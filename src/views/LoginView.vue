@@ -446,6 +446,7 @@ input:focus {
 /* ===== 按鈕 ===== */
 button {
   height: 44px;
+  width: 100%;
   margin-top: 6px;
   border-radius: 12px;
   border: none;

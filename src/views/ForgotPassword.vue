@@ -4,12 +4,39 @@ const email = ref('')
 const loading = ref(false)
 const error = ref('')
 
-const login = async () => {
+const sendEmail = async () => {
   if (!email.value) {
     error.value = '請輸入驗證電子郵件地址'
     return
   }
   loading.value = true
+
+  try{
+    const res = await fetch('http://localhost:8080/forgot-password',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json'
+      },
+      body: JSON.stringify({
+        email: email.value
+      }),
+    })
+
+    if (!res.ok){
+      const errorBody = await res.json()
+      error.value = errorBody.message
+      return
+    }
+    error.value = ''
+    alert("信件已發出,請在15分鐘內更改密碼,謝謝")
+
+  }catch (e){
+    console.error(e)
+    error.value = "不明錯誤,請稍後在試"
+  }finally {
+    loading.value = false
+  }
+
 }
 </script>
 
@@ -35,7 +62,7 @@ const login = async () => {
 
     <p v-if="error" class="error">{{ error }}</p>
 
-    <button @click="login" :disabled="loading">
+    <button @click="sendEmail" :disabled="loading">
       <span v-if="!loading">傳送驗證信件</span>
       <span v-else class="loading">發送中…</span>
     </button>
