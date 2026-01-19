@@ -1,20 +1,30 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+const route = useRoute()
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/share_diamond_logo.png" width="200" height="200" />
+  <div v-if="route.meta.fullscreen" id="app" :class="{ fullscreen: route.meta.fullscreen }">
+    <RouterView />
+  </div>
+
+  <header v-if="!route.meta.fullscreen">
+    <img
+      alt="Vue logo"
+      class="logo"
+      src="@/assets/share_diamond_logo.png"
+      width="200"
+      height="200"
+    />
 
     <div class="wrapper">
       <HelloWorld msg="Diamond Core" />
-
-
     </div>
   </header>
-
-  <RouterView />
+  <div v-if="!route.meta.fullscreen">
+    <RouterView />
+  </div>
 </template>
 
 <style scoped>

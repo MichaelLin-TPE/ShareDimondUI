@@ -1,63 +1,162 @@
 <script setup lang="ts">
-import {ref,onMounted} from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
+const showApplyClanModal = ref(false)
 
-interface Clan{
-  id:string,
-  name:string
+interface Clan {
+  id: string
+  name: string
+  clanId: string
 }
-const fetchClans = async ()=>{
-  try{
+const authStore = useAuthStore()
+// 比對clanId取出血盟名稱
+const selectedClanName = computed(() => {
+  if (selectedClan.value === '') return ''
+  const clan = clans.value.find((c) => c.clanId === selectedClan.value)
+  return clan?.name ?? ''
+})
+const selectedClanNameForApply = computed(() => {
+  if (selectedClanForAppyly.value === '') return ''
+  const clan = clans.value.find((c) => c.clanId === selectedClanForAppyly.value)
+  return clan?.name ?? ''
+})
+
+//打API取得所有支援的血盟---------------------------------------
+const clans = ref<Clan[]>([])
+const fetchClans = async () => {
+  try {
     const res = await fetch('http://localhost:8080/clans')
-    if (!res.ok){
-      throw new Error("取得血盟失敗")
+    if (!res.ok) {
+      throw new Error('取得血盟失敗')
     }
     clans.value = await res.json()
-  }catch (e){
+  } catch (e) {
     console.error(e)
     error.value = '無法取得血盟資料'
   }
 }
 
-onMounted(()=>{
+onMounted(() => {
   fetchClans()
 })
+//打API取得所有支援的血盟---------------------------------------
 
-const clans = ref<Clan[]>([])
+const addMember = async () => {
+  errorForApply.value = ''
+  if (
+    !accountForApply.value ||
+    !passwordForApply.value ||
+    !passwordForApplyAgain.value ||
+    !userNameForApply.value
+  ) {
+    errorForApply.value = '請填滿所有的欄位!'
+    return
+  }
+  if (passwordForApply.value != passwordForApplyAgain.value) {
+    errorForApply.value = '請填寫正確的密碼'
+    return
+  }
+
+  loadingForApply.value = true
+
+  try {
+    const res = await fetch('http://localhost:8080/addMember', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        account: accountForApply.value,
+        password: passwordForApply.value,
+        clanId: selectedClanForAppyly.value,
+        userName: userNameForApply.value,
+        email: emailForAPply.value,
+      }),
+    })
+    if (!res.ok) {
+      const errorBody = await res.json()
+      errorForApply.value = errorBody.message
+      return
+    }
+    const data = await res.json()
+    authStore.setToken(data.authToken)
+    console.log('申請成功 : ', data)
+
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    alert(`登入成功\n血盟：${selectedClanNameForApply.value}`)
+  } catch (e) {
+    console.error(e)
+    errorForApply.value = '申請失敗'
+  } finally {
+    loadingForApply.value = false
+  }
+}
 
 const selectedClan = ref('')
+const selectedClanForAppyly = ref('')
+const accountForApply = ref('')
+const passwordForApply = ref('')
+const passwordForApplyAgain = ref('')
+const userNameForApply = ref('')
+const emailForAPply = ref('')
 
 const account = ref('')
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+const errorForApply = ref('')
+const loadingForApply = ref(false)
 
 const login = async () => {
   error.value = ''
+  if (!account.value || !password.value || !selectedClan.value) {
+    error.value = '請填寫帳號,密碼,血盟'
+    return
+  }
+
   loading.value = true
 
   try {
-    if (!selectedClan.value) {
-      throw new Error('請選擇血盟')
+    const res = await fetch('http://localhost:8080/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        account: account.value,
+        password: password.value,
+        clanId: selectedClan.value,
+      }),
+    })
+    if (!res.ok) {
+      const errorBody = await res.json()
+      error.value = errorBody.message
+      return
     }
-
-    await new Promise(resolve => setTimeout(resolve, 800))
-    alert(`登入成功（mock）\n血盟：${selectedClan.value}`)
+    const data = await res.json()
+    authStore.setToken(data.authToken)
+    console.log('登入成功 : ', data)
+    showApplyClanModal.value = false
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    alert(`登入成功\n血盟：${selectedClanName.value}`)
   } catch (e) {
+    console.error(e)
     error.value = '登入失敗'
   } finally {
     loading.value = false
   }
 }
 const onApplyClan = () => {
-  alert('申請加入血盟（mock）')
+  showApplyClanModal.value = true
+  errorForApply.value = ''
+  loadingForApply.value = false
 }
-
+const router = useRouter()
 const onForgotPassword = () => {
-  alert('忘記密碼（mock）')
+  router.push({ name: 'ForgotPassword' })
 }
-
 </script>
-
 
 <template>
   <div class="page">
@@ -70,24 +169,14 @@ const onForgotPassword = () => {
       </div>
 
       <div class="form">
-        <select
-          v-model="selectedClan"
-          :class="{ selected: selectedClan !== '' }">
+        <select v-model="selectedClan" :class="{ selected: selectedClan !== '' }">
           <option value="" disabled>選擇血盟</option>
-          <option
-            v-for="clan in clans"
-            :key="clan.id"
-            :value="clan.id"
-          >
+          <option v-for="clan in clans" :key="clan.id" :value="clan.clanId">
             {{ clan.name }}
           </option>
         </select>
 
-        <input
-          v-model="account"
-          placeholder="Account"
-          autocomplete="username"
-        />
+        <input v-model="account" placeholder="Account" autocomplete="username" />
         <input
           v-model="password"
           type="password"
@@ -103,22 +192,107 @@ const onForgotPassword = () => {
         <p v-if="error" class="error">{{ error }}</p>
 
         <div class="action-links">
-          <span class="link left" @click="onApplyClan">
-              申請加入血盟
-          </span>
-          <span class="link right" @click="onForgotPassword">
-              忘記密碼
-          </span>
+          <span class="link left" @click="onApplyClan"> 申請加入血盟 </span>
+          <span class="link right" @click="onForgotPassword"> 忘記密碼 </span>
         </div>
+      </div>
+    </div>
 
+    <!-- 申請血盟 Modal -->
+    <div v-if="showApplyClanModal" class="modal-mask">
+      <div class="modal-card">
+        <h3>申請加入血盟</h3>
+
+        <select v-model="selectedClanForAppyly" :class="{ selected: selectedClanForAppyly !== '' }">
+          <option value="" disabled selected>選擇血盟</option>
+          <option v-for="clan in clans" :key="clan.id" :value="clan.clanId">
+            {{ clan.name }}
+          </option>
+        </select>
+
+        <input v-model="accountForApply" placeholder="請輸入帳號" />
+
+        <input v-model="passwordForApply" type="password" placeholder="請輸入密碼" />
+        <input v-model="passwordForApplyAgain" type="password" placeholder="再次輸入密碼" />
+        <input v-model="userNameForApply" type="text" placeholder="請輸入遊戲名稱" />
+        <input v-model="emailForAPply" type="email" placeholder="請輸入電子郵件" />
+        <p v-if="errorForApply" class="errorForApply">{{ errorForApply }}</p>
+
+        <button @click="addMember" :disabled="loadingForApply">
+          <span v-if="!loadingForApply">提交申請</span>
+          <span v-else class="loadingForApply">驗證中…</span>
+        </button>
+
+        <button class="close-btn" @click="showApplyClanModal = false">關閉</button>
       </div>
     </div>
   </div>
 </template>
 
-
 <style scoped>
+/* ===== Modal 遮罩 ===== */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9); /* ⬅ 更深 */
+  backdrop-filter: blur(4px); /* ⬅ 模糊降低 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
 
+/* ===== Modal 卡片 ===== */
+.modal-card {
+  width: 380px;
+  padding: 28px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.1));
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #e6f0ff;
+}
+
+.modal-card h3 {
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* ===== Input / Select ===== */
+.modal-card input,
+.modal-card select {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--text-placeholder);
+  font-size: 14px;
+  outline: none;
+}
+
+/* ===== 提交按鈕 ===== */
+.submit-btn {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  color: #000;
+  background: linear-gradient(90deg, #6be9ff, #b388ff);
+  cursor: pointer;
+}
+
+/* ===== 關閉按鈕 ===== */
+.close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 13px;
+}
 
 /* ===== 底部操作連結 ===== */
 .action-links {
@@ -132,14 +306,15 @@ const onForgotPassword = () => {
   color: var(--text-placeholder);
   cursor: pointer;
   user-select: none;
-  transition: color 0.2s, text-shadow 0.2s;
+  transition:
+    color 0.2s,
+    text-shadow 0.2s;
 }
 
 .link:hover {
   color: var(--text-primary);
   text-shadow: 0 0 8px rgba(108, 242, 255, 0.4);
 }
-
 
 /* ===== Mobile 微調 ===== */
 @media (max-width: 480px) {
@@ -176,11 +351,11 @@ select option {
   color: #000;
 }
 
-
 select:focus {
   background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 0 0 1px rgba(108, 242, 255, 0.6),
-  0 0 12px rgba(108, 242, 255, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(108, 242, 255, 0.6),
+    0 0 12px rgba(108, 242, 255, 0.35);
 }
 
 /* ===== 背景 ===== */
@@ -199,15 +374,12 @@ select:focus {
 .login-card {
   width: 360px;
   padding: 32px 28px 36px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.02)
-  );
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
   border-radius: 16px;
   backdrop-filter: blur(12px);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45),
-  inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ===== LOGO 區 ===== */
@@ -220,8 +392,9 @@ select:focus {
   font-size: 42px;
   color: #6cf2ff;
   margin-bottom: 8px;
-  text-shadow: 0 0 12px rgba(108, 242, 255, 0.9),
-  0 0 32px rgba(180, 110, 255, 0.8);
+  text-shadow:
+    0 0 12px rgba(108, 242, 255, 0.9),
+    0 0 32px rgba(180, 110, 255, 0.8);
 }
 
 .logo-area h2 {
@@ -254,7 +427,9 @@ input {
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   font-size: 14px;
-  transition: box-shadow 0.2s, background 0.2s;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
 }
 
 input::placeholder {
@@ -263,8 +438,9 @@ input::placeholder {
 
 input:focus {
   background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 0 0 1px rgba(108, 242, 255, 0.6),
-  0 0 12px rgba(108, 242, 255, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(108, 242, 255, 0.6),
+    0 0 12px rgba(108, 242, 255, 0.35);
 }
 
 /* ===== 按鈕 ===== */
@@ -279,7 +455,9 @@ button {
   color: #0b0f1a;
   background: linear-gradient(135deg, #6cf2ff, #b46eff);
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 }
 
 button:hover:not(:disabled) {
@@ -293,6 +471,7 @@ button:disabled {
 }
 
 /* ===== 錯誤 ===== */
+.errorForApply,
 .error {
   margin-top: 4px;
   font-size: 13px;
@@ -301,19 +480,20 @@ button:disabled {
 }
 
 /* ===== loading ===== */
+.loadingForApply,
 .loading {
   animation: pulse 1.2s infinite;
 }
 
 @keyframes pulse {
   0% {
-    opacity: 1
+    opacity: 1;
   }
   50% {
-    opacity: 0.5
+    opacity: 0.5;
   }
   100% {
-    opacity: 1
+    opacity: 1;
   }
 }
 </style>
