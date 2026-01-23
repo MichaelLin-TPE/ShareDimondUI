@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
+import type { Member } from '@/types/member.ts'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     authToken: localStorage.getItem('authToken') as string | null,
+    member: null as Member | null,
   }),
 
   getters: {
@@ -10,6 +12,9 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    setMember(member: Member) {
+      this.member = member
+    },
     setToken(token: string) {
       this.authToken = token
       localStorage.setItem('authToken', token)

@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import { onMounted } from 'vue'
+import { useAuthInit } from '@/composables/useAuthInit.ts'
 const route = useRoute()
+
+onMounted(() => {
+  useAuthInit()
+})
 </script>
 
 <template>

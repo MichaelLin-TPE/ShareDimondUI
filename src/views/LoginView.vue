@@ -81,6 +81,7 @@ const addMember = async () => {
     }
     const data = await res.json()
     authStore.setToken(data.authToken)
+    authStore.setMember(data)
     console.log('申請成功 : ', data)
 
     await new Promise((resolve) => setTimeout(resolve, 1500))
@@ -136,10 +137,12 @@ const login = async () => {
     }
     const data = await res.json()
     authStore.setToken(data.authToken)
+    authStore.setMember(data)
     console.log('登入成功 : ', data)
     showApplyClanModal.value = false
     await new Promise((resolve) => setTimeout(resolve, 1500))
     alert(`登入成功\n血盟：${selectedClanName.value}`)
+    router.replace('/clan')
   } catch (e) {
     console.error(e)
     error.value = '登入失敗'
