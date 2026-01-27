@@ -12,7 +12,7 @@ const sendEmail = async () => {
   loading.value = true
 
   try {
-    const res = await fetch('http://localhost:8080/forgot-password', {
+    const res = await fetch('http://138.2.9.163:8080/forgot-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

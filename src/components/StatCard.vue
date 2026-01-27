@@ -40,11 +40,7 @@ const {
             <button class="plus-button" @click="handlePlus(item)">+</button>
           </div>
 
-          <button
-            class="submit-btn"
-            :disabled="item.disableSubmitButton"
-            @click="handleSubmit(item)"
-          >
+          <button class="submit-btn" :disabled="!item.isBidding" @click="handleSubmit(item)">
             <span v-if="item.isBidding">我要出價</span>
 
             <span v-else-if="item.disableSubmitButton">結束競標</span>

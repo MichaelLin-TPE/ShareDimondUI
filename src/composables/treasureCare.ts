@@ -16,6 +16,7 @@ export function useAuction() {
   const error = ref('')
   const authStore = useAuthStore()
   const addBossName = ref('')
+  const showPeopleList = ref(false)
   const openAddBossDialog = () => {
     showAddBossDialog.value = true
   }
@@ -39,7 +40,7 @@ export function useAuction() {
 
   const getBossList = async () => {
     try {
-      const res = await fetch('http://localhost:8080/getBossList', {
+      const res = await fetch('http://138.2.9.163:8080/getBossList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -58,7 +59,7 @@ export function useAuction() {
 
   const getTreasureItemList = async () => {
     try {
-      const res = await fetch('http://localhost:8080/getTreasureList', {
+      const res = await fetch('http://138.2.9.163:8080/getTreasureList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -94,7 +95,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('http://localhost:8080/open-ticket', {
+      const res = await fetch('http://138.2.9.163:8080/open-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -140,7 +141,7 @@ export function useAuction() {
 
   const deleteTreasure = async () =>{
     try{
-      const res = await fetch('http://localhost:8080/delete-ticket', {
+      const res = await fetch('http://138.2.9.163:8080/delete-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -165,7 +166,7 @@ export function useAuction() {
 
   const addAttendance = async () =>{
     try{
-      const res = await fetch('http://localhost:8080/add-attendance', {
+      const res = await fetch('http://138.2.9.163:8080/add-attendance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -194,7 +195,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('http://localhost:8080/add-boss', {
+      const res = await fetch('http://138.2.9.163:8080/add-boss', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -231,7 +232,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('http://localhost:8080/add-treasure', {
+      const res = await fetch('http://138.2.9.163:8080/add-treasure', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -268,6 +269,8 @@ export function useAuction() {
     joinTime:string
     canceled:false
     canceledTime:string
+    userName:string
+    remainSecond:number
   }
 
 
@@ -341,7 +344,7 @@ export function useAuction() {
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
     try {
-      const res = await fetch('http://localhost:8080/get-ongoing-treasure', {
+      const res = await fetch('http://138.2.9.163:8080/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -368,12 +371,45 @@ export function useAuction() {
 
   let timer: number | null = null // 用來存放計時器
 
+  const getJoinList = (item: Treasure): TreasureAttendance[] => {
+    const now = new Date().getTime()
+    item.treasureAttendanceList.forEach((item) =>{
+      if (!item.joinTime) {
+        item.remainSecond = 0
+        return
+      }
+
+      // 2. 關鍵修正：補上 "Z" 標記，強制讓 JS 以 UTC 解析
+      // 如果後端傳來的是 "2026-01-25T00:39:28"，補 Z 後會變成 "2026-01-25T00:39:28Z"
+      // 這樣 new Date() 就會自動幫你加上 8 小時（台北時區）
+      const utcString = item.joinTime.endsWith('Z') ? item.joinTime : `${item.joinTime}Z`
+
+      const expire = new Date(utcString).getTime()
+
+      // 3. 計算剩餘秒數
+      const diff = Math.max(0, Math.floor((expire - now) / 1000))
+      item.remainSecond = diff
+    })
+
+
+
+    return item.treasureAttendanceList
+  }
+
+
  const handleJoinButtonDiable = () =>{
 
  }
+ const selectPeopleItem = ref<Treasure>()
+
+ const handlePeopleCount = (item:Treasure) =>{
+    showPeopleList.value = true
+    selectPeopleItem.value = item
+ }
+
   onMounted(async () => {
     try {
-      const res = await fetch('http://localhost:8080/get-ongoing-treasure', {
+      const res = await fetch('http://138.2.9.163:8080/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -396,15 +432,15 @@ export function useAuction() {
     }
   })
 
-  const startCountdown = () =>{
+  const startCountdown = () => {
     if (timer) clearInterval(timer)
 
-    timer = setInterval(() =>{
+    timer = setInterval(() => {
       const now = new Date().getTime()
-      auctions.value.forEach((item) =>{
+      auctions.value.forEach((item) => {
         const expire = new Date(item.expireTime).getTime()
 
-        const diff = Math.max(0,Math.floor((expire - now) / 1000))
+        const diff = Math.max(0, Math.floor((expire - now) / 1000))
         item.remainSeconds = diff
       })
     })
@@ -421,6 +457,10 @@ export function useAuction() {
 
 
   return {
+    getJoinList,
+    selectPeopleItem,
+    showPeopleList,
+    handlePeopleCount,
     auctions,
     formatTime,
     showModal,

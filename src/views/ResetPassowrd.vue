@@ -30,7 +30,7 @@ const sendNewPassword = async () => {
   }
   loading.value = true
   try {
-    const res = await fetch('http://localhost:8080/update-password', {
+    const res = await fetch('http://138.2.9.163:8080/update-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await fetch('http://localhost:8080/verify-token', {
+    const res = await fetch('http://138.2.9.163:8080/verify-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

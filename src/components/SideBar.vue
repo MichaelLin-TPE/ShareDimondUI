@@ -29,7 +29,7 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await fetch('http://localhost:8080/getBalance', {
+    const res = await fetch('http://138.2.9.163:8080/getBalance', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,

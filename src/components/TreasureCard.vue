@@ -13,6 +13,9 @@ const {
   basePrice,
   remark,
   openTicket,
+  handlePeopleCount,
+  showPeopleList,
+  selectPeopleItem,
   openAddTreasureDialog,
   handleDeleteItem,
   showAddTreasureDialog,
@@ -24,6 +27,7 @@ const {
   handleJoinItem,
   addBossName,
   addBoss,
+  getJoinList,
   openAddBossDialog,
 } = useAuction()
 </script>
@@ -39,7 +43,11 @@ const {
     <div class="auction-scroll">
       <div class="auction-grid">
         <div v-for="item in auctions" :key="item.treasureCode" class="auction-card">
-          <button class="delete-ticket" v-show="item.showDeleteTicket" @click="handleDeleteItem(item)">
+          <button
+            class="delete-ticket"
+            v-show="item.showDeleteTicket"
+            @click="handleDeleteItem(item)"
+          >
             撤單
           </button>
           <div class="item-name gold">{{ item.itemName }}</div>
@@ -55,10 +63,36 @@ const {
             <span v-else>我有參與+1</span>
           </button>
 
-          <div class="meta">
+          <div class="meta" @click="handlePeopleCount(item)">
             ⏳ {{ formatTime(item.remainSeconds) }} 👥 {{ item.treasureAttendanceList.length }}人
           </div>
           <div class="bottom_title">倒數完畢此道具將會進入競拍...</div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showPeopleList" class="show-people-list" @click.self="showPeopleList = false">
+      <div class="boss-container">
+        <h2 class="boss-title">參與名單</h2>
+        <div v-if="showPeopleList" class="show-people-list" @click.self="showPeopleList = false">
+          <div class="boss-container">
+            <h2 class="boss-title">參與名單</h2>
+
+            <ul class="people-list">
+              <li
+                v-for="(data, index) in getJoinList(selectPeopleItem)"
+                :key="index"
+                class="person-item"
+              >
+                <div class="person-info">
+                  <span class="person-name">👤 {{ data.userName }}</span>
+                  <span class="join-time">{{ formatTime(data.remainSecond) }}</span>
+                </div>
+              </li>
+            </ul>
+
+            <button class="close-btn" @click="showPeopleList = false">關閉</button>
+          </div>
         </div>
       </div>
     </div>
@@ -188,6 +222,92 @@ const {
 </template>
 
 <style scoped>
+/* 容器主體 */
+.boss-container {
+  background: rgba(30, 30, 30, 0.9); /* 深色背景符合整體氛圍 */
+  width: 90%;
+  max-width: 400px;
+  max-height: 70vh; /* 限制高度，避免名單太長 */
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.boss-title {
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+/* 清單區域 */
+.people-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto; /* 超出高度時可滾動 */
+}
+
+/* 每一行名單 */
+.person-item {
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.person-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.person-info {
+  display: flex;
+  justify-content: space-between; /* 名字在左，時間在右 */
+  align-items: center;
+  padding: 12px 15px;
+}
+
+.person-name {
+  color: #e0e0e0;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.join-time {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* 自定義捲軸樣式 (讓它看起來更精緻) */
+.people-list::-webkit-scrollbar {
+  width: 6px;
+}
+.people-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+/* 下方的關閉按鈕 */
+.close-btn {
+  margin-top: 20px;
+  padding: 10px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.close-btn:hover {
+  background: #666;
+}
+
 .error {
   width: 100%;
   margin-top: 4px;
@@ -200,6 +320,7 @@ const {
 span {
   margin-right: 15px;
 }
+.show-people-list,
 .show-add-boss-overlay,
 .show-add-treasure-overlay,
 .modal-overlay {
@@ -470,6 +591,18 @@ span {
 
 .meta {
   margin-top: 15px;
+  cursor: pointer; /* 讓滑鼠移上去時顯示小手圖示 */
+  transition: all 0.2s ease; /* 讓背景顏色變化更平滑 */
+  padding: 8px; /* 增加一點點點擊範圍 */
+  border-radius: 4px; /* 讓邊緣稍微圓潤，看起來像按鈕 */
+}
+.meta:hover {
+  background-color: rgba(0, 0, 0, 05);
+}
+/* 點擊下去的效果：縮放或變暗 */
+.meta:active {
+  transform: scale(0.98); /* 輕微縮小，模擬實體按鈕按下去的感覺 */
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 /* 1. 基礎容器設定 */
