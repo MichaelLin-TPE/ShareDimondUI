@@ -26,7 +26,7 @@ const selectedClanNameForApply = computed(() => {
 const clans = ref<Clan[]>([])
 const fetchClans = async () => {
   try {
-    const res = await fetch('http://138.2.9.163:8080/clans')
+    const res = await fetch('https://gameshare-system.com/clans')
     if (!res.ok) {
       throw new Error('取得血盟失敗')
     }
@@ -61,7 +61,7 @@ const addMember = async () => {
   loadingForApply.value = true
 
   try {
-    const res = await fetch('http://138.2.9.163:8080/addMember', {
+    const res = await fetch('https://gameshare-system.com/addMember', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ const login = async () => {
   loading.value = true
 
   try {
-    const res = await fetch('http://138.2.9.163:8080/login', {
+    const res = await fetch('https://gameshare-system.com/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

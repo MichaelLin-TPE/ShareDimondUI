@@ -4,22 +4,63 @@ import { useAuthStore } from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
 const router = useRouter()
 const menu = [
-  { label: '🏰 血盟大廳' },
-  { label: '🏰 分寶大廳' },
-  { label: '💎 進行中的分寶' },
-  { label: '📜 歷史分寶' },
-  { label: '💰 公會基金' },
-  { label: '👥 成員與權限' },
+  { label: '🏛️ 血盟大廳' },
+  { label: '📖 歷史紀錄' },
+  { label: '💸 轉帳' },
+  { label: '📤 申請提款' },
+  { label: '📤 提款審核' },
+  { label: '👑 成員管理' },
 ]
 const authStore = useAuthStore()
 const loading = ref(false)
 const balance = ref(0)
 const clanBalance = ref(0)
 
+const handleMenuClick = (item) => {
+  console.log('你點擊了：', item.label)
+
+  // 這裡可以根據點擊的內容做跳轉或其他操作
+  if (item.label === '🏛️ 血盟大廳') {
+    // 執行相關邏輯
+    router.replace('/clan/dashboard')
+  } else if (item.label == '📖 歷史紀錄') {
+    router.replace('/clan/treasures')
+  } else if (item.label == '💸 轉帳') {
+    router.replace('/clan/transfer')
+  } else if (item.label == '📤 申請提款') {
+    router.replace('/clan/withdraw')
+  } else if (item.label == '👑 成員管理') {
+    router.replace('/clan/memberRole')
+  } else if (item.label == '📤 提款審核') {
+    router.replace('/clan/verifyWithdraw')
+  }
+}
+
 const formatNumber = (val: number | string | null) => {
   if (val === null || val === undefined) return '0'
   // 確保轉成數字後再格式化
   return Number(val).toLocaleString()
+}
+
+const logout = async () => {
+  try {
+    const res = await fetch('https://gameshare-system.com/logout', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${authStore.authToken}`,
+        Accept: 'application/json',
+      },
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      alert(data.message)
+      return
+    }
+    alert('登出成功')
+    router.replace('/login')
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 onMounted(async () => {
@@ -29,7 +70,7 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await fetch('http://138.2.9.163:8080/getBalance', {
+    const res = await fetch('https://gameshare-system.com/getBalance', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
@@ -45,6 +86,7 @@ onMounted(async () => {
     balance.value = data.balance
     clanBalance.value = data.clanBalance
   } catch (e) {
+    console.log(e)
     balance.value = 0
     clanBalance.value = 0
   } finally {
@@ -62,7 +104,10 @@ const handleInvalidToken = () => {
   <aside class="sidebar">
     <div class="clan">
       <img class="logo" src="/share_diamond_logo.png" />
-      <div v-if="authStore.member" class="name">{{ authStore.member.clanName }}</div>
+      <div v-if="authStore.member" class="name">
+        {{ authStore.member.clanName }}
+      </div>
+      <button class="logout" @click="logout">登出</button>
     </div>
     <div class="balance_view">
       <span v-if="loading">讀取中...</span>
@@ -73,7 +118,7 @@ const handleInvalidToken = () => {
       </span>
     </div>
     <nav>
-      <div v-for="item in menu" :key="item.label" class="menu-item">
+      <div v-for="item in menu" :key="item.label" class="menu-item" @click="handleMenuClick(item)">
         {{ item.label }}
       </div>
     </nav>
@@ -87,6 +132,57 @@ const handleInvalidToken = () => {
   color: #fff;
   height: 100vh;
   padding: 16px;
+}
+
+.logout:hover {
+  border-color: #00d4ff;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.logout:active {
+  transform: translateY(1px);
+}
+
+.logout {
+  width: 40px;
+  height: 20px;
+  padding: 0; /* 移除可能存在的內距 */
+  margin: 0; /* 移除可能的邊距 */
+
+  display: flex; /* 使用 flex 處理內部文字置中 */
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1; /* 確保文字不會被行高推下去 */
+  font-size: 10px;
+  box-sizing: border-box;
+
+  /* 你的精美樣式保持不變 */
+  border-radius: 8px;
+  color: #00d4ff;
+  background: linear-gradient(145deg, #12141d, #1a1f2e);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
+/* 確保父容器沒有干擾因素 */
+.clan {
+  display: flex;
+  align-items: center; /* 這是垂直置中的關鍵 */
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.clan h2,
+.clan span {
+  /* 如果你左邊是用 h2 或 span */
+  margin: 0; /* 移除標題預設的下邊距 */
+  display: flex;
+  align-items: center;
 }
 
 .balance_view {

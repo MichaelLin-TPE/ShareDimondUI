@@ -40,7 +40,7 @@ export function useAuction() {
 
   const getBossList = async () => {
     try {
-      const res = await fetch('http://138.2.9.163:8080/getBossList', {
+      const res = await fetch('https://gameshare-system.com/getBossList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -59,7 +59,7 @@ export function useAuction() {
 
   const getTreasureItemList = async () => {
     try {
-      const res = await fetch('http://138.2.9.163:8080/getTreasureList', {
+      const res = await fetch('https://gameshare-system.com/getTreasureList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -95,7 +95,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('http://138.2.9.163:8080/open-ticket', {
+      const res = await fetch('https://gameshare-system.com/open-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -141,7 +141,7 @@ export function useAuction() {
 
   const deleteTreasure = async () =>{
     try{
-      const res = await fetch('http://138.2.9.163:8080/delete-ticket', {
+      const res = await fetch('https://gameshare-system.com/delete-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -166,7 +166,7 @@ export function useAuction() {
 
   const addAttendance = async () =>{
     try{
-      const res = await fetch('http://138.2.9.163:8080/add-attendance', {
+      const res = await fetch('https://gameshare-system.com/add-attendance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -195,7 +195,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('http://138.2.9.163:8080/add-boss', {
+      const res = await fetch('https://gameshare-system.com/add-boss', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -232,7 +232,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('http://138.2.9.163:8080/add-treasure', {
+      const res = await fetch('https://gameshare-system.com/add-treasure', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -344,7 +344,7 @@ export function useAuction() {
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
     try {
-      const res = await fetch('http://138.2.9.163:8080/get-ongoing-treasure', {
+      const res = await fetch('https://gameshare-system.com/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -371,9 +371,10 @@ export function useAuction() {
 
   let timer: number | null = null // 用來存放計時器
 
-  const getJoinList = (item: Treasure): TreasureAttendance[] => {
+  const getJoinList = (): TreasureAttendance[] => {
+    const data = selectPeopleItem.value! // 自動推導為 Treasure | undefined
     const now = new Date().getTime()
-    item.treasureAttendanceList.forEach((item) =>{
+    data.treasureAttendanceList.forEach((item) => {
       if (!item.joinTime) {
         item.remainSecond = 0
         return
@@ -393,7 +394,7 @@ export function useAuction() {
 
 
 
-    return item.treasureAttendanceList
+    return data.treasureAttendanceList
   }
 
 
@@ -409,7 +410,7 @@ export function useAuction() {
 
   onMounted(async () => {
     try {
-      const res = await fetch('http://138.2.9.163:8080/get-ongoing-treasure', {
+      const res = await fetch('https://gameshare-system.com/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -453,10 +454,25 @@ export function useAuction() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
+  function formatTimestamp(timeStr:string) {
+    // 1. 將字串轉換為 Date 物件
+    const date = new Date(timeStr)
 
+    // 2. 提取各個部分並補零
+    const yyyy = date.getFullYear()
+    const MM = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    const hh = String(date.getHours()).padStart(2, '0')
+    const mm = String(date.getMinutes()).padStart(2, '0')
+    const ss = String(date.getSeconds()).padStart(2, '0')
+
+    // 3. 組合回傳
+    return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`
+  }
 
 
   return {
+    formatTimestamp,
     getJoinList,
     selectPeopleItem,
     showPeopleList,

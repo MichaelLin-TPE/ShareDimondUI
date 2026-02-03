@@ -7,7 +7,7 @@ export async function useAuthInit() {
   if (!authStore.authToken) return
 
   try {
-    const res = await fetch('http://138.2.9.163:8080/getBasicInfo', {
+    const res = await fetch('https://gameshare-system.com/getBasicInfo', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
@@ -15,8 +15,8 @@ export async function useAuthInit() {
     })
 
     if (!res.ok) {
-      alert('請重新登入謝謝!')
-      router.replace('/login')
+      // alert('請重新登入謝謝!')
+      // router.replace('/login')
       return
     }
 

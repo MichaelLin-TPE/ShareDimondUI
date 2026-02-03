@@ -25,6 +25,7 @@ const {
   addTreasure,
   showAddBossDialog,
   handleJoinItem,
+  formatTimestamp,
   addBossName,
   addBoss,
   getJoinList,
@@ -80,13 +81,13 @@ const {
 
             <ul class="people-list">
               <li
-                v-for="(data, index) in getJoinList(selectPeopleItem)"
+                v-for="(data, index) in getJoinList()"
                 :key="index"
                 class="person-item"
               >
                 <div class="person-info">
                   <span class="person-name">👤 {{ data.userName }}</span>
-                  <span class="join-time">{{ formatTime(data.remainSecond) }}</span>
+                  <span class="join-time">{{ formatTimestamp(data.joinTime) }}</span>
                 </div>
               </li>
             </ul>
@@ -443,6 +444,10 @@ span {
 /* 確保 disabled option 的樣式 */
 .custom-select option[disabled] {
   color: #777;
+}
+
+.item-name{
+  font-size: 20px;
 }
 
 /* --- Action Buttons --- */

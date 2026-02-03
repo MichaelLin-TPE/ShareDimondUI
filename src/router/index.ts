@@ -4,8 +4,12 @@ import ForgotPassword from '@/views/ForgotPassword.vue'
 import ResetPassowrd from '@/views/ResetPassowrd.vue'
 import DashBoard from '@/views/DashBoard.vue'
 import ClanLayout from '@/layouts/ClanLayout.vue'
-import Treasure from '@/views/Treasure.vue'
+import ShareHistory from '@/views/ShareHistory.vue'
 import HistoryBoard from '@/views/HistoryBoard.vue'
+import TransferPage from '@/views/TransferPage.vue'
+import WithdrawPage from '@/views/WithdrawPage.vue'
+import MemberRolePage from '@/views/MemberRolePage.vue'
+import VerifyWithdrawPage from '@/views/VerifyWithdrawPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -56,11 +60,27 @@ const router = createRouter({
         },
         {
           path: 'treasures',
-          component: Treasure,
+          component: ShareHistory,
         },
         {
           path: 'history',
           component: HistoryBoard,
+        },
+        {
+          path: 'transfer',
+          component: TransferPage,
+        },
+        {
+          path: 'withdraw',
+          component: WithdrawPage,
+        },
+        {
+          path: 'memberRole',
+          component: MemberRolePage,
+        },
+        {
+          path: 'verifyWithdraw',
+          component: VerifyWithdrawPage,
         },
       ],
     },
