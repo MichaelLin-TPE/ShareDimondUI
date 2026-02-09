@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import { useAuction } from '@/composables/withdraw_verify.ts'
+// 靜態資料
+const { mockRequests, totalAmount, withdrawHistoryList, handleAction } = useAuction()
+</script>
+
 <template>
   <div class="audit-container">
     <div class="header-section">
@@ -8,11 +14,11 @@
     <div class="stats-row">
       <div class="stat-card">
         <span class="label">待審核項目</span>
-        <span class="value warning">12</span>
+        <span class="value warning">{{ withdrawHistoryList.length }}</span>
       </div>
       <div class="stat-card">
-        <span class="label">今日已撥款</span>
-        <span class="value">458,000</span>
+        <span class="label">待撥款總額</span>
+        <span class="value">{{ totalAmount }}</span>
       </div>
     </div>
 
@@ -24,42 +30,31 @@
       </div>
 
       <div class="request-list">
-        <div v-for="req in mockRequests" :key="req.id" class="request-item">
+        <div v-for="req in withdrawHistoryList" :key="req.ticketCode" class="request-item">
           <div class="requester-info">
-            <div class="avatar">{{ req.name.charAt(0) }}</div>
+            <div class="avatar">{{ req.requestUserName.charAt(0) }}</div>
             <div class="details">
-              <div class="name">{{ req.name }}</div>
-              <div class="request-time">{{ req.time }}</div>
+              <div class="name">{{ req.requestUserName }}</div>
+              <div class="request-time">{{ req.createTime }}</div>
             </div>
           </div>
 
           <div class="request-content">
-            <div class="amount">💰 {{ req.amount.toLocaleString() }}</div>
-            <div class="memo">" {{ req.memo }} "</div>
+            <div class="amount">💰 {{ req.requestAmount.toLocaleString() }}</div>
+            <div class="memo">" {{ req.remark }} "</div>
           </div>
 
           <div class="audit-actions">
-            <button class="btn-reject" @click="handleAction(req.name, 'reject')">駁回</button>
-            <button class="btn-approve" @click="handleAction(req.name, 'approve')">核准撥款</button>
+            <button class="btn-reject" @click="handleAction(req.ticketCode, 'reject')">核准</button>
+            <button class="btn-approve" @click="handleAction(req.ticketCode, 'approve')">
+              核准
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const mockRequests = [
-  { id: 1, name: '宮城良田', amount: 50000, memo: '購買攻城藥水', time: '10 分鐘前' },
-  { id: 2, name: '櫻木花道', amount: 1200, memo: '修理裝備費用', time: '25 分鐘前' },
-  { id: 3, name: '流川楓', amount: 800000, memo: '分紅提取', time: '1 小時前' },
-]
-
-const handleAction = (name: string, type: 'approve' | 'reject') => {
-  const actionText = type === 'approve' ? '核准' : '駁回'
-  alert(`已成功${actionText} ${name} 的提款申請`)
-}
-</script>
 
 <style scoped>
 .audit-container {

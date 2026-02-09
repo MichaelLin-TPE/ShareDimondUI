@@ -1,3 +1,9 @@
+<script setup lang="ts">
+import { useAuction } from '@/composables/transfer.ts'
+// 靜態資料
+const { handleTransfer, memberList, selectedMemberId, inputAmount } = useAuction()
+</script>
+
 <template>
   <div class="transfer-container">
     <div class="transfer-card">
@@ -5,10 +11,10 @@
 
       <div class="input-group">
         <label>收款對象</label>
-        <select class="styled-select">
+        <select v-model="selectedMemberId" class="styled-select">
           <option value="" disabled selected>請選擇接收者</option>
-          <option v-for="user in mockUsers" :key="user.id" :value="user.id">
-            {{ user.name }} ({{ user.role }})
+          <option v-for="user in memberList" :key="user.memberId" :value="user.memberId">
+            {{ user.memberName }} ({{ user.memberRole }})
           </option>
         </select>
       </div>
@@ -17,7 +23,7 @@
         <label>轉帳金額</label>
         <div class="amount-input-wrapper">
           <span class="currency-symbol">$</span>
-          <input type="number" placeholder="0" class="amount-input" />
+          <input v-model.number="inputAmount" type="number" placeholder="0" class="amount-input" />
         </div>
       </div>
 
@@ -27,19 +33,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-// 靜態資料
-const mockUsers = [
-  { id: 1, name: '櫻木花道', role: '大前鋒' },
-  { id: 2, name: '流川楓', role: '小前鋒' },
-  { id: 3, name: '赤木剛憲', role: '中鋒' },
-]
-
-const handleTransfer = () => {
-  alert('功能開發中！')
-}
-</script>
 
 <style scoped>
 .transfer-container {

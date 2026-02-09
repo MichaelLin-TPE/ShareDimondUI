@@ -3,14 +3,6 @@ import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
 const router = useRouter()
-const menu = [
-  { label: '🏛️ 血盟大廳' },
-  { label: '📖 歷史紀錄' },
-  { label: '💸 轉帳' },
-  { label: '📤 申請提款' },
-  { label: '📤 提款審核' },
-  { label: '👑 成員管理' },
-]
 const authStore = useAuthStore()
 const loading = ref(false)
 const balance = ref(0)
@@ -62,6 +54,26 @@ const logout = async () => {
     console.log(e)
   }
 }
+const menuList = ref<Menu[]>([])
+interface Menu {
+  label: string
+}
+
+onMounted(async () => {
+  try {
+    const res = await fetch('https://gameshare-system.com/get-menu', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${authStore.authToken}`,
+        Accept: 'application/json',
+      },
+    })
+    const data = await res.json()
+    menuList.value = data
+  } catch (e) {
+    console.log(e)
+  }
+})
 
 onMounted(async () => {
   loading.value = true
@@ -118,7 +130,12 @@ const handleInvalidToken = () => {
       </span>
     </div>
     <nav>
-      <div v-for="item in menu" :key="item.label" class="menu-item" @click="handleMenuClick(item)">
+      <div
+        v-for="item in menuList"
+        :key="item.label"
+        class="menu-item"
+        @click="handleMenuClick(item)"
+      >
         {{ item.label }}
       </div>
     </nav>

@@ -1,19 +1,20 @@
+<script setup lang="ts">
+import { useAuction } from '@/composables/withdraw.ts'
+// 靜態資料
+const { balance, memberList, amount, handleWithdraw, selectedMemberId } =
+  useAuction()
+</script>
+
 <template>
   <div class="withdraw-container">
-    <div class="balance-card">
-      <div class="balance-info">
-        <div class="balance-label">當前帳號金幣</div>
-        <div class="balance-amount">{{ balance.toLocaleString() }}</div>
-      </div>
-      <div class="balance-icon">💰</div>
-    </div>
+
 
     <div class="withdraw-form">
       <div class="input-group">
         <label>審核對象 (幹部/會長)</label>
-        <select class="styled-select">
-          <option v-for="admin in admins" :key="admin.id" :value="admin.id">
-            [{{ admin.title }}] {{ admin.name }}
+        <select class="styled-select" v-model="selectedMemberId">
+          <option v-for="admin in memberList" :key="admin.memberId" :value="admin.memberId">
+            [{{ admin.memberRole }}] {{ admin.memberName }}
           </option>
         </select>
       </div>
@@ -26,38 +27,12 @@
         </div>
       </div>
 
-      <div class="input-group">
-        <label>申請備註 (選填)</label>
-        <textarea
-          class="styled-textarea"
-          placeholder="例如：購買攻城器械、分紅申請..."
-          rows="2"
-        ></textarea>
-      </div>
-
-      <button class="withdraw-btn" @click="confirmWithdraw">送出申請給幹部</button>
+      <button class="withdraw-btn" @click="handleWithdraw">送出申請給幹部</button>
 
       <div class="status-tip"><span class="dot pulse"></span> 申請後請靜候幹部於系統內核准撥款</div>
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-
-const balance = ref(1258450)
-const amount = ref()
-
-const admins = [
-  { id: 1, name: '赤木', title: '會長', online: true },
-  { id: 2, name: '三井', title: '財務幹部', online: true },
-  { id: 3, name: '木暮', title: '副會長', online: false },
-]
-
-const confirmWithdraw = () => {
-  alert('提款申請已提交給幹部，請等待審核。')
-}
-</script>
 
 <style scoped>
 .withdraw-container {
