@@ -150,6 +150,11 @@ const login = async () => {
     loading.value = false
   }
 }
+
+const createClan = () => {
+  router.push({ name: 'CreateGuild' })
+}
+
 const onApplyClan = () => {
   showApplyClanModal.value = true
   errorForApply.value = ''
@@ -196,6 +201,7 @@ const onForgotPassword = () => {
 
         <div class="action-links">
           <span class="link left" @click="onApplyClan"> 申請加入血盟 </span>
+          <span class="link left" @click="createClan"> 建立血盟 </span>
           <span class="link right" @click="onForgotPassword"> 忘記密碼 </span>
         </div>
       </div>

@@ -2,12 +2,14 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
+import type { Balance } from '@/types/balance.ts'
+import { useBalanceStore } from '@/stores/balanceTool.ts'
 const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
-const balance = ref(0)
-const clanBalance = ref(0)
-
+const memberBalanceList = ref<Balance[]>([])
+const clanBalanceList = ref<Balance[]>([])
+const balance = useBalanceStore()
 const handleMenuClick = (item) => {
   console.log('你點擊了：', item.label)
 
@@ -90,17 +92,14 @@ onMounted(async () => {
       },
     })
     if (!res.ok) {
-      balance.value = 0
-      clanBalance.value = 0
       return
     }
     const data = await res.json()
-    balance.value = data.balance
-    clanBalance.value = data.clanBalance
+    memberBalanceList.value = data.memberBalanceResponseList
+    clanBalanceList.value = data.clanBalanceResponseList
+    balance.setBalanceList(data.memberBalanceResponseList)
   } catch (e) {
     console.log(e)
-    balance.value = 0
-    clanBalance.value = 0
   } finally {
     loading.value = false
   }
@@ -123,11 +122,16 @@ const handleInvalidToken = () => {
     </div>
     <div class="balance_view">
       <span v-if="loading">讀取中...</span>
-      <span v-else class="balance-text">
-        個人帳戶 : {{ formatNumber(balance) }} 元寶
-        <br />
-        血盟帳戶 : {{ formatNumber(clanBalance) }} 元寶
-      </span>
+      <div class="balance-text">
+        <strong>個人帳戶 :</strong>
+        <div v-for="item in memberBalanceList" :key="item.currency">
+          {{ item.currency }} : {{ formatNumber(item.balance) }} 元
+        </div>
+        <strong>血盟共用基金 :</strong>
+        <div v-for="item in clanBalanceList" :key="item.currency">
+          {{ item.currency }} : {{ formatNumber(item.balance) }} 元
+        </div>
+      </div>
     </div>
     <nav>
       <div

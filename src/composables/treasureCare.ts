@@ -1,5 +1,6 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useBalanceStore } from '@/stores/balanceTool.ts'
 
 export function useAuction() {
   const showModal = ref(false)
@@ -20,6 +21,7 @@ export function useAuction() {
   const openAddBossDialog = () => {
     showAddBossDialog.value = true
   }
+  const balance = useBalanceStore()
   interface TreasureItem {
     itemName: string
     itemId: string
@@ -95,6 +97,12 @@ export function useAuction() {
     }
     loading.value = true
     try {
+      let type: number
+      if (selectedType.value == '競標'){
+        type = 0
+      }else {
+        type = 1
+      }
       const res = await fetch('https://gameshare-system.com/open-ticket', {
         method: 'POST',
         headers: {
@@ -106,6 +114,8 @@ export function useAuction() {
           bossName: bossName.value,
           lowestPrice: basePrice.value,
           remark: remark.value,
+          currency: selectedCurrency.value,
+          type: type,
         }),
       })
       if (!res.ok) {
@@ -298,12 +308,18 @@ export function useAuction() {
 
     ticketOwerName: string
 
+    currency: string
+
+    baseAmount: string
+
+    treasureType: string
+
     /** 最後得標者 memberId（尚未得標時為 null） */
     buyerMemberId: number | null
 
-    biddingName:string
+    biddingName: string
 
-    currentPrice:number
+    currentPrice: number
 
     /** 最終成交價（尚未結標時為 null） */
     finalPrice: string | null
@@ -358,6 +374,9 @@ export function useAuction() {
       }
       const data = await res.json()
       auctions.value = data
+      auctions.value.forEach((item) =>{
+        item.treasureType = item.treasureType == 'RANDOM_BUYER' ? '固定金額' : '競標單'
+      })
       startCountdown()
     } catch (e) {
       console.log(e)
@@ -397,11 +416,16 @@ export function useAuction() {
     return data.treasureAttendanceList
   }
 
-
+  const formatPrice = (value:number) => {
+    if (!value) return '0'
+    return Number(value).toLocaleString('en-US') // 強制使用英文千分位格式
+  }
  const handleJoinButtonDiable = () =>{
 
  }
  const selectPeopleItem = ref<Treasure>()
+  const selectedCurrency = ref('')
+  const selectedType = ref('')
 
  const handlePeopleCount = (item:Treasure) =>{
     showPeopleList.value = true
@@ -424,6 +448,9 @@ export function useAuction() {
       }
       const data = await res.json()
       auctions.value = data
+      auctions.value.forEach((item) => {
+        item.treasureType = item.treasureType == 'RANDOM_BUYER' ? '固定金額' : '競標單'
+      })
       startCountdown()
       handleJoinButtonDiable()
 
@@ -472,9 +499,12 @@ export function useAuction() {
 
 
   return {
+    balance,
     formatTimestamp,
     getJoinList,
     selectPeopleItem,
+    selectedCurrency,
+    selectedType,
     showPeopleList,
     handlePeopleCount,
     auctions,
@@ -485,6 +515,7 @@ export function useAuction() {
     basePrice,
     remark,
     error,
+    formatPrice,
     itemOptions,
     bossOptions,
     handleSubmit,

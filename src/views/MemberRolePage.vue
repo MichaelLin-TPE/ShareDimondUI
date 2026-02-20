@@ -1,3 +1,18 @@
+<script setup lang="ts">
+import { useAuction } from '@/composables/memberRole.ts'
+// 靜態資料
+const { memberList, setRole, roleClassMap } = useAuction()
+const roleLabels: Record<string, string> = {
+  leader: '會長',
+  officer: '幹部',
+  member: '成員',
+}
+
+const handleSave = () => {
+  alert('權限更新成功！')
+}
+</script>
+
 <template>
   <div class="admin-container">
     <div class="header-section">
@@ -11,13 +26,13 @@
       </div>
 
       <div class="member-list">
-        <div v-for="member in mockMembers" :key="member.id" class="member-item">
+        <div v-for="member in memberList" :key="member.memberId" class="member-item">
           <div class="member-info">
-            <div class="avatar">{{ member.name.charAt(0) }}</div>
+            <div class="avatar">{{ member.memberName.charAt(0) }}</div>
             <div class="details">
-              <div class="name">{{ member.name }}</div>
-              <div class="current-role" :class="member.role">
-                {{ roleLabels[member.role] }}
+              <div class="name">{{ member.memberName }}</div>
+              <div class="current-role" :class="roleClassMap[member.memberRole]">
+                {{ roleLabels[member.memberRole] }}
               </div>
             </div>
           </div>
@@ -25,22 +40,24 @@
           <div class="role-actions">
             <button
               class="action-btn btn-member"
-              :class="{ active: member.role === 'member' }"
-              title="設為一般成員"
+              :class="{ active: member.memberRole === 'MEMBER' }"
+              @click="setRole(member, 'MEMBER')"
             >
-              成員
+              會員
             </button>
+
             <button
               class="action-btn btn-officer"
-              :class="{ active: member.role === 'officer' }"
-              title="設為幹部"
+              :class="{ active: member.memberRole === 'OFFICER' }"
+              @click="setRole(member, 'OFFICER')"
             >
               幹部
             </button>
+
             <button
               class="action-btn btn-leader"
-              @click="confirmTransfer(member.name)"
-              title="移交會長職位"
+              :class="{ active: member.memberRole === 'LEADER' }"
+              @click="setRole(member, 'LEADER')"
             >
               會長
             </button>
@@ -62,33 +79,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
-const roleLabels: Record<string, string> = {
-  leader: '會長',
-  officer: '財務幹部',
-  member: '一般成員',
-}
-
-const mockMembers = [
-  { id: 1, name: '櫻木花道', role: 'member' },
-  { id: 2, name: '流川楓', role: 'officer' },
-  { id: 3, name: '赤木剛憲', role: 'leader' },
-  { id: 4, name: '宮城良田', role: 'member' },
-]
-
-const confirmTransfer = (name: string) => {
-  confirm(`確定要將會長職位移交給「${name}」嗎？此操作不可逆！`)
-}
-
-const handleSave = () => {
-  alert('權限更新成功！')
-}
-</script>
-
 <style scoped>
+/* =========================
+   Layout
+========================= */
 .admin-container {
-  padding: 40px 24px; /* 增加上下高度感 */
-  max-width: 1000px; /* 👈 從 650px 放大到 1000px */
+  padding: 40px 24px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -107,15 +104,20 @@ const handleSave = () => {
   font-size: 13px;
 }
 
-/* 管理卡片 */
+/* =========================
+   Card
+========================= */
 .management-card {
   background: #161822;
   border: 1px solid #24263a;
-  border-radius: 24px; /* 稍微加圓潤一點 */
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); /* 增加陰影深淺感 */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
+/* =========================
+   Search
+========================= */
 .search-bar {
   padding: 16px;
   background: rgba(255, 255, 255, 0.03);
@@ -132,7 +134,9 @@ const handleSave = () => {
   outline: none;
 }
 
-/* 成員列表 */
+/* =========================
+   Member List
+========================= */
 .member-list {
   max-height: 400px;
   overflow-y: auto;
@@ -142,7 +146,7 @@ const handleSave = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 32px; /* 👈 增加內距，讓每一列更寬敞 */
+  padding: 24px 32px;
   border-bottom: 1px solid #24263a;
 }
 
@@ -157,17 +161,20 @@ const handleSave = () => {
 }
 
 .avatar {
-  width: 48px; /* 👈 頭像同步加大 */
+  width: 48px;
   height: 48px;
   font-size: 18px;
 }
 
 .name {
   color: #fff;
-  font-size: 18px; /* 👈 名字加大 */
+  font-size: 18px;
   font-weight: 600;
 }
 
+/* =========================
+   Current Role Badge
+========================= */
 .current-role {
   font-size: 11px;
   padding: 2px 6px;
@@ -176,69 +183,91 @@ const handleSave = () => {
   display: inline-block;
 }
 
-.current-role.leader {
-  background: rgba(255, 209, 102, 0.2);
-  color: #ffd166;
-}
-.current-role.officer {
-  background: rgba(0, 255, 136, 0.15);
-  color: #00ff88;
-}
 .current-role.member {
   background: rgba(255, 255, 255, 0.1);
   color: #aaa;
 }
 
-/* 按鈕組 */
-.role-actions {
-  display: flex;
-  gap: 8px;
+.current-role.officer {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
 }
 
+.current-role.leader {
+  background: rgba(255, 209, 102, 0.2);
+  color: #ffd166;
+}
+
+/* =========================
+   Role Buttons
+========================= */
+.role-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: nowrap; /* 不換行 */
+  flex-shrink: 0; /* 不被擠扁 */
+}
+
+.details {
+  min-width: 0;
+}
+
+.name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 420px; /* 你要更短/更長自己調 */
+}
+
+/* Base button */
 .action-btn {
-  padding: 10px 20px;
+  padding: 6px 14px;
   border-radius: 10px;
-  font-size: 14px;
-  cursor: pointer;
   border: 1px solid #2d3047;
-  background: #1d1f2d; /* 深色底 */
-  color: #888; /* 灰色字 */
+  background: #0f111a;
+  color: #aaa;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .action-btn:hover {
-  border-color: #ffd166;
   color: #fff;
 }
 
+/* ---------- Active common ---------- */
 .action-btn.active {
-  background: linear-gradient(135deg, #4cc9f0, #4361ee); /* 採用你圖中的藍紫色漸層 */
-  border: none;
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4); /* 增加發光感 */
+  color: #fff;
+  border-color: transparent;
 }
 
-.action-btn.btn-officer.active {
+/* ---------- Member ---------- */
+.btn-member.active {
+  background: #2d3047;
+}
+
+/* ---------- Officer ---------- */
+.btn-officer.active {
   background: linear-gradient(135deg, #ffd166, #e6b800);
   color: #0f111a;
   box-shadow: 0 4px 15px rgba(255, 209, 102, 0.3);
 }
 
-/* 特殊處理：如果是選中「會長」，可以用紅色警告色 */
-.action-btn.btn-leader.active {
+/* ---------- Leader ---------- */
+.btn-leader.active {
   background: linear-gradient(135deg, #ff4d4d, #d90429);
-  color: #ffffff;
+  color: #fff;
   box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
 }
 
 .btn-leader:hover {
   background: #ff4d4d;
-  color: #fff;
   border-color: #ff4d4d;
+  color: #fff;
 }
 
-/* 底部送出 */
+/* =========================
+   Footer
+========================= */
 .footer-actions {
   padding: 32px;
   display: flex;
@@ -247,13 +276,16 @@ const handleSave = () => {
 
 .save-btn {
   width: 100%;
-  max-width: 400px; /* 👈 儲存按鈕不一定要全寬，居中更美觀 */
+  max-width: 400px;
   margin: 0 auto;
   padding: 18px;
   font-size: 18px;
   letter-spacing: 2px;
 }
 
+/* =========================
+   Warning
+========================= */
 .warning-box {
   margin-top: 20px;
   background: rgba(255, 77, 77, 0.1);

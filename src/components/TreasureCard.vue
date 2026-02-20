@@ -25,7 +25,11 @@ const {
   addTreasure,
   showAddBossDialog,
   handleJoinItem,
+  balance,
+  formatPrice,
   formatTimestamp,
+  selectedCurrency,
+  selectedType,
   addBossName,
   addBoss,
   getJoinList,
@@ -55,6 +59,9 @@ const {
 
           <div class="price">首領：{{ item.bossName }}</div>
           <div class="price">開單者：{{ item.ticketOwerName }}</div>
+          <div class="price">分紅幣別：{{ item.currency }}</div>
+          <div class="price">價格：{{ Number(item.baseAmount).toLocaleString() }}</div>
+          <div class="price">單子種類：{{ item.treasureType }}</div>
           <button
             class="submit-btn"
             @click="handleJoinItem(item)"
@@ -80,11 +87,7 @@ const {
             <h2 class="boss-title">參與名單</h2>
 
             <ul class="people-list">
-              <li
-                v-for="(data, index) in getJoinList()"
-                :key="index"
-                class="person-item"
-              >
+              <li v-for="(data, index) in getJoinList()" :key="index" class="person-item">
                 <div class="person-info">
                   <span class="person-name">👤 {{ data.userName }}</span>
                   <span class="join-time">{{ formatTimestamp(data.joinTime) }}</span>
@@ -156,7 +159,7 @@ const {
 
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal-container">
-        <h2 class="modal-title">創建新競拍</h2>
+        <h2 class="modal-title">開單</h2>
 
         <form @submit.prevent="handleSubmit" class="modal-form">
           <div class="form-group">
@@ -182,6 +185,43 @@ const {
                 </option>
               </select>
               <span class="select-arrow"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>選擇幣種</label>
+            <div class="currency-radio-group">
+              <label
+                v-for="item in balance.balanceList"
+                :key="item.currency"
+                class="currency-option"
+              >
+                <input
+                  type="radio"
+                  v-model="selectedCurrency"
+                  :value="item.currency"
+                  name="currency"
+                />
+                <span class="custom-radio"></span>
+                <span class="currency-name">{{ item.currency }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>選擇開單種類</label>
+            <div class="currency-radio-group">
+              <label class="currency-option">
+                <input type="radio" v-model="selectedType" value="bid" name="orderType" />
+                <span class="custom-radio"></span>
+                <span class="currency-name">競標</span>
+              </label>
+
+              <label class="currency-option">
+                <input type="radio" v-model="selectedType" value="fixed" name="orderType" />
+                <span class="custom-radio"></span>
+                <span class="currency-name">固定金額</span>
+              </label>
             </div>
           </div>
 
@@ -441,12 +481,74 @@ span {
   pointer-events: none; /* 讓點擊穿透到 select */
 }
 
-/* 確保 disabled option 的樣式 */
-.custom-select option[disabled] {
-  color: #777;
+.currency-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 保持三行 */
+  gap: 15px;
+  margin-top: 10px;
 }
 
-.item-name{
+/* 調整父容器，確保對齊 */
+.currency-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  min-width: 0; /* 👈 防止 flex 子元素溢出 */
+}
+
+/* 隱藏預設 input */
+.currency-option input {
+  display: none;
+}
+
+/* 自定義圓圈：核心修正 */
+.custom-radio {
+  width: 18px; /* 固定寬度 */
+  height: 18px; /* 固定高度 */
+  flex: 0 0 18px; /* 👈 強制設定 flex-basis 為 18px，防止任何擠壓 */
+  border: 2px solid #555;
+  border-radius: 50%; /* 絕對圓角 */
+  margin-right: 10px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  box-sizing: border-box; /* 確保 18px 包含 border */
+  display: inline-block; /* 👈 確保它是區塊元素 */
+}
+
+/* 文字樣式 */
+.currency-name {
+  color: #ccc;
+  font-size: 14px;
+  white-space: nowrap; /* 防止文字換行擠壓圓圈 */
+}
+
+/* 選中狀態：外圈變色 */
+.currency-option input:checked + .custom-radio {
+  border-color: #7e57c2;
+  box-shadow: 0 0 8px rgba(126, 87, 194, 0.5);
+}
+
+/* 選中狀態：內心實心圓 */
+.currency-option input:checked + .custom-radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: #88d3ce;
+  border-radius: 50%;
+  /* 確保內心圓也不會變形 */
+  display: block;
+}
+
+/* 選中後的文字顏色 */
+.currency-option input:checked ~ .currency-name {
+  color: #fff;
+}
+
+.item-name {
   font-size: 20px;
 }
 

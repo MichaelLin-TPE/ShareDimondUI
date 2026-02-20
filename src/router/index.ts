@@ -10,6 +10,7 @@ import TransferPage from '@/views/TransferPage.vue'
 import WithdrawPage from '@/views/WithdrawPage.vue'
 import MemberRolePage from '@/views/MemberRolePage.vue'
 import VerifyWithdrawPage from '@/views/VerifyWithdrawPage.vue'
+import CreateGuild from '@/views/CreateGuild.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +23,14 @@ const router = createRouter({
       path: '/forgot-password',
       name: 'ForgotPassword',
       component: ForgotPassword,
+      meta: {
+        fullscreen: true,
+      },
+    },
+    {
+      path: '/create-guild',
+      name: 'CreateGuild',
+      component: CreateGuild,
       meta: {
         fullscreen: true,
       },
