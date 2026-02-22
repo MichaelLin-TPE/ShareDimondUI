@@ -28,6 +28,8 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/memberRole')
   } else if (item.label == '📤 提款審核') {
     router.replace('/clan/verifyWithdraw')
+  } else if (item.label == '💰 基金分配') {
+    router.replace('/clan/DistributionPage')
   }
 }
 
