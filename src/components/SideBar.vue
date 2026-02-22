@@ -10,7 +10,7 @@ const loading = ref(false)
 const memberBalanceList = ref<Balance[]>([])
 const clanBalanceList = ref<Balance[]>([])
 const balance = useBalanceStore()
-const handleMenuClick = (item) => {
+const handleMenuClick = (item: Menu) => {
   console.log('你點擊了：', item.label)
 
   // 這裡可以根據點擊的內容做跳轉或其他操作
