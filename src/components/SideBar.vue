@@ -38,7 +38,7 @@ const formatNumber = (val: number | string | null) => {
 
 const logout = async () => {
   try {
-    const res = await fetch('https://gameshare-system.com/logout', {
+    const res = await fetch('https://api.gameshare-system.com/logout', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
@@ -63,7 +63,7 @@ interface Menu {
 
 onMounted(async () => {
   try {
-    const res = await fetch('https://gameshare-system.com/get-menu', {
+    const res = await fetch('https://api.gameshare-system.com/get-menu', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
@@ -84,7 +84,7 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await fetch('https://gameshare-system.com/getBalance', {
+    const res = await fetch('https://api.gameshare-system.com/getBalance', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,

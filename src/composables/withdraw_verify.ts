@@ -21,7 +21,7 @@ export function useAuction() {
   }
   const rejectWithdraw = async (code: string) => {
     try {
-      const res = await fetch('https://gameshare-system.com/reject-withdraw', {
+      const res = await fetch('https://api.gameshare-system.com/reject-withdraw', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -40,7 +40,7 @@ export function useAuction() {
   }
   const confirmWithdraw = async (code: string) => {
     try {
-      const res = await fetch('https://gameshare-system.com/confirm-withdraw', {
+      const res = await fetch('https://api.gameshare-system.com/confirm-withdraw', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -70,7 +70,7 @@ export function useAuction() {
 
   const getWithdrawHistory = async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/get-withdraw-history-verify-list', {
+      const res = await fetch('https://api.gameshare-system.com/get-withdraw-history-verify-list', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,

@@ -16,7 +16,7 @@ export function useAuction() {
 
   const withdraw = async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/withdraw', {
+      const res = await fetch('https://api.gameshare-system.com/withdraw', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -48,7 +48,7 @@ export function useAuction() {
   const getAllMember = async () => {
 
     try {
-      const res = await fetch('https://gameshare-system.com/members', {
+      const res = await fetch('https://api.gameshare-system.com/members', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,

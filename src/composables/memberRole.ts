@@ -29,7 +29,7 @@ export function useAuction() {
   }
 
   const getAllMember = async () => {
-    const res = await fetch('https://gameshare-system.com/members', {
+    const res = await fetch('https://api.gameshare-system.com/members', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
       },
@@ -43,7 +43,7 @@ export function useAuction() {
   // 傳送至後端的方法（留空）
   const updateRolesApi = async (payload: { memberId: number; role: string }[]) => {
     // 這裡留給您對接 API，例如 axios.post('/api/roles', payload)
-    const res = await fetch('https://gameshare-system.com/change-member-role', {
+    const res = await fetch('https://api.gameshare-system.com/change-member-role', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,

@@ -12,7 +12,7 @@ const sendEmail = async () => {
   loading.value = true
 
   try {
-    const res = await fetch('https://gameshare-system.com/forgot-password', {
+    const res = await fetch('https://api.gameshare-system.com/forgot-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

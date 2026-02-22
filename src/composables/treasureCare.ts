@@ -42,7 +42,7 @@ export function useAuction() {
 
   const getBossList = async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/getBossList', {
+      const res = await fetch('https://api.gameshare-system.com/getBossList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -61,7 +61,7 @@ export function useAuction() {
 
   const getTreasureItemList = async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/getTreasureList', {
+      const res = await fetch('https://api.gameshare-system.com/getTreasureList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -104,7 +104,7 @@ export function useAuction() {
       }else {
         type = 1
       }
-      const res = await fetch('https://gameshare-system.com/open-ticket', {
+      const res = await fetch('https://api.gameshare-system.com/open-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -152,7 +152,7 @@ export function useAuction() {
 
   const deleteTreasure = async () =>{
     try{
-      const res = await fetch('https://gameshare-system.com/delete-ticket', {
+      const res = await fetch('https://api.gameshare-system.com/delete-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -177,7 +177,7 @@ export function useAuction() {
 
   const addAttendance = async () =>{
     try{
-      const res = await fetch('https://gameshare-system.com/add-attendance', {
+      const res = await fetch('https://api.gameshare-system.com/add-attendance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -206,7 +206,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('https://gameshare-system.com/add-boss', {
+      const res = await fetch('https://api.gameshare-system.com/add-boss', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -243,7 +243,7 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('https://gameshare-system.com/add-treasure', {
+      const res = await fetch('https://api.gameshare-system.com/add-treasure', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -361,7 +361,7 @@ export function useAuction() {
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/get-ongoing-treasure', {
+      const res = await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
@@ -435,7 +435,7 @@ export function useAuction() {
 
   onMounted(async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/get-ongoing-treasure', {
+      const res = await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,

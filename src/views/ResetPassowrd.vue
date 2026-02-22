@@ -30,7 +30,7 @@ const sendNewPassword = async () => {
   }
   loading.value = true
   try {
-    const res = await fetch('https://gameshare-system.com/update-password', {
+    const res = await fetch('https://api.gameshare-system.com/update-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await fetch('https://gameshare-system.com/verify-token', {
+    const res = await fetch('https://api.gameshare-system.com/verify-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -47,7 +47,7 @@ export function useAuction() {
   const getShareHistory = async () => {
     if (!authStore.authToken) return
 
-    const res = await fetch('https://gameshare-system.com/getHistory', {
+    const res = await fetch('https://api.gameshare-system.com/getHistory', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,

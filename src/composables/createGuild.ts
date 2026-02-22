@@ -37,7 +37,7 @@ export function useAuction() {
 
   const createClan = async () => {
     try {
-      const res = await fetch('https://gameshare-system.com/create-clans', {
+      const res = await fetch('https://api.gameshare-system.com/create-clans', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

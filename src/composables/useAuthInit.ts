@@ -7,7 +7,7 @@ export async function useAuthInit() {
   if (!authStore.authToken) return
 
   try {
-    const res = await fetch('https://gameshare-system.com/getBasicInfo', {
+    const res = await fetch('https://api.gameshare-system.com/getBasicInfo', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
