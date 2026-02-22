@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAlert } from '@/utils/alerts.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -49,7 +50,7 @@ const sendNewPassword = async () => {
       error.value = errorBody.message
       return
     }
-    alert('更新密碼成功,請好好保存您的新密碼!')
+    useAlert.success('更新密碼成功,請好好保存您的新密碼!')
     router.replace('/login')
   } catch (e) {
     handleInvalidToken()
@@ -79,7 +80,7 @@ onMounted(async () => {
   }
 })
 const handleInvalidToken = () => {
-  alert('憑證過期,請重新發送驗證信!')
+  useAlert.success('憑證過期,請重新發送驗證信!')
   router.replace('/login')
 }
 </script>

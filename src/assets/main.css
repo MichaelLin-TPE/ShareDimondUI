@@ -57,3 +57,24 @@ a,
     background-color: hsla(160, 100%, 37%, 0.2);
   }
 }
+/* 1. 放大 SweetAlert2 所有的按鈕 */
+.swal2-confirm, .swal2-cancel {
+  padding: 12px 30px !important; /* 增加上下左右的內距 */
+  font-size: 1.1rem !important;  /* 字體放大一點 */
+  font-weight: 600 !important;   /* 字體加粗，更有遊戲質感 */
+  min-width: 120px;              /* 設定最小寬度，避免字少時按鈕太短 */
+  margin: 10px !important;       /* 按鈕之間的間距 */
+  transition: transform 0.1s ease-in-out !important; /* 加上點擊回饋感 */
+}
+
+/* 2. 增加點擊時的縮放效果 (Android 常見的 Click Feedback) */
+.swal2-confirm:active, .swal2-cancel:active {
+  transform: scale(0.95);
+}
+
+/* 3. 優化彈窗整體的寬度 (在手機上才不會顯得太窄) */
+.swal2-popup {
+  width: 90% !important;
+  max-width: 400px !important;
+  border-radius: 16px !important; /* 既然 JS 不能寫，我們就寫在 CSS 裡 */
+}

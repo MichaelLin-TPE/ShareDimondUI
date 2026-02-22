@@ -1,6 +1,7 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
+import { useAlert } from '@/utils/alerts.ts'
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -25,7 +26,7 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
-      alert(data.message)
+      useAlert.success(data.message)
     } catch (e) {
       console.log(e)
     }

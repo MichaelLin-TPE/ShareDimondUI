@@ -1,6 +1,7 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useAlert } from '@/utils/alerts.ts'
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -54,13 +55,13 @@ export function useAuction() {
       })
       const data = await res.json()
       if (!res.ok){
-        alert(data.message)
+        useAlert.success(data.message)
         return
       }
       authStore.setToken(data.authToken)
       authStore.setMember(data)
       await new Promise((resolve) => setTimeout(resolve, 1500))
-      alert(`登入成功\n血盟：${form.value.guildName}`)
+      useAlert.success(`登入成功\n血盟：${form.value.guildName}`)
       router.replace('/clan')
 
     } catch (e) {

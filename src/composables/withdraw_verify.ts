@@ -1,5 +1,6 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useAlert } from '@/utils/alerts.ts'
 
 export function useAuction() {
 
@@ -32,7 +33,7 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
-      alert(data.message)
+      useAlert.success(data.message)
       getWithdrawHistory()
     } catch (e) {
       console.error(e)
@@ -51,7 +52,7 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
-      alert(data.message)
+      useAlert.success(data.message)
       getWithdrawHistory()
     } catch (e) {
       console.error(e)

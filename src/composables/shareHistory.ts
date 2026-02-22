@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useAlert } from '@/utils/alerts.ts'
 
 // ===== 角色狀態定義（與後端 enum 對齊） =====
 export type EventRole =
@@ -59,7 +60,7 @@ export function useAuction() {
 
     const data = await res.json()
     if (!res.ok) {
-      alert(data.message)
+      useAlert.success(data.message)
       return
     }
 

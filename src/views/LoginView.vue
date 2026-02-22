@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import { useAlert } from '@/utils/alerts.ts'
 const showApplyClanModal = ref(false)
 
 interface Clan {
@@ -85,7 +86,7 @@ const addMember = async () => {
     console.log('申請成功 : ', data)
 
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    alert(`登入成功\n血盟：${selectedClanNameForApply.value}`)
+    useAlert.success(`登入成功\n血盟：${selectedClanNameForApply.value}`)
   } catch (e) {
     console.error(e)
     errorForApply.value = '申請失敗'
@@ -141,7 +142,7 @@ const login = async () => {
     console.log('登入成功 : ', data)
     showApplyClanModal.value = false
     await new Promise((resolve) => setTimeout(resolve, 1500))
-    alert(`登入成功\n血盟：${selectedClanName.value}`)
+    useAlert.success(`登入成功\n血盟：${selectedClanName.value}`)
     router.replace('/clan')
   } catch (e) {
     console.error(e)

@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useAlert } from '@/utils/alerts.ts'
 
 export function useAuction() {
   const showModal = ref(false)
@@ -86,7 +87,7 @@ export function useAuction() {
       remark.value = ''
       basePrice.value = ''
       error.value = ''
-      alert('開單成功!!!')
+      useAlert.success('開單成功!!!')
       showModal.value = false
       fetchOngoingTreasures()
     } catch (e) {
@@ -121,10 +122,10 @@ export function useAuction() {
         }),
       })
       if (!res.ok) {
-        alert('刪除失敗,再試一次!')
+        useAlert.success('刪除失敗,再試一次!')
         return
       }
-      alert('刪除成功!')
+      useAlert.success('刪除成功!')
       fetchOngoingTreasures()
     } catch (e) {
       console.log(e)
@@ -144,10 +145,10 @@ export function useAuction() {
         }),
       })
       if (!res.ok) {
-        alert('參與失敗,請再試一次!')
+        useAlert.success('參與失敗,請再試一次!')
         return
       }
-      alert('參與成功!')
+      useAlert.success('參與成功!')
       fetchOngoingTreasures()
     } catch (e) {
       console.log(e)
@@ -178,7 +179,7 @@ export function useAuction() {
         return
       }
       error.value = ''
-      alert('新增成功!')
+      useAlert.success('新增成功!')
       loading.value = false
       showAddBossDialog.value = false
     } catch (e) {
@@ -213,7 +214,7 @@ export function useAuction() {
         }),
       })
       const data = await res.json();
-      alert(data.message)
+      useAlert.success(data.message)
       if (res.ok){
         fetchOngoingTreasures()
         return
@@ -241,11 +242,11 @@ export function useAuction() {
 
       if (!res.ok){
         const data = await res.json()
-        alert(data.message)
+        useAlert.success(data.message)
         return
       }
       const data = await res.json()
-      alert(data.message)
+      useAlert.success(data.message)
       fetchOngoingTreasures()
     }catch (e) {
       console.log(e)
@@ -277,7 +278,7 @@ export function useAuction() {
         return
       }
       error.value = ''
-      alert('新增成功!')
+      useAlert.success('新增成功!')
       loading.value = false
       showAddTreasureDialog.value = false
     } catch (e) {

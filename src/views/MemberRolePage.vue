@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/memberRole.ts'
+import { useAlert } from '@/utils/alerts.ts'
 // 靜態資料
 const { changedMemberIds, memberList, setRole, roleClassMap, updateRolesApi } = useAuction()
 
@@ -14,11 +15,11 @@ const handleSave = async () => {
   const leaderCount = memberList.value.filter((m) => m.memberRole === 'LEADER').length
 
   if (leaderCount === 0) {
-    alert('錯誤：血盟必須擁有一位會長！')
+    useAlert.success('錯誤：血盟必須擁有一位會長！')
     return
   }
   if (leaderCount > 1) {
-    alert('錯誤：會長只能有一位，請先將其他成員降職。')
+    useAlert.success('錯誤：會長只能有一位，請先將其他成員降職。')
     return
   }
 
@@ -31,7 +32,7 @@ const handleSave = async () => {
     }))
 
   if (payload.length === 0) {
-    alert('資料未變動，無需儲存。')
+    useAlert.success('資料未變動，無需儲存。')
     return
   }
 
@@ -41,7 +42,7 @@ const handleSave = async () => {
     // 儲存成功後重置追蹤狀態
     changedMemberIds.value.clear()
   } catch (error) {
-    alert('更新失敗，請稍後再試。' + error)
+    useAlert.success('更新失敗，請稍後再試。' + error)
   }
 }
 </script>

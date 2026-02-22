@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
 import type { Balance } from '@/types/balance.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
+import { useAlert } from '@/utils/alerts.ts'
 const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
@@ -47,10 +48,10 @@ const logout = async () => {
     })
     const data = await res.json()
     if (!res.ok) {
-      alert(data.message)
+      useAlert.success(data.message)
       return
     }
-    alert('登出成功')
+    useAlert.success('登出成功')
     router.replace('/login')
   } catch (e) {
     console.log(e)
@@ -106,7 +107,7 @@ onMounted(async () => {
 })
 
 const handleInvalidToken = () => {
-  alert('憑證過期,請重新發送驗證信!')
+  useAlert.success('憑證過期,請重新發送驗證信!')
   router.replace('/login')
 }
 </script>
