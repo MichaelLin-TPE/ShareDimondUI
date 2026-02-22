@@ -1,15 +1,48 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/memberRole.ts'
 // 靜態資料
-const { memberList, setRole, roleClassMap } = useAuction()
+const { changedMemberIds, memberList, setRole, roleClassMap, updateRolesApi } = useAuction()
+
 const roleLabels: Record<string, string> = {
   leader: '會長',
   officer: '幹部',
   member: '成員',
 }
 
-const handleSave = () => {
-  alert('權限更新成功！')
+const handleSave = async () => {
+  // 1. 檢查會長數量 (確保唯一性)
+  const leaderCount = memberList.value.filter((m) => m.memberRole === 'LEADER').length
+
+  if (leaderCount === 0) {
+    alert('錯誤：血盟必須擁有一位會長！')
+    return
+  }
+  if (leaderCount > 1) {
+    alert('錯誤：會長只能有一位，請先將其他成員降職。')
+    return
+  }
+
+  // 2. 收集變動過的資料清單 (格式為 [{memberId, role}])
+  const payload = memberList.value
+    .filter((m) => changedMemberIds.value.has(m.memberId))
+    .map((m) => ({
+      memberId: m.memberId,
+      role: m.memberRole,
+    }))
+
+  if (payload.length === 0) {
+    alert('資料未變動，無需儲存。')
+    return
+  }
+
+  // 3. 呼叫後端 API
+  try {
+    await updateRolesApi(payload)
+    // 儲存成功後重置追蹤狀態
+    changedMemberIds.value.clear()
+  } catch (error) {
+    alert('更新失敗，請稍後再試。' + error)
+  }
 }
 </script>
 

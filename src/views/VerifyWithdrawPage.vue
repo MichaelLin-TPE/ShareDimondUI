@@ -45,7 +45,7 @@ const { mockRequests, totalAmount, withdrawHistoryList, handleAction } = useAuct
           </div>
 
           <div class="audit-actions">
-            <button class="btn-reject" @click="handleAction(req.ticketCode, 'reject')">核准</button>
+            <button class="btn-reject" @click="handleAction(req.ticketCode, 'reject')">拒絕</button>
             <button class="btn-approve" @click="handleAction(req.ticketCode, 'approve')">
               核准
             </button>

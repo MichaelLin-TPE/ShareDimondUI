@@ -30,19 +30,35 @@ const {
           </button>
           <div class="item-name gold">{{ item.itemName }}</div>
 
-          <div class="price">底價：{{ item.lowestPrice.toLocaleString() }} 元寶</div>
-          <div class="price">目前最高：{{ item.currentPrice }} 元寶</div>
+          <div class="price">底價：{{ item.lowestPrice.toLocaleString() }} {{ item.currency }}</div>
+          <div class="price">目前最高：{{ item.currentPrice }} {{ item.currency }}</div>
 
-          <div class="bidder">最高者：{{ item.biddingName }}</div>
+          <div class="bidder">
+            <template v-if="item.treasureType === 'RANDOM_BUYER'">
+              <span class="status-label">競標人數：</span>
+              <span class="status-value">{{ item.biddingMemberList.length }} 人</span>
+            </template>
 
-          <div class="bid-control">
+            <template v-else> 最高者：{{ item.biddingName }} </template>
+          </div>
+          <div class="bidder">
+            <template v-if="item.treasureType === 'RANDOM_BUYER'">
+              <span class="status-label">得標者：</span>
+              <span class="status-value">{{ item.biddingName }}</span>
+            </template>
+          </div>
+
+          <div v-if="item.treasureType !== 'RANDOM_BUYER'" class="bid-control">
             <button class="reduce-button" @click="handleReduce(item)">-</button>
             <span class="myBid">{{ item.biddingPrice }}</span>
             <button class="plus-button" @click="handlePlus(item)">+</button>
           </div>
 
           <button class="submit-btn" :disabled="canSubmit(item)" @click="handleSubmit(item)">
-            <span v-if="item.isBidding">我要出價</span>
+            <span v-if="item.isBidding">
+              <template v-if="item.treasureType === 'RANDOM_BUYER'">我要標此物品</template>
+              <template v-else>我要出價</template>
+            </span>
 
             <span v-else-if="item.disableSubmitButton">結束競標</span>
 
@@ -59,11 +75,8 @@ const {
   </div>
 </template>
 
-
-
 <style scoped>
-
-.item-name{
+.item-name {
   font-size: 20px;
 }
 

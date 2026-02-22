@@ -318,11 +318,13 @@ export function useAuction() {
     /** 底價 */
     lowestPrice: number
 
+    currency: string
+
     biddingName: string
 
     currentPrice: number
 
-    biddingPrice:number
+    biddingPrice: number
 
     /** 開單者 memberId */
     ticketOwerMemberId: number
@@ -350,6 +352,8 @@ export function useAuction() {
     /** 對外顯示用的隨機單號 */
     treasureCode: string
 
+    treasureType: string
+
     /** 備註（可選） */
     remark?: string
 
@@ -359,12 +363,19 @@ export function useAuction() {
 
     showDeleteTicket: boolean
 
-    disableSubmitButton:boolean
+    disableSubmitButton: boolean
 
-    canVerifyBiddingTicket:boolean
+    canVerifyBiddingTicket: boolean
 
-    isBidding:boolean
+    isBidding: boolean
+
+    biddingMemberList:BiddingMember[]
   }
+
+  interface BiddingMember{
+    userName:string
+  }
+
   type TreasureStatus =
     | 'ATTENDANCE_WAITING'
     | 'BIDDING'
@@ -394,6 +405,9 @@ export function useAuction() {
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status == 'BIDDING'
+        if (item.biddingName == null || item.biddingName == ''){
+          item.biddingName = '尚未有得標者'
+        }
       })
       startCountdown()
     } catch (e) {
@@ -428,6 +442,9 @@ export function useAuction() {
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status == 'BIDDING'
+        if (item.biddingName == null || item.biddingName == '') {
+          item.biddingName = '尚未有得標者'
+        }
       })
       startCountdown()
       handleJoinButtonDiable()

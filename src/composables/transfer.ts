@@ -1,5 +1,6 @@
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useBalanceStore } from '@/stores/balanceTool.ts'
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -8,7 +9,7 @@ export function useAuction() {
   const handleTransfer = () => {
     transfer();
   }
-
+  const selectedCurrency = ref('')
   const transfer = async () =>{
     try {
       const res = await fetch('https://gameshare-system.com/transfer', {
@@ -19,7 +20,8 @@ export function useAuction() {
         },
         body: JSON.stringify({
           memberId: selectedMemberId.value,
-          amount : inputAmount.value
+          amount : inputAmount.value,
+          currency: selectedCurrency.value
         }),
       })
       const data = await res.json()
@@ -28,7 +30,7 @@ export function useAuction() {
       console.log(e)
     }
   }
-
+  const balance = useBalanceStore()
   onMounted(async () => {
     getAllMember()
   })
@@ -74,6 +76,8 @@ export function useAuction() {
 
 
   return {
+    selectedCurrency,
+    balance,
     inputAmount,
     selectedMemberId,
     memberList,

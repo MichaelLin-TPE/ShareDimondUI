@@ -98,7 +98,8 @@ export function useAuction() {
     loading.value = true
     try {
       let type: number
-      if (selectedType.value == '競標'){
+      console.log(selectedType.value)
+      if (selectedType.value == 'bid'){
         type = 0
       }else {
         type = 1

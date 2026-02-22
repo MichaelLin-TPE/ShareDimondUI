@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/withdraw.ts'
 // 靜態資料
-const { balance, memberList, amount, handleWithdraw, selectedMemberId } =
-  useAuction()
+const {
+  balance,
+  memberList,
+  amount,
+  handleWithdraw,
+  selectedMemberId,
+  balanceTool,
+  selectedCurrency,
+} = useAuction()
 </script>
 
 <template>
   <div class="withdraw-container">
-
-
     <div class="withdraw-form">
       <div class="input-group">
         <label>審核對象 (幹部/會長)</label>
@@ -19,11 +24,25 @@ const { balance, memberList, amount, handleWithdraw, selectedMemberId } =
         </select>
       </div>
 
+      <div class="form-group">
+        <label>選擇幣種</label>
+        <div class="currency-radio-group">
+          <label
+            v-for="item in balanceTool.balanceList"
+            :key="item.currency"
+            class="currency-option"
+          >
+            <input type="radio" v-model="selectedCurrency" :value="item.currency" name="currency" />
+            <span class="custom-radio"></span>
+            <span class="currency-name">{{ item.currency }}</span>
+          </label>
+        </div>
+      </div>
+
       <div class="input-group">
         <label>提領金額</label>
         <div class="amount-wrapper">
           <input type="number" v-model="amount" placeholder="輸入金幣數量" class="withdraw-input" />
-          <button class="all-in-btn" @click="amount = balance">全部提領</button>
         </div>
       </div>
 
@@ -35,6 +54,85 @@ const { balance, memberList, amount, handleWithdraw, selectedMemberId } =
 </template>
 
 <style scoped>
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  color: #e0e0e0; /* 淺灰色標籤 */
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.currency-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 保持三行 */
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* 調整父容器，確保對齊 */
+.currency-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  min-width: 0; /* 👈 防止 flex 子元素溢出 */
+}
+
+/* 隱藏預設 input */
+.currency-option input {
+  display: none;
+}
+
+/* 自定義圓圈：核心修正 */
+.custom-radio {
+  width: 18px; /* 固定寬度 */
+  height: 18px; /* 固定高度 */
+  flex: 0 0 18px; /* 👈 強制設定 flex-basis 為 18px，防止任何擠壓 */
+  border: 2px solid #555;
+  border-radius: 50%; /* 絕對圓角 */
+  margin-right: 10px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  box-sizing: border-box; /* 確保 18px 包含 border */
+  display: inline-block; /* 👈 確保它是區塊元素 */
+}
+
+/* 文字樣式 */
+.currency-name {
+  color: #ccc;
+  font-size: 14px;
+  white-space: nowrap; /* 防止文字換行擠壓圓圈 */
+}
+
+/* 選中狀態：外圈變色 */
+.currency-option input:checked + .custom-radio {
+  border-color: #7e57c2;
+  box-shadow: 0 0 8px rgba(126, 87, 194, 0.5);
+}
+
+/* 選中狀態：內心實心圓 */
+.currency-option input:checked + .custom-radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: #88d3ce;
+  border-radius: 50%;
+  /* 確保內心圓也不會變形 */
+  display: block;
+}
+
+/* 選中後的文字顏色 */
+.currency-option input:checked ~ .currency-name {
+  color: #fff;
+}
+
 .withdraw-container {
   padding: 16px;
   max-width: 500px;

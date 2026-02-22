@@ -1,13 +1,15 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useBalanceStore } from '@/stores/balanceTool.ts'
 
 export function useAuction() {
 
   const balance = ref(1258450)
   const amount = ref()
-
+  const balanceTool = useBalanceStore()
   const authStore = useAuthStore()
   const selectedMemberId = ref('')
+  const selectedCurrency = ref('')
   const handleWithdraw = () => {
     withdraw();
   }
@@ -22,7 +24,8 @@ export function useAuction() {
         },
         body: JSON.stringify({
           memberId: selectedMemberId.value,
-          amount: amount.value
+          amount: amount.value,
+          currency: selectedCurrency.value
         }),
       })
       const data = await res.json()
@@ -74,6 +77,8 @@ export function useAuction() {
 
 
   return {
+    selectedCurrency,
+    balanceTool,
     balance,
     amount,
     selectedMemberId,
