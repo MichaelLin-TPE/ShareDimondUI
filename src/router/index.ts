@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import ForgotPassword from '@/views/ForgotPassword.vue'
 import ResetPassowrd from '@/views/ResetPassowrd.vue'
@@ -13,7 +13,7 @@ import VerifyWithdrawPage from '@/views/VerifyWithdrawPage.vue'
 import CreateGuild from '@/views/CreateGuild.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
