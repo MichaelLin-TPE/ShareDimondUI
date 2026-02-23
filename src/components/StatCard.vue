@@ -35,11 +35,11 @@ const {
 
           <div class="bidder">
             <template v-if="item.treasureType === 'RANDOM_BUYER'">
-              <span class="status-label">競標人數：</span>
+              <span class="status-label">目前競標人數：</span>
               <span class="status-value">{{ item.biddingMemberList.length }} 人</span>
             </template>
 
-            <template v-else> 最高者：{{ item.biddingName }} </template>
+            <template v-else> 出價者：{{ item.biddingName }} </template>
           </div>
           <div class="bidder">
             <template v-if="item.treasureType === 'RANDOM_BUYER'">

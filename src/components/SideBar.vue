@@ -29,7 +29,7 @@ const handleMenuClick = (item: Menu) => {
   } else if (item.label == '📤 提款審核') {
     router.replace('/clan/verifyWithdraw')
   } else if (item.label == '💰 基金分配') {
-    router.replace('/clan/DistributionPage')
+    router.replace('/clan/distributionPage')
   }
 }
 
@@ -101,6 +101,7 @@ onMounted(async () => {
     memberBalanceList.value = data.memberBalanceResponseList
     clanBalanceList.value = data.clanBalanceResponseList
     balance.setBalanceList(data.memberBalanceResponseList)
+    balance.setClanBalanceList(data.clanBalanceResponseList)
   } catch (e) {
     console.log(e)
   } finally {
@@ -126,7 +127,7 @@ const handleInvalidToken = () => {
     <div class="balance_view">
       <span v-if="loading">讀取中...</span>
       <div class="balance-text">
-        <strong>個人帳戶 :</strong>
+        <strong>分紅累計 :</strong>
         <div v-for="item in memberBalanceList" :key="item.currency">
           {{ item.currency }} : {{ formatNumber(item.balance) }} 元
         </div>

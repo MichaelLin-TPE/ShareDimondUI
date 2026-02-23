@@ -94,7 +94,7 @@ const router = createRouter({
         },
         {
           path: 'distributionPage',
-          component:DistributionPage,
+          component: DistributionPage,
         },
       ],
     },

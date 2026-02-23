@@ -7,12 +7,16 @@ export const useBalanceStore = defineStore('balance', {
   state: () => ({
     // 直接定義為 Balance 陣列，初始值給空陣列 []
     balanceList: [] as Balance[],
+    clanBalanceList:[] as Balance[],
   }),
 
   actions: {
     // 傳入參數直接使用陣列類型
     setBalanceList(balances: Balance[]) {
       this.balanceList = balances
+    },
+    setClanBalanceList(balances: Balance[]) {
+      this.clanBalanceList = balances
     },
   },
 })

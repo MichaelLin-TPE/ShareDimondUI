@@ -1,40 +1,15 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useAlert } from '@/utils/alerts.ts'
-
+import { useAuction } from '@/composables/shareAmount.ts'
 // 1. 資料定義
-const totalFund = ref(50000)
-const members = ref([
-  { id: 1, name: '會長大人', role: 'LEADER', amount: 0 },
-  { id: 2, name: '戰力天花板', role: 'OFFICER', amount: 0 },
-  { id: 3, name: '肝帝一號', role: 'MEMBER', amount: 0 },
-  { id: 4, name: '萌新小號', role: 'MEMBER', amount: 0 },
-])
-
-// 2. 計算邏輯
-const allocatedAmount = computed(() => {
-  return members.value.reduce((sum, m) => sum + (Number(m.amount) || 0), 0)
-})
-
-const remainingFund = computed(() => totalFund.value - allocatedAmount.value)
-
-// 3. 按鈕動作
-const handleDistributeEvenly = () => {
-  const evenAmount = Math.floor(totalFund.value / members.value.length)
-  members.value.forEach((m) => (m.amount = evenAmount))
-}
-
-const handleConfirm = async () => {
-  if (allocatedAmount.value > totalFund.value) {
-    useAlert.error('撥款總額不能超過現有基金！')
-    return
-  }
-
-  const result = await useAlert.confirm(`準備撥款共 ${allocatedAmount.value} 鑽石，確定發放？`)
-  if (result?.isConfirmed) {
-    useAlert.success('💰 基金撥款成功！')
-  }
-}
+const {
+  handleConfirm,
+  allocatedAmount,
+  memberList,
+  clanBalanceResponseList,
+  getRemaining,
+  balance,
+  selectedCurrency,
+} = useAuction()
 </script>
 
 <template>
@@ -45,33 +20,48 @@ const handleConfirm = async () => {
       </header>
 
       <div class="header-card">
-        <div class="info-item">
-          <span class="label">血盟總基金</span>
-          <span class="value gold">{{ totalFund.toLocaleString() }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">剩餘可分配</span>
-          <span class="value" :class="{ 'text-danger': remainingFund < 0 }">
-            {{ remainingFund.toLocaleString() }}
-          </span>
+        <template v-for="(item, index) in clanBalanceResponseList" :key="index">
+          <div class="info-item">
+            <span class="label">血盟總 ({{ item.currency }})</span>
+            <span class="value gold">{{ item.balance.toLocaleString() }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">剩餘 ({{ item.currency }})</span>
+            <span class="value" :class="{ 'text-danger': Number(getRemaining(item)) < 0 }">
+              {{ getRemaining(item).toLocaleString() }}
+            </span>
+          </div>
+        </template>
+      </div>
+
+      <div class="form-group">
+        <label>選擇幣種</label>
+        <div class="currency-radio-group">
+          <label v-for="item in balance.balanceList" :key="item.currency" class="currency-option">
+            <input type="radio" v-model="selectedCurrency" :value="item.currency" name="currency" />
+            <span class="custom-radio"></span>
+            <span class="currency-name">{{ item.currency }}</span>
+          </label>
         </div>
       </div>
 
       <div class="list-container">
-        <div v-for="member in members" :key="member.id" class="member-item">
+        <div v-for="member in memberList" :key="member.memberId" class="member-item">
           <div class="member-info">
-            <span class="name">{{ member.name }}</span>
-            <span class="role-tag" :class="member.role.toLowerCase()">{{ member.role }}</span>
+            <span class="name">{{ member.memberName }}</span>
+            <span class="role-tag" :class="member.memberRole.toLowerCase()">{{
+              member.memberRole
+            }}</span>
           </div>
 
           <div class="input-group">
             <input
               type="number"
-              v-model.number="member.amount"
+              v-model.number="member.memberAmount"
               class="fund-input"
               placeholder="0"
             />
-            <span class="unit">鑽</span>
           </div>
         </div>
       </div>
@@ -86,6 +76,85 @@ const handleConfirm = async () => {
 </template>
 
 <style scoped>
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  color: #e0e0e0; /* 淺灰色標籤 */
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.currency-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 保持三行 */
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* 調整父容器，確保對齊 */
+.currency-option {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  min-width: 0; /* 👈 防止 flex 子元素溢出 */
+}
+
+/* 隱藏預設 input */
+.currency-option input {
+  display: none;
+}
+
+/* 自定義圓圈：核心修正 */
+.custom-radio {
+  width: 18px; /* 固定寬度 */
+  height: 18px; /* 固定高度 */
+  flex: 0 0 18px; /* 👈 強制設定 flex-basis 為 18px，防止任何擠壓 */
+  border: 2px solid #555;
+  border-radius: 50%; /* 絕對圓角 */
+  margin-right: 10px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  box-sizing: border-box; /* 確保 18px 包含 border */
+  display: inline-block; /* 👈 確保它是區塊元素 */
+}
+
+/* 文字樣式 */
+.currency-name {
+  color: #ccc;
+  font-size: 14px;
+  white-space: nowrap; /* 防止文字換行擠壓圓圈 */
+}
+
+/* 選中狀態：外圈變色 */
+.currency-option input:checked + .custom-radio {
+  border-color: #7e57c2;
+  box-shadow: 0 0 8px rgba(126, 87, 194, 0.5);
+}
+
+/* 選中狀態：內心實心圓 */
+.currency-option input:checked + .custom-radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: #88d3ce;
+  border-radius: 50%;
+  /* 確保內心圓也不會變形 */
+  display: block;
+}
+
+/* 選中後的文字顏色 */
+.currency-option input:checked ~ .currency-name {
+  color: #fff;
+}
+
 /* 頁面背景 */
 .fund-page {
   background: #0f111a;
@@ -183,15 +252,15 @@ const handleConfirm = async () => {
   border-radius: 6px;
   font-weight: bold;
 }
-.role-tag.leader {
+.role-tag.會長 {
   background: rgba(255, 77, 77, 0.2);
   color: #ff4d4d;
 }
-.role-tag.officer {
+.role-tag.幹部 {
   background: rgba(255, 209, 102, 0.2);
   color: #ffd166;
 }
-.role-tag.member {
+.role-tag.成員 {
   background: rgba(170, 170, 170, 0.2);
   color: #aaa;
 }
@@ -202,7 +271,7 @@ const handleConfirm = async () => {
   color: #ffd166;
   padding: 10px;
   border-radius: 10px;
-  width: 90px;
+  width: 150px;
   text-align: right;
   font-size: 1.1rem;
   font-weight: bold;
