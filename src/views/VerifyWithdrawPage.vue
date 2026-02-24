@@ -40,7 +40,9 @@ const { mockRequests, totalAmount, withdrawHistoryList, handleAction } = useAuct
           </div>
 
           <div class="request-content">
-            <div class="amount">💰 {{ req.requestAmount.toLocaleString() }}</div>
+            <div class="amount">
+              💰 {{ req.requestAmount.toLocaleString() }} {{ req.currency.toLocaleString() }}
+            </div>
             <div class="memo">" {{ req.remark }} "</div>
           </div>
 

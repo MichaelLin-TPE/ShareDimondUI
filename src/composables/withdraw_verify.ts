@@ -100,6 +100,7 @@ export function useAuction() {
     ticketCode: string
     createTime:string
     remark:string
+    currency:string
   }
   function formatDateTime(value: string): string {
     if (!value) return ''
