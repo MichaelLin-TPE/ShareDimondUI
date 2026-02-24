@@ -55,7 +55,7 @@ export function useAuction() {
       })
       const data = await res.json()
       if (!res.ok){
-        useAlert.success(data.message)
+        useAlert.error(data.message)
         return
       }
       authStore.setToken(data.authToken)

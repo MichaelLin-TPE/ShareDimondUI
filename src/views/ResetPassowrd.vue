@@ -80,7 +80,7 @@ onMounted(async () => {
   }
 })
 const handleInvalidToken = () => {
-  useAlert.success('憑證過期,請重新發送驗證信!')
+  useAlert.error('憑證過期,請重新發送驗證信!')
   router.replace('/login')
 }
 </script>

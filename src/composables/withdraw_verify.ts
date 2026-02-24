@@ -33,6 +33,10 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
+      if (!res.ok){
+        useAlert.error(data.message)
+        return
+      }
       useAlert.success(data.message)
       getWithdrawHistory()
     } catch (e) {
@@ -52,6 +56,10 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
+      if (!res.ok){
+        useAlert.error(data.message)
+        return
+      }
       useAlert.success(data.message)
       getWithdrawHistory()
     } catch (e) {

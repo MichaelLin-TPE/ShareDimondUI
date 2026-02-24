@@ -80,6 +80,7 @@ export function useAuction() {
       })
       if (!res.ok) {
         loading.value = false
+        useAlert.error('開單失敗!!!')
         return
       }
       itemName.value = ''
@@ -122,7 +123,7 @@ export function useAuction() {
         }),
       })
       if (!res.ok) {
-        useAlert.success('刪除失敗,再試一次!')
+        useAlert.error('刪除失敗,再試一次!')
         return
       }
       useAlert.success('刪除成功!')
@@ -145,7 +146,7 @@ export function useAuction() {
         }),
       })
       if (!res.ok) {
-        useAlert.success('參與失敗,請再試一次!')
+        useAlert.error('參與失敗,請再試一次!')
         return
       }
       useAlert.success('參與成功!')
@@ -176,6 +177,7 @@ export function useAuction() {
         loading.value = false
         const data = await res.json()
         error.value = data.message
+        useAlert.error(error.value)
         return
       }
       error.value = ''
@@ -214,6 +216,10 @@ export function useAuction() {
         }),
       })
       const data = await res.json();
+      if (!res.ok){
+        useAlert.error(data.message)
+        return
+      }
       useAlert.success(data.message)
       if (res.ok){
         fetchOngoingTreasures()
@@ -242,7 +248,7 @@ export function useAuction() {
 
       if (!res.ok){
         const data = await res.json()
-        useAlert.success(data.message)
+        useAlert.error(data.message)
         return
       }
       const data = await res.json()
@@ -275,6 +281,7 @@ export function useAuction() {
         loading.value = false
         const data = await res.json()
         error.value = data.message
+        useAlert.error(error.value)
         return
       }
       error.value = ''

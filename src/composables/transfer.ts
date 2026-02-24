@@ -26,6 +26,10 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
+      if (!res.ok){
+        useAlert.error(data.message)
+        return
+      }
       useAlert.success(data.message)
     } catch (e) {
       console.log(e)

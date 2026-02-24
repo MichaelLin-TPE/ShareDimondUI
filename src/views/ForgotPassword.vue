@@ -26,6 +26,7 @@ const sendEmail = async () => {
     if (!res.ok) {
       const errorBody = await res.json()
       error.value = errorBody.message
+      useAlert.error(error.value)
       return
     }
     error.value = ''

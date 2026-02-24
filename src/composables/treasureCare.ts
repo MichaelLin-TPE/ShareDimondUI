@@ -122,6 +122,7 @@ export function useAuction() {
       })
       if (!res.ok) {
         loading.value = false
+        useAlert.error('開單失敗!!!')
         return
       }
       itemName.value = ''
@@ -164,7 +165,7 @@ export function useAuction() {
         }),
       })
       if (!res.ok){
-        useAlert.success('刪除失敗,再試一次!')
+        useAlert.error('刪除失敗,再試一次!')
         return
       }
       useAlert.success('刪除成功!')
@@ -189,7 +190,7 @@ export function useAuction() {
         }),
       })
       if (!res.ok){
-        useAlert.success('參與失敗,請再試一次!')
+        useAlert.error('參與失敗,請再試一次!')
         return
       }
       useAlert.success('參與成功!')
@@ -221,6 +222,7 @@ export function useAuction() {
         loading.value = false
         const data = await res.json()
         error.value = data.message
+        useAlert.error('新增失敗!')
         return
       }
       error.value = ''
@@ -258,6 +260,7 @@ export function useAuction() {
         loading.value = false
         const data = await res.json()
         error.value = data.message
+        useAlert.error(error.value)
         return
       }
       error.value = ''

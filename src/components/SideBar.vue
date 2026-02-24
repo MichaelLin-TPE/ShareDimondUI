@@ -50,7 +50,7 @@ const logout = async () => {
     })
     const data = await res.json()
     if (!res.ok) {
-      useAlert.success(data.message)
+      useAlert.error(data.message)
       return
     }
     useAlert.success('登出成功')
