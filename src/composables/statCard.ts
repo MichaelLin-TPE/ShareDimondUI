@@ -22,10 +22,14 @@ export function useAuction() {
   const openAddBossDialog = () => {
     showAddBossDialog.value = true
   }
-
+  const showPeopleList = ref(false)
+  const selectPeopleItem = ref<Treasure>()
   const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
   const stompClient = Stomp.over(socket)
-
+  const handlePeopleCount = (item: Treasure) => {
+    showPeopleList.value = true
+    selectPeopleItem.value = item
+  }
   stompClient.connect({}, (frame) => {
     console.log('Connected : ' + frame)
     stompClient.subscribe('/topic/bidding/' + authStore?.member?.clanId, () => {
@@ -318,6 +322,8 @@ export function useAuction() {
     joinTime: string
     canceled: false
     canceledTime: string
+    userName: string
+    remainSecond: number
   }
 
   // 這裡可以放原本寫在 script 的各種 function，例如 openTicket() 等
@@ -391,6 +397,8 @@ export function useAuction() {
     isBidding: boolean
 
     biddingMemberList:BiddingMember[]
+
+    biddingMemberContent:string
   }
 
   interface BiddingMember{
@@ -425,10 +433,15 @@ export function useAuction() {
       auctions.value = data
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
-        item.isBidding = item.status == 'BIDDING'
+        item.isBidding = item.status === 'BIDDING'
+        console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
         if (item.biddingName == null || item.biddingName == ''){
           item.biddingName = '尚未有得標者'
         }
+        if (item.biddingMemberList != null && item.biddingMemberList.length != 0){
+          item.biddingMemberContent = item.biddingMemberList.map((data) => data.userName).join(',')
+        }
+
       })
       startCountdown()
     } catch (e) {
@@ -462,9 +475,13 @@ export function useAuction() {
       auctions.value = data
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
-        item.isBidding = item.status == 'BIDDING'
+        item.isBidding = item.status === 'BIDDING'
+        console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
         if (item.biddingName == null || item.biddingName == '') {
           item.biddingName = '尚未有得標者'
+        }
+        if (item.biddingMemberList != null && item.biddingMemberList.length != 0) {
+          item.biddingMemberContent = item.biddingMemberList.map((data) => data.userName).join(',')
         }
       })
       startCountdown()
@@ -495,6 +512,8 @@ export function useAuction() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
+
+
   const handleStatus = (status:TreasureStatus) :string =>{
     if (status == 'BIDDING'){
       return '競標中'
@@ -521,8 +540,52 @@ export function useAuction() {
     }
   })
 
+  const getJoinList = (): TreasureAttendance[] => {
+    const data = selectPeopleItem.value! // 自動推導為 Treasure | undefined
+    const now = new Date().getTime()
+    data.treasureAttendanceList.forEach((item) => {
+      if (!item.joinTime) {
+        item.remainSecond = 0
+        return
+      }
+
+      // 2. 關鍵修正：補上 "Z" 標記，強制讓 JS 以 UTC 解析
+      // 如果後端傳來的是 "2026-01-25T00:39:28"，補 Z 後會變成 "2026-01-25T00:39:28Z"
+      // 這樣 new Date() 就會自動幫你加上 8 小時（台北時區）
+      const utcString = item.joinTime.endsWith('Z') ? item.joinTime : `${item.joinTime}Z`
+
+      const expire = new Date(utcString).getTime()
+
+      // 3. 計算剩餘秒數
+      const diff = Math.max(0, Math.floor((expire - now) / 1000))
+      item.remainSecond = diff
+    })
+
+    return data.treasureAttendanceList
+  }
+  function formatTimestamp(timeStr: string) {
+    // 1. 將字串轉換為 Date 物件
+    const date = new Date(timeStr)
+
+    // 2. 提取各個部分並補零
+    const yyyy = date.getFullYear()
+    const MM = String(date.getMonth() + 1).padStart(2, '0')
+    const dd = String(date.getDate()).padStart(2, '0')
+    const hh = String(date.getHours()).padStart(2, '0')
+    const mm = String(date.getMinutes()).padStart(2, '0')
+    const ss = String(date.getSeconds()).padStart(2, '0')
+
+    // 3. 組合回傳
+    return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`
+  }
+
 
   return {
+    formatTimestamp,
+    handlePeopleCount,
+    showPeopleList,
+    selectPeopleItem,
+    getJoinList,
     canSubmit,
     handleReduce,
     handlePlus,

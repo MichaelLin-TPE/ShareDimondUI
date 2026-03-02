@@ -10,6 +10,11 @@ const {
   handleDeleteItem,
   handleReduce,
   canSubmit,
+  // 新增以下解構
+  showPeopleList,
+  getJoinList,
+  formatTimestamp,
+  handlePeopleCount,
 } = useAuction()
 </script>
 
@@ -35,8 +40,8 @@ const {
 
           <div class="bidder">
             <template v-if="item.treasureType === 'RANDOM_BUYER'">
-              <span class="status-label">目前競標人數：</span>
-              <span class="status-value">{{ item.biddingMemberList.length }} 人</span>
+              <span class="status-label">目前競標玩家：</span>
+              <span class="status-value">{{ item.biddingMemberContent}}</span>
             </template>
 
             <template v-else> 出價者：{{ item.biddingName }} </template>
@@ -65,17 +70,33 @@ const {
             <span v-else-if="item.canVerifyBiddingTicket">已拿到帳款,可派發獎金</span>
           </button>
 
-          <div class="meta">
+          <div class="meta" @click="handlePeopleCount(item)">
             ⏳ {{ formatTime(item.remainSeconds) }} 👥 {{ item.treasureAttendanceList.length }} 人
             🔥{{ handleStatus(item.status) }}
           </div>
         </div>
       </div>
     </div>
+
+    <div v-if="showPeopleList" class="show-people-list" @click.self="showPeopleList = false">
+      <div class="boss-container">
+        <h2 class="boss-title">參與名單</h2>
+        <ul class="people-list">
+          <li v-for="(data, index) in getJoinList()" :key="index" class="person-item">
+            <div class="person-info">
+              <span class="person-name">👤 {{ data.userName }}</span>
+              <span class="join-time">{{ formatTimestamp(data.joinTime) }}</span>
+            </div>
+          </li>
+        </ul>
+        <button class="close-btn" @click="showPeopleList = false">關閉</button>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* 原有的樣式保持不變 */
 .item-name {
   font-size: 20px;
 }
@@ -89,11 +110,9 @@ const {
   transform: translateY(-1px);
 }
 .delete-ticket {
-  position: absolute; /* 👈 脫離排版流 */
-  top: 0px; /* 距離頂部 */
-  right: 12px; /* 👈 改為右邊 12px，就變成右上角了 */
-
-  /* 保持你原本的樣式設定 */
+  position: absolute;
+  top: 0px;
+  right: 12px;
   width: 45px;
   height: 32px;
   display: flex;
@@ -117,6 +136,16 @@ const {
 
 .meta {
   margin-top: 15px;
+  cursor: pointer; /* 增加手勢 */
+  transition: all 0.2s ease;
+  padding: 8px;
+  border-radius: 4px;
+}
+.meta:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.meta:active {
+  transform: scale(0.98);
 }
 
 .reduce-button,
@@ -128,7 +157,7 @@ const {
   margin-left: 10px;
   margin-right: 10px;
 }
-/* 1. 基礎容器設定 */
+
 .auction-scroll {
   margin-top: 10px;
   width: 100%;
@@ -138,33 +167,24 @@ const {
   -webkit-overflow-scrolling: touch;
 }
 
-/* 2. 定義捲軸整體樣式 */
 .auction-scroll::-webkit-scrollbar {
-  height: 6px; /* 捲軸高度 */
+  height: 6px;
 }
 
-/* 3. 預設讓捲軸軌道與滑塊變透明 */
 .auction-scroll::-webkit-scrollbar-thumb {
   background-color: transparent;
   border-radius: 10px;
   transition: background-color 0.3s;
 }
 
-/* 4. 當滑鼠 hover 容器時，顯示滑塊顏色 */
 .auction-scroll:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(180, 110, 255, 0.5); /* 使用你主題的紫色，帶點透明度 */
-}
-
-/* 5. (選用) 懸停在滑塊本身時變深 */
-.auction-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: #b46eff;
+  background-color: rgba(180, 110, 255, 0.5);
 }
 
 .auction-grid {
   display: flex;
   gap: 20px;
-
-  width: max-content; /* 👈 關鍵：不要被父層壓縮 */
+  width: max-content;
 }
 
 .auction-card {
@@ -172,10 +192,8 @@ const {
   background: #161822;
   border: 1px solid #24263a;
   border-radius: 14px;
-  /* 關鍵 1：稍微增加 padding-top，為標題留出呼吸空間，但不影響按鈕 */
   padding: 24px 16px 16px 16px;
   flex: 0 0 360px;
-  /* 關鍵 2：確保內容不會溢出，這有助於定位精準 */
   overflow: hidden;
 }
 
@@ -192,5 +210,113 @@ const {
   color: #0b0f1a;
   padding: 10px;
   border-radius: 8px;
+}
+
+/* --- 新增彈窗專用 CSS (由 TreasureCard 移植) --- */
+.show-people-list {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.boss-container {
+  background: rgba(30, 30, 30, 0.9);
+  width: 90%;
+  max-width: 400px;
+  max-height: 70vh;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.boss-title {
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.people-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+}
+
+.person-item {
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 10px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.person-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.person-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+}
+
+.person-name {
+  color: #e0e0e0;
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.join-time {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.close-btn {
+  margin-top: 20px;
+  padding: 10px;
+  width: 100%;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.close-btn:hover {
+  background: #666;
+}
+
+.people-list::-webkit-scrollbar {
+  width: 6px;
+}
+.people-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>
