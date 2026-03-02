@@ -2,6 +2,8 @@ import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { useAlert } from '@/utils/alerts.ts'
+import SockJS from 'sockjs-client'
+import Stomp from 'stompjs'
 
 export function useAuction() {
   const showModal = ref(false)
@@ -23,6 +25,17 @@ export function useAuction() {
     showAddBossDialog.value = true
   }
   const balance = useBalanceStore()
+  const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
+  const stompClient = Stomp.over(socket)
+
+  stompClient.connect({},(frame) => {
+    console.log('Connected : '+frame)
+    stompClient.subscribe('/topic/treasure/' + authStore?.member?.clanId, () => {
+      fetchOngoingTreasures()
+    })
+
+  })
+
   interface TreasureItem {
     itemName: string
     itemId: string
@@ -468,7 +481,7 @@ export function useAuction() {
   const startCountdown = () => {
     if (timer) clearInterval(timer)
 
-    timer = setInterval(() => {
+    timer = window.setInterval(() => {
       const now = new Date().getTime()
       auctions.value.forEach((item) => {
         const expire = new Date(item.expireTime).getTime()

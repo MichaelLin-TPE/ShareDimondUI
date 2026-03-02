@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import StatCard from '@/components/StatCard.vue'
 import TreasureCard from '@/components/TreasureCard.vue'
+import ClanNotice from '@/components/ClanNotice.vue' // 引入新組件
 import { useAuthStore } from '@/stores/auth.ts'
 
 const authStore = useAuthStore()
@@ -10,6 +11,8 @@ const authStore = useAuthStore()
   <div class="dashboard">
     <h1 v-if="authStore.member">{{ authStore.member.clanName }} 血盟大廳</h1>
 
+    <ClanNotice />
+
     <div class="stats">
       <StatCard />
       <TreasureCard class="treasureCard" />
@@ -18,8 +21,7 @@ const authStore = useAuthStore()
 </template>
 
 <style scoped>
-
-.treasureCard{
+.treasureCard {
   margin-top: 50px;
 }
 
@@ -33,5 +35,4 @@ const authStore = useAuthStore()
   gap: 16px;
   margin-bottom: 32px;
 }
-
 </style>

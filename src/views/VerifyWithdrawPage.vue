@@ -25,8 +25,6 @@ const { mockRequests, totalAmount, withdrawHistoryList, handleAction } = useAuct
     <div class="audit-card">
       <div class="tab-header">
         <div class="tab active">待審核</div>
-        <div class="tab">已核准</div>
-        <div class="tab">已駁回</div>
       </div>
 
       <div class="request-list">

@@ -30,6 +30,8 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/verifyWithdraw')
   } else if (item.label == '💰 基金分配') {
     router.replace('/clan/distributionPage')
+  } else if (item.label == '🙋‍♂️ 人員審核') {
+    router.replace('/clan/approvalPage')
   }
 }
 
