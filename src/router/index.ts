@@ -13,6 +13,7 @@ import VerifyWithdrawPage from '@/views/VerifyWithdrawPage.vue'
 import CreateGuild from '@/views/CreateGuild.vue'
 import DistributionPage from '@/views/DistributionPage.vue'
 import ApprovalPage from '@/views/ApprovalPage.vue'
+import ClanSettingsPage from '@/views/ClanSettingsPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -100,6 +101,10 @@ const router = createRouter({
         {
           path: 'approvalPage',
           component:ApprovalPage,
+        },
+        {
+          path:'clanSettingsPage',
+          component:ClanSettingsPage
         }
       ],
     },

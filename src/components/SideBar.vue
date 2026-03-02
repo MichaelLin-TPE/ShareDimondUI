@@ -32,6 +32,8 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/distributionPage')
   } else if (item.label == '🙋‍♂️ 人員審核') {
     router.replace('/clan/approvalPage')
+  } else if (item.label == '⚙️ 血盟設置'){
+    router.replace('/clan/clanSettingsPage')
   }
 }
 
