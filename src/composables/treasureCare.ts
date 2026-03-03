@@ -160,9 +160,12 @@ export function useAuction() {
     console.log('點了'+item.treasureCode)
     addAttendance()
   }
-  const handleDeleteItem = (item:Treasure) =>{
+  const handleDeleteItem = async (item:Treasure) =>{
     submitDeleteTicketCode.value = item.treasureCode
-    deleteTreasure()
+    const result = await useAlert.confirm("請確認是否要刪除此單?")
+    if (result.isConfirmed){
+      deleteTreasure()
+    }
   }
 
   const deleteTreasure = async () =>{
