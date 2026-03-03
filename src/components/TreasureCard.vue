@@ -40,7 +40,7 @@ const {
 <template>
   <div class="whole_page">
     <div class="page-header">
-      <h3>戰利品分配：今日榮耀共賞（共 {{ auctions.length }} 件寶物）</h3>
+      <h3>寶物分紅參予：（共 {{ auctions.length }} 件寶物）</h3>
       <button class="open-ticket" @click="openTicket">我要開單</button>
       <button class="add-treasure" @click="openAddTreasureDialog">新增道具</button>
       <button class="add-boss" @click="openAddBossDialog">新增首領</button>
@@ -160,7 +160,6 @@ const {
     <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
       <div class="modal-container">
         <h2 class="modal-title">開單</h2>
-
         <form @submit.prevent="handleSubmit" class="modal-form">
           <div class="form-group">
             <label for="item-name">寶物名稱</label>

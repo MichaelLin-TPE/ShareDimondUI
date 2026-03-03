@@ -210,14 +210,63 @@ export function useAuction() {
   }
   const submitTreasureCod = ref('')
   const submitBiddingPrice= ref(0)
-  const handleSubmit = (item:Treasure) =>{
+  const selectedTreasure = ref<Treasure | null>(null)
+  const showAssignModal = ref(false)
+  const selectedMemberId = ref<string | null>(null)
+  function showBiddingList() {
+    showAssignModal.value = true
+    selectedMemberId.value = null
+  }
+
+  const submitAssign = async () => {
+    if (!selectedTreasure.value || !selectedMemberId.value) {
+      useAlert.success('請選擇一位成員！')
+      return
+    }
+    try {
+      const res = await fetch('https://api.gameshare-system.com/setUpBuyer', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userName: selectedMemberId.value,
+          ticketCode: selectedTreasure.value.treasureCode,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      showAssignModal.value = false
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+  const handleSubmit = async (item:Treasure) =>{
     submitTreasureCod.value = item.treasureCode
     submitBiddingPrice.value = item.biddingPrice
+    selectedTreasure.value = item
+    if (item.assignByLeader && item.status == 'WAIT_PAY') {
+      showBiddingList()
+      return
+    }
     if (!item.isBidding && item.canVerifyBiddingTicket){
       confirmTicket()
       return
     }
-    submitBidding()
+    const result = await useAlert.confirm('你真的要標嗎???')
+    // SweetAlert2 的回傳物件會包含 isConfirmed
+    if (result.isConfirmed) {
+      // 執行您的 SQL 邏輯或 API 呼叫
+      submitBidding()
+    }
+
+
   }
 
   const confirmTicket = async () =>{
@@ -394,11 +443,13 @@ export function useAuction() {
 
     canVerifyBiddingTicket: boolean
 
+    assignByLeader: boolean
+
     isBidding: boolean
 
-    biddingMemberList:BiddingMember[]
+    biddingMemberList: BiddingMember[]
 
-    biddingMemberContent:string
+    biddingMemberContent: string
   }
 
   interface BiddingMember{
@@ -581,6 +632,10 @@ export function useAuction() {
 
 
   return {
+    selectedTreasure,
+    submitAssign,
+    showAssignModal,
+    selectedMemberId,
     formatTimestamp,
     handlePeopleCount,
     showPeopleList,

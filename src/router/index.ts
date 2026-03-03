@@ -14,6 +14,8 @@ import CreateGuild from '@/views/CreateGuild.vue'
 import DistributionPage from '@/views/DistributionPage.vue'
 import ApprovalPage from '@/views/ApprovalPage.vue'
 import ClanSettingsPage from '@/views/ClanSettingsPage.vue'
+import AllMemberBalance from '@/components/AllMemberBalance.vue'
+import KickMemberPage from '@/components/KickMemberPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -100,12 +102,20 @@ const router = createRouter({
         },
         {
           path: 'approvalPage',
-          component:ApprovalPage,
+          component: ApprovalPage,
         },
         {
-          path:'clanSettingsPage',
-          component:ClanSettingsPage
-        }
+          path: 'clanSettingsPage',
+          component: ClanSettingsPage,
+        },
+        {
+          path: 'allMemberBalance',
+          component: AllMemberBalance,
+        },
+        {
+          path: 'kickMemberPage',
+          component: KickMemberPage,
+        },
       ],
     },
     // 之後登入成功再打開

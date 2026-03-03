@@ -32,8 +32,12 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/distributionPage')
   } else if (item.label == '🙋‍♂️ 人員審核') {
     router.replace('/clan/approvalPage')
-  } else if (item.label == '⚙️ 血盟設置'){
+  } else if (item.label == '⚙️ 血盟設置') {
     router.replace('/clan/clanSettingsPage')
+  } else if (item.label == '💳 成員帳戶') {
+    router.replace('/clan/allMemberBalance')
+  } else if (item.label == '🚪 成員管理') {
+    router.replace('/clan/kickMemberPage')
   }
 }
 

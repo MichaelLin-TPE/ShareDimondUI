@@ -15,6 +15,10 @@ const {
   getJoinList,
   formatTimestamp,
   handlePeopleCount,
+  submitAssign,
+  showAssignModal,
+  selectedMemberId,
+  selectedTreasure,
 } = useAuction()
 </script>
 
@@ -34,14 +38,15 @@ const {
             撤單
           </button>
           <div class="item-name gold">{{ item.itemName }}</div>
-
+          <div class="price">開單者：{{ item.ticketOwerName }}</div>
+          <div class="price">頭目：{{ item.bossName }}</div>
           <div class="price">底價：{{ item.lowestPrice.toLocaleString() }} {{ item.currency }}</div>
           <div class="price">目前最高：{{ item.currentPrice }} {{ item.currency }}</div>
 
           <div class="bidder">
             <template v-if="item.treasureType === 'RANDOM_BUYER'">
               <span class="status-label">目前競標玩家：</span>
-              <span class="status-value">{{ item.biddingMemberContent}}</span>
+              <span class="status-value">{{ item.biddingMemberContent }}</span>
             </template>
 
             <template v-else> 出價者：{{ item.biddingName }} </template>
@@ -66,7 +71,7 @@ const {
             </span>
 
             <span v-else-if="item.disableSubmitButton">結束競標</span>
-
+            <span v-else-if="item.assignByLeader">請選擇得標者</span>
             <span v-else-if="item.canVerifyBiddingTicket">已拿到帳款,可派發獎金</span>
           </button>
 
@@ -93,9 +98,131 @@ const {
       </div>
     </div>
   </div>
+
+  <div class="modal-overlay" v-if="showAssignModal" @click.self="showAssignModal = false">
+    <div class="boss-container assign-modal">
+      <div class="boss-title">會長指定得標</div>
+
+      <div class="target-item-info">
+        道具：<span class="gold">{{ selectedTreasure?.itemName }}</span>
+      </div>
+
+      <div class="people-list">
+        <div v-if="!selectedTreasure?.biddingMemberList?.length" class="empty-hint">
+          目前無人參與競標
+        </div>
+
+        <div
+          v-for="member in selectedTreasure?.biddingMemberList"
+          :key="member.userName"
+          class="person-item"
+          :class="{ 'is-selected': selectedMemberId === member.userName }"
+          @click="selectedMemberId = member.userName"
+        >
+          <div class="member-info">
+            <span class="member-name">{{ member.userName }}</span>
+            <span class="check-icon" v-if="selectedMemberId === member.userName">✔</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="confirm-btn" @click="submitAssign">確認得標</button>
+        <button class="cancel-btn" @click="showAssignModal = false">取消</button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+/* 彈窗遮罩 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.assign-modal {
+  border: 1px solid #6366f1; /* 給予霓虹邊框感 */
+}
+
+.target-item-info {
+  text-align: center;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+/* 成員列 */
+.person-item {
+  padding: 15px;
+  margin-bottom: 8px;
+  border: 1px solid #2d3047;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.person-item.is-selected {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: #6366f1;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+}
+
+.member-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.check-icon {
+  color: #6366f1;
+  font-weight: bold;
+}
+
+/* 底部按鈕 */
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.confirm-btn {
+  flex: 2;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.cancel-btn {
+  flex: 1;
+  background: #2d3047;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.empty-hint {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+}
+
 /* 原有的樣式保持不變 */
 .item-name {
   font-size: 20px;
@@ -159,26 +286,33 @@ const {
 }
 
 .auction-scroll {
-  margin-top: 10px;
-  width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 12px;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: auto; /* 確保橫向溢出 */
+  padding-bottom: 15px; /* 給予捲軸空間，避免擋住卡片內容 */
 }
 
+/* 2. 設定 Webkit 瀏覽器的捲軸樣式 */
 .auction-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 8px; /* 橫向捲軸的高度 */
+  display: block; /* 確保顯示 */
 }
 
-.auction-scroll::-webkit-scrollbar-thumb {
-  background-color: transparent;
+/* 3. 捲軸軌道（底色）*/
+.auction-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05); /* 稍微看得到的深色底 */
   border-radius: 10px;
-  transition: background-color 0.3s;
 }
 
-.auction-scroll:hover::-webkit-scrollbar-thumb {
-  background-color: rgba(180, 110, 255, 0.5);
+/* 4. 捲軸拉條（滑塊）*/
+.auction-scroll::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.5); /* 使用你系統的紫色調，並給予固定透明度 */
+  border-radius: 10px;
+  border: 2px solid transparent; /* 讓滑塊看起來細一點 */
+  background-clip: padding-box;
+}
+
+/* 5. 滑鼠移上去時變亮（可選，增加互動感）*/
+.auction-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.8);
 }
 
 .auction-grid {
