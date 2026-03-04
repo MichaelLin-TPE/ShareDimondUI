@@ -7,6 +7,7 @@ const {
   handleStatus,
   handlePlus,
   handleSubmit,
+  handleUpdateRemark,
   handleDeleteItem,
   handleReduce,
   canSubmit,
@@ -37,6 +38,13 @@ const {
           >
             撤單
           </button>
+          <button
+            class="remark-ticket"
+            v-show="item.showDeleteTicket"
+            @click="handleUpdateRemark(item)"
+          >
+            備註
+          </button>
           <div class="item-name gold">{{ item.itemName }}</div>
           <div class="price">開單者：{{ item.ticketOwerName }}</div>
           <div class="price">頭目：{{ item.bossName }}</div>
@@ -57,14 +65,23 @@ const {
               <span class="status-value">{{ item.biddingName }}</span>
             </template>
           </div>
-
+          <div class="price">備註：{{ item.remark }}</div>
           <div v-if="item.treasureType !== 'RANDOM_BUYER'" class="bid-control">
             <button class="reduce-button" @click="handleReduce(item)">-</button>
             <span class="myBid">{{ item.biddingPrice }}</span>
             <button class="plus-button" @click="handlePlus(item)">+</button>
           </div>
 
-          <button class="submit-btn" :disabled="canSubmit(item)" @click="handleSubmit(item)">
+          <button
+            class="submit-btn"
+            :class="{
+              'btn-assign-gem': !item.isBidding && item.assignByLeader,
+              'btn-verify-gem':
+                !item.isBidding && !item.assignByLeader && item.canVerifyBiddingTicket,
+            }"
+            :disabled="canSubmit(item)"
+            @click="handleSubmit(item)"
+          >
             <span v-if="item.isBidding">
               <template v-if="item.treasureType === 'RANDOM_BUYER'">我要標此物品</template>
               <template v-else>我要出價</template>
@@ -227,15 +244,41 @@ const {
 .item-name {
   font-size: 20px;
 }
-
+.remark-ticket:active {
+  transform: translateY(1px);
+}
 .delete-ticket:active {
   transform: translateY(1px);
+}
+.remark-ticket:hover {
+  border-color: #00d4ff;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+  transform: translateY(-1px);
 }
 .delete-ticket:hover {
   border-color: #00d4ff;
   box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
   transform: translateY(-1px);
 }
+.remark-ticket {
+  position: absolute;
+  top: 0px;
+  right: 60px;
+  width: 45px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #00d4ff;
+  background: linear-gradient(145deg, #12141d, #1a1f2e);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
 .delete-ticket {
   position: absolute;
   top: 0px;
@@ -340,10 +383,40 @@ const {
   width: 100%;
   height: 50px;
   margin-top: 15px;
-  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  background: linear-gradient(135deg, #6cf2ff, #b46eff); /* 這是原本的藍紫漸層 */
   color: #0b0f1a;
   padding: 10px;
   border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* --- 只有符合條件時才會覆蓋上去的顏色 --- */
+
+/* 狀態：請選擇得標者 (日落橘漸層 - 代表動作提醒) */
+/* 狀態：請選擇得標者 (寶石紅漸層) */
+.submit-btn.btn-assign-gem {
+  background: linear-gradient(135deg, #9f1239, #be123c) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(159, 18, 57, 0.4);
+  border: 1px solid rgba(251, 113, 133, 0.3) !important;
+}
+
+/* 狀態：已拿到帳款 (深邃藍綠漸層) */
+.submit-btn.btn-verify-gem {
+  background: linear-gradient(135deg, #0e7490, #155e75) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(14, 116, 144, 0.4);
+  border: 1px solid rgba(34, 211, 238, 0.3) !important;
+}
+
+/* 強化懸停時的發光感 */
+.submit-btn.btn-assign-gem:hover,
+.submit-btn.btn-verify-gem:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
 }
 
 /* --- 新增彈窗專用 CSS (由 TreasureCard 移植) --- */
@@ -452,5 +525,63 @@ const {
   to {
     opacity: 1;
   }
+}
+
+</style>
+
+<style>
+/* 注意：這裡不要加 scoped */
+
+/* 強制讓 SweetAlert2 內容垂直排列 */
+.custom-swal-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 12px !important;
+  margin-top: 20px !important;
+}
+
+/* 強制按鈕與輸入框寬度一致 (90%) */
+.custom-swal-confirm,
+.custom-swal-cancel,
+.custom-swal-input {
+  width: 90% !important;
+  max-width: 350px !important; /* 限制最大寬度防止太醜 */
+  margin: 5px auto !important;
+  box-sizing: border-box !important;
+}
+
+/* 按鈕高度與圓角 */
+.custom-swal-confirm,
+.custom-swal-cancel {
+  height: 48px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 送出按鈕顏色 (套用你的藍紫漸層) */
+.custom-swal-confirm {
+  background: linear-gradient(135deg, #6366f1, #a855f7) !important;
+  color: white !important;
+}
+
+/* 取消按鈕顏色 */
+.custom-swal-cancel {
+  background: #444 !important;
+  color: white !important;
+}
+
+/* 輸入框深色背景 */
+.custom-swal-input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  height: 45px !important;
 }
 </style>

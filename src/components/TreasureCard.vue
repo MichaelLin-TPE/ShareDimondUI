@@ -62,6 +62,7 @@ const {
           <div class="price">分紅幣別：{{ item.currency }}</div>
           <div class="price">價格：{{ Number(item.baseAmount).toLocaleString() }}</div>
           <div class="price">單子種類：{{ item.treasureType }}</div>
+          <div class="price">備註：{{ item.remark }}</div>
           <button
             class="submit-btn"
             @click="handleJoinItem(item)"

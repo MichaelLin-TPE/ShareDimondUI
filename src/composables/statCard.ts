@@ -131,6 +131,40 @@ export function useAuction() {
 
   }
 
+  const handleUpdateRemark = async (item: Treasure) => {
+    submitDeleteTicketCode.value = item.treasureCode
+    const result = await useAlert.inputDialog('請更新備註','更新備註')
+    if (result) {
+      updateRemark(result)
+    }
+  }
+
+  const updateRemark = async (value:string) =>{
+    try {
+      const res = await fetch('https://api.gameshare-system.com/update_remark', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketCode: submitDeleteTicketCode.value,
+          remark: value,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok){
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
+
   const deleteTreasure = async () => {
     try {
       const res = await fetch('https://api.gameshare-system.com/delete-ticket', {
@@ -405,6 +439,8 @@ export function useAuction() {
 
     biddingName: string
 
+    remark:string
+
     currentPrice: number
 
     biddingPrice: number
@@ -436,9 +472,6 @@ export function useAuction() {
     treasureCode: string
 
     treasureType: string
-
-    /** 備註（可選） */
-    remark?: string
 
     remainSeconds: number
 
@@ -639,6 +672,7 @@ export function useAuction() {
 
 
   return {
+    handleUpdateRemark,
     selectedTreasure,
     submitAssign,
     showAssignModal,
