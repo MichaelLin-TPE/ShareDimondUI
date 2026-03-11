@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { useAuction } from '@/composables/statCard.ts'
+import { useAuction } from '@/composables/BiddingManageMent.ts'
 
 const {
   auctions,
   formatTime,
   handleStatus,
-  handlePersonClick,
   handlePlus,
   handleSubmit,
   handleUpdateRemark,
@@ -16,6 +15,7 @@ const {
   showPeopleList,
   getJoinList,
   formatTimestamp,
+  handlePeopleClick,
   handlePeopleCount,
   submitAssign,
   showAssignModal,
@@ -27,7 +27,7 @@ const {
 <template>
   <div class="whole_page">
     <div class="page-header">
-      <h3>正在競拍 共 {{ auctions.length }} 件競拍中道具</h3>
+      <h3>待分配單 共 {{ auctions.length }} 件待分配道具</h3>
     </div>
     <div class="auction-scroll">
       <div class="auction-grid">
@@ -109,8 +109,7 @@ const {
             v-for="(data, index) in getJoinList()"
             :key="index"
             class="person-item"
-            @click="handlePersonClick(data)"
-          >
+            @click="handlePeopleClick(data)">
             <div class="person-info">
               <span class="person-name">👤 {{ data.userName }}</span>
               <span class="join-time">{{ formatTimestamp(data.joinTime) }}</span>

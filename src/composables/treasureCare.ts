@@ -155,10 +155,21 @@ export function useAuction() {
 
   const submitAttendanceTicketCode = ref('')
   const submitDeleteTicketCode = ref('')
-  const handleJoinItem = (item:Treasure) =>{
+  const handleJoinItem = async (item:Treasure) =>{
     submitAttendanceTicketCode.value = item.treasureCode
-    console.log('點了'+item.treasureCode)
-    addAttendance()
+    if (item.joinButtonDisable){
+      const result = await useAlert.confirm('你確定要取消參予分紅!?')
+      if (result.isConfirmed){
+
+        deleteAttendance()
+      }
+      return
+    }
+    const result = await useAlert.confirm('確定有參予再按! 確定不?')
+    if (result.isConfirmed){
+      console.log('點了' + item.treasureCode)
+      addAttendance()
+    }
   }
   const handleDeleteItem = async (item:Treasure) =>{
     submitDeleteTicketCode.value = item.treasureCode
@@ -191,7 +202,29 @@ export function useAuction() {
     }
   }
 
-
+  const deleteAttendance = async () => {
+    try {
+      const res = await fetch('https://api.gameshare-system.com/delete-attendance', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketCode: submitAttendanceTicketCode.value,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   const addAttendance = async () =>{
     try{
@@ -441,9 +474,7 @@ export function useAuction() {
     if (!value) return '0'
     return Number(value).toLocaleString('en-US') // 強制使用英文千分位格式
   }
- const handleJoinButtonDiable = () =>{
 
- }
  const selectPeopleItem = ref<Treasure>()
   const selectedCurrency = ref('')
   const selectedType = ref('')
@@ -453,33 +484,42 @@ export function useAuction() {
     selectPeopleItem.value = item
  }
 
-  onMounted(async () => {
+ const handlePersonClick = async (data:TreasureAttendance) =>{
+
+    if (authStore.member?.role === 'MEMBER'){
+      return
+    }
+    const reuslt = await useAlert.confirm(`是否要將${data.userName}從這張單移除分紅?`)
+    if (reuslt.isConfirmed){
+      showPeopleList.value = false
+      deleteAttendanceByLeader(data.memberId)
+    }
+  }
+  const deleteAttendanceByLeader = async (userId:number) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {
-        method: 'GET',
+      const res = await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
-          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          ticketCode: selectPeopleItem.value?.treasureCode,
+          userId: userId,
+        }),
       })
+      const data = await res.json()
       if (!res.ok) {
-        const data = await res.json()
-        console.log(data)
+        useAlert.error(data.message)
         return
       }
-      const data = await res.json()
-      auctions.value = data
-      auctions.value.forEach((item) => {
-        item.treasureType = item.treasureType == 'RANDOM_BUYER' ? '固定金額' : '競標單'
-      })
-      startCountdown()
-      handleJoinButtonDiable()
-
-
+      useAlert.success(data.message)
+      fetchOngoingTreasures()
     } catch (e) {
       console.log(e)
     }
-  })
+  }
+
 
   const startCountdown = () => {
     if (timer) clearInterval(timer)
@@ -517,10 +557,41 @@ export function useAuction() {
     // 3. 組合回傳
     return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`
   }
-
+  const handleUpdateRemark = async (item: Treasure) => {
+    submitDeleteTicketCode.value = item.treasureCode
+    const result = await useAlert.inputDialog('請更新備註', '更新備註')
+    if (result) {
+      updateRemark(result)
+    }
+  }
+  const updateRemark = async (value: string) => {
+    try {
+      const res = await fetch('https://api.gameshare-system.com/update_remark', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketCode: submitDeleteTicketCode.value,
+          remark: value,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   return {
     balance,
+    handlePersonClick,
     formatTimestamp,
     getJoinList,
     selectPeopleItem,
@@ -540,6 +611,7 @@ export function useAuction() {
     itemOptions,
     bossOptions,
     handleSubmit,
+    handleUpdateRemark,
     handleDeleteItem,
     openTicket,
     openAddTreasureDialog,

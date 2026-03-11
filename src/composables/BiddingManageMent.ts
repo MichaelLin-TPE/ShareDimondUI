@@ -67,61 +67,9 @@ export function useAuction() {
   const openAddTreasureDialog = () => {
     showAddTreasureDialog.value = true
   }
-  const createTicket = async () => {
-    if (!bossName.value) {
-      error.value = '請選擇首領'
-      return
-    }
-    if (!itemName.value) {
-      error.value = '請選擇道具'
-      return
-    }
-    if (!basePrice.value) {
-      error.value = '請填入底價'
-      return
-    }
-    loading.value = true
-    try {
-      const res = await fetch('https://api.gameshare-system.com/open-ticket', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          itemName: itemName.value,
-          bossName: bossName.value,
-          lowestPrice: basePrice.value,
-          remark: remark.value,
-        }),
-      })
-      if (!res.ok) {
-        loading.value = false
-        useAlert.error('開單失敗!!!')
-        return
-      }
-      itemName.value = ''
-      bossName.value = ''
-      remark.value = ''
-      basePrice.value = ''
-      error.value = ''
-      useAlert.success('開單成功!!!')
-      showModal.value = false
-      fetchOngoingTreasures()
-    } catch (e) {
-      console.log(e)
-    } finally {
-      loading.value = false
-    }
-  }
 
-  const submitAttendanceTicketCode = ref('')
   const submitDeleteTicketCode = ref('')
-  const handleJoinItem = (item: Treasure) => {
-    submitAttendanceTicketCode.value = item.treasureCode
-    console.log('點了' + item.treasureCode)
-    addAttendance()
-  }
+
   const handleDeleteItem = async (item: Treasure) => {
     submitDeleteTicketCode.value = item.treasureCode
     const result =  await useAlert.confirm("請確認是否要刪除此單?")
@@ -188,64 +136,6 @@ export function useAuction() {
     }
   }
 
-  const addAttendance = async () => {
-    try {
-      const res = await fetch('https://api.gameshare-system.com/add-attendance', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ticketCode: submitAttendanceTicketCode.value,
-        }),
-      })
-      if (!res.ok) {
-        useAlert.error('參與失敗,請再試一次!')
-        return
-      }
-      useAlert.success('參與成功!')
-      fetchOngoingTreasures()
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-  const addBoss = async () => {
-    if (!addBossName.value) {
-      error.value = '請輸入首領名稱'
-      return
-    }
-    loading.value = true
-    try {
-      const res = await fetch('https://api.gameshare-system.com/add-boss', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          bossName: addBossName.value,
-        }),
-      })
-      if (!res.ok) {
-        loading.value = false
-        const data = await res.json()
-        error.value = data.message
-        useAlert.error(error.value)
-        return
-      }
-      error.value = ''
-      useAlert.success('新增成功!')
-      loading.value = false
-      showAddBossDialog.value = false
-    } catch (e) {
-      console.log(e)
-      loading.value = false
-    } finally {
-      loading.value = false
-    }
-  }
   const submitTreasureCod = ref('')
   const submitBiddingPrice= ref(0)
   const selectedTreasure = ref<Treasure | null>(null)
@@ -505,43 +395,6 @@ export function useAuction() {
     | 'CANCELED'
     | 'FAILED'
 
-  const handlePersonClick = async (data: TreasureAttendance) => {
-    if (authStore.member?.role === 'MEMBER') {
-      return
-    }
-    const reuslt = await useAlert.confirm(`是否要將${data.userName}從這張單移除分紅?`)
-    if (reuslt.isConfirmed) {
-      showPeopleList.value = false
-      deleteAttendanceByLeader(data.memberId)
-    }
-  }
-  const deleteAttendanceByLeader = async (userId: number) => {
-    try {
-      const code = selectPeopleItem.value?.treasureCode
-      const res = await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ticketCode: code,
-          userId: userId,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        useAlert.error(data.message)
-        return
-      }
-      useAlert.success(data.message)
-      fetchOngoingTreasures()
-    } catch (e) {
-      console.log(e)
-    }
-  }
-
-
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
     try {
@@ -559,18 +412,18 @@ export function useAuction() {
       }
       const data = await res.json()
       auctions.value = data
-      auctions.value = data.filter((item: Treasure) => item.status === 'BIDDING')
+      // 假設 data 是一個陣列
+      auctions.value = data.filter((item:Treasure) => item.status === 'WAIT_PAY')
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status === 'BIDDING'
         console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
-        if (item.biddingName == null || item.biddingName == ''){
+        if (item.biddingName == null || item.biddingName == '') {
           item.biddingName = '尚未有得標者'
         }
-        if (item.biddingMemberList != null && item.biddingMemberList.length != 0){
+        if (item.biddingMemberList != null && item.biddingMemberList.length != 0) {
           item.biddingMemberContent = item.biddingMemberList.map((data) => data.userName).join(',')
         }
-
       })
       startCountdown()
     } catch (e) {
@@ -584,8 +437,6 @@ export function useAuction() {
   })
 
   let timer: number | null = null // 用來存放計時器
-
-
 
   const startCountdown = () => {
     if (timer) clearInterval(timer)
@@ -608,7 +459,40 @@ export function useAuction() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-
+  const handlePeopleClick = async (data: TreasureAttendance) => {
+    if (authStore.member?.role === 'MEMBER') {
+      return
+    }
+    const reuslt = await useAlert.confirm(`是否要將${data.userName}從這張單移除分紅?`)
+    if (reuslt.isConfirmed) {
+      showPeopleList.value = false
+      deleteAttendanceByLeader(data.memberId)
+    }
+  }
+  const deleteAttendanceByLeader = async (userId: number) => {
+    try {
+      const res = await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketCode: selectPeopleItem.value?.treasureCode,
+          userId: userId,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   const handleStatus = (status:TreasureStatus) :string =>{
     if (status == 'BIDDING'){
@@ -680,6 +564,7 @@ export function useAuction() {
     handleUpdateRemark,
     selectedTreasure,
     submitAssign,
+    handlePeopleClick,
     showAssignModal,
     selectedMemberId,
     formatTimestamp,
@@ -694,7 +579,6 @@ export function useAuction() {
     auctions,
     formatTime,
     showModal,
-    handlePersonClick,
     itemName,
     bossName,
     basePrice,
@@ -711,9 +595,6 @@ export function useAuction() {
     addTreasure,
     showAddBossDialog,
     addBossName,
-    addBoss,
-    openAddBossDialog,
-    createTicket,
-    handleJoinItem,
+    openAddBossDialog
   }
 }

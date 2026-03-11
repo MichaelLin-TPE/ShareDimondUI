@@ -11,6 +11,8 @@ export type EventRole =
   | 'COMPLETE_SHARE'
   | 'JOIN_SHARE'
   | 'CREATE_ITEM'
+  |'UPDATE_REMARK'
+  |'UPDATE_CLAN_BALANCE'
 
 // ===== 顯示用中文名稱 =====
 export const roleTextMap: Record<EventRole, string> = {
@@ -21,6 +23,8 @@ export const roleTextMap: Record<EventRole, string> = {
   COMPLETE_SHARE: '分配完成',
   JOIN_SHARE: '加入分寶',
   CREATE_ITEM: '建立戰利品',
+  UPDATE_REMARK: '更新備註',
+  UPDATE_CLAN_BALANCE:'調整公積金',
 }
 
 // ===== API 回傳結構 =====
@@ -56,8 +60,6 @@ export function useAuction() {
       },
     })
 
-
-
     const data = await res.json()
     if (!res.ok) {
       useAlert.error(data.message)
@@ -71,9 +73,49 @@ export function useAuction() {
     getShareHistory()
   })
 
+  // 👈 新增：當前選中的狀態 (null 代表全部)
+  const selectedStatus = ref<string | null>(null)
+
+  const sortedAuctions = computed(() => {
+    return [...auctions.value].sort((a, b) => {
+      return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+    })
+  })
+
+  // 1. 搜尋文字與狀態的響應式變數
+  const searchQuery = ref('')
+
+  // 2. 核心過濾邏輯：同時處理狀態與全域文字搜尋
+  const filteredAuctions = computed(() => {
+    return [...auctions.value]
+      .filter((item) => {
+        // A. 狀態檢查：若沒選狀態則 pass，有選則必須符合
+        const matchStatus = !selectedStatus.value || item.role === selectedStatus.value
+
+        // B. 文字檢查：若沒輸入則 pass，有輸入則檢查 eventContent 是否包含該字串
+        const matchText =
+          !searchQuery.value ||
+          item.eventContent.toLowerCase().includes(searchQuery.value.toLowerCase())
+
+        return matchStatus && matchText
+      })
+      .sort((a, b) => {
+        return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      })
+  })
+
+  const toggleStatus = (status: string) => {
+    selectedStatus.value = selectedStatus.value === status ? null : status
+  }
+
   return {
+    searchQuery,
+    selectedStatus,
+    toggleStatus,
+    filteredAuctions,
     auctions,
     roleTextMap,
     formatEventTime,
+    sortedAuctions,
   }
 }

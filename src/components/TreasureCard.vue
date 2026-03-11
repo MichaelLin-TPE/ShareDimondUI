@@ -15,18 +15,18 @@ const {
   openTicket,
   handlePeopleCount,
   showPeopleList,
-  selectPeopleItem,
+  handleUpdateRemark,
   openAddTreasureDialog,
   handleDeleteItem,
   showAddTreasureDialog,
   addItemName,
+  handlePersonClick,
   loading,
   error,
   addTreasure,
   showAddBossDialog,
   handleJoinItem,
   balance,
-  formatPrice,
   formatTimestamp,
   selectedCurrency,
   selectedType,
@@ -55,6 +55,13 @@ const {
           >
             撤單
           </button>
+          <button
+            class="remark-ticket"
+            v-show="item.showDeleteTicket"
+            @click="handleUpdateRemark(item)"
+          >
+            備註
+          </button>
           <div class="item-name gold">{{ item.itemName }}</div>
 
           <div class="price">首領：{{ item.bossName }}</div>
@@ -63,12 +70,8 @@ const {
           <div class="price">價格：{{ Number(item.baseAmount).toLocaleString() }}</div>
           <div class="price">單子種類：{{ item.treasureType }}</div>
           <div class="price">備註：{{ item.remark }}</div>
-          <button
-            class="submit-btn"
-            @click="handleJoinItem(item)"
-            :disabled="item.joinButtonDisable"
-          >
-            <span v-if="item.joinButtonDisable">已參與此次分紅</span>
+          <button class="submit-btn" @click="handleJoinItem(item)">
+            <span v-if="item.joinButtonDisable">已參予,再次點我撤銷</span>
             <span v-else>我有參與+1</span>
           </button>
 
@@ -88,7 +91,12 @@ const {
             <h2 class="boss-title">參與名單</h2>
 
             <ul class="people-list">
-              <li v-for="(data, index) in getJoinList()" :key="index" class="person-item">
+              <li
+                v-for="(data, index) in getJoinList()"
+                :key="index"
+                class="person-item"
+                @click="handlePersonClick(data)"
+              >
                 <div class="person-info">
                   <span class="person-name">👤 {{ data.userName }}</span>
                   <span class="join-time">{{ formatTimestamp(data.joinTime) }}</span>
@@ -662,6 +670,33 @@ span {
   transition: all 0.3s ease;
   cursor: pointer;
 }
+.remark-ticket:active {
+  transform: translateY(1px);
+}
+.remark-ticket:hover {
+  border-color: #00d4ff;
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+  transform: translateY(-1px);
+}
+.remark-ticket {
+  position: absolute;
+  top: 0px;
+  right: 60px;
+  width: 45px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #00d4ff;
+  background: linear-gradient(145deg, #12141d, #1a1f2e);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  z-index: 10;
+}
+
 .delete-ticket:hover,
 .open-ticket:hover,
 .add-boss:hover,
@@ -796,5 +831,61 @@ span {
   color: #0b0f1a;
   padding: 10px;
   border-radius: 8px;
+}
+</style>
+<style>
+/* 注意：這裡不要加 scoped */
+
+/* 強制讓 SweetAlert2 內容垂直排列 */
+.custom-swal-actions {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 12px !important;
+  margin-top: 20px !important;
+}
+
+/* 強制按鈕與輸入框寬度一致 (90%) */
+.custom-swal-confirm,
+.custom-swal-cancel,
+.custom-swal-input {
+  width: 90% !important;
+  max-width: 350px !important; /* 限制最大寬度防止太醜 */
+  margin: 5px auto !important;
+  box-sizing: border-box !important;
+}
+
+/* 按鈕高度與圓角 */
+.custom-swal-confirm,
+.custom-swal-cancel {
+  height: 48px !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  font-weight: bold !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* 送出按鈕顏色 (套用你的藍紫漸層) */
+.custom-swal-confirm {
+  background: linear-gradient(135deg, #6366f1, #a855f7) !important;
+  color: white !important;
+}
+
+/* 取消按鈕顏色 */
+.custom-swal-cancel {
+  background: #444 !important;
+  color: white !important;
+}
+
+/* 輸入框深色背景 */
+.custom-swal-input {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  height: 45px !important;
 }
 </style>
