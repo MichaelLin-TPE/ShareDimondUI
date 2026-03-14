@@ -22,6 +22,7 @@ export function useAuction() {
   const openAddBossDialog = () => {
     showAddBossDialog.value = true
   }
+  const inputPrice = ref(0)
   const showPeopleList = ref(false)
   const selectPeopleItem = ref<Treasure>()
   const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
@@ -687,6 +688,7 @@ export function useAuction() {
     showPeopleList,
     selectPeopleItem,
     getJoinList,
+    inputPrice,
     canSubmit,
     handleReduce,
     handlePlus,

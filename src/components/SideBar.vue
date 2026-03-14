@@ -38,6 +38,8 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/allMemberBalance')
   } else if (item.label == '🚪 成員管理') {
     router.replace('/clan/kickMemberPage')
+  } else if (item.label == '💰 個人掛賣區'){
+    router.replace('/clan/marketPlace')
   }
 }
 

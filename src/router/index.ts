@@ -16,6 +16,7 @@ import ApprovalPage from '@/views/ApprovalPage.vue'
 import ClanSettingsPage from '@/views/ClanSettingsPage.vue'
 import AllMemberBalance from '@/components/AllMemberBalance.vue'
 import KickMemberPage from '@/components/KickMemberPage.vue'
+import MarketPlace from '@/components/MarketPlace.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -116,6 +117,10 @@ const router = createRouter({
           path: 'kickMemberPage',
           component: KickMemberPage,
         },
+        {
+          path:'marketPlace',
+          component:MarketPlace
+        }
       ],
     },
     // 之後登入成功再打開

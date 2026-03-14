@@ -6,14 +6,13 @@ const {
   formatTime,
   handleStatus,
   handlePersonClick,
-  handlePlus,
   handleSubmit,
   handleUpdateRemark,
   handleDeleteItem,
-  handleReduce,
   canSubmit,
   // 新增以下解構
   showPeopleList,
+  inputPrice,
   getJoinList,
   formatTimestamp,
   handlePeopleCount,
@@ -68,9 +67,15 @@ const {
           </div>
           <div class="price">備註：{{ item.remark }}</div>
           <div v-if="item.treasureType !== 'RANDOM_BUYER'" class="bid-control">
-            <button class="reduce-button" @click="handleReduce(item)">-</button>
-            <span class="myBid">{{ item.biddingPrice }}</span>
-            <button class="plus-button" @click="handlePlus(item)">+</button>
+            <input
+              type="number"
+              id="base-price"
+              v-model.number="item.biddingPrice"
+              min="0"
+              required
+              class="text-input"
+              placeholder="請輸入你要競標的價格"
+            />
           </div>
 
           <button

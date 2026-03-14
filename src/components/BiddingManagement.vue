@@ -5,16 +5,15 @@ const {
   auctions,
   formatTime,
   handleStatus,
-  handlePlus,
   handleSubmit,
   handleUpdateRemark,
   handleDeleteItem,
-  handleReduce,
   canSubmit,
   // 新增以下解構
   showPeopleList,
   getJoinList,
   formatTimestamp,
+  handleSubmitFromWallet,
   handlePeopleClick,
   handlePeopleCount,
   submitAssign,
@@ -67,11 +66,30 @@ const {
             </template>
           </div>
           <div class="price">備註：{{ item.remark }}</div>
-          <div v-if="item.treasureType !== 'RANDOM_BUYER'" class="bid-control">
-            <button class="reduce-button" @click="handleReduce(item)">-</button>
-            <span class="myBid">{{ item.biddingPrice }}</span>
-            <button class="plus-button" @click="handlePlus(item)">+</button>
-          </div>
+
+          <button
+            v-if="item.canVerifyBiddingTicket && item.hasEnoughMoneyToBuy"
+            class="submit-btn"
+            :class="{
+              'btn-assign-gem': !item.isBidding && item.assignByLeader,
+              'btn-verify-gem-wallet':
+                !item.isBidding &&
+                !item.assignByLeader &&
+                item.canVerifyBiddingTicket &&
+                item.hasEnoughMoneyToBuy,
+            }"
+            :disabled="canSubmit(item)"
+            @click="handleSubmitFromWallet(item)"
+          >
+            <span v-if="item.isBidding">
+              <template v-if="item.treasureType === 'RANDOM_BUYER'">我要標此物品</template>
+              <template v-else>我要出價</template>
+            </span>
+
+            <span v-else-if="item.disableSubmitButton">結束競標</span>
+            <span v-else-if="item.assignByLeader">請選擇得標者</span>
+            <span v-else-if="item.hasEnoughMoneyToBuy">可直接從得標者帳戶扣款,可派發獎金</span>
+          </button>
 
           <button
             class="submit-btn"
@@ -90,7 +108,7 @@ const {
 
             <span v-else-if="item.disableSubmitButton">結束競標</span>
             <span v-else-if="item.assignByLeader">請選擇得標者</span>
-            <span v-else-if="item.canVerifyBiddingTicket">已拿到帳款,可派發獎金</span>
+            <span v-else-if="item.canVerifyBiddingTicket">跟得標者拿錢並且派發獎金</span>
           </button>
 
           <div class="meta" @click="handlePeopleCount(item)">
@@ -109,7 +127,8 @@ const {
             v-for="(data, index) in getJoinList()"
             :key="index"
             class="person-item"
-            @click="handlePeopleClick(data)">
+            @click="handlePeopleClick(data)"
+          >
             <div class="person-info">
               <span class="person-name">👤 {{ data.userName }}</span>
               <span class="join-time">{{ formatTimestamp(data.joinTime) }}</span>
@@ -403,6 +422,13 @@ const {
 
 /* 狀態：請選擇得標者 (日落橘漸層 - 代表動作提醒) */
 /* 狀態：請選擇得標者 (寶石紅漸層) */
+.submit-btn.btn-verify-gem-wallet {
+  /* 翡翠森林綠 (Emerald Forest) */
+  background: linear-gradient(135deg, #065f46, #059669) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(5, 150, 105, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
 .submit-btn.btn-assign-gem {
   background: linear-gradient(135deg, #9f1239, #be123c) !important;
   color: #ffffff !important;

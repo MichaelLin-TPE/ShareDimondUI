@@ -138,6 +138,7 @@ export function useAuction() {
 
   const submitTreasureCod = ref('')
   const submitBiddingPrice= ref(0)
+  const submitConfirmType = ref(0)
   const selectedTreasure = ref<Treasure | null>(null)
   const showAssignModal = ref(false)
   const selectedMemberId = ref<string | null>(null)
@@ -175,9 +176,34 @@ export function useAuction() {
     }
   }
 
+  const handleSubmitFromWallet = async (item: Treasure) => {
+    submitTreasureCod.value = item.treasureCode
+    submitBiddingPrice.value = item.biddingPrice
+    submitConfirmType.value = 1
+    selectedTreasure.value = item
+    if (item.assignByLeader && item.status == 'WAIT_PAY') {
+      showBiddingList()
+      return
+    }
+    if (!item.isBidding && item.canVerifyBiddingTicket) {
+      const resulf = await useAlert.confirm('請確認是否收到帳款?')
+      if (resulf.isConfirmed) {
+        confirmTicket()
+      }
+      return
+    }
+    const result = await useAlert.confirm('你真的要標嗎???')
+    // SweetAlert2 的回傳物件會包含 isConfirmed
+    if (result.isConfirmed) {
+      // 執行您的 SQL 邏輯或 API 呼叫
+      submitBidding()
+    }
+  }
+
   const handleSubmit = async (item:Treasure) =>{
     submitTreasureCod.value = item.treasureCode
     submitBiddingPrice.value = item.biddingPrice
+    submitConfirmType.value = 2
     selectedTreasure.value = item
     if (item.assignByLeader && item.status == 'WAIT_PAY') {
       showBiddingList()
@@ -209,7 +235,8 @@ export function useAuction() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ticketCode: submitTreasureCod.value
+          ticketCode: submitTreasureCod.value,
+          confirmType: submitConfirmType.value,
         }),
       })
       const data = await res.json();
@@ -329,7 +356,7 @@ export function useAuction() {
 
     biddingName: string
 
-    remark:string
+    remark: string
 
     currentPrice: number
 
@@ -373,6 +400,7 @@ export function useAuction() {
 
     canVerifyBiddingTicket: boolean
 
+    hasEnoughMoneyToBuy: boolean
     assignByLeader: boolean
 
     isBidding: boolean
@@ -561,6 +589,7 @@ export function useAuction() {
 
 
   return {
+    handleSubmitFromWallet,
     handleUpdateRemark,
     selectedTreasure,
     submitAssign,
