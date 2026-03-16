@@ -89,7 +89,8 @@ const {
             @click="handleSubmit(item)"
           >
             <span v-if="item.isBidding">
-              <template v-if="item.treasureType === 'RANDOM_BUYER'">我要標此物品</template>
+              <template v-if="!item.canBid">沒有參與，暫時無法競標</template>
+              <template v-else-if="item.treasureType === 'RANDOM_BUYER'">我要標此物品</template>
               <template v-else>我要出價</template>
             </span>
 

@@ -488,6 +488,8 @@ export function useAuction() {
 
     isBidding: boolean
 
+    canBid:boolean
+
     biddingMemberList: BiddingMember[]
 
     biddingMemberContent: string
@@ -594,12 +596,14 @@ export function useAuction() {
     timer = window.setInterval(() => {
       const now = new Date().getTime()
       auctions.value.forEach((item) => {
-        const expire = new Date(item.expireTime).getTime()
+        // ✅ 唯一需要修改的地方：加上 '+08:00'
+        // 告訴所有國家的瀏覽器：「這是台灣時間！」
+        const expire = new Date(item.expireTime + '+08:00').getTime()
 
         const diff = Math.max(0, Math.floor((expire - now) / 1000))
         item.remainSeconds = diff
       })
-    })
+    }, 1000) // 小提醒：你的 setInterval 好像漏寫了 1000 (毫秒)
   }
 
   const formatTime = (seconds: number): string => {
@@ -626,9 +630,12 @@ export function useAuction() {
 
   const canSubmit = computed(() => {
     return (item: Treasure) => {
-      if (!item.isBidding && !item.canVerifyBiddingTicket){
+      if (!item.canBid){
         return true
       }
+        if (!item.isBidding && !item.canVerifyBiddingTicket) {
+          return true
+        }
       if (item.canVerifyBiddingTicket){
         return false
       }
