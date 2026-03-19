@@ -69,6 +69,44 @@
     </div>
 
     <div class="management-card p-8">
+      <div class="header-section" style="margin-bottom: 20px">
+        <h3 class="title" style="font-size: 20px">💱 幣別與匯率設置</h3>
+        <p class="subtitle">設定系統轉換計算用的基準幣別與預設比值</p>
+      </div>
+
+      <div class="settings-grid">
+        <div class="setting-item">
+          <label class="setting-label">基準幣別</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              v-model="settings.baseCurrency"
+              class="setting-input"
+              placeholder="例如: 元寶"
+            />
+            <span class="unit-tag">幣別</span>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <label class="setting-label">基準比值</label>
+          <div class="input-wrapper">
+            <input
+              type="number"
+              v-model="settings.exchangeRate"
+              class="setting-input"
+              placeholder="例如: 330"
+            />
+            <span class="unit-tag">比值</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-actions mt-8">
+        <button class="save-btn" @click="handleSaveRate">更新匯率設置</button>
+      </div>
+    </div>
+    <div class="management-card p-8">
       <div class="settings-grid">
         <div class="form-group">
           <label>選擇幣種</label>
@@ -129,7 +167,8 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/clanSetting.ts'
 
-const { handleSave, settings, balance, selectedCurrency, handleUpdateBalance } = useAuction()
+const { handleSave, settings, balance, selectedCurrency, handleUpdateBalance, handleSaveRate } =
+  useAuction()
 </script>
 
 <style scoped>

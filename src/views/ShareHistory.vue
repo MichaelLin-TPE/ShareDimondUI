@@ -78,6 +78,12 @@ const {
           @click="toggleStatus('UPDATE_CLAN_BALANCE')"
           >血盟餘額</span
         >
+        <span
+          class="status-tag tag-share-balance"
+          :class="{ 'is-active': selectedStatus === 'SHARE_CLAN_BALANCE' }"
+          @click="toggleStatus('SHARE_CLAN_BALANCE')"
+          >基金分配</span
+        >
       </div>
     </div>
 
@@ -186,6 +192,10 @@ const {
 } /* 灰色 */
 .tag-clan {
   background: #d35400;
+  color: #fff;
+} /* 磚紅 */
+.tag-share-balance {
+  background: #8c9191;
   color: #fff;
 } /* 磚紅 */
 

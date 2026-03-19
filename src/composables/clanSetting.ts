@@ -16,9 +16,36 @@ export function useAuction() {
     addRemark:'',
     minusRemark:'',
     addClanBalance:0,
-    minusClanBalance:0
+    minusClanBalance:0,
+    baseCurrency:'',
+    exchangeRate:0
   })
   const selectedCurrency = ref('')
+
+  const handleSaveRate = async () => {
+    try {
+      const res = await fetch('https://api.gameshare-system.com/updateClanBaseCurrencyAndRate', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          baseCurrency: settings.value.baseCurrency,
+          exchangeRate: settings.value.exchangeRate,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
 
   const handleSave = async () => {
     try {
@@ -134,6 +161,8 @@ export function useAuction() {
     settings.value.fundPercentage = data.shareAmountPercent
     settings.value.auctionMinutes = data.biddingMins
     settings.value.participationMinutes = data.joinMins
+    settings.value.baseCurrency = data.baseCurrency
+    settings.value.exchangeRate = data.exchangeRate
   }
 
 
@@ -146,6 +175,7 @@ export function useAuction() {
     balance,
     authStore,
     handleSave,
+    handleSaveRate,
     settings,
   }
 }

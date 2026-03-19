@@ -13,6 +13,7 @@ export type EventRole =
   | 'CREATE_ITEM'
   |'UPDATE_REMARK'
   |'UPDATE_CLAN_BALANCE'
+  |'SHARE_CLAN_BALANCE'
 
 // ===== 顯示用中文名稱 =====
 export const roleTextMap: Record<EventRole, string> = {
@@ -25,6 +26,7 @@ export const roleTextMap: Record<EventRole, string> = {
   CREATE_ITEM: '建立戰利品',
   UPDATE_REMARK: '更新備註',
   UPDATE_CLAN_BALANCE:'調整公積金',
+  SHARE_CLAN_BALANCE:'基金分配'
 }
 
 // ===== API 回傳結構 =====

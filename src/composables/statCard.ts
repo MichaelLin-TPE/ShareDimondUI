@@ -46,6 +46,15 @@ export function useAuction() {
     bossName: string
     bossId: string
   }
+  function formatEventTime(iso: string): string {
+    const date = new Date(iso)
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    const h = String(date.getHours()).padStart(2, '0')
+    const min = String(date.getMinutes()).padStart(2, '0')
+    return `${y}/${m}/${d} ${h}:${min}`
+  }
 
 
   const handlePlus = (item: Treasure) => {
@@ -451,6 +460,8 @@ export function useAuction() {
 
     ticketOwerName: string
 
+    createDate:string
+
     /** 最後得標者 memberId（尚未得標時為 null） */
     buyerMemberId: number | null
 
@@ -721,6 +732,7 @@ export function useAuction() {
     showAddBossDialog,
     addBossName,
     addBoss,
+    formatEventTime,
     openAddBossDialog,
     createTicket,
     handleJoinItem,
