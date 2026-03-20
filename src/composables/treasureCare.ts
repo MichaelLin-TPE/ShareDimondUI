@@ -31,6 +31,7 @@ export function useAuction() {
   stompClient.connect({},(frame) => {
     console.log('Connected : '+frame)
     stompClient.subscribe('/topic/treasure/' + authStore?.member?.clanId, () => {
+
       fetchOngoingTreasures()
     })
 
@@ -326,6 +327,12 @@ export function useAuction() {
 
   const auctions = ref<Treasure[]>([])
 
+  interface TreasureCurrency {
+    currency:string
+    amount:string
+  }
+
+
   interface TreasureAttendance{
     id:number
     treasureCode:string
@@ -348,7 +355,7 @@ export function useAuction() {
 
     /** 首領名稱 */
     bossName: string
-
+    treasureCurrencyList:TreasureCurrency[]
     /** 首領 ID */
     bossId: string
 

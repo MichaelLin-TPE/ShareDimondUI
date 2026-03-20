@@ -60,15 +60,17 @@ const {
               <span class="label">開單者</span>
               <span class="value">{{ item.ticketOwerName }}</span>
             </div>
-            <div class="info-row">
-              <span class="label">底價</span>
-              <span class="value">{{ item.lowestPrice }} {{ item.currency }}</span>
+            <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
+              <span class="label">{{ c.currency }}價格</span
+              ><span class="value gold">{{ Number(c.amount).toLocaleString() }}</span>
             </div>
-            <div class="info-row highlight">
-              <span class="label">目前最高價</span>
-              <span class="value-price">{{ item.currentPrice }} {{ item.currency }}</span>
+            <div v-if="item.biddingName != '尚未有得標者'" class="info-row highlight">
+              <span class="label">最終價格</span>
+              <span class="value-price"
+                >{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span
+              >
             </div>
-            <div class="info-row">
+            <div v-if="item.biddingName == null || item.biddingName.length == 0" class="info-row">
               <span class="label">競標名單</span>
               <span class="value-text">{{ item.biddingMemberContent || '無' }}</span>
             </div>

@@ -33,6 +33,7 @@ export function useAuction() {
   stompClient.connect({}, (frame) => {
     console.log('Connected : ' + frame)
     stompClient.subscribe('/topic/bidding/' + authStore?.member?.clanId, () => {
+      console.log('收到更新訊息 : /topic/bidding/' + authStore?.member?.clanId)
       fetchOngoingTreasures()
     })
   })
@@ -322,6 +323,11 @@ export function useAuction() {
 
   const auctions = ref<Treasure[]>([])
 
+  interface TreasureCurrency {
+    currency:string
+    amount:string
+  }
+
   interface TreasureAttendance {
     id: number
     treasureCode: string
@@ -366,6 +372,8 @@ export function useAuction() {
     ticketOwerMemberId: number
 
     ticketOwerName: string
+
+    treasureCurrencyList:TreasureCurrency[]
 
     /** 最後得標者 memberId（尚未得標時為 null） */
     buyerMemberId: number | null
@@ -445,7 +453,7 @@ export function useAuction() {
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status === 'BIDDING'
-        console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
+        // console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
         if (item.biddingName == null || item.biddingName == '') {
           item.biddingName = '尚未有得標者'
         }

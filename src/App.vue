@@ -59,6 +59,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
+
 /* ===== 新增：手機版遮罩樣式 ===== */
 .mobile-blocker {
   position: fixed;

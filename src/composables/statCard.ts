@@ -22,9 +22,12 @@ export function useAuction() {
   const openAddBossDialog = () => {
     showAddBossDialog.value = true
   }
+  const currentBuyItem = ref<Treasure>()
+  const selectedBuyCurrency = ref('')
   const inputPrice = ref(0)
   const showPeopleList = ref(false)
   const selectPeopleItem = ref<Treasure>()
+  const showCurrencyModal = ref(false)
   const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
   const stompClient = Stomp.over(socket)
   const handlePeopleCount = (item: Treasure) => {
@@ -34,6 +37,7 @@ export function useAuction() {
   stompClient.connect({}, (frame) => {
     console.log('Connected : ' + frame)
     stompClient.subscribe('/topic/bidding/' + authStore?.member?.clanId, () => {
+      console.log('收到更新訊息 : /topic/bidding/' + authStore?.member?.clanId)
       fetchOngoingTreasures()
     })
   })
@@ -55,7 +59,6 @@ export function useAuction() {
     const min = String(date.getMinutes()).padStart(2, '0')
     return `${y}/${m}/${d} ${h}:${min}`
   }
-
 
   const handlePlus = (item: Treasure) => {
     // 如果還沒出過價，從底價開始；否則在當前基礎上 + 50
@@ -134,22 +137,21 @@ export function useAuction() {
   }
   const handleDeleteItem = async (item: Treasure) => {
     submitDeleteTicketCode.value = item.treasureCode
-    const result =  await useAlert.confirm("請確認是否要刪除此單?")
-    if (result.isConfirmed){
+    const result = await useAlert.confirm('請確認是否要刪除此單?')
+    if (result.isConfirmed) {
       deleteTreasure()
     }
-
   }
 
   const handleUpdateRemark = async (item: Treasure) => {
     submitDeleteTicketCode.value = item.treasureCode
-    const result = await useAlert.inputDialog('請更新備註','更新備註')
+    const result = await useAlert.inputDialog('請更新備註', '更新備註')
     if (result) {
       updateRemark(result)
     }
   }
 
-  const updateRemark = async (value:string) =>{
+  const updateRemark = async (value: string) => {
     try {
       const res = await fetch('https://api.gameshare-system.com/update_remark', {
         method: 'POST',
@@ -163,7 +165,7 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
-      if (!res.ok){
+      if (!res.ok) {
         useAlert.error(data.message)
         return
       }
@@ -173,7 +175,6 @@ export function useAuction() {
       console.log(e)
     }
   }
-
 
   const deleteTreasure = async () => {
     try {
@@ -257,7 +258,7 @@ export function useAuction() {
     }
   }
   const submitTreasureCod = ref('')
-  const submitBiddingPrice= ref(0)
+  const submitBiddingPrice = ref(0)
   const selectedTreasure = ref<Treasure | null>(null)
   const showAssignModal = ref(false)
   const selectedMemberId = ref<string | null>(null)
@@ -295,7 +296,7 @@ export function useAuction() {
     }
   }
 
-  const handleSubmit = async (item:Treasure) =>{
+  const handleSubmit = async (item: Treasure) => {
     submitTreasureCod.value = item.treasureCode
     submitBiddingPrice.value = item.biddingPrice
     selectedTreasure.value = item
@@ -303,24 +304,49 @@ export function useAuction() {
       showBiddingList()
       return
     }
-    if (!item.isBidding && item.canVerifyBiddingTicket){
-      const resulf = await useAlert.confirm("請確認是否收到帳款?")
-      if (resulf.isConfirmed){
+    if (!item.isBidding && item.canVerifyBiddingTicket) {
+      const resulf = await useAlert.confirm('請確認是否收到帳款?')
+      if (resulf.isConfirmed) {
         confirmTicket()
       }
       return
     }
-    const result = await useAlert.confirm('你真的要標嗎???')
-    // SweetAlert2 的回傳物件會包含 isConfirmed
-    if (result.isConfirmed) {
-      // 執行您的 SQL 邏輯或 API 呼叫
-      submitBidding()
+    if (item.treasureType === 'BID') {
+      const result = await useAlert.confirm('你真的要出價嗎?')
+      if (result.isConfirmed) {
+        submitBidding(item.currency)
+      }
+    } else {
+      showCurrencyModal.value = true
     }
-
-
   }
 
-  const confirmTicket = async () =>{
+  // 如果你的 composable 還沒有 openCurrencyModal，可以在這補上，或者寫在 composable 裡
+  const openCurrencyModal = (item: Treasure) => {
+    currentBuyItem.value = item
+    showCurrencyModal.value = true
+  }
+
+  // 點擊確認購買
+  const handleConfirmBuy = () => {
+    if (!selectedBuyCurrency.value || !currentBuyItem.value) return
+    confirmBuy(currentBuyItem.value, selectedBuyCurrency.value)
+    showCurrencyModal.value = false
+  }
+
+  const confirmBuy = (item: Treasure, currency:string) => {
+    console.log('準備購買道具:', item.itemName)
+    console.log('使用的幣別:', currency)
+    submitTreasureCod.value = item.treasureCode
+    submitBiddingPrice.value = item.biddingPrice
+    submitBidding(currency)
+    // 👉 這裡可以把資料傳回給 useAuction 的 handleJoinItem 或是直接打後端 API
+    // handleJoinItem(currentBuyItem.value, selectedBuyCurrency.value)
+
+    showCurrencyModal.value = false // 關閉彈窗
+  }
+
+  const confirmTicket = async () => {
     try {
       const res = await fetch('https://api.gameshare-system.com/confirm-ticket', {
         method: 'POST',
@@ -329,27 +355,25 @@ export function useAuction() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ticketCode: submitTreasureCod.value
+          ticketCode: submitTreasureCod.value,
         }),
       })
-      const data = await res.json();
-      if (!res.ok){
+      const data = await res.json()
+      if (!res.ok) {
         useAlert.error(data.message)
         return
       }
       useAlert.success(data.message)
-      if (res.ok){
+      if (res.ok) {
         fetchOngoingTreasures()
         return
       }
-
-    }catch (e) {
+    } catch (e) {
       console.log(e)
     }
   }
 
-
-  const submitBidding = async () =>{
+  const submitBidding = async (currency: string) => {
     try {
       const res = await fetch('https://api.gameshare-system.com/add-bidding', {
         method: 'POST',
@@ -359,11 +383,12 @@ export function useAuction() {
         },
         body: JSON.stringify({
           treasureCode: submitTreasureCod.value,
-          biddingPrice:submitBiddingPrice.value
+          biddingPrice: submitBiddingPrice.value,
+          currency: currency,
         }),
       })
 
-      if (!res.ok){
+      if (!res.ok) {
         const data = await res.json()
         useAlert.error(data.message)
         return
@@ -371,11 +396,10 @@ export function useAuction() {
       const data = await res.json()
       useAlert.success(data.message)
       fetchOngoingTreasures()
-    }catch (e) {
+    } catch (e) {
       console.log(e)
     }
   }
-
 
   const addTreasure = async () => {
     if (!addItemName.value) {
@@ -415,6 +439,11 @@ export function useAuction() {
 
   const auctions = ref<Treasure[]>([])
 
+  interface TreasureCurrency {
+    amount: string
+    currency: string
+  }
+
   interface TreasureAttendance {
     id: number
     treasureCode: string
@@ -449,7 +478,7 @@ export function useAuction() {
 
     biddingName: string
 
-    remark:string
+    remark: string
 
     currentPrice: number
 
@@ -460,7 +489,9 @@ export function useAuction() {
 
     ticketOwerName: string
 
-    createDate:string
+    treasureCurrencyList: TreasureCurrency[]
+
+    createDate: string
 
     /** 最後得標者 memberId（尚未得標時為 null） */
     buyerMemberId: number | null
@@ -499,15 +530,15 @@ export function useAuction() {
 
     isBidding: boolean
 
-    canBid:boolean
+    canBid: boolean
 
     biddingMemberList: BiddingMember[]
 
     biddingMemberContent: string
   }
 
-  interface BiddingMember{
-    userName:string
+  interface BiddingMember {
+    userName: string
   }
 
   type TreasureStatus =
@@ -555,7 +586,6 @@ export function useAuction() {
     }
   }
 
-
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
     try {
@@ -578,13 +608,18 @@ export function useAuction() {
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status === 'BIDDING'
         console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
-        if (item.biddingName == null || item.biddingName == ''){
+        if (item.biddingName == null || item.biddingName == '') {
           item.biddingName = '尚未有得標者'
         }
-        if (item.biddingMemberList != null && item.biddingMemberList.length != 0){
+        if (item.biddingMemberList != null && item.biddingMemberList.length != 0) {
           item.biddingMemberContent = item.biddingMemberList.map((data) => data.userName).join(',')
         }
-
+        if (item.treasureType === 'BID') {
+          // filter 會回傳一個新陣列，裡面只包含「條件為 true」的元素
+          item.treasureCurrencyList = item.treasureCurrencyList.filter(
+            (currency) => currency.currency == item.currency,
+          )
+        }
       })
       startCountdown()
     } catch (e) {
@@ -598,8 +633,6 @@ export function useAuction() {
   })
 
   let timer: number | null = null // 用來存放計時器
-
-
 
   const startCountdown = () => {
     if (timer) clearInterval(timer)
@@ -624,16 +657,14 @@ export function useAuction() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-
-
-  const handleStatus = (status:TreasureStatus) :string =>{
-    if (status == 'BIDDING'){
+  const handleStatus = (status: TreasureStatus): string => {
+    if (status == 'BIDDING') {
       return '競標中'
     }
     if (status == 'WAIT_PAY') {
       return '等待幹部審核'
     }
-    if (status == 'BID_FINISHED'){
+    if (status == 'BID_FINISHED') {
       return '競標結束,等候幹部審核'
     }
     return '競標中'
@@ -641,13 +672,13 @@ export function useAuction() {
 
   const canSubmit = computed(() => {
     return (item: Treasure) => {
-      if (!item.canBid){
+      if (!item.canBid) {
         return true
       }
-        if (!item.isBidding && !item.canVerifyBiddingTicket) {
-          return true
-        }
-      if (item.canVerifyBiddingTicket){
+      if (!item.isBidding && !item.canVerifyBiddingTicket) {
+        return true
+      }
+      if (item.canVerifyBiddingTicket) {
         return false
       }
 
@@ -694,7 +725,6 @@ export function useAuction() {
     return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`
   }
 
-
   return {
     handleUpdateRemark,
     selectedTreasure,
@@ -714,6 +744,7 @@ export function useAuction() {
     auctions,
     formatTime,
     showModal,
+    selectedBuyCurrency,
     handlePersonClick,
     itemName,
     bossName,
@@ -723,14 +754,19 @@ export function useAuction() {
     itemOptions,
     bossOptions,
     handleSubmit,
+    showCurrencyModal,
     handleDeleteItem,
     openAddTreasureDialog,
     showAddTreasureDialog,
     addItemName,
     loading,
+    confirmBuy,
+    openCurrencyModal,
     addTreasure,
     showAddBossDialog,
+    currentBuyItem,
     addBossName,
+    handleConfirmBuy,
     addBoss,
     formatEventTime,
     openAddBossDialog,

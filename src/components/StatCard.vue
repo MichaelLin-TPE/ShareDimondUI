@@ -14,11 +14,16 @@ const {
   getJoinList,
   formatTimestamp,
   handlePeopleCount,
+  selectedBuyCurrency,
   submitAssign,
   showAssignModal,
   selectedMemberId,
   selectedTreasure,
+  showCurrencyModal,
   formatEventTime,
+  handleConfirmBuy,
+  openCurrencyModal,
+  currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
 } = useAuction()
 </script>
 
@@ -60,19 +65,19 @@ const {
           <div class="info-section">
             <div class="info-row">
               <span class="label">開單時間</span>
-              <span class="value">{{ formatEventTime(item.createDate)}}</span>
+              <span class="value">{{ formatEventTime(item.createDate) }}</span>
             </div>
             <div class="info-row">
               <span class="label">開單者</span>
               <span class="value">{{ item.ticketOwerName }}</span>
             </div>
-            <div class="info-row">
-              <span class="label">底價</span>
-              <span class="value">{{ item.lowestPrice.toLocaleString() }} {{ item.currency }}</span>
+            <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
+              <span class="label">{{ c.currency }}價格</span>
+              <span class="value gold">{{ Number(c.amount).toLocaleString() }}</span>
             </div>
-            <div class="info-row highlight">
+            <div v-if="item.treasureType === 'BID'" class="info-row highlight">
               <span class="label">目前最高價</span>
-              <span class="value-price">{{ item.currentPrice }} {{ item.currency }}</span>
+              <span class="value-price">{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span>
             </div>
           </div>
 
@@ -81,10 +86,6 @@ const {
               <div class="info-row">
                 <span class="label">競標名單</span>
                 <span class="value-text">{{ item.biddingMemberContent || '無' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">得標者</span>
-                <span class="value gold">{{ item.biddingName || '計算中...' }}</span>
               </div>
             </template>
             <template v-else>
@@ -117,7 +118,11 @@ const {
                 !item.isBidding && !item.assignByLeader && item.canVerifyBiddingTicket,
             }"
             :disabled="canSubmit(item)"
-            @click="handleSubmit(item)"
+            @click="
+              item.treasureType === 'RANDOM_BUYER' && item.isBidding && item.canBid
+                ? openCurrencyModal(item)
+                : handleSubmit(item)
+            "
           >
             <span v-if="item.isBidding">
               <template v-if="!item.canBid">尚未參與,無法競標</template>
@@ -138,6 +143,41 @@ const {
       </div>
     </div>
 
+    <div v-if="showCurrencyModal" class="modal-overlay" @click.self="showCurrencyModal = false">
+      <div class="modal-card mini">
+        <div class="modal-header">
+          <h2 class="modal-title">請選擇購買幣別</h2>
+        </div>
+
+        <div class="form-group" style="margin-top: 20px">
+          <div class="radio-card-group">
+            <label
+              v-for="c in currentBuyItem?.treasureCurrencyList"
+              :key="c.currency"
+              class="radio-card"
+            >
+              <input
+                type="radio"
+                v-model="selectedBuyCurrency"
+                :value="c.currency"
+                name="buyCurrency"
+              />
+              <div class="radio-content" style="padding: 12px">
+                <div style="font-size: 1rem; margin-bottom: 4px">{{ c.currency }}</div>
+                <div class="gold" style="font-weight: bold">
+                  {{ Number(c.amount).toLocaleString() }}
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-submit" @click="handleConfirmBuy">我要標!</button>
+          <button class="btn-cancel" @click="showCurrencyModal = false">取消</button>
+        </div>
+      </div>
+    </div>
     <div v-if="showPeopleList" class="show-people-list" @click.self="showPeopleList = false">
       <div class="boss-container">
         <h2 class="boss-title">參與名單</h2>
@@ -374,7 +414,7 @@ const {
   color: #6366f1;
 }
 
-/* Modal 樣式保持原本邏輯但微調 */
+/* Modal 共用樣式 */
 .show-people-list,
 .modal-overlay {
   position: fixed;
@@ -390,6 +430,78 @@ const {
   z-index: 1000;
 }
 
+.modal-card {
+  background: #1a1f2e;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 24px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.modal-title {
+  font-size: 1.4rem;
+  color: #f8fafc;
+  margin-bottom: 4px;
+}
+
+/* 👇 補齊你原本寫在 TreasureCard 裡的 Radio 樣式 👇 */
+.radio-card-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.radio-card {
+  cursor: pointer;
+  flex: 1;
+}
+.radio-card input {
+  display: none;
+}
+.radio-content {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  text-align: center;
+  color: #94a3b8;
+  transition: all 0.2s;
+}
+.radio-card input:checked + .radio-content {
+  border-color: #b46eff;
+  background: rgba(180, 110, 255, 0.1);
+  color: #fff;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+.btn-submit {
+  flex: 2;
+  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #1e293b;
+}
+.btn-cancel {
+  flex: 1;
+  background: #334155;
+  color: #f1f5f9;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
 .close-btn {
   width: 100%;
   height: 40px;
@@ -397,39 +509,32 @@ const {
 
 .boss-container {
   background: #1e1e2e;
-  height: 60%; /* 保持你原本要求的 60% 高度 */
+  height: 60%;
   width: 90%;
   max-width: 400px;
   border-radius: 12px;
   padding: 20px;
   border: 1px solid #334155;
-
-  /* 新增：使用 flex 佈局，讓內部組件可以自動撐開與收縮 */
   display: flex;
   flex-direction: column;
 }
 
-/* 2. 針對標題固定位置 */
 .boss-title {
   text-align: center;
   color: #fff;
   margin-bottom: 20px;
-  flex-shrink: 0; /* 防止標題被壓縮 */
+  flex-shrink: 0;
 }
 
-/* 3. 關鍵：針對名單區域設定滾動 */
 .people-list {
-  flex: 1; /* 佔據彈窗內扣除標題與按鈕後的剩餘所有空間 */
-  overflow-y: auto; /* 內容超過時顯示垂直滾動軸 */
+  flex: 1;
+  overflow-y: auto;
   margin-bottom: 15px;
-  padding-right: 8px; /* 預留空間給滾動軸，防止擋住文字 */
-
-  /* 優化滾動軸樣式（選配，讓它更有質感） */
+  padding-right: 8px;
   scrollbar-width: thin;
   scrollbar-color: #334155 transparent;
 }
 
-/* 針對 Chrome, Safari 的滾動軸優化 */
 .people-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -438,10 +543,9 @@ const {
   border-radius: 10px;
 }
 
-/* 4. 針對底部按鈕固定位置 */
 .close-btn,
 .modal-footer {
-  flex-shrink: 0; /* 防止按鈕被壓縮 */
+  flex-shrink: 0;
   margin-top: auto;
 }
 .person-item {

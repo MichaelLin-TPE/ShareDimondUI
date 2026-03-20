@@ -78,12 +78,9 @@ const {
             <div class="info-row">
               <span class="label">開單者</span><span class="value">{{ item.ticketOwerName }}</span>
             </div>
-            <div class="info-row">
-              <span class="label">幣別</span><span class="value">{{ item.currency }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">價格</span
-              ><span class="value gold">{{ Number(item.baseAmount).toLocaleString() }}</span>
+            <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
+              <span class="label">{{ c.currency }}價格</span
+              ><span class="value gold">{{ Number(c.amount).toLocaleString() }}</span>
             </div>
             <div class="info-row">
               <span class="label">種類</span><span class="value">{{ item.treasureType }}</span>
