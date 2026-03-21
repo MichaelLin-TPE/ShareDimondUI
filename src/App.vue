@@ -1,97 +1,40 @@
 <script setup lang="ts">
 import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useAuthInit } from '@/composables/useAuthInit.ts'
 
 const route = useRoute()
 
-// 建立一個響應式變數來記錄是否為行動裝置
-const isMobile = ref(false)
-
 onMounted(() => {
   useAuthInit()
-
-  // 判斷是否為非 PC 瀏覽器 (行動裝置)
-  const userAgentInfo = navigator.userAgent.toLowerCase()
-  const mobileAgents = ['android', 'iphone', 'symbianos', 'windows phone', 'ipad', 'ipod']
-  isMobile.value = mobileAgents.some((agent) => userAgentInfo.includes(agent))
-
-  // 如果是手機，跳出系統原生的警告彈窗
-  if (isMobile.value) {
-    alert('目前系統尚未支援手機瀏覽器，為確保功能正常運作，請改用 PC 瀏覽器！')
-  }
 })
 </script>
 
 <template>
-  <div v-if="isMobile" class="mobile-blocker">
-    <div class="blocker-content">
-      <h2>⚠️ 設備不支援</h2>
-      <p>目前 Diamond Core 系統尚未支援手機瀏覽器<br />請改用 PC 瀏覽器以獲得最佳體驗！</p>
-    </div>
+  <div v-if="route.meta.fullscreen" id="app" :class="{ fullscreen: route.meta.fullscreen }">
+    <RouterView />
   </div>
 
   <template v-else>
-    <div v-if="route.meta.fullscreen" id="app" :class="{ fullscreen: route.meta.fullscreen }">
-      <RouterView />
-    </div>
-
-    <template v-else>
-      <header>
-        <img
-          alt="Vue logo"
-          class="logo"
-          src="@/assets/share_diamond_logo.png"
-          width="200"
-          height="200"
-        />
-
-        <div class="wrapper">
-          <HelloWorld msg="Diamond Core" />
-        </div>
-      </header>
-      <div>
-        <RouterView />
+    <header>
+      <img
+        alt="Vue logo"
+        class="logo"
+        src="@/assets/share_diamond_logo.png"
+        width="200"
+        height="200"
+      />
+      <div class="wrapper">
+        <HelloWorld msg="Diamond Core" />
       </div>
-    </template>
+    </header>
+    <RouterView />
   </template>
 </template>
 
 <style scoped>
-
-/* ===== 新增：手機版遮罩樣式 ===== */
-.mobile-blocker {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
-  z-index: 9999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  text-align: center;
-}
-
-.blocker-content {
-  background: #222;
-  padding: 2rem 3rem;
-  border-radius: 12px;
-  border: 1px solid #444;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-}
-
-.blocker-content h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #ff4d4f; /* 警告用的紅色 */
-}
-/* ================================ */
-
-/* 以下為你原本的 CSS 保持不變 */
+/* 👇 這裡 100% 恢復你最初始的 CSS，保證不動到你原本的一般頁面排版 👇 */
 header {
   line-height: 1.5;
   max-height: 100vh;
@@ -148,9 +91,36 @@ nav a:first-of-type {
     text-align: left;
     margin-left: -1rem;
     font-size: 1rem;
-
     padding: 1rem 0;
     margin-top: 1rem;
+  }
+}
+</style>
+
+<style>
+/* 👇 登入頁專屬手機版優化：隱藏左側 Logo，完美置中登入卡片 👇 */
+@media (max-width: 768px) {
+  /* 1. 直接隱藏 App.vue 產生的左半部 Logo 與文字 */
+  header {
+    display: none !important;
+  }
+
+  /* 2. 強制讓 Vue 的最外層根目錄變成「彈性置中」 */
+  #app {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important; /* 垂直置中 */
+    align-items: center !important; /* 水平置中 */
+    min-height: 100vh !important; /* 撐滿全螢幕高度 */
+    padding: 20px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 3. 讓剩下的 RouterView (登入卡片) 釋放寬度並置中 */
+  #app > *:not(header) {
+    width: 100% !important;
+    max-width: 400px !important; /* 限制寬度，維持卡片的精緻比例 */
+    margin: 0 auto !important;
   }
 }
 </style>

@@ -77,7 +77,9 @@ const {
             </div>
             <div v-if="item.treasureType === 'BID'" class="info-row highlight">
               <span class="label">目前最高價</span>
-              <span class="value-price">{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span>
+              <span class="value-price"
+                >{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span
+              >
             </div>
           </div>
 
@@ -231,6 +233,9 @@ const {
 </template>
 
 <style scoped>
+
+
+
 /* 頁面基礎設定 */
 .whole_page {
   width: 100%;
@@ -555,7 +560,10 @@ const {
   margin-bottom: 8px;
   cursor: pointer;
 }
-
+.gold {
+  color: #f5c451;
+  font-weight: bold;
+}
 .person-item.is-selected {
   border: 1px solid #6366f1;
   background: rgba(99, 102, 241, 0.1);

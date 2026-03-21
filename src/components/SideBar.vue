@@ -124,6 +124,24 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* 1. 調整遮罩層的 z-index，確保它蓋住 dashboard，但又在選單之下 */
+.sidebar-overlay {
+  /* ... 原本的設定 ... */
+  z-index: 1040; /* 建議調高一點，確保能蓋住其他可能設定了 z-index 的卡片 */
+}
+
+/* 2. 調整側邊欄的 z-index */
+.sidebar {
+  /* ... 原本的設定 ... */
+  z-index: 1050; /* 確保選單在遮罩層之上 */
+}
+
+/* 3. 調整按鈕的 z-index */
+.toggle-btn {
+  /* ... 原本的設定 ... */
+  z-index: 1030; /* 按鈕在最底層，這樣抽屜滑出來時，三條線按鈕會被遮罩蓋住，視覺比較乾淨 */
+}
+
 /* 切換按鈕樣式 - 固定在左側 */
 .toggle-btn {
   position: fixed;

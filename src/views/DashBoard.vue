@@ -20,7 +20,7 @@ const balance = useBalanceStore()
 stompClient.connect({}, (frame) => {
   console.log('Connected : ' + frame)
   stompClient.subscribe('/topic/balance/' + authStore?.member?.clanId, () => {
-    console.log("收到更新balance")
+    console.log('收到更新balance')
     getBalance()
   })
 })
@@ -94,15 +94,17 @@ onMounted(getBalance)
 </template>
 
 <style scoped>
-
-h1{
-margin-top: 5px;
+h1 {
+  margin-top: 5px;
   margin-bottom: 15px;
+  /* 加上左邊距，用來閃避固定在左上角的 Menu 按鈕 (三條線) */
+  /* 因為那顆按鈕是 fixed 在 left: 15px，寬度 40px，所以標題退後 65px 是最剛好的 */
+  margin-left: 65px;
 }
 
 .dashboard {
   /* 修改這裡：原本是 24px，現在左邊多加 40px 給按鈕（共 64px） */
-  padding: 24px 24px 24px 80px;
+  padding: 24px 24px 24px 24px;
   color: #fff;
   transition: padding-left 0.4s ease; /* 增加平滑感 */
 }
@@ -213,34 +215,49 @@ margin-top: 5px;
   color: #f5c451;
 }
 
-/* 手機版適應：改為上下排列 */
+/* ==================================================
+   👇 這裡是幫你重新優化、合併過的手機版專屬體驗 👇
+   ================================================== */
 @media (max-width: 768px) {
-  .balance-dashboard-compact {
-    flex-direction: column;
-    gap: 10px;
+  /* 1. 釋放螢幕兩側被浪費的空白，讓卡片有更大空間展示 */
+  .dashboard {
+    padding: 16px 12px;
   }
 
+  /* 2. 標題與選單按鈕的間距微調 */
+  h1 {
+    font-size: 1.35rem;
+    margin-left: 50px;
+    margin-bottom: 16px;
+  }
+
+  /* 3. 將大區塊間的間距縮小，滑動時視覺更緊湊連貫 */
+  .stats {
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* 4. 餘額卡片改為垂直排列，不再硬擠在同一排 */
+  .balance-dashboard-compact {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* 5. 縮減餘額卡片內部的留白，適應小螢幕 */
   .balance-row {
-    padding: 10px 16px;
+    padding: 12px 16px;
   }
 
   .row-header {
-    width: 100px;
+    width: 100px; /* 留給左邊標題的寬度縮小，把空間讓給右邊的數字 */
   }
-}
 
-/* 手機版適應 */
-@media (max-width: 768px) {
-  .balance-dashboard {
-    flex-direction: column;
-    gap: 16px;
+  .balance-items-wrapper {
+    gap: 16px; /* 縮小天幣跟元寶數字之間的距離 */
   }
-}
 
-/* 手機版適應 */
-@media (max-width: 768px) {
-  .balance-section {
-    flex-direction: column;
+  .amount-value {
+    font-size: 1.05rem; /* 稍微縮小數字，防止破千萬時撐破卡片 */
   }
 }
 </style>
