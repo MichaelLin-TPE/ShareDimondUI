@@ -6,9 +6,9 @@ import { useAuthInit } from '@/composables/useAuthInit.ts'
 
 const route = useRoute()
 
-onMounted(() => {
-  useAuthInit()
-})
+// onMounted(() => {
+//   useAuthInit()
+// })
 </script>
 
 <template>

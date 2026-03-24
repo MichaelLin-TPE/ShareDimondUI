@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/statCard.ts'
+import { useAuthStore } from '@/stores/auth.ts'
 
 const {
   auctions,
@@ -14,12 +15,14 @@ const {
   getJoinList,
   formatTimestamp,
   handlePeopleCount,
+  authStore,
   selectedBuyCurrency,
   submitAssign,
   showAssignModal,
   selectedMemberId,
   selectedTreasure,
   showCurrencyModal,
+  handleStorageChange,
   formatEventTime,
   handleConfirmBuy,
   openCurrencyModal,
@@ -100,6 +103,23 @@ const {
               <span class="label">備註</span>
               <span class="value-remark">{{ item.remark || '無備註' }}</span>
             </div>
+            <div class="info-row">
+              <span class="label">確認存倉</span>
+              <div
+                v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
+                class="value-action"
+              >
+                <input
+                  type="checkbox"
+                  v-model="item.checkFromRepository"
+                  class="small-checkbox"
+                  @change="handleStorageChange(item)"
+                />
+              </div>
+              <span v-else class="value-remark">{{
+                item.checkFromRepository ? '確認存倉' : '尚未存倉'
+              }}</span>
+            </div>
           </div>
 
           <div v-if="item.treasureType !== 'RANDOM_BUYER'" class="bid-input-box">
@@ -115,6 +135,8 @@ const {
           <button
             class="submit-btn"
             :class="{
+              'btn-verify-get-item':
+                !item.checkFromRepository && authStore.member?.role === 'MEMBER',
               'btn-assign-gem': !item.isBidding && item.assignByLeader,
               'btn-verify-gem':
                 !item.isBidding && !item.assignByLeader && item.canVerifyBiddingTicket,
@@ -233,9 +255,6 @@ const {
 </template>
 
 <style scoped>
-
-
-
 /* 頁面基礎設定 */
 .whole_page {
   width: 100%;
@@ -247,6 +266,31 @@ const {
   margin-bottom: 20px;
   border-left: 4px solid #6366f1;
   padding-left: 15px;
+}
+
+/* Checkbox 外層容器，確保垂直置中 */
+.value-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 如果你的 value 通常靠右對齊，用這個 */
+}
+
+/* 小巧的 Checkbox 樣式 */
+.small-checkbox {
+  width: 16px; /* 控制框框大小 */
+  height: 16px; /* 控制框框大小 */
+  cursor: pointer;
+  margin: 0;
+
+  /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 (金黃色) */
+  accent-color: #ffd166;
+
+  /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
+  transition: transform 0.1s ease;
+}
+
+.small-checkbox:active {
+  transform: scale(0.9); /* 點擊時微縮的按壓回饋 */
 }
 
 /* 核心：Grid 排版，自動換行，一排約 3-4 個 */
@@ -401,6 +445,10 @@ const {
 
 .submit-btn.btn-verify-gem {
   background: linear-gradient(135deg, #0e7490, #155e75) !important;
+}
+
+.btn-verify-get-item {
+  background: linear-gradient(135deg, #9f1239, #be123c) !important;
 }
 
 /* 底部數據 */

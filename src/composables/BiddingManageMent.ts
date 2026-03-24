@@ -362,6 +362,8 @@ export function useAuction() {
 
     biddingName: string
 
+    checkFromRepository:boolean
+
     remark: string
 
     currentPrice: number
@@ -373,7 +375,7 @@ export function useAuction() {
 
     ticketOwerName: string
 
-    treasureCurrencyList:TreasureCurrency[]
+    treasureCurrencyList: TreasureCurrency[]
 
     /** 最後得標者 memberId（尚未得標時為 null） */
     buyerMemberId: number | null
@@ -596,9 +598,32 @@ export function useAuction() {
     // 3. 組合回傳
     return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`
   }
-
+  const checkStatusFromRepository = ref(false)
+  const handleStorageChange = (item: Treasure) => {
+    submitTreasureCod.value = item.treasureCode
+    checkStatusFromRepository.value = item.checkFromRepository
+    confirmGetItem()
+  }
+  const confirmGetItem = async () => {
+    try {
+      const res = await fetch('https://api.gameshare-system.com/confirm-get-item', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketCode: submitTreasureCod.value,
+          checked: checkStatusFromRepository.value,
+        }),
+      })
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   return {
+    authStore,
     handleSubmitFromWallet,
     handleUpdateRemark,
     selectedTreasure,
@@ -634,6 +659,7 @@ export function useAuction() {
     addTreasure,
     showAddBossDialog,
     addBossName,
-    openAddBossDialog
+    openAddBossDialog,
+    handleStorageChange,
   }
 }

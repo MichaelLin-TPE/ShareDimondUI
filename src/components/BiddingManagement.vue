@@ -14,10 +14,12 @@ const {
   formatTimestamp,
   handleSubmitFromWallet,
   handlePeopleClick,
+  authStore,
   handlePeopleCount,
   submitAssign,
   showAssignModal,
   selectedMemberId,
+  handleStorageChange,
   selectedTreasure,
 } = useAuction()
 </script>
@@ -62,11 +64,11 @@ const {
             </div>
             <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
               <span class="label">{{ c.currency }}價格</span
-              ><span class="value gold">{{ Number(c.amount).toLocaleString() }}</span>
+              ><span class="value">{{ Number(c.amount).toLocaleString() }}</span>
             </div>
             <div v-if="item.biddingName != '尚未有得標者'" class="info-row highlight">
               <span class="label">最終價格</span>
-              <span class="value-price"
+              <span class="value gold"
                 >{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span
               >
             </div>
@@ -79,11 +81,28 @@ const {
           <div class="bidder-section">
             <div class="info-row">
               <span class="label">得標者</span>
-              <span class="value">{{ item.biddingName }}</span>
+              <span class="value gold">{{ item.biddingName }}</span>
             </div>
             <div class="info-row">
               <span class="label">備註</span>
               <span class="value-remark">{{ item.remark }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">確認存倉</span>
+              <div
+                v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
+                class="value-action"
+              >
+                <input
+                  type="checkbox"
+                  v-model="item.checkFromRepository"
+                  class="small-checkbox"
+                  @change="handleStorageChange(item)"
+                />
+              </div>
+              <span v-else class="value-remark">{{
+                item.checkFromRepository ? '確認存倉' : '尚未存倉'
+              }}</span>
             </div>
           </div>
 
@@ -146,7 +165,7 @@ const {
       <div class="boss-container assign-modal">
         <div class="boss-title">會長指定得標</div>
         <div class="target-item-info">
-          道具：<span class="gold">{{ selectedTreasure?.itemName }}</span>
+          道具：<span class="gold-class gold">{{ selectedTreasure?.itemName }}</span>
         </div>
         <div class="people-list">
           <div
@@ -172,6 +191,30 @@ const {
 </template>
 
 <style scoped>
+/* Checkbox 外層容器，確保垂直置中 */
+.value-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* 如果你的 value 通常靠右對齊，用這個 */
+}
+
+/* 小巧的 Checkbox 樣式 */
+.small-checkbox {
+  width: 16px; /* 控制框框大小 */
+  height: 16px; /* 控制框框大小 */
+  cursor: pointer;
+  margin: 0;
+
+  /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 (金黃色) */
+  accent-color: #ffd166;
+
+  /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
+  transition: transform 0.1s ease;
+}
+
+.small-checkbox:active {
+  transform: scale(0.9); /* 點擊時微縮的按壓回饋 */
+}
 /* 頁面基礎設定 */
 .whole_page {
   width: 100%;
@@ -245,9 +288,12 @@ const {
   font-weight: bold;
   margin-bottom: 4px;
 }
-
+.value {
+  color: #f1f5f9;
+}
 .gold {
   color: #f5c451;
+  font-weight: bold;
 }
 
 .boss-name {
@@ -272,9 +318,6 @@ const {
 
 .label {
   color: #64748b;
-}
-.value {
-  color: #f1f5f9;
 }
 
 .highlight .value-price {

@@ -346,6 +346,24 @@ export function useAuction() {
     showCurrencyModal.value = false // 關閉彈窗
   }
 
+  const confirmGetItem = async () =>{
+    try {
+      const res = await fetch('https://api.gameshare-system.com/confirm-get-item', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ticketCode: submitTreasureCod.value,
+          checked: checkStatusFromRepository.value,
+        }),
+      })
+    }catch (e){
+      console.log(e)
+    }
+  }
+
   const confirmTicket = async () => {
     try {
       const res = await fetch('https://api.gameshare-system.com/confirm-ticket', {
@@ -532,6 +550,8 @@ export function useAuction() {
 
     canBid: boolean
 
+    checkFromRepository: boolean
+
     biddingMemberList: BiddingMember[]
 
     biddingMemberContent: string
@@ -670,8 +690,19 @@ export function useAuction() {
     return '競標中'
   }
 
+
+
   const canSubmit = computed(() => {
+
     return (item: Treasure) => {
+      console.log('check : ' + item.checkFromRepository +' , role : '+ authStore.member?.role)
+      // if (!item.checkFromRepository && authStore.member?.role == 'MEMBER'){
+      //   return true
+      // }
+      // if (!item.checkFromRepository &&
+      //   (authStore.member?.role == 'OFFICER' || authStore.member?.role == 'LEADER')) {
+      //   return false
+      // }
       if (!item.canBid) {
         return true
       }
@@ -725,6 +756,14 @@ export function useAuction() {
     return `${yyyy}/${MM}/${dd} ${hh}:${mm}:${ss}`
   }
 
+  const checkStatusFromRepository = ref(false)
+  const handleStorageChange = (item:Treasure)=>{
+    submitTreasureCod.value = item.treasureCode
+    checkStatusFromRepository.value = item.checkFromRepository
+    confirmGetItem()
+  }
+
+
   return {
     handleUpdateRemark,
     selectedTreasure,
@@ -759,6 +798,7 @@ export function useAuction() {
     openAddTreasureDialog,
     showAddTreasureDialog,
     addItemName,
+    handleStorageChange,
     loading,
     confirmBuy,
     openCurrencyModal,
@@ -769,6 +809,7 @@ export function useAuction() {
     handleConfirmBuy,
     addBoss,
     formatEventTime,
+    authStore,
     openAddBossDialog,
     createTicket,
     handleJoinItem,

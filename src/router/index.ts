@@ -17,6 +17,7 @@ import ClanSettingsPage from '@/views/ClanSettingsPage.vue'
 import AllMemberBalance from '@/components/AllMemberBalance.vue'
 import KickMemberPage from '@/components/KickMemberPage.vue'
 import MarketPlace from '@/components/MarketPlace.vue'
+import PersonalLog from '@/components/PersonalLog.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -120,6 +121,10 @@ const router = createRouter({
         {
           path:'marketPlace',
           component:MarketPlace
+        },
+        {
+          path:'personalLog',
+          component:PersonalLog
         }
       ],
     },
