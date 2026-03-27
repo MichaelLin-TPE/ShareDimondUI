@@ -6,6 +6,7 @@ const {
   formatTime,
   handleStatus,
   handleSubmit,
+  groupedAuctionsList,
   handleUpdateRemark,
   handleDeleteItem,
   canSubmit,
@@ -31,111 +32,115 @@ const {
     </div>
 
     <div class="auction-container">
-      <div class="auction-grid">
-        <div v-for="item in auctions" :key="item.treasureCode" class="auction-card">
-          <div class="card-tools">
-            <button
-              class="tool-btn remark"
-              v-show="item.showDeleteTicket"
-              @click="handleUpdateRemark(item)"
-            >
-              備註
-            </button>
-            <button
-              class="tool-btn delete"
-              v-show="item.showDeleteTicket"
-              @click="handleDeleteItem(item)"
-            >
-              撤單
-            </button>
-          </div>
+      <div v-for="group in groupedAuctionsList" :key="group.title" class="group-wrapper">
+        <h4 class="group-title">{{ group.title }}</h4>
 
-          <div class="item-main">
-            <div class="item-name gold">{{ item.itemName }}</div>
-            <div class="boss-name">頭目：{{ item.bossName }}</div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="info-section">
-            <div class="info-row">
-              <span class="label">開單者</span>
-              <span class="value">{{ item.ticketOwerName }}</span>
-            </div>
-            <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
-              <span class="label">{{ c.currency }}價格</span
-              ><span class="value">{{ Number(c.amount).toLocaleString() }}</span>
-            </div>
-            <div v-if="item.biddingName != '尚未有得標者'" class="info-row highlight">
-              <span class="label">最終價格</span>
-              <span class="value gold"
-                >{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span
+        <div class="auction-grid">
+          <div v-for="item in group.items" :key="item.treasureCode" class="auction-card">
+            <div class="card-tools">
+              <button
+                class="tool-btn remark"
+                v-show="item.showDeleteTicket"
+                @click="handleUpdateRemark(item)"
               >
-            </div>
-            <div v-if="item.biddingName == null || item.biddingName.length == 0" class="info-row">
-              <span class="label">競標名單</span>
-              <span class="value-text">{{ item.biddingMemberContent || '無' }}</span>
-            </div>
-          </div>
-
-          <div class="bidder-section">
-            <div class="info-row">
-              <span class="label">得標者</span>
-              <span class="value gold">{{ item.biddingName }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">備註</span>
-              <span class="value-remark">{{ item.remark }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">確認存倉</span>
-              <div
-                v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
-                class="value-action"
+                備註
+              </button>
+              <button
+                class="tool-btn delete"
+                v-show="item.showDeleteTicket"
+                @click="handleDeleteItem(item)"
               >
-                <input
-                  type="checkbox"
-                  v-model="item.checkFromRepository"
-                  class="small-checkbox"
-                  @change="handleStorageChange(item)"
-                />
+                撤單
+              </button>
+            </div>
+
+            <div class="item-main">
+              <div class="item-name gold">{{ item.itemName }}</div>
+              <div class="boss-name">頭目：{{ item.bossName }}</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="info-section">
+              <div class="info-row">
+                <span class="label">開單者</span>
+                <span class="value">{{ item.ticketOwerName }}</span>
               </div>
-              <span v-else class="value-remark">{{
-                item.checkFromRepository ? '確認存倉' : '尚未存倉'
-              }}</span>
+              <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
+                <span class="label">{{ c.currency }}價格</span
+                ><span class="value">{{ Number(c.amount).toLocaleString() }}</span>
+              </div>
+              <div v-if="item.biddingName != '尚未有得標者'" class="info-row highlight">
+                <span class="label">最終價格</span>
+                <span class="value gold"
+                  >{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span
+                >
+              </div>
+              <div v-if="item.biddingName == null || item.biddingName.length == 0" class="info-row">
+                <span class="label">競標名單</span>
+                <span class="value-text">{{ item.biddingMemberContent || '無' }}</span>
+              </div>
             </div>
-          </div>
 
-          <div class="action-wrapper">
+            <div class="bidder-section">
+              <div class="info-row">
+                <span class="label">得標者</span>
+                <span class="value gold">{{ item.biddingName }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">備註</span>
+                <span class="value-remark">{{ item.remark }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">確認存倉</span>
+                <div
+                  v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
+                  class="value-action"
+                >
+                  <input
+                    type="checkbox"
+                    v-model="item.checkFromRepository"
+                    class="small-checkbox"
+                    @change="handleStorageChange(item)"
+                  />
+                </div>
+                <span v-else class="value-remark">{{
+                  item.checkFromRepository ? '確認存倉' : '尚未存倉'
+                }}</span>
+              </div>
+            </div>
+
+            <div class="action-wrapper">
+              <button
+                class="submit-btn wallet-btn"
+                v-if="item.canVerifyBiddingTicket && item.hasEnoughMoneyToBuy"
+                :disabled="canSubmit(item)"
+                @click="handleSubmitFromWallet(item)"
+              >
+                從錢包扣除並派發
+              </button>
+            </div>
             <button
-              class="submit-btn wallet-btn"
-              v-if="item.canVerifyBiddingTicket && item.hasEnoughMoneyToBuy"
+              class="submit-btn"
+              :class="{
+                'btn-assign-gem': !item.isBidding && item.assignByLeader,
+                'btn-verify-gem':
+                  !item.isBidding && !item.assignByLeader && item.canVerifyBiddingTicket,
+              }"
               :disabled="canSubmit(item)"
-              @click="handleSubmitFromWallet(item)"
+              @click="handleSubmit(item)"
             >
-              從錢包扣除並派發
+              <span v-if="item.isBidding">確認出價</span>
+              <span v-else-if="item.disableSubmitButton">分配結束</span>
+              <span v-else-if="item.assignByLeader">指定得標者</span>
+              <span v-else-if="item.canVerifyBiddingTicket">取得帳款並派發獎金</span>
             </button>
-          </div>
-          <button
-            class="submit-btn"
-            :class="{
-              'btn-assign-gem': !item.isBidding && item.assignByLeader,
-              'btn-verify-gem':
-                !item.isBidding && !item.assignByLeader && item.canVerifyBiddingTicket,
-            }"
-            :disabled="canSubmit(item)"
-            @click="handleSubmit(item)"
-          >
-            <span v-if="item.isBidding">確認出價</span>
-            <span v-else-if="item.disableSubmitButton">分配結束</span>
-            <span v-else-if="item.assignByLeader">指定得標者</span>
-            <span v-else-if="item.canVerifyBiddingTicket">取得帳款並派發獎金</span>
-          </button>
 
-          <div class="card-footer" @click="handlePeopleCount(item)">
-            <span class="timer">⏳ {{ formatTime(item.remainSeconds) }}</span>
-            <span class="people">👥 {{ item.treasureAttendanceList.length }}人</span>
-            <span class="status-tag">{{ handleStatus(item.status) }}</span>
+            <div class="card-footer" @click="handlePeopleCount(item)">
+              <span class="timer">⏳ {{ formatTime(item.remainSeconds) }}</span>
+              <span class="people">👥 {{ item.treasureAttendanceList.length }}人</span>
+              <span class="status-tag">{{ handleStatus(item.status) }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -191,6 +196,28 @@ const {
 </template>
 
 <style scoped>
+/* -------------------------------------- */
+/* 新增：群組標題相關樣式 (加在原本 CSS 的最上方) */
+/* -------------------------------------- */
+.group-wrapper {
+  margin-bottom: 40px;
+}
+
+.group-title {
+  color: #f1f5f9;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(99, 102, 241, 0.3); /* 使用與你按鈕相呼應的紫色調 */
+  display: flex;
+  align-items: center;
+}
+
+/* -------------------------------------- */
+/* 以下為你原本的 CSS，完全未作更動 */
+/* -------------------------------------- */
+
 /* Checkbox 外層容器，確保垂直置中 */
 .value-action {
   display: flex;

@@ -43,7 +43,7 @@ const handleMenuClick = (item: Menu) => {
   } else if (item.label == '💰 個人掛賣區') {
     router.replace('/clan/marketPlace')
   } else if (item.label == '💸 個人帳戶') {
-    router.replace('/clan/personalLog')
+    router.replace('/clan/ticketManagement')
   }
 }
 

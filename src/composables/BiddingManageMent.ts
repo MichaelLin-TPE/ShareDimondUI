@@ -47,7 +47,6 @@ export function useAuction() {
     bossId: string
   }
 
-
   const handlePlus = (item: Treasure) => {
     // 如果還沒出過價，從底價開始；否則在當前基礎上 + 50
     if (!item.biddingPrice || item.biddingPrice === 0) {
@@ -73,22 +72,21 @@ export function useAuction() {
 
   const handleDeleteItem = async (item: Treasure) => {
     submitDeleteTicketCode.value = item.treasureCode
-    const result =  await useAlert.confirm("請確認是否要刪除此單?")
-    if (result.isConfirmed){
+    const result = await useAlert.confirm('請確認是否要刪除此單?')
+    if (result.isConfirmed) {
       deleteTreasure()
     }
-
   }
 
   const handleUpdateRemark = async (item: Treasure) => {
     submitDeleteTicketCode.value = item.treasureCode
-    const result = await useAlert.inputDialog('請更新備註','更新備註')
+    const result = await useAlert.inputDialog('請更新備註', '更新備註')
     if (result) {
       updateRemark(result)
     }
   }
 
-  const updateRemark = async (value:string) =>{
+  const updateRemark = async (value: string) => {
     try {
       const res = await fetch('https://api.gameshare-system.com/update_remark', {
         method: 'POST',
@@ -102,7 +100,7 @@ export function useAuction() {
         }),
       })
       const data = await res.json()
-      if (!res.ok){
+      if (!res.ok) {
         useAlert.error(data.message)
         return
       }
@@ -112,7 +110,6 @@ export function useAuction() {
       console.log(e)
     }
   }
-
 
   const deleteTreasure = async () => {
     try {
@@ -138,7 +135,7 @@ export function useAuction() {
   }
 
   const submitTreasureCod = ref('')
-  const submitBiddingPrice= ref(0)
+  const submitBiddingPrice = ref(0)
   const submitConfirmType = ref(0)
   const selectedTreasure = ref<Treasure | null>(null)
   const showAssignModal = ref(false)
@@ -201,7 +198,7 @@ export function useAuction() {
     }
   }
 
-  const handleSubmit = async (item:Treasure) =>{
+  const handleSubmit = async (item: Treasure) => {
     submitTreasureCod.value = item.treasureCode
     submitBiddingPrice.value = item.biddingPrice
     submitConfirmType.value = 2
@@ -210,9 +207,9 @@ export function useAuction() {
       showBiddingList()
       return
     }
-    if (!item.isBidding && item.canVerifyBiddingTicket){
-      const resulf = await useAlert.confirm("請確認是否收到帳款?")
-      if (resulf.isConfirmed){
+    if (!item.isBidding && item.canVerifyBiddingTicket) {
+      const resulf = await useAlert.confirm('請確認是否收到帳款?')
+      if (resulf.isConfirmed) {
         confirmTicket()
       }
       return
@@ -223,11 +220,9 @@ export function useAuction() {
       // 執行您的 SQL 邏輯或 API 呼叫
       submitBidding()
     }
-
-
   }
 
-  const confirmTicket = async () =>{
+  const confirmTicket = async () => {
     try {
       const res = await fetch('https://api.gameshare-system.com/confirm-ticket', {
         method: 'POST',
@@ -240,24 +235,22 @@ export function useAuction() {
           confirmType: submitConfirmType.value,
         }),
       })
-      const data = await res.json();
-      if (!res.ok){
+      const data = await res.json()
+      if (!res.ok) {
         useAlert.error(data.message)
         return
       }
       useAlert.success(data.message)
-      if (res.ok){
+      if (res.ok) {
         fetchOngoingTreasures()
         return
       }
-
-    }catch (e) {
+    } catch (e) {
       console.log(e)
     }
   }
 
-
-  const submitBidding = async () =>{
+  const submitBidding = async () => {
     try {
       const res = await fetch('https://api.gameshare-system.com/add-bidding', {
         method: 'POST',
@@ -267,11 +260,11 @@ export function useAuction() {
         },
         body: JSON.stringify({
           treasureCode: submitTreasureCod.value,
-          biddingPrice:submitBiddingPrice.value
+          biddingPrice: submitBiddingPrice.value,
         }),
       })
 
-      if (!res.ok){
+      if (!res.ok) {
         const data = await res.json()
         useAlert.error(data.message)
         return
@@ -279,11 +272,10 @@ export function useAuction() {
       const data = await res.json()
       useAlert.success(data.message)
       fetchOngoingTreasures()
-    }catch (e) {
+    } catch (e) {
       console.log(e)
     }
   }
-
 
   const addTreasure = async () => {
     if (!addItemName.value) {
@@ -324,8 +316,8 @@ export function useAuction() {
   const auctions = ref<Treasure[]>([])
 
   interface TreasureCurrency {
-    currency:string
-    amount:string
+    currency: string
+    amount: string
   }
 
   interface TreasureAttendance {
@@ -362,7 +354,7 @@ export function useAuction() {
 
     biddingName: string
 
-    checkFromRepository:boolean
+    checkFromRepository: boolean
 
     remark: string
 
@@ -420,8 +412,8 @@ export function useAuction() {
     biddingMemberContent: string
   }
 
-  interface BiddingMember{
-    userName:string
+  interface BiddingMember {
+    userName: string
   }
 
   type TreasureStatus =
@@ -451,7 +443,7 @@ export function useAuction() {
       const data = await res.json()
       auctions.value = data
       // 假設 data 是一個陣列
-      auctions.value = data.filter((item:Treasure) => item.status === 'WAIT_PAY')
+      auctions.value = data.filter((item: Treasure) => item.status === 'WAIT_PAY')
       auctions.value.forEach((item) => {
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status === 'BIDDING'
@@ -534,14 +526,14 @@ export function useAuction() {
     }
   }
 
-  const handleStatus = (status:TreasureStatus) :string =>{
-    if (status == 'BIDDING'){
+  const handleStatus = (status: TreasureStatus): string => {
+    if (status == 'BIDDING') {
       return '競標中'
     }
     if (status == 'WAIT_PAY') {
       return '等待幹部審核'
     }
-    if (status == 'BID_FINISHED'){
+    if (status == 'BID_FINISHED') {
       return '競標結束,等候幹部審核'
     }
     return '競標中'
@@ -549,10 +541,10 @@ export function useAuction() {
 
   const canSubmit = computed(() => {
     return (item: Treasure) => {
-      if (!item.isBidding && !item.canVerifyBiddingTicket){
+      if (!item.isBidding && !item.canVerifyBiddingTicket) {
         return true
       }
-      if (item.canVerifyBiddingTicket){
+      if (item.canVerifyBiddingTicket) {
         return false
       }
 
@@ -622,8 +614,48 @@ export function useAuction() {
     }
   }
 
+  // --- 新增：不更動原有邏輯，僅增加分組用的計算屬性 ---
+  const groupedAuctionsList = computed(() => {
+    const unassigned: Treasure[] = []
+    const groups: Record<string, Treasure[]> = {}
+
+    // 兼容 ref 或 reactive 的取值方式
+    const source = auctions.value || auctions
+
+    if (!source) return []
+
+    source.forEach((item: Treasure) => {
+      const name = item.biddingName
+      // 判斷是否尚未分配
+      if (!name || name === '尚未有得標者' || name.length === 0) {
+        unassigned.push(item)
+      } else {
+        // 依得標者名稱分組
+        if (!groups[name]) {
+          groups[name] = []
+        }
+        groups[name].push(item)
+      }
+    })
+
+    const result = []
+
+    // 將已分配的訂單推入結果陣列
+    for (const name in groups) {
+      result.push({ title: `${name} 得標的訂單`, items: groups[name] })
+    }
+
+    // 將尚未分配的訂單放在最後面
+    if (unassigned.length > 0) {
+      result.push({ title: '尚未分配得標的訂單', items: unassigned })
+    }
+
+    return result
+  })
+
   return {
     authStore,
+    groupedAuctionsList,
     handleSubmitFromWallet,
     handleUpdateRemark,
     selectedTreasure,
