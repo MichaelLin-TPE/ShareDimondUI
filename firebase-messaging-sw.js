@@ -1,5 +1,15 @@
 // public/firebase-messaging-sw.js
 
+// --- 加上這段控制生命週期的代碼 ---
+self.addEventListener('install', (event) => {
+  self.skipWaiting(); // 強制跳過等待狀態，立即安裝新版本
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim()); // 立即接管所有開啟中的分頁
+});
+// ----------------------------
+
 // 1. 載入 Firebase 核心與推播腳本
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js')
@@ -18,14 +28,20 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig)
 const messaging = firebase.messaging()
 
-// 4. 設定背景收到訊息時的處理行為
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] 收到背景推播訊息 ', payload)
-  const notificationTitle = payload.notification.title
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/favicon.ico', // 通知上的小圖示
+
+// 2. 處理「後台」收到的 Data Message
+messaging.onBackgroundMessage(function (payload) {
+  console.log('[Service Worker] 收到背景推播: ', payload)
+
+  // 因為後端改成放 data 裡面了，所以我們從 data 取值
+  const title = payload.data?.title || '系統通知'
+  const options = {
+    body: payload.data.body || '您有一則新通知',
+    data: {
+      type: payload.data.type,
+    },
   }
 
-  self.registration.showNotification(notificationTitle, notificationOptions)
+  // 手動觸發原生系統通知
+  return self.registration.showNotification(title, options)
 })
