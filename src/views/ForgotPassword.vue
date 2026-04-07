@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 const email = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -13,10 +14,13 @@ const sendEmail = async () => {
   loading.value = true
 
   try {
-    const res = await fetch('https://api.gameshare-system.com/forgot-password', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/forgot-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
       body: JSON.stringify({
         email: email.value,

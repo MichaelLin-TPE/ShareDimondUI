@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 
 export function useAuction() {
@@ -71,9 +72,12 @@ export function useAuction() {
   const authStore = useAuthStore()
 
   const getBasicInfo = async () => {
-    const res = await fetch('https://api.gameshare-system.com/getAllMemberWallet', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getAllMemberWallet', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) return

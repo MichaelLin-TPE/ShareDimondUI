@@ -1,6 +1,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 // ===== 角色狀態定義（與後端 enum 對齊） =====
 export type EventRole =
@@ -54,11 +55,14 @@ export function useAuction() {
   const getShareHistory = async () => {
     if (!authStore.authToken) return
 
-    const res = await fetch('https://api.gameshare-system.com/getHistory', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getHistory', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
 

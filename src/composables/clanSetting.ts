@@ -1,7 +1,8 @@
 import {  onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
-import { useBalanceStore } from '@/stores/balanceTool.ts' // 延續你的 Alert 工具
+import { useBalanceStore } from '@/stores/balanceTool.ts'
+import { generateSignature } from '@/utils/SignTools.ts' // 延續你的 Alert 工具
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -24,11 +25,14 @@ export function useAuction() {
 
   const handleSaveRate = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/updateClanBaseCurrencyAndRate', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/updateClanBaseCurrencyAndRate', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           baseCurrency: settings.value.baseCurrency,
@@ -49,11 +53,14 @@ export function useAuction() {
 
   const handleSave = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/updateClanBasicInfo', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/updateClanBasicInfo', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           announcement: settings.value.announcement,
@@ -76,16 +83,19 @@ export function useAuction() {
 
   const requestUpdateClanBalanceAdd = async ()=>{
         try {
-          const res = await fetch('https://api.gameshare-system.com/updateClanBalanceAdd', {
+          const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/updateClanBalanceAdd', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${authStore.authToken}`,
               'Content-Type': 'application/json',
+              Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
             },
             body: JSON.stringify({
               clanBalance: settings.value.addClanBalance,
               remark: settings.value.addRemark,
-              currency:selectedCurrency.value
+              currency: selectedCurrency.value,
             }),
           })
           const data = await res.json()
@@ -106,14 +116,17 @@ export function useAuction() {
 
     const requestUpdateClanBalanceMinus = async ()=>{
         try {
-          const res = await fetch('https://api.gameshare-system.com/updateClanBalanceMinus', {
+          const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/updateClanBalanceMinus', {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${authStore.authToken}`,
               'Content-Type': 'application/json',
+              Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
             },
             body: JSON.stringify({
-              currency:selectedCurrency.value,
+              currency: selectedCurrency.value,
               clanBalance: settings.value.minusClanBalance,
               remark: settings.value.minusRemark,
             }),
@@ -149,9 +162,12 @@ export function useAuction() {
   }
 
   const getBasicInfo = async () => {
-    const res = await fetch('https://api.gameshare-system.com/getClanBasicInfo', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getClanBasicInfo', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) return

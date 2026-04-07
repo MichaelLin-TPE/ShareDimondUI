@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -31,10 +32,14 @@ const sendNewPassword = async () => {
   }
   loading.value = true
   try {
-    const res = await fetch('https://api.gameshare-system.com/update-password', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/update-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        method: 'POST',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
       body: JSON.stringify({
         token: token,
@@ -65,10 +70,13 @@ onMounted(async () => {
     return
   }
   try {
-    const res = await fetch('https://api.gameshare-system.com/verify-token', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/verify-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
       body: JSON.stringify({ token }),
     })

@@ -1,16 +1,20 @@
 import {  onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 
 export function useAuction() {
   const authStore = useAuthStore()
   const announcement = ref('')
-  const noticeItemList =  ref<String[]>([])
+  const noticeItemList =  ref<string[]>([])
 
   const getBasicInfo = async () => {
-    const res = await fetch('https://api.gameshare-system.com/getBasicInfo', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getBasicInfo', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) return
@@ -19,9 +23,12 @@ export function useAuction() {
   }
 
   const getAllItemsBuyer = async () =>{
-    const res = await fetch('https://api.gameshare-system.com/get-item-buyers', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/get-item-buyers', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
 

@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
+import { generateSignature } from '@/utils/SignTools.ts'
 const router = useRouter()
 export async function useAuthInit() {
   const authStore = useAuthStore()
@@ -7,10 +8,13 @@ export async function useAuthInit() {
   if (!authStore.authToken) return
 
   try {
-    const res = await fetch('https://api.gameshare-system.com/getBasicInfo', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getBasicInfo', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
 

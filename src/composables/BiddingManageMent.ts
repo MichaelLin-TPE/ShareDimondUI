@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import SockJS from 'sockjs-client'
 import Stomp from 'stompjs'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 export function useAuction() {
   const showModal = ref(false)
@@ -88,11 +89,14 @@ export function useAuction() {
 
   const updateRemark = async (value: string) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/update_remark', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/update_remark', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           ticketCode: submitDeleteTicketCode.value,
@@ -113,11 +117,14 @@ export function useAuction() {
 
   const deleteTreasure = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/delete-ticket', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/delete-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           ticketCode: submitDeleteTicketCode.value,
@@ -151,11 +158,14 @@ export function useAuction() {
       return
     }
     try {
-      const res = await fetch('https://api.gameshare-system.com/setUpBuyer', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/setUpBuyer', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           userName: selectedMemberId.value,
@@ -224,11 +234,14 @@ export function useAuction() {
 
   const confirmTicket = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/confirm-ticket', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/confirm-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           ticketCode: submitTreasureCod.value,
@@ -252,11 +265,14 @@ export function useAuction() {
 
   const submitBidding = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/add-bidding', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/add-bidding', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           treasureCode: submitTreasureCod.value,
@@ -284,11 +300,14 @@ export function useAuction() {
     }
     loading.value = true
     try {
-      const res = await fetch('https://api.gameshare-system.com/add-treasure', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/add-treasure', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           itemName: addItemName.value,
@@ -428,11 +447,14 @@ export function useAuction() {
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/get-ongoing-bidding-treasure', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/get-ongoing-bidding-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           Accept: 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
       })
       if (!res.ok) {
@@ -503,11 +525,14 @@ export function useAuction() {
   }
   const deleteAttendanceByLeader = async (userId: number) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           ticketCode: selectPeopleItem.value?.treasureCode,
@@ -598,11 +623,14 @@ export function useAuction() {
   }
   const confirmGetItem = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/confirm-get-item', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/confirm-get-item', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           ticketCode: submitTreasureCod.value,
@@ -650,7 +678,7 @@ export function useAuction() {
       result.push({ title: '尚未分配得標的訂單', items: unassigned })
     }
 
-    return result
+    return result.sort((a, b) => a.title.localeCompare(b.title, 'zh-TW'))
   })
 
   return {

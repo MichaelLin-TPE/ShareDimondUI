@@ -1,16 +1,20 @@
 import {  onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 
 export function useAuction() {
 
   const authStore = useAuthStore()
 
+
   const getVerifyList = async () => {
-    const res = await fetch('https://api.gameshare-system.com/getVerifyList', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getVerifyList', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign:generateSignature(currentTimeStamp)
       },
     })
     if (!res.ok) return
@@ -38,11 +42,14 @@ export function useAuction() {
 
   const confirmIn = async (memberId:number) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/confirm_in', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/confirm_in', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           memberId: memberId,
@@ -62,11 +69,14 @@ export function useAuction() {
 
   const confirmOut = async (memberId: number) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/confirm_out', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/confirm_out', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           memberId: memberId,

@@ -1,6 +1,7 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 export function useAuction() {
 
@@ -22,11 +23,14 @@ export function useAuction() {
   }
   const rejectWithdraw = async (code: string) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/reject-withdraw', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/reject-withdraw', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           ticketCode: code,
@@ -45,14 +49,17 @@ export function useAuction() {
   }
   const confirmWithdraw = async (code: string) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/confirm-withdraw', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/confirm-withdraw', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
-          ticketCode: code
+          ticketCode: code,
         }),
       })
       const data = await res.json()
@@ -79,11 +86,14 @@ export function useAuction() {
 
   const getWithdrawHistory = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/get-withdraw-history-verify-list', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/get-withdraw-history-verify-list', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
       })
       const data = await res.json()

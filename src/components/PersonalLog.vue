@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 const authStore = useAuthStore()
 
@@ -39,11 +40,14 @@ const rawLogs = ref<PersonalLog[]>([])
 
 const getPersonalLog = async () => {
   try {
-    const res = await fetch('https://api.gameshare-system.com/getPersonalLog', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getPersonalLog', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     const data = await res.json()
@@ -58,11 +62,14 @@ const getPersonalLog = async () => {
 }
 const getMemberCumulativeAmount = async () => {
   try {
-    const res = await fetch('https://api.gameshare-system.com/getMemberCumulativeAmount', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getMemberCumulativeAmount', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     const data = await res.json()
@@ -104,8 +111,13 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
 
 const filteredLogs = computed(() => {
   return rawLogs.value.filter((log) => {
+    // 1. 搜尋關鍵字過濾
     const matchSearch = log.eventDescription.toLowerCase().includes(searchQuery.value.toLowerCase())
-    return matchSearch
+
+    // 2. 狀態標籤過濾
+    const matchStatus = selectedStatus.value === 'ALL' || log.status === selectedStatus.value
+
+    return matchSearch && matchStatus
   })
 })
 

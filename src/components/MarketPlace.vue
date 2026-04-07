@@ -4,6 +4,7 @@ import { useBalanceStore } from '@/stores/balanceTool.ts'
 // 記得引入你的 authStore 來拿 Token
 import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 interface MarketCurrency {
   currency: string
@@ -42,11 +43,14 @@ const editingTicketCode = ref<string | null>(null)
 
 const fetchMarketList = async () => {
   try {
-    const res = await fetch('https://api.gameshare-system.com/getMarketSellingItem', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/getMarketSellingItem', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
 
@@ -125,11 +129,14 @@ const submitOrder = async () => {
     : 'https://api.gameshare-system.com/createMarketTicketed'
 
   try {
-    const res = await fetch(apiUrl, {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
       body: JSON.stringify(requestPayload),
     })
@@ -177,11 +184,14 @@ const buyItem = async () => {
   if (!confirmBuy) return
 
   try {
-    const res = await fetch('https://api.gameshare-system.com/buyMarketTicket', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/buyMarketTicket', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
       body: JSON.stringify({
         ticketCode: selectedItem.value.ticketCode,
@@ -231,11 +241,14 @@ const cancelOrder = async (item: MarketItem) => {
 
 const deleteTicket = async (code: string) => {
   try {
-    const res = await fetch('https://api.gameshare-system.com/deleteMarketTicket', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/deleteMarketTicket', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
       body: JSON.stringify({
         ticketCode: code,
@@ -299,10 +312,10 @@ const deleteTicket = async (code: string) => {
           <div class="col-action action-group">
             <button class="btn-secondary" @click="viewDetails(item)">查看詳情</button>
 
-            <template v-if="item.userName === currentUserName">
-              <button class="btn-edit-sm" @click="editOrder(item)">✏️ 編輯</button>
-              <button class="btn-danger-sm" @click="cancelOrder(item)">🗑️ 撤銷</button>
-            </template>
+            <!--            <template v-if="item.userName === currentUserName">-->
+            <!--              <button class="btn-edit-sm" @click="editOrder(item)">✏️ 編輯</button>-->
+            <!--              <button class="btn-danger-sm" @click="cancelOrder(item)">🗑️ 撤銷</button>-->
+            <!--            </template>-->
           </div>
         </div>
       </div>

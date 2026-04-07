@@ -2,6 +2,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 export function useAuction() {
 
@@ -17,16 +18,19 @@ export function useAuction() {
 
   const withdraw = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/withdraw', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/withdraw', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           memberId: selectedMemberId.value,
           amount: amount.value,
-          currency: selectedCurrency.value
+          currency: selectedCurrency.value,
         }),
       })
       const data = await res.json()
@@ -53,11 +57,14 @@ export function useAuction() {
   const getAllMember = async () => {
 
     try {
-      const res = await fetch('https://api.gameshare-system.com/members', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/members', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
       })
       const data = await res.json()

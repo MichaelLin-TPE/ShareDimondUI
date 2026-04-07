@@ -1,6 +1,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 
 export function useAuction() {
@@ -18,8 +19,9 @@ export function useAuction() {
 
   // 獲取成員清單 (這裡可以複用你之前的 getAllMemberWallet 或專門的成員 API)
   const fetchMembers = async () => {
-    const res = await fetch('https://api.gameshare-system.com/getAllMembers', {
-      headers: { Authorization: `Bearer ${authStore.authToken}` },
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getAllMembers', {
+      headers: { Authorization: `Bearer ${authStore.authToken}`, Sign: generateSignature(currentTimeStamp),TimeStamp:currentTimeStamp },
     })
     if (res.ok) memberList.value = await res.json()
   }
@@ -48,9 +50,12 @@ export function useAuction() {
   const authStore = useAuthStore()
 
   const getBasicInfo = async () => {
-    const res = await fetch('https://api.gameshare-system.com/members', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/members', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) return
@@ -60,11 +65,14 @@ export function useAuction() {
 
   const handleKick = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/removeMember', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/removeMember', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${authStore.authToken}`,
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           userId: selectedMember.value?.memberId,

@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import type { Balance } from '@/types/balance.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -78,11 +79,14 @@ export function useAuction() {
   }
   const shareAll = async (distributionData: ShareMemberData[]) => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/share-all', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/share-all', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           currency: selectedCurrency.value,
@@ -118,11 +122,14 @@ export function useAuction() {
   }
   const getAllBalance = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/getBalance', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/getBalance', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           Accept: 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
       })
       if (!res.ok) {
@@ -135,9 +142,12 @@ export function useAuction() {
     }
   }
   const getAllMember = async () => {
-    const res = await fetch('https://api.gameshare-system.com/members', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/members', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) return

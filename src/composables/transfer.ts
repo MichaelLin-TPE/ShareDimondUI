@@ -2,31 +2,35 @@ import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 export function useAuction() {
   const authStore = useAuthStore()
   const selectedMemberId = ref('')
   const inputAmount = ref(0)
   const handleTransfer = () => {
-    transfer();
+    transfer()
   }
   const selectedCurrency = ref('')
-  const transfer = async () =>{
+  const transfer = async () => {
     try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
       const res = await fetch('https://api.gameshare-system.com/transfer', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           memberId: selectedMemberId.value,
-          amount : inputAmount.value,
-          currency: selectedCurrency.value
+          amount: inputAmount.value,
+          currency: selectedCurrency.value,
         }),
       })
       const data = await res.json()
-      if (!res.ok){
+      if (!res.ok) {
         useAlert.error(data.message)
         return
       }
@@ -43,17 +47,19 @@ export function useAuction() {
   interface MemberResponse {
     memberId: number
     memberName: string
-    memberRole:string
+    memberRole: string
   }
 
   const getAllMember = async () => {
-
     try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
       const res = await fetch('https://api.gameshare-system.com/members', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
         },
       })
       const data = await res.json()
@@ -63,22 +69,18 @@ export function useAuction() {
       memberList.value = data
 
       memberList.value.forEach((item) => {
-        if (item.memberRole == 'MEMBER'){
+        if (item.memberRole == 'MEMBER') {
           item.memberRole = '會員'
-        }else if (item.memberRole == 'LEADER'){
+        } else if (item.memberRole == 'LEADER') {
           item.memberRole = '會長'
-        }else if (item.memberRole == 'OFFICER'){
+        } else if (item.memberRole == 'OFFICER') {
           item.memberRole = '幹部'
         }
       })
-
     } catch (e) {
       console.log(e)
     }
   }
-
-
-
 
   return {
     selectedCurrency,

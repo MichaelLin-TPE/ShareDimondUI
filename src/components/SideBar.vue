@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -43,17 +44,20 @@ const handleMenuClick = (item: Menu) => {
   } else if (item.label == '💰 個人掛賣區') {
     router.replace('/clan/marketPlace')
   } else if (item.label == '💸 個人帳戶') {
-    router.replace('/clan/ticketManagement')
+    router.replace('/clan/personalLog')
   }
 }
 
 const logout = async () => {
   try {
-    const res = await fetch('https://api.gameshare-system.com/logout', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/logout', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     const data = await res.json()
@@ -75,11 +79,14 @@ interface Menu {
 
 onMounted(async () => {
   try {
-    const res = await fetch('https://api.gameshare-system.com/get-menu', {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/get-menu', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) {

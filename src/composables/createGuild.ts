@@ -2,6 +2,7 @@ import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -38,10 +39,13 @@ export function useAuction() {
 
   const createClan = async () => {
     try {
-      const res = await fetch('https://api.gameshare-system.com/create-clans', {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+const res= await fetch('https://api.gameshare-system.com/create-clans', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+TimeStamp:currentTimeStamp
         },
         body: JSON.stringify({
           announcement: form.value.account,
