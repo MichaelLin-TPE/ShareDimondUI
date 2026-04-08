@@ -1,6 +1,28 @@
 import Swal from 'sweetalert2'
 
 export const useAlert = {
+  // 載入中彈窗 (Loading)
+  loading: (message = '載入中...', title = '請稍候') => {
+    return Swal.fire({
+      title,
+      html: `<div class="loading-text">${message}</div>`,
+      allowOutsideClick: false,
+      showConfirmButton: false,
+      background: '#1e1e1e',
+      color: '#ffffff',
+      didOpen: () => {
+        Swal.showLoading() // 顯示 Swal 內建的漂亮的旋轉動畫
+      },
+      customClass: {
+        popup: 'custom-swal-loading-popup',
+      }
+    })
+  },
+
+  // 關閉目前所有的彈窗
+  close: () => {
+    Swal.close()
+  },
   currencySelect: async (
     currencyList: { currency: string; amount: number | string }[],
     title = '請選擇你要購買的幣別',

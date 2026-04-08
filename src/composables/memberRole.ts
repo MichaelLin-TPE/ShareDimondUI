@@ -32,11 +32,11 @@ export function useAuction() {
 
   const getAllMember = async () => {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/members', {
+    const res = await fetch('https://api.gameshare-system.com/members', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
     })
     if (!res.ok) return
@@ -49,28 +49,26 @@ TimeStamp:currentTimeStamp
   const updateRolesApi = async (payload: { memberId: number; role: string }[]) => {
     // 這裡留給您對接 API，例如 axios.post('/api/roles', payload)
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/change-member-role', {
+    const res = await fetch('https://api.gameshare-system.com/change-member-role', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify({
         memberRoleDataList: payload,
       }),
     })
     const data = await res.json()
-    if (!res.ok){
+    if (!res.ok) {
       useAlert.error(data.message)
       return
     }
     useAlert.success(data.message)
     getAllMember()
-
   }
-
 
   onMounted(getAllMember)
 

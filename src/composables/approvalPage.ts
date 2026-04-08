@@ -11,10 +11,11 @@ export function useAuction() {
 
   const getVerifyList = async () => {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getVerifyList', {
+    const res= await fetch('https://api.gameshare-system.com/getVerifyList', {
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
-        Sign:generateSignature(currentTimeStamp)
+        Sign:generateSignature(currentTimeStamp),
+        TimeStamp:currentTimeStamp
       },
     })
     if (!res.ok) return

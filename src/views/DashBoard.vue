@@ -34,13 +34,13 @@ const getDeviceType = () => {
 const saveTokenToBackend = async (token: string) => {
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/saveFcmToken', {
+    const res = await fetch('https://api.gameshare-system.com/saveFcmToken', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify({
         token: token,
@@ -119,13 +119,13 @@ const getBalance = async () => {
   if (!authStore.authToken) return
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getBalance', {
+    const res = await fetch('https://api.gameshare-system.com/getBalance', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
     })
     if (!res.ok) return
@@ -138,22 +138,130 @@ TimeStamp:currentTimeStamp
     console.log(e)
   }
 }
+const version = ref('')
+const getVersion = async () => {
+  if (!authStore.authToken) return
+  try {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+    const res = await fetch('https://api.gameshare-system.com/getBiggestVersion', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${authStore.authToken}`,
+        Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+        TimeStamp: currentTimeStamp,
+      },
+    })
+    if (!res.ok) return
+    const data = await res.json()
+    version.value = data.version
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+const checkUpdate = async () => {
+  if (!authStore.authToken) return
+  try {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+    const res = await fetch('https://api.gameshare-system.com/checkUpdateInformation', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${authStore.authToken}`,
+        Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+        TimeStamp: currentTimeStamp,
+      },
+    })
+    if (!res.ok) return
+    const data = await res.json()
+    if (data.needToUpdate) {
+      checkUpdateInformation()
+      getVersion()
+    }
+  } catch (e) {
+    console.log(e)
+  }
+}
+interface SystemContentResponse {
+  content: string
+}
+
+const contentList = ref<SystemContentResponse[]>([])
+
+const checkUpdateInformation = async () => {
+  if (!authStore.authToken) return
+  try {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+    const res = await fetch('https://api.gameshare-system.com/getUpdateInformation', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${authStore.authToken}`,
+        Accept: 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+        TimeStamp: currentTimeStamp,
+      },
+    })
+    if (!res.ok) return
+    contentList.value = await res.json()
+    isUpdateModalOpen.value = true
+  } catch (e) {
+    console.log(e)
+  }
+}
 
 stompClient.connect({}, () => {
   stompClient.subscribe('/topic/balance/' + authStore?.member?.clanId, () => {
     getBalance()
   })
 })
-
+const isUpdateModalOpen = ref(false)
 // 8. 掛載生命週期
 onMounted(() => {
+  checkUpdate()
   getBalance()
   checkNotificationPermission()
 })
+const closeUpdateModal = () => {
+  isUpdateModalOpen.value = false
+}
 </script>
 
 <template>
   <div class="dashboard">
+    <div v-if="isUpdateModalOpen" class="custom-modal-overlay" @click.self="closeUpdateModal">
+      <div class="custom-modal-content update-modal">
+        <div class="modal-top-bar"></div>
+
+        <div class="modal-icon update-icon">🚀</div>
+
+        <div class="modal-title">Diamond Core 系統重大升級 (v{{ version }})</div>
+
+        <div class="modal-desc update-desc">
+          <p class="summary">
+            親愛的用戶，我們剛完成了核心架構的翻修，本次升級將為您帶來更穩定、更專業的體驗：
+          </p>
+
+          <ul class="feature-list">
+            <li v-for="(item, index) in contentList" :key="index">
+              <span class="icon">{{ ['🚀', '✨', '🛡️', '⚡', '💰', '🔥'][index % 6] }}</span>
+
+              <div class="text">
+                <p>{{ item.content }}</p>
+              </div>
+            </li>
+          </ul>
+
+          <p class="footer-msg">Diamond Core 團隊 持續進化中。</p>
+        </div>
+
+        <div class="modal-actions">
+          <button class="modal-btn btn-confirm btn-long" @click="closeUpdateModal">
+            我知道了，立即體驗
+          </button>
+        </div>
+      </div>
+    </div>
     <div v-if="showPushModal" class="custom-modal-overlay">
       <div class="custom-modal-content">
         <div class="modal-icon">🔔</div>
@@ -473,5 +581,252 @@ h1 {
   .amount-value {
     font-size: 1.05rem;
   }
+}
+.update-modal {
+  position: relative;
+  overflow: hidden; /* 為了讓 modal-top-bar 裁切 */
+  background: #1e1e2e;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 40px 30px 30px; /* 頂部加點空間給 bar */
+  width: 90%;
+  max-width: 480px; /* 更新公告可以稍微寬一點點 */
+  text-align: left; /* 內容置左，方便閱讀 */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 頂部紫色漸層裝飾條 */
+.modal-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+}
+
+.modal-icon.update-icon {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  text-align: center; /* 圖示依然置中 */
+  animation: rocketUp 1s ease-out; /* 加上小火箭飛上來的動畫 */
+}
+
+@keyframes rocketUp {
+  0% {
+    transform: translateY(30px) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-title {
+  color: #f8fafc;
+  font-size: 1.4rem; /* 字大一點 */
+  font-weight: 900;
+  margin-bottom: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  text-align: center; /* 標題置中 */
+}
+
+.modal-desc.update-desc {
+  color: #cbd5e1; /* 文字顏色調亮，更清晰 */
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.update-desc .summary {
+  margin-bottom: 25px;
+  color: #f1f5f9;
+}
+
+/* 功能清單列表樣式 */
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  border-radius: 12px;
+  background: rgba(30, 41, 59, 0.5); /* 加上背景區隔 */
+  padding: 15px;
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.feature-list li {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.feature-list li:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.feature-list li .icon {
+  font-size: 1.8rem;
+  padding-top: 3px;
+}
+
+.feature-list li strong {
+  color: #f1f5f9;
+  font-size: 1rem;
+}
+
+.feature-list li p {
+  margin: 2px 0 0;
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.footer-msg {
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(99, 102, 241, 0.7); /* 使用系統的紫色 */
+  font-style: italic;
+  margin-top: 20px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center; /* 按鈕置中 */
+}
+
+.modal-btn {
+  padding: 14px 0;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+/* 按鈕改成長按鈕，符合專業設計 */
+.btn-long {
+  width: 100%;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4); /* 陰影加深，突出按鈕 */
+}
+
+.btn-confirm:hover {
+  filter: brightness(1.1);
+  transform: translateY(-3px) scale(1.02);
+}
+/* 👇 自訂彈窗的樣式 👇 */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.custom-modal-content {
+  background: #1e1e2e;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.modal-title {
+  color: #f1f5f9;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.modal-desc {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 25px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-cancel {
+  background: #2d3047;
+  color: #94a3b8;
+  border: 1px solid #3f425b;
+}
+
+.btn-cancel:hover {
+  background: #3f425b;
+  color: #fff;
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.btn-confirm:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
 }
 </style>

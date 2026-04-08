@@ -65,6 +65,7 @@ TimeStamp:currentTimeStamp
       useAlert.error(data.message)
       return
     }
+    authStore.authToken = ''
     useAlert.success('登出成功')
     router.replace('/login')
   } catch (e) {

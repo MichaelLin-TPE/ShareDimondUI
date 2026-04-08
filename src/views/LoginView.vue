@@ -29,12 +29,11 @@ const clans = ref<Clan[]>([])
 const fetchClans = async () => {
   try {
     const currentTimestamp = Math.floor(Date.now() / 1000).toString()
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/clans', {
+    const res = await fetch('https://api.gameshare-system.com/clans', {
       method: 'GET',
       headers: {
         Sign: generateSignature(currentTimestamp),
-        TimeStamp:currentTimestamp
+        TimeStamp: currentTimestamp,
       },
     })
 
@@ -50,7 +49,39 @@ const res= await fetch('https://api.gameshare-system.com/clans', {
 
 onMounted(() => {
   fetchClans()
+  if (authStore.authToken != null && authStore.authToken.length > 0) {
+    autoLoginByToken()
+  }
 })
+
+const autoLoginByToken = async () => {
+  try {
+    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+    const res = await fetch('https://api.gameshare-system.com/loginByToken', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${authStore.authToken}`,
+        'Content-Type': 'application/json',
+        Sign: generateSignature(currentTimeStamp),
+        TimeStamp: currentTimeStamp,
+      },
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      return
+    }
+    authStore.setToken(data.authToken)
+    authStore.setMember(data)
+    console.log('登入成功 : ', data)
+    showApplyClanModal.value = false
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+    useAlert.success(`登入成功\n血盟：${selectedClanName.value}`)
+    router.replace('/clan')
+  } catch (e) {
+    console.log(e)
+  }
+}
+
 //打API取得所有支援的血盟---------------------------------------
 
 const addMember = async () => {
@@ -73,13 +104,13 @@ const addMember = async () => {
 
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/addMember', {
+    const res = await fetch('https://api.gameshare-system.com/addMember', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         method: 'POST',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify({
         account: accountForApply.value,
@@ -135,13 +166,13 @@ const login = async () => {
 
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/login', {
+    const res = await fetch('https://api.gameshare-system.com/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         method: 'POST',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify({
         account: account.value,

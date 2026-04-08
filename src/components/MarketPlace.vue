@@ -44,13 +44,13 @@ const editingTicketCode = ref<string | null>(null)
 const fetchMarketList = async () => {
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-      const res = await fetch('https://api.gameshare-system.com/getMarketSellingItem', {
+    const res = await fetch('https://api.gameshare-system.com/getMarketSellingItem', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
     })
 
@@ -130,13 +130,13 @@ const submitOrder = async () => {
 
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-      const res = await fetch(apiUrl, {
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify(requestPayload),
     })
@@ -185,13 +185,13 @@ const buyItem = async () => {
 
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-      const res = await fetch('https://api.gameshare-system.com/buyMarketTicket', {
+    const res = await fetch('https://api.gameshare-system.com/buyMarketTicket', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify({
         ticketCode: selectedItem.value.ticketCode,
@@ -242,13 +242,13 @@ const cancelOrder = async (item: MarketItem) => {
 const deleteTicket = async (code: string) => {
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/deleteMarketTicket', {
+    const res = await fetch('https://api.gameshare-system.com/deleteMarketTicket', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         'Content-Type': 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
       body: JSON.stringify({
         ticketCode: code,

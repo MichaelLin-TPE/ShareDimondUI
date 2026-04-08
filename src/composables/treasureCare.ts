@@ -29,13 +29,11 @@ export function useAuction() {
   const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
   const stompClient = Stomp.over(socket)
 
-  stompClient.connect({},(frame) => {
-    console.log('Connected : '+frame)
+  stompClient.connect({}, (frame) => {
+    console.log('Connected : ' + frame)
     stompClient.subscribe('/topic/treasure/' + authStore?.member?.clanId, () => {
-
       fetchOngoingTreasures()
     })
-
   })
 
   interface TreasureItem {
@@ -59,13 +57,13 @@ export function useAuction() {
   const getBossList = async () => {
     try {
       const currentTimestamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getBossList', {
+      const res = await fetch('https://api.gameshare-system.com/getBossList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           Accept: 'application/json',
           Sign: generateSignature(currentTimestamp),
-          TimeStamp:currentTimestamp
+          TimeStamp: currentTimestamp,
         },
       })
       if (!res.ok) {
@@ -81,13 +79,13 @@ const res= await fetch('https://api.gameshare-system.com/getBossList', {
   const getTreasureItemList = async () => {
     try {
       const currentTimestamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getTreasureList', {
+      const res = await fetch('https://api.gameshare-system.com/getTreasureList', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           Accept: 'application/json',
           Sign: generateSignature(currentTimestamp),
-          TimeStamp:currentTimestamp
+          TimeStamp: currentTimestamp,
         },
       })
       if (!res.ok) {
@@ -121,19 +119,19 @@ const res= await fetch('https://api.gameshare-system.com/getTreasureList', {
     try {
       let type: number
       console.log(selectedType.value)
-      if (selectedType.value == 'bid'){
+      if (selectedType.value == 'bid') {
         type = 0
-      }else {
+      } else {
         type = 1
       }
       const currentTimestamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/open-ticket', {
+      const res = await fetch('https://api.gameshare-system.com/open-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimestamp),
-          TimeStamp:currentTimestamp
+          TimeStamp: currentTimestamp,
         },
         body: JSON.stringify({
           itemName: itemName.value,
@@ -166,52 +164,51 @@ const res= await fetch('https://api.gameshare-system.com/open-ticket', {
 
   const submitAttendanceTicketCode = ref('')
   const submitDeleteTicketCode = ref('')
-  const handleJoinItem = async (item:Treasure) =>{
+  const handleJoinItem = async (item: Treasure) => {
     submitAttendanceTicketCode.value = item.treasureCode
-    if (item.joinButtonDisable){
+    if (item.joinButtonDisable) {
       const result = await useAlert.confirm('你確定要取消參予分紅!?')
-      if (result.isConfirmed){
-
+      if (result.isConfirmed) {
         deleteAttendance()
       }
       return
     }
     const result = await useAlert.confirm('確定有參予再按! 確定不?')
-    if (result.isConfirmed){
+    if (result.isConfirmed) {
       console.log('點了' + item.treasureCode)
       addAttendance()
     }
   }
-  const handleDeleteItem = async (item:Treasure) =>{
+  const handleDeleteItem = async (item: Treasure) => {
     submitDeleteTicketCode.value = item.treasureCode
-    const result = await useAlert.confirm("請確認是否要刪除此單?")
-    if (result.isConfirmed){
+    const result = await useAlert.confirm('請確認是否要刪除此單?')
+    if (result.isConfirmed) {
       deleteTreasure()
     }
   }
 
-  const deleteTreasure = async () =>{
-    try{
+  const deleteTreasure = async () => {
+    try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/delete-ticket', {
+      const res = await fetch('https://api.gameshare-system.com/delete-ticket', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: submitDeleteTicketCode.value,
         }),
       })
-      if (!res.ok){
+      if (!res.ok) {
         useAlert.error('刪除失敗,再試一次!')
         return
       }
       useAlert.success('刪除成功!')
       fetchOngoingTreasures()
-    }catch (e){
+    } catch (e) {
       console.log(e)
     }
   }
@@ -219,13 +216,13 @@ TimeStamp:currentTimeStamp
   const deleteAttendance = async () => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/delete-attendance', {
+      const res = await fetch('https://api.gameshare-system.com/delete-attendance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: submitAttendanceTicketCode.value,
@@ -243,32 +240,31 @@ TimeStamp:currentTimeStamp
     }
   }
 
-  const addAttendance = async () =>{
-    try{
+  const addAttendance = async () => {
+    try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/add-attendance', {
+      const res = await fetch('https://api.gameshare-system.com/add-attendance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: submitAttendanceTicketCode.value,
         }),
       })
-      if (!res.ok){
+      if (!res.ok) {
         useAlert.error('參與失敗,請再試一次!')
         return
       }
       useAlert.success('參與成功!')
       fetchOngoingTreasures()
-    }catch (e){
+    } catch (e) {
       console.log(e)
     }
   }
-
 
   const addBoss = async () => {
     if (!addBossName.value) {
@@ -278,13 +274,13 @@ TimeStamp:currentTimeStamp
     loading.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/add-boss', {
+      const res = await fetch('https://api.gameshare-system.com/add-boss', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           bossName: addBossName.value,
@@ -309,8 +305,6 @@ TimeStamp:currentTimeStamp
     }
   }
 
-
-
   const addTreasure = async () => {
     if (!addItemName.value) {
       error.value = '請輸入道具名稱'
@@ -319,13 +313,13 @@ TimeStamp:currentTimeStamp
     loading.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/add-treasure', {
+      const res = await fetch('https://api.gameshare-system.com/add-treasure', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           itemName: addItemName.value,
@@ -353,22 +347,20 @@ TimeStamp:currentTimeStamp
   const auctions = ref<Treasure[]>([])
 
   interface TreasureCurrency {
-    currency:string
-    amount:string
+    currency: string
+    amount: string
   }
 
-
-  interface TreasureAttendance{
-    id:number
-    treasureCode:string
-    memberId:number
-    joinTime:string
-    canceled:false
-    canceledTime:string
-    userName:string
-    remainSecond:number
+  interface TreasureAttendance {
+    id: number
+    treasureCode: string
+    memberId: number
+    joinTime: string
+    canceled: false
+    canceledTime: string
+    userName: string
+    remainSecond: number
   }
-
 
   // 這裡可以放原本寫在 script 的各種 function，例如 openTicket() 等
   interface Treasure {
@@ -380,7 +372,7 @@ TimeStamp:currentTimeStamp
 
     /** 首領名稱 */
     bossName: string
-    treasureCurrencyList:TreasureCurrency[]
+    treasureCurrencyList: TreasureCurrency[]
     /** 首領 ID */
     bossId: string
 
@@ -447,13 +439,13 @@ TimeStamp:currentTimeStamp
   const fetchOngoingTreasures = async () => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {
+      const res = await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           Accept: 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
       })
       if (!res.ok) {
@@ -463,7 +455,7 @@ TimeStamp:currentTimeStamp
       }
       const data = await res.json()
       auctions.value = data
-      auctions.value.forEach((item) =>{
+      auctions.value.forEach((item) => {
         item.treasureType = item.treasureType == 'RANDOM_BUYER' ? '固定金額' : '競標單'
       })
       startCountdown()
@@ -500,46 +492,43 @@ TimeStamp:currentTimeStamp
       item.remainSecond = diff
     })
 
-
-
     return data.treasureAttendanceList
   }
 
-  const formatPrice = (value:number) => {
+  const formatPrice = (value: number) => {
     if (!value) return '0'
     return Number(value).toLocaleString('en-US') // 強制使用英文千分位格式
   }
 
- const selectPeopleItem = ref<Treasure>()
+  const selectPeopleItem = ref<Treasure>()
   const selectedCurrency = ref('')
   const selectedType = ref('')
 
- const handlePeopleCount = (item:Treasure) =>{
+  const handlePeopleCount = (item: Treasure) => {
     showPeopleList.value = true
     selectPeopleItem.value = item
- }
+  }
 
- const handlePersonClick = async (data:TreasureAttendance) =>{
-
-    if (authStore.member?.role === 'MEMBER'){
+  const handlePersonClick = async (data: TreasureAttendance) => {
+    if (authStore.member?.role === 'MEMBER') {
       return
     }
     const reuslt = await useAlert.confirm(`是否要將${data.userName}從這張單移除分紅?`)
-    if (reuslt.isConfirmed){
+    if (reuslt.isConfirmed) {
       showPeopleList.value = false
       deleteAttendanceByLeader(data.memberId)
     }
   }
-  const deleteAttendanceByLeader = async (userId:number) => {
+  const deleteAttendanceByLeader = async (userId: number) => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
+      const res = await fetch('https://api.gameshare-system.com/delete-attendance-by-leader', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: selectPeopleItem.value?.treasureCode,
@@ -558,7 +547,6 @@ TimeStamp:currentTimeStamp
     }
   }
 
-
   const startCountdown = () => {
     if (timer) clearInterval(timer)
 
@@ -575,14 +563,14 @@ TimeStamp:currentTimeStamp
     }, 1000) // 小提醒：你的 setInterval 好像漏寫了 1000 (毫秒)
   }
 
-  const formatTime = (seconds:number):string =>{
+  const formatTime = (seconds: number): string => {
     if (!seconds || seconds <= 0) return '00:00'
     const m = Math.floor(seconds / 60)
     const s = seconds % 60
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  function formatTimestamp(timeStr:string) {
+  function formatTimestamp(timeStr: string) {
     // 1. 將字串轉換為 Date 物件
     const date = new Date(timeStr)
 
@@ -607,13 +595,13 @@ TimeStamp:currentTimeStamp
   const updateRemark = async (value: string) => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/update_remark', {
+      const res = await fetch('https://api.gameshare-system.com/update_remark', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: submitDeleteTicketCode.value,
@@ -629,6 +617,36 @@ TimeStamp:currentTimeStamp
       fetchOngoingTreasures()
     } catch (e) {
       console.log(e)
+    }
+  }
+
+  const handleItemChange = async () => {
+    if (!itemName.value) return
+
+    console.log('選中的寶物 ID 是:', itemName.value)
+
+    // 在這裡打你的 API
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/getItemRecentPrice', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+        body: JSON.stringify({
+          itemId: itemName.value,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok){
+        return
+      }
+      basePrice.value = data.price
+    } catch (error) {
+      console.error('API 請求失敗', error)
     }
   }
 
@@ -665,6 +683,7 @@ TimeStamp:currentTimeStamp
     showAddBossDialog,
     addBossName,
     addBoss,
+    handleItemChange,
     openAddBossDialog,
     createTicket,
     handleJoinItem,

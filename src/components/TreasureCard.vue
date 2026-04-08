@@ -12,6 +12,7 @@ const {
   bossOptions,
   basePrice,
   remark,
+  handleItemChange,
   openTicket,
   handlePeopleCount,
   showPeopleList,
@@ -135,7 +136,7 @@ const {
         <form @submit.prevent="handleSubmit" class="modal-form">
           <div class="form-group">
             <label>寶物名稱</label>
-            <select v-model="itemName" required class="styled-select">
+            <select v-model="itemName" @change="handleItemChange" required class="styled-select">
               <option disabled value="">請選擇要開單的寶物</option>
               <option v-for="opt in itemOptions" :key="opt.itemId" :value="opt.itemId">
                 {{ opt.itemName }}
