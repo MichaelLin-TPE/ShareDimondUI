@@ -42,7 +42,20 @@ const {
   <div class="whole_page">
     <div class="page-header">
       <h3 class="page-title">
-        寶物分紅參與 <span>(共 {{ auctions.length }} 件)</span>
+        寶物分紅參與
+
+        <div class="tooltip-wrapper">
+          <font-awesome-icon :icon="['far', 'circle-question']" class="info-icon" />
+          <div class="tooltip-content">
+            <strong>💰 寶物分紅與申報須知</strong>
+            1. <b>建立帳單：</b>掉落寶物後請立即進行開單。<br />
+            2. <b>標註持有人：</b>備註註明保管人，以便會計與倉庫追蹤。<br />
+            3. <b>及時交接：</b>請儘速將物品轉交倉庫或會計。<br />
+            4. <b>確認權益：</b>參與成員請務必點擊「我有參與 +1」。
+          </div>
+        </div>
+
+        <span>(共 {{ auctions.length }} 件)</span>
       </h3>
       <div class="header-btns">
         <button class="btn-top open" @click="openTicket">我要開單</button>
@@ -247,6 +260,75 @@ const {
 </template>
 
 <style scoped>
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.info-icon {
+  color: #999;
+  transition: color 0.2s;
+}
+
+.info-icon:hover {
+  color: #4a90e2; /* 滑鼠移上去變色 */
+}
+
+/* 提示框本體 */
+.tooltip-content {
+  visibility: hidden;
+  width: 320px; /* 增加寬度，文字才不會擠在一起 */
+  background-color: rgba(0, 0, 0, 0.9); /* 稍微加深背景色增加對比 */
+  color: #fff;
+  text-align: left;
+  padding: 15px; /* 增加內距，讓文字有呼吸空間 */
+  border-radius: 8px; /* 圓角加大一點點，看起來更現代 */
+
+  /* 關鍵字體調整 */
+  font-size: 15px; /* 放大字體 */
+  line-height: 1.6; /* 增加行高，閱讀長文案才不吃力 */
+  font-weight: normal;
+  letter-spacing: 0.5px; /* 微調字距 */
+
+  /* 定位 */
+  position: absolute;
+  bottom: 140%; /* 調整距離問號的高度 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999; /* 確保在最上層 */
+
+  /* 動畫 */
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none; /* 防止滑鼠滑進去提示框時閃爍 */
+}
+
+/* 小箭頭 */
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -8px; /* 箭頭加大一點點 */
+  border-width: 8px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+.tooltip-content strong {
+  color: #ffda6a; /* 給標題一個顯眼的顏色，例如金色 */
+  font-size: 17px; /* 標題再大一點 */
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* 滑鼠移入 wrapper 時顯示 content */
+.tooltip-wrapper:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px); /* 向上浮動的效果 */
+}
+
 .whole_page {
   padding: 20px;
   color: #e2e8f0;

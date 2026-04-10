@@ -34,6 +34,18 @@ const {
   <div class="whole_page">
     <div class="page-header">
       <h3>正在競拍 共 {{ auctions.length }} 件競拍中道具</h3>
+      <div class="tooltip-wrapper">
+        <font-awesome-icon :icon="['far', 'circle-question']" class="info-icon" />
+        <div class="tooltip-content">
+          <strong>🔨 競拍道具參與須知</strong>
+          1. <b>競拍時限：</b>每件物品皆有專屬倒數計時，時間結束即結標。<br />
+          2. <b>自動流標：</b>若無人出價，物品將自動進入下一輪倒數，且<b>起標價格不變</b>。<br />
+          3. <b>出價模式：</b>分為「直購價（固定金額）」與「價高者得（競標）」兩種模式。<br />
+          4. <b>防壓秒保護：</b>倒數一分鐘內若有人出價，時間將重置回一分鐘，直至無人加價。<br />
+          5. <b>優先參與權：</b>首輪僅限「參與分紅者」競拍；若流標，次輪起才開放全體成員。<br />
+          6. <b>誠信守則：</b>出價後<b>不可收回</b>。嚴禁惡意出價，違者將依規定懲處。
+        </div>
+      </div>
     </div>
 
     <div class="auction-container">
@@ -255,6 +267,84 @@ const {
 </template>
 
 <style scoped>
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.info-icon {
+  color: #999;
+  transition: all 0.2s; /* 讓大小變化也能有過渡效果 */
+
+  /* 調整大小 */
+  font-size: 20px; /* 你可以設定 px, rem 或 em */
+  cursor: pointer;
+
+  /* 如果覺得圖示跟文字沒對齊，可以加這個 */
+  vertical-align: middle;
+}
+
+.info-icon:hover {
+  color: #4a90e2;
+  transform: scale(1.1); /* 額外小技巧：滑鼠移上去稍微放大 1.1 倍，動感更強 */
+}
+
+/* 提示框本體 */
+.tooltip-content {
+  visibility: hidden;
+  width: 350px; /* 增加寬度，文字才不會擠在一起 */
+  background-color: rgba(15, 15, 15, 0.95); /* 稍微加深背景色增加對比 */
+  color: #fff;
+  text-align: left;
+  padding: 15px; /* 增加內距，讓文字有呼吸空間 */
+  border-radius: 8px; /* 圓角加大一點點，看起來更現代 */
+
+  /* 關鍵字體調整 */
+  font-size: 15px; /* 放大字體 */
+  line-height: 1.7; /* 增加行高，閱讀長文案才不吃力 */
+  font-weight: normal;
+  letter-spacing: 0.5px; /* 微調字距 */
+
+  /* 定位 */
+  position: absolute;
+  bottom: 140%; /* 調整距離問號的高度 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999; /* 確保在最上層 */
+
+  /* 動畫 */
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none; /* 防止滑鼠滑進去提示框時閃爍 */
+  border: 1px solid #444; /* 加一個細邊框，更有質感 */
+}
+
+/* 小箭頭 */
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -8px; /* 箭頭加大一點點 */
+  border-width: 8px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+.tooltip-content strong {
+  color: #ffda6a; /* 給標題一個顯眼的顏色，例如金色 */
+  font-size: 17px; /* 標題再大一點 */
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* 滑鼠移入 wrapper 時顯示 content */
+.tooltip-wrapper:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px); /* 向上浮動的效果 */
+}
+
 /* 頁面基礎設定 */
 .whole_page {
   width: 100%;
@@ -266,6 +356,9 @@ const {
   margin-bottom: 20px;
   border-left: 4px solid #6366f1;
   padding-left: 15px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 /* Checkbox 外層容器，確保垂直置中 */

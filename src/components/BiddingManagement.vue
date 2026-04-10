@@ -29,6 +29,17 @@ const {
   <div class="whole_page">
     <div class="page-header">
       <h3>待分配單 共 {{ auctions.length }} 件待分配道具</h3>
+      <div class="tooltip-wrapper">
+        <font-awesome-icon :icon="['far', 'circle-question']" class="info-icon" />
+        <div class="tooltip-content">
+          <strong>📋 待分配區作業須知</strong>
+          1. <b>狀態轉換：</b>物品一旦有人標中，競標單將自動轉為「待分配單」。<br />
+          2. <b>得標判定：</b>若有複數出價者，管理員可手動指定得標人，或由系統自動判定。<br />
+          3. <b>收款方式：</b>管理員可依情況選擇「帳戶餘額扣款」或「遊戲內直接取款」。<br />
+          4. <b>分紅結算：</b>管理員截標後，系統將依設定比例發放分紅予參與成員，並提撥公積金。<br />
+          5. <b>物品交付：</b>確認收到款項後，請管理員務必將結案物品確實交付予得標人。
+        </div>
+      </div>
     </div>
 
     <div class="auction-container">
@@ -196,6 +207,84 @@ const {
 </template>
 
 <style scoped>
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  cursor: help;
+}
+
+.info-icon {
+  color: #999;
+  transition: all 0.2s; /* 讓大小變化也能有過渡效果 */
+
+  /* 調整大小 */
+  font-size: 20px; /* 你可以設定 px, rem 或 em */
+  cursor: pointer;
+
+  /* 如果覺得圖示跟文字沒對齊，可以加這個 */
+  vertical-align: middle;
+}
+
+.info-icon:hover {
+  color: #4a90e2;
+  transform: scale(1.1); /* 額外小技巧：滑鼠移上去稍微放大 1.1 倍，動感更強 */
+}
+
+/* 提示框本體 */
+.tooltip-content {
+  visibility: hidden;
+  width: 350px; /* 增加寬度，文字才不會擠在一起 */
+  background-color: rgba(15, 15, 15, 0.95); /* 稍微加深背景色增加對比 */
+  color: #fff;
+  text-align: left;
+  padding: 15px; /* 增加內距，讓文字有呼吸空間 */
+  border-radius: 8px; /* 圓角加大一點點，看起來更現代 */
+
+  /* 關鍵字體調整 */
+  font-size: 15px; /* 放大字體 */
+  line-height: 1.7; /* 增加行高，閱讀長文案才不吃力 */
+  font-weight: normal;
+  letter-spacing: 0.5px; /* 微調字距 */
+
+  /* 定位 */
+  position: absolute;
+  bottom: 140%; /* 調整距離問號的高度 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999; /* 確保在最上層 */
+
+  /* 動畫 */
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none; /* 防止滑鼠滑進去提示框時閃爍 */
+  border: 1px solid #444; /* 加一個細邊框，更有質感 */
+}
+
+/* 小箭頭 */
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -8px; /* 箭頭加大一點點 */
+  border-width: 8px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+.tooltip-content strong {
+  color: #ffda6a; /* 給標題一個顯眼的顏色，例如金色 */
+  font-size: 17px; /* 標題再大一點 */
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* 滑鼠移入 wrapper 時顯示 content */
+.tooltip-wrapper:hover .tooltip-content {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px); /* 向上浮動的效果 */
+}
+
 /* -------------------------------------- */
 /* 新增：群組標題相關樣式 (加在原本 CSS 的最上方) */
 /* -------------------------------------- */
@@ -253,6 +342,9 @@ const {
   margin-bottom: 20px;
   border-left: 4px solid #6366f1;
   padding-left: 15px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 /* 核心：Grid 排版，自動換行，一排約 3-4 個 */
