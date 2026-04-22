@@ -27,7 +27,7 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/transfer')
   } else if (item.label == '📤 申請提款') {
     router.replace('/clan/withdraw')
-  } else if (item.label == '👑 成員管理') {
+  } else if (item.label == '👑 權限管理') {
     router.replace('/clan/memberRole')
   } else if (item.label == '📤 提款審核') {
     router.replace('/clan/verifyWithdraw')
@@ -51,13 +51,13 @@ const handleMenuClick = (item: Menu) => {
 const logout = async () => {
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/logout', {
+    const res = await fetch('https://api.gameshare-system.com/logout', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
     })
     const data = await res.json()
@@ -81,13 +81,13 @@ interface Menu {
 onMounted(async () => {
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/get-menu', {
+    const res = await fetch('https://api.gameshare-system.com/get-menu', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${authStore.authToken}`,
         Accept: 'application/json',
         Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+        TimeStamp: currentTimeStamp,
       },
     })
     if (!res.ok) {

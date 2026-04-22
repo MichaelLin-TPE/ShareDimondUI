@@ -511,14 +511,17 @@ const {
   text-align: center;
   box-sizing: border-box;
 }
-
+.submit-btn span {
+  font-weight: bold;
+}
 /* 按鈕 */
 .submit-btn {
   width: 100%;
   height: 44px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
+  color: #000000;
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -533,15 +536,36 @@ const {
 }
 
 .submit-btn.btn-assign-gem {
-  background: linear-gradient(135deg, #9f1239, #be123c) !important;
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
+  color: #1e1e24 !important;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.2s;
 }
 
 .submit-btn.btn-verify-gem {
-  background: linear-gradient(135deg, #0e7490, #155e75) !important;
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
+  color: #1e1e24 !important;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.2s;
 }
 
 .btn-verify-get-item {
-  background: linear-gradient(135deg, #9f1239, #be123c) !important;
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
+  color: #1e1e24 !important;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter 0.2s;
 }
 
 /* 底部數據 */
@@ -630,13 +654,13 @@ const {
 }
 .btn-submit {
   flex: 2;
-  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  color: #000000;
   border: none;
   padding: 12px;
   border-radius: 10px;
   font-weight: bold;
   cursor: pointer;
-  color: #1e293b;
 }
 .btn-cancel {
   flex: 1;

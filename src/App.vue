@@ -1,10 +1,18 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 
-// 檢查通知權限狀態，決定是否顯示自訂彈窗
-
 const route = useRoute()
+
+// 控制圖片彈窗顯示狀態的變數
+const showUsageImage = ref(false)
+// 新增：控制 LINE QR Code 彈窗顯示狀態的變數
+const showLineQR = ref(false)
+
+const isLoginPage = computed(() => {
+  return route.name === 'login' // 對應你 router 裡的 name: 'login'
+})
 </script>
 
 <template>
@@ -27,40 +35,94 @@ const route = useRoute()
     </header>
     <RouterView />
   </template>
+
+  <footer v-if="isLoginPage" class="bottom-nav">
+    <button class="nav-link" @click="showUsageImage = true">核心用法</button>
+    <div class="divider"></div>
+    <button class="nav-link" @click="showLineQR = true">聯絡我們</button>
+    <div class="divider"></div>
+    <button class="nav-link">收費方式</button>
+  </footer>
+
+  <div
+    v-if="isLoginPage && showUsageImage"
+    class="image-modal-overlay"
+    @click="showUsageImage = false"
+  >
+    <div class="image-modal-container" @click.stop>
+      <button class="close-btn" @click="showUsageImage = false">✕</button>
+      <img src="@/assets/core_logic_pic.png" alt="核心用法教學" class="usage-image" />
+    </div>
+  </div>
+
+  <div v-if="isLoginPage && showLineQR" class="image-modal-overlay" @click="showLineQR = false">
+    <div class="image-modal-container" @click.stop>
+      <img
+        src="https://qr-official.line.me/gs/M_920wuugp_GW.png?oat_content=qr"
+        alt="加入 LINE 聯絡我們"
+        class="usage-image"
+        style="background-color: white; padding: 15px"
+      />
+    </div>
+  </div>
 </template>
 
 <style scoped>
-/* 👇 自訂彈窗的樣式 👇 */
-.custom-modal-overlay {
+/* --- 圖片彈窗樣式 --- */
+.image-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
+  backdrop-filter: blur(5px); /* 背景模糊化，增加質感 */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
+  z-index: 10000; /* 確保在最上層，蓋過導覽列 */
 }
 
-.custom-modal-content {
-  background: #1e1e2e;
-  border: 1px solid #334155;
-  border-radius: 16px;
-  padding: 30px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
-  animation: popIn 0.3s ease-out;
+.image-modal-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.2s ease-out;
 }
 
-@keyframes popIn {
+.usage-image {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain; /* 確保圖片不變形 */
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.close-btn {
+  position: absolute;
+  top: -40px; /* 放在圖片右上角外面 */
+  right: 0;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #fff;
+}
+
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
@@ -68,63 +130,49 @@ const route = useRoute()
   }
 }
 
-.modal-icon {
-  font-size: 3rem;
-  margin-bottom: 15px;
-}
-
-.modal-title {
-  color: #f1f5f9;
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.modal-desc {
-  color: #94a3b8;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin-bottom: 25px;
-}
-
-.modal-actions {
+/* --- 底部固定導覽樣式 --- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 15px;
+  padding: 25px 0;
+  width: auto;
+  z-index: 9999;
+  background: transparent;
 }
 
-.modal-btn {
-  flex: 1;
-  padding: 12px 0;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
+.nav-link {
+  background: transparent;
   border: none;
-}
-
-.btn-cancel {
-  background: #2d3047;
   color: #94a3b8;
-  border: 1px solid #3f425b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  padding: 5px 10px;
 }
 
-.btn-cancel:hover {
-  background: #3f425b;
-  color: #fff;
+.nav-link:hover {
+  color: #6366f1;
+  text-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
-.btn-confirm {
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+.divider {
+  margin-top: 25px;
+  width: 1px;
+  height: 12px;
+  background-color: #334155;
 }
 
-.btn-confirm:hover {
-  filter: brightness(1.1);
-  transform: translateY(-2px);
-}
-
-/* 👇 下面保留你原本的 CSS 👇 */
+/* --- 基本佈局樣式 --- */
 header {
   line-height: 1.5;
   max-height: 100vh;
@@ -133,26 +181,7 @@ header {
   display: block;
   margin: 0 auto 2rem;
 }
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-nav a:first-of-type {
-  border: 0;
-}
+
 @media (min-width: 1024px) {
   header {
     display: flex;
@@ -167,18 +196,11 @@ nav a:first-of-type {
     place-items: flex-start;
     flex-wrap: wrap;
   }
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
 }
 </style>
 
 <style>
-/* 手機版登入頁優化 (保留你寫的) */
+/* 手機版全局優化 */
 @media (max-width: 768px) {
   header {
     display: none !important;
@@ -191,11 +213,6 @@ nav a:first-of-type {
     min-height: 100vh !important;
     padding: 20px !important;
     box-sizing: border-box !important;
-  }
-  #app > *:not(header) {
-    width: 100% !important;
-    max-width: 400px !important;
-    margin: 0 auto !important;
   }
 }
 </style>

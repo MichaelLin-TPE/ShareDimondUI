@@ -478,8 +478,8 @@ const {
   width: 100%;
   height: 44px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  color: #000000;
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -495,10 +495,12 @@ const {
 
 .submit-btn.btn-assign-gem {
   background: linear-gradient(135deg, #9f1239, #be123c) !important;
+  color: white;
 }
 
 .submit-btn.btn-verify-gem {
   background: linear-gradient(135deg, #0e7490, #155e75) !important;
+  color: white;
 }
 
 /* 底部數據 */
@@ -626,7 +628,7 @@ const {
 
 /* 確認得標按鈕：遊戲風格漸層與發光 */
 .confirm-btn {
-  background: linear-gradient(135deg, #6366f1, #a855f7); /* 藍紫漸層 */
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important; /* 藍紫漸層 */
   color: #ffffff;
   border: none;
   box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); /* 深藍色發光 */

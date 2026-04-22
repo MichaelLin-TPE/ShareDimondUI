@@ -58,9 +58,9 @@ const {
         <span>(共 {{ auctions.length }} 件)</span>
       </h3>
       <div class="header-btns">
-        <button class="btn-top open" @click="openTicket">我要開單</button>
-        <button class="btn-top add" @click="openAddTreasureDialog">新增道具</button>
-        <button class="btn-top add" @click="openAddBossDialog">新增首領</button>
+        <button class="btn-top open" @click="openTicket">開單</button>
+        <button class="btn-top add" @click="openAddTreasureDialog">道具</button>
+        <button class="btn-top add" @click="openAddBossDialog">首領</button>
       </div>
     </div>
 
@@ -419,8 +419,8 @@ const {
   width: 100%;
   height: 44px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  color: #000000;
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -429,7 +429,7 @@ const {
 }
 .joined {
   background: #334155;
-  color: #94a3b8;
+  color: #000000;
 }
 .card-footer {
   display: flex;
@@ -550,7 +550,7 @@ const {
 }
 .btn-submit {
   flex: 2;
-  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
   border: none;
   padding: 12px;
   border-radius: 10px;
