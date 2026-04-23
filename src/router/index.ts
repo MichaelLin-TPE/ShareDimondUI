@@ -19,6 +19,7 @@ import KickMemberPage from '@/components/KickMemberPage.vue'
 import MarketPlace from '@/components/MarketPlace.vue'
 import PersonalLog from '@/components/PersonalLog.vue'
 import TicketManagement from '@/components/TicketManagement.vue'
+import BossTimerPage from '@/views/BossTimerPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -130,6 +131,10 @@ const router = createRouter({
         {
           path: 'ticketManagement',
           component: TicketManagement
+        },
+        {
+          path: 'bossTimer',
+          component: BossTimerPage,
         },
       ],
     },

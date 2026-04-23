@@ -45,6 +45,8 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/marketPlace')
   } else if (item.label == '💸 個人帳戶') {
     router.replace('/clan/personalLog')
+  } else if (item.label == '⚔️ 首領追蹤') {
+    router.replace('/clan/bossTimer')
   }
 }
 

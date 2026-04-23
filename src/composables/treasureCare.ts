@@ -5,7 +5,8 @@ import { useAlert } from '@/utils/alerts.ts'
 import SockJS from 'sockjs-client'
 import Stomp from 'stompjs'
 import { generateSignature } from '@/utils/SignTools.ts'
-
+let stompClient: Stomp.Client | null = null
+let isSubscribed = false
 export function useAuction() {
   const showModal = ref(false)
   const itemName = ref('')
@@ -26,16 +27,30 @@ export function useAuction() {
     showAddBossDialog.value = true
   }
   const balance = useBalanceStore()
-  const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
-  const stompClient = Stomp.over(socket)
 
-  stompClient.connect({}, (frame) => {
-    console.log('Connected : ' + frame)
-    stompClient.subscribe('/topic/treasure/' + authStore?.member?.clanId, () => {
-      fetchOngoingTreasures()
+  const initWebSocket = () => {
+    // 如果已經連線或訂閱過，就直接 return，避免重複連線
+    if (stompClient && isSubscribed) return
+
+    const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
+    stompClient = Stomp.over(socket)
+
+    stompClient.connect({}, (frame) => {
+      console.log('Connected : ' + frame)
+
+      const clanId = authStore?.member?.clanId
+      if (clanId && !isSubscribed) {
+        stompClient!.subscribe('/topic/treasure/' + clanId, (message) => {
+          if (message.body === 'STATUS_UPDATED') {
+            console.log('有人開新單啦！馬上更新列表！')
+            fetchOngoingTreasures()
+          }
+        })
+        isSubscribed = true // 標記為已訂閱
+      }
     })
-  })
-
+  }
+  initWebSocket()
   interface TreasureItem {
     itemName: string
     itemId: string
@@ -437,6 +452,7 @@ export function useAuction() {
 
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
+    console.trace('到底是誰在瘋狂呼叫我！？')
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
       const res = await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {

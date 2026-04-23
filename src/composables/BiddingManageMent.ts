@@ -33,9 +33,11 @@ export function useAuction() {
   }
   stompClient.connect({}, (frame) => {
     console.log('Connected : ' + frame)
-    stompClient.subscribe('/topic/bidding/' + authStore?.member?.clanId, () => {
-      console.log('收到更新訊息 : /topic/bidding/' + authStore?.member?.clanId)
-      fetchOngoingTreasures()
+    stompClient.subscribe('/topic/bidding/' + authStore?.member?.clanId, (message) => {
+      if (message.body === 'BIDDING_LIST_UPDATED') {
+        console.log('收到更新訊息 : /topic/bidding/' + authStore?.member?.clanId)
+        fetchOngoingTreasures()
+      }
     })
   })
 
