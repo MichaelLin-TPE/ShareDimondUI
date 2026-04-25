@@ -1,384 +1,706 @@
-<template>
-  <div class="admin-container">
-    <div class="header-section">
-      <h2 class="title">🛡️ 血盟設置</h2>
-      <p class="subtitle">管理血盟核心規則、公告與拍賣參數</p>
-    </div>
+<script setup lang="ts">
+import { useAuction } from '@/composables/clanSetting.ts'
+import { computed } from 'vue'
 
-    <div class="management-card p-8">
-      <div class="setting-group mb-8">
-        <label class="setting-label">血盟碎碎念 (佈告欄)</label>
+const {
+  handleSave,
+  handleSaveRate,
+  handleUpdateBalance,
+  settings,
+  selectedCurrency,
+  clanCurrencies,
+  toggleCurrency,
+  balance,
+  balanceAction,
+  balanceAmount,
+  balanceRemark,
+} = useAuction()
+
+// 給 dropdown 用的可選幣別清單：
+// 1. 優先用後端 /clan-currencies 的資料（可區分 enabled/disabled）
+// 2. 若還沒拿到，fallback 到 balance store 的 balanceList（讓畫面不會空白）
+const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
+  if (clanCurrencies.value.length > 0) {
+    return clanCurrencies.value
+      .filter((c) => c.enabled)
+      .map((c) => ({ currencyName: c.currencyName }))
+  }
+  return (balance.balanceList || []).map((b) => ({ currencyName: b.currency }))
+})
+</script>
+
+<template>
+  <div class="cs-page">
+    <!-- Header -->
+    <header class="cs-header">
+      <h1 class="cs-title">🛡️ 血盟設置</h1>
+      <p class="cs-sub">管理公會核心規則、幣別與金庫</p>
+    </header>
+
+    <div class="cs-grid">
+      <!-- ─── 公告 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">📢</span>
+          <div>
+            <h3>血盟公告</h3>
+            <p>盟友登入後會看到的歡迎訊息</p>
+          </div>
+        </div>
         <textarea
           v-model="settings.announcement"
           placeholder="輸入想對盟友說的話..."
-          class="setting-textarea"
+          class="cs-textarea"
           rows="4"
         ></textarea>
-      </div>
+        <div class="cs-actions">
+          <button class="cs-btn-primary" @click="handleSave">💾 儲存公告</button>
+        </div>
+      </section>
 
-      <div class="settings-grid">
-        <div class="setting-item">
-          <label class="setting-label">參與時間設置 (分鐘)</label>
-          <div class="input-wrapper">
-            <input type="number" v-model="settings.participationMinutes" class="setting-input" />
-            <span class="unit-tag">MIN</span>
+      <!-- ─── 競標規則 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">⚔️</span>
+          <div>
+            <h3>競標規則</h3>
+            <p>調整參與時間、競標時長與分潤比例</p>
           </div>
         </div>
 
-        <div class="setting-item">
-          <label class="setting-label">競標時間設置 (分鐘)</label>
-          <div class="input-wrapper">
-            <input type="number" v-model="settings.auctionMinutes" class="setting-input" />
-            <span class="unit-tag">MIN</span>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <label class="setting-label">血盟基金百分比</label>
-          <div class="input-wrapper">
-            <input
-              type="number"
-              v-model="settings.fundPercentage"
-              class="setting-input"
-              max="100"
-              min="0"
-            />
-            <span class="unit-tag">%</span>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <label class="setting-label">固定金額單得標人決定方式</label>
-          <div
-            class="toggle-container"
-            @click="settings.autoDecideWinner = !settings.autoDecideWinner"
-          >
-            <div class="toggle-track" :class="{ active: settings.autoDecideWinner }">
-              <div class="toggle-handle"></div>
-            </div>
-            <span class="toggle-text">
-              {{ settings.autoDecideWinner ? '系統自動決定' : '手動分配' }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer-actions mt-8">
-        <button class="save-btn" @click="handleSave">更新血盟設置</button>
-      </div>
-    </div>
-
-    <div class="management-card p-8">
-      <div class="header-section" style="margin-bottom: 20px">
-        <h3 class="title" style="font-size: 20px">💱 幣別與匯率設置</h3>
-        <p class="subtitle">設定系統轉換計算用的基準幣別與預設比值</p>
-      </div>
-
-      <div class="settings-grid">
-        <div class="setting-item">
-          <label class="setting-label">基準幣別</label>
-          <div class="input-wrapper">
-            <input
-              type="text"
-              v-model="settings.baseCurrency"
-              class="setting-input"
-              placeholder="例如: 元寶"
-            />
-            <span class="unit-tag">幣別</span>
-          </div>
-        </div>
-
-        <div class="setting-item">
-          <label class="setting-label">基準比值</label>
-          <div class="input-wrapper">
-            <input
-              type="number"
-              v-model="settings.exchangeRate"
-              class="setting-input"
-              placeholder="例如: 330"
-            />
-            <span class="unit-tag">比值</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer-actions mt-8">
-        <button class="save-btn" @click="handleSaveRate">更新匯率設置</button>
-      </div>
-    </div>
-    <div class="management-card p-8">
-      <div class="settings-grid">
-        <div class="form-group">
-          <label>選擇幣種</label>
-          <div class="currency-radio-group">
-            <label v-for="item in balance.balanceList" :key="item.currency" class="currency-option">
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>參與時間</label>
+            <div class="cs-input-wrap">
               <input
-                type="radio"
-                v-model="selectedCurrency"
-                :value="item.currency"
-                name="currency"
+                v-model.number="settings.participationMinutes"
+                type="number"
+                class="cs-input"
+                min="1"
               />
-              <span class="custom-radio"></span>
-              <span class="currency-name">{{ item.currency }}</span>
-            </label>
+              <span class="cs-suffix">分鐘</span>
+            </div>
+            <p class="cs-hint">開單後可參與「+1 分紅」的時間長度</p>
           </div>
-        </div>
-      </div>
-      <div class="settings-grid">
-        <div class="setting-item">
-          <label class="setting-label_balance">增加公積金填這</label>
-          <div class="input-wrapper">
-            <input type="number" v-model="settings.addClanBalance" class="setting-input" />
-            <span class="unit-tag">{{ selectedCurrency }}</span>
+
+          <div class="cs-field">
+            <label>競標時間</label>
+            <div class="cs-input-wrap">
+              <input
+                v-model.number="settings.auctionMinutes"
+                type="number"
+                class="cs-input"
+                min="1"
+              />
+              <span class="cs-suffix">分鐘</span>
+            </div>
+            <p class="cs-hint">參與時間結束後，競標出價的時間</p>
+          </div>
+
+          <div class="cs-field">
+            <label>血盟基金抽成</label>
+            <div class="cs-input-wrap">
+              <input
+                v-model.number="settings.fundPercentage"
+                type="number"
+                class="cs-input"
+                min="0"
+                max="100"
+              />
+              <span class="cs-suffix">%</span>
+            </div>
+            <p class="cs-hint">每次分紅自動撥入血盟金庫的比例</p>
+          </div>
+
+          <div class="cs-field">
+            <label>固定金額單得標方式</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: settings.autoDecideWinner }"
+              @click="settings.autoDecideWinner = !settings.autoDecideWinner"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ settings.autoDecideWinner ? '🎲 系統自動決定' : '✋ 手動分配' }}
+              </span>
+            </div>
+            <p class="cs-hint">
+              {{
+                settings.autoDecideWinner
+                  ? '到時間後系統隨機抽出得標者'
+                  : '會長/幹部手動指定得標者'
+              }}
+            </p>
           </div>
         </div>
 
-        <div class="setting-item">
-          <label class="setting-label_balance">增加公積金原因</label>
-          <div class="input-wrapper">
-            <input type="text" v-model="settings.addRemark" class="setting-input" />
-            <span class="unit-tag">原因</span>
-          </div>
+        <div class="cs-actions">
+          <button class="cs-btn-primary" @click="handleSave">💾 儲存競標規則</button>
         </div>
-        <div class="setting-item">
-          <label class="setting-label_balance">減少公積金填這</label>
-          <div class="input-wrapper">
-            <input type="number" v-model="settings.minusClanBalance" class="setting-input" />
-            <span class="unit-tag">{{ selectedCurrency }}</span>
+      </section>
+
+      <!-- ─── 幣別管理 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">💱</span>
+          <div>
+            <h3>幣別管理</h3>
+            <p>啟用/關閉幣別，並設定基準幣與匯率</p>
           </div>
         </div>
 
-        <div class="setting-item">
-          <label class="setting-label_balance">減少公積金原因</label>
-          <div class="input-wrapper">
-            <input type="text" v-model="settings.minusRemark" class="setting-input" />
-            <span class="unit-tag">原因</span>
+        <!-- 幣別列表 -->
+        <div class="cs-currency-list">
+          <div
+            v-for="item in clanCurrencies"
+            :key="item.currencyName"
+            class="cs-currency-item"
+            :class="{ disabled: !item.enabled, base: item.baseCurrency }"
+          >
+            <div class="cs-currency-left">
+              <span class="cs-currency-name">{{ item.currencyName }}</span>
+              <span v-if="item.baseCurrency" class="cs-currency-badge base">基準</span>
+              <span v-else-if="!item.enabled" class="cs-currency-badge off">已關閉</span>
+              <span v-else class="cs-currency-badge on">啟用中</span>
+            </div>
+            <button
+              class="cs-toggle-btn"
+              :class="{ on: item.enabled, off: !item.enabled }"
+              :disabled="item.baseCurrency"
+              :title="item.baseCurrency ? '基準幣無法關閉，請先變更基準幣' : ''"
+              @click="toggleCurrency(item)"
+            >
+              <span class="cs-toggle-dot"></span>
+            </button>
+          </div>
+
+          <div v-if="clanCurrencies.length === 0" class="cs-empty">
+            尚無幣別資料
           </div>
         </div>
-      </div>
 
-      <div class="footer-actions mt-8">
-        <button class="save-btn" @click="handleUpdateBalance">更新血盟基金</button>
-      </div>
+        <div class="cs-divider"></div>
+
+        <!-- 基準幣 + 匯率 -->
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>基準幣別</label>
+            <select v-model="settings.baseCurrency" class="cs-input">
+              <option v-for="c in enabledCurrencies" :key="c.currencyName" :value="c.currencyName">
+                {{ c.currencyName }}
+              </option>
+            </select>
+            <p class="cs-hint">作為計價單位的主要貨幣</p>
+          </div>
+
+          <div class="cs-field">
+            <label>匯率</label>
+            <div class="cs-rate-row">
+              <span class="cs-rate-label">1 {{ settings.baseCurrency || '基準' }} =</span>
+              <input
+                v-model.number="settings.exchangeRate"
+                type="number"
+                class="cs-input cs-rate-input"
+                min="1"
+                placeholder="100"
+              />
+              <span class="cs-rate-label">其他幣別</span>
+            </div>
+            <p class="cs-hint">非基準幣兌換時的固定比例</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" @click="handleSaveRate">💾 儲存幣別與匯率</button>
+        </div>
+      </section>
+
+      <!-- ─── 金庫調整 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🏦</span>
+          <div>
+            <h3>金庫調整</h3>
+            <p>手動增減血盟金庫餘額（會記錄事件）</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-3col">
+          <div class="cs-field">
+            <label>選擇幣別</label>
+            <select v-model="selectedCurrency" class="cs-input">
+              <option value="" disabled>請選擇</option>
+              <option v-for="c in enabledCurrencies" :key="c.currencyName" :value="c.currencyName">
+                {{ c.currencyName }}
+              </option>
+            </select>
+          </div>
+
+          <div class="cs-field">
+            <label>調整方式</label>
+            <div class="cs-action-toggle">
+              <button
+                class="cs-action-btn"
+                :class="{ active: balanceAction === 'add' }"
+                @click="balanceAction = 'add'"
+              >
+                ➕ 增加
+              </button>
+              <button
+                class="cs-action-btn minus"
+                :class="{ active: balanceAction === 'minus' }"
+                @click="balanceAction = 'minus'"
+              >
+                ➖ 扣除
+              </button>
+            </div>
+          </div>
+
+          <div class="cs-field">
+            <label>金額</label>
+            <div class="cs-input-wrap">
+              <input
+                v-model.number="balanceAmount"
+                type="number"
+                class="cs-input"
+                min="1"
+                placeholder="0"
+              />
+              <span class="cs-suffix">{{ selectedCurrency || '幣別' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cs-field">
+          <label>調整原因 <span class="cs-required">*</span></label>
+          <input
+            v-model="balanceRemark"
+            type="text"
+            class="cs-input"
+            placeholder="例如：補入活動分紅、發獎勵等"
+          />
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" @click="handleUpdateBalance">💸 確認調整</button>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { useAuction } from '@/composables/clanSetting.ts'
-
-const { handleSave, settings, balance, selectedCurrency, handleUpdateBalance, handleSaveRate } =
-  useAuction()
-</script>
-
 <style scoped>
-.currency-radio-group {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 保持三行 */
-  gap: 15px;
-  margin-top: 10px;
-}
-
-/* 調整父容器，確保對齊 */
-.currency-option {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  min-width: 0; /* 👈 防止 flex 子元素溢出 */
-}
-
-/* 隱藏預設 input */
-.currency-option input {
-  display: none;
-}
-
-/* 自定義圓圈：核心修正 */
-.custom-radio {
-  width: 18px; /* 固定寬度 */
-  height: 18px; /* 固定高度 */
-  flex: 0 0 18px; /* 👈 強制設定 flex-basis 為 18px，防止任何擠壓 */
-  border: 2px solid #555;
-  border-radius: 50%; /* 絕對圓角 */
-  margin-right: 10px;
-  position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  box-sizing: border-box; /* 確保 18px 包含 border */
-  display: inline-block; /* 👈 確保它是區塊元素 */
-}
-
-/* 文字樣式 */
-.currency-name {
-  color: #ccc;
-  font-size: 14px;
-  white-space: nowrap; /* 防止文字換行擠壓圓圈 */
-}
-
-/* 選中狀態：外圈變色 */
-.currency-option input:checked + .custom-radio {
-  border-color: #7e57c2;
-  box-shadow: 0 0 8px rgba(126, 87, 194, 0.5);
-}
-
-/* 選中狀態：內心實心圓 */
-.currency-option input:checked + .custom-radio::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
-  background: #88d3ce;
-  border-radius: 50%;
-  /* 確保內心圓也不會變形 */
-  display: block;
-}
-
-/* 選中後的文字顏色 */
-.currency-option input:checked ~ .currency-name {
-  color: #fff;
-}
-
-/* 引用你原本 Page 的變數與結構 */
-.admin-container {
-  padding: 40px 24px;
-  max-width: 800px;
+.cs-page {
+  padding: 32px 20px 48px;
+  max-width: 980px;
   margin: 0 auto;
+  color: #e2e8f0;
 }
 
-.header-section {
-  margin-bottom: 24px;
+/* Header */
+.cs-header {
+  margin-bottom: 28px;
+  margin-left: 48px;
 }
-.title {
-  color: #fff;
-  font-size: 24px;
-  margin-bottom: 4px;
+.cs-title {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #a5b4fc, #f0abfc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+.cs-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
-.management-card {
+/* Grid */
+.cs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cs-card--full {
+  grid-column: 1 / -1;
+}
+
+/* Card */
+.cs-card {
   background: #161822;
   border: 1px solid #24263a;
-  border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  padding: 40px;
-  margin-top: 15px;
+  border-radius: 18px;
+  padding: 24px;
+}
+.cs-card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cs-card-icon {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4));
+}
+.cs-card-head h3 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+.cs-card-head p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
-.setting-group {
+/* Fields */
+.cs-field {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  margin-bottom: 14px;
 }
-.settings-grid {
+.cs-field label {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.cs-required {
+  color: #f87171;
+}
+.cs-fields-2col {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
-}
-.setting-label_balance,
-.setting-label {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 500;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
   margin-bottom: 8px;
-  display: block;
-  margin-top: 10px;
+}
+.cs-fields-3col {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
-/* 輸入框風格 (與搜尋框一致) */
-.setting-textarea,
-.setting-input {
+/* Inputs */
+.cs-input,
+.cs-textarea {
   width: 100%;
   background: #0f111a;
   border: 1px solid #2d3047;
-  border-radius: 12px;
-  padding: 12px 16px;
-  color: #fff;
+  border-radius: 10px;
+  padding: 0 14px;
+  color: #f1f5f9;
+  font-size: 0.92rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+  font-family: inherit;
+  height: 44px;
+  line-height: 42px;
 }
-
-.setting-textarea:focus,
-.setting-input:focus {
+.cs-input:focus,
+.cs-textarea:focus {
   border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
-
-/* 單位標籤設計 */
-.input-wrapper {
+.cs-textarea {
+  resize: none;
+  margin-bottom: 14px;
+  height: auto;
+  min-height: 90px;
+  line-height: 1.5;
+  padding: 12px 14px;
+}
+select.cs-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #94a3b8 50%),
+    linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+.cs-input-wrap {
   position: relative;
 }
-.unit-tag {
+.cs-suffix {
   position: absolute;
-  right: 16px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 12px;
-  font-weight: bold;
+  font-size: 0.78rem;
+  color: #64748b;
+  font-weight: 600;
+  pointer-events: none;
+}
+.cs-hint {
+  margin: 4px 0 0;
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.4;
 }
 
-/* 自定義開關 (Toggle Switch) */
-.toggle-container {
+/* Toggle (open/manual) */
+.cs-toggle {
   display: flex;
   align-items: center;
   gap: 12px;
   cursor: pointer;
+  padding: 0 14px;
+  background: #0f111a;
+  border: 1px solid #2d3047;
+  border-radius: 10px;
+  height: 44px;
+  box-sizing: border-box;
 }
-
-.toggle-track {
-  width: 50px;
-  height: 26px;
+.cs-toggle-track {
+  width: 42px;
+  height: 22px;
   background: #2d3047;
-  border-radius: 50px;
+  border-radius: 100px;
   position: relative;
-  transition: background 0.3s;
+  transition: background 0.25s;
+  flex-shrink: 0;
 }
-
-.toggle-track.active {
-  background: linear-gradient(135deg, #00ff88, #059669); /* 延續幹部綠色系 */
+.cs-toggle.active .cs-toggle-track {
+  background: linear-gradient(135deg, #10b981, #059669);
 }
-
-.toggle-handle {
-  width: 20px;
-  height: 20px;
+.cs-toggle-handle {
+  width: 16px;
+  height: 16px;
   background: white;
   border-radius: 50%;
   position: absolute;
   top: 3px;
   left: 3px;
-  transition: left 0.3s;
+  transition: left 0.25s;
+}
+.cs-toggle.active .cs-toggle-handle {
+  left: 23px;
+}
+.cs-toggle-text {
+  color: #f1f5f9;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
-.active .toggle-handle {
+/* Currency list */
+.cs-currency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.cs-currency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #0f111a;
+  border: 1px solid #2d3047;
+  border-radius: 12px;
+  transition: all 0.15s;
+}
+.cs-currency-item.base {
+  border-color: rgba(245, 196, 81, 0.4);
+  background: rgba(245, 196, 81, 0.05);
+}
+.cs-currency-item.disabled {
+  opacity: 0.55;
+  background: #0a0c14;
+}
+.cs-currency-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cs-currency-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.5px;
+}
+.cs-currency-item.disabled .cs-currency-name {
+  text-decoration: line-through;
+  color: #64748b;
+}
+.cs-currency-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.cs-currency-badge.base {
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #000;
+}
+.cs-currency-badge.on {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.cs-currency-badge.off {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+/* Toggle button (currency on/off) */
+.cs-toggle-btn {
+  width: 50px;
+  height: 26px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.25s;
+  padding: 0;
+}
+.cs-toggle-btn.on {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+.cs-toggle-btn.off {
+  background: #3a3f5c;
+}
+.cs-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.cs-toggle-dot {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.25s;
+}
+.cs-toggle-btn.on .cs-toggle-dot {
   left: 27px;
 }
 
-.toggle-text {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
+.cs-empty {
+  text-align: center;
+  padding: 24px;
+  color: #475569;
+  font-size: 0.85rem;
 }
 
-/* 儲存按鈕 (延續原本按鈕樣式) */
-.save-btn {
+.cs-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 18px 0 18px;
+}
+
+/* Rate row */
+.cs-rate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cs-rate-label {
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cs-rate-input {
+  flex: 1;
+  text-align: center;
+  font-weight: 700;
+  color: #ffd166;
+  min-width: 0;
+}
+
+/* Action toggle (add/minus) — 用明確 height 確保按鈕一定在框內 */
+.cs-action-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #0f111a;
+  border: 1px solid #2d3047;
+  border-radius: 10px;
+  padding: 3px;
+  height: 44px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.cs-action-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 36px; /* 44(總) - 2(border) - 6(padding) = 36，剛好填滿 */
+  margin: 0;
+  border: 0;
+  outline: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.cs-action-btn.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+}
+.cs-action-btn.minus.active {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Actions — 提交按鈕滿版 */
+.cs-actions {
+  margin-top: 18px;
+}
+.cs-btn-primary {
   width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  padding: 14px 24px;
   border: none;
   border-radius: 12px;
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.cs-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.4);
 }
 
-.save-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+/* RWD */
+@media (max-width: 768px) {
+  .cs-page { padding: 20px 12px 32px; }
+  .cs-header { margin-left: 48px; }
+  .cs-fields-2col,
+  .cs-fields-3col {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .cs-card { padding: 18px 16px; }
 }
 </style>

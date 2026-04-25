@@ -1,67 +1,59 @@
-import {  onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
-import { generateSignature } from '@/utils/SignTools.ts' // 延續你的 Alert 工具
+import { generateSignature } from '@/utils/SignTools.ts'
+
+const API = 'https://api.gameshare-system.com'
+
+export interface ClanCurrency {
+  currencyName: string
+  currencyCode: string
+  enabled: boolean
+  baseCurrency: boolean
+}
 
 export function useAuction() {
   const authStore = useAuthStore()
-
   const balance = useBalanceStore()
+
   const settings = ref({
     announcement: '',
     participationMinutes: 0,
     auctionMinutes: 0,
     fundPercentage: 0,
     autoDecideWinner: false,
-    addRemark:'',
-    minusRemark:'',
-    addClanBalance:0,
-    minusClanBalance:0,
-    baseCurrency:'',
-    exchangeRate:0
+    addRemark: '',
+    minusRemark: '',
+    addClanBalance: 0,
+    minusClanBalance: 0,
+    baseCurrency: '',
+    exchangeRate: 0,
   })
   const selectedCurrency = ref('')
 
-  const handleSaveRate = async () => {
-    try {
-      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/updateClanBaseCurrencyAndRate', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-          Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-        },
-        body: JSON.stringify({
-          baseCurrency: settings.value.baseCurrency,
-          exchangeRate: settings.value.exchangeRate,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        useAlert.error(data.message)
-        return
-      }
-      useAlert.success(data.message)
-    } catch (e) {
-      console.log(e)
-    }
-  }
+  // 公積金調整：改成單一表單流程
+  const balanceAction = ref<'add' | 'minus'>('add')
+  const balanceAmount = ref<number>(0)
+  const balanceRemark = ref<string>('')
 
+  // 幣別列表
+  const clanCurrencies = ref<ClanCurrency[]>([])
 
+  const headers = (ts: string) => ({
+    Authorization: `Bearer ${authStore.authToken}`,
+    'Content-Type': 'application/json',
+    Sign: generateSignature(ts),
+    TimeStamp: ts,
+  })
+
+  // ───── 基本資訊 ─────
   const handleSave = async () => {
     try {
-      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/updateClanBasicInfo', {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/updateClanBasicInfo`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-          Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-        },
+        headers: headers(ts),
         body: JSON.stringify({
           announcement: settings.value.announcement,
           joinMins: settings.value.participationMinutes,
@@ -81,94 +73,121 @@ TimeStamp:currentTimeStamp
     }
   }
 
-  const requestUpdateClanBalanceAdd = async ()=>{
-        try {
-          const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/updateClanBalanceAdd', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${authStore.authToken}`,
-              'Content-Type': 'application/json',
-              Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-            },
-            body: JSON.stringify({
-              clanBalance: settings.value.addClanBalance,
-              remark: settings.value.addRemark,
-              currency: selectedCurrency.value,
-            }),
-          })
-          const data = await res.json()
-          if (!res.ok) {
-            useAlert.error(data.message)
-            return
-          }
-          useAlert.success(data.message)
-          settings.value.addClanBalance = 0
-          settings.value.addRemark = ''
-          if (settings.value.minusClanBalance != 0){
-            requestUpdateClanBalanceMinus()
-          }
-      }catch (e){
-        console.log(e)
+  // ───── 基準幣與匯率 ─────
+  const handleSaveRate = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/updateClanBaseCurrencyAndRate`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({
+          baseCurrency: settings.value.baseCurrency,
+          exchangeRate: settings.value.exchangeRate,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
       }
+      useAlert.success(data.message)
+      // 重新拉幣別清單，更新 baseCurrency 標記
+      fetchClanCurrencies()
+    } catch (e) {
+      console.log(e)
+    }
   }
 
-    const requestUpdateClanBalanceMinus = async ()=>{
-        try {
-          const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/updateClanBalanceMinus', {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${authStore.authToken}`,
-              'Content-Type': 'application/json',
-              Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-            },
-            body: JSON.stringify({
-              currency: selectedCurrency.value,
-              clanBalance: settings.value.minusClanBalance,
-              remark: settings.value.minusRemark,
-            }),
-          })
-          const data = await res.json()
-          if (!res.ok) {
-            useAlert.error(data.message)
-            return
-          }
-          useAlert.success(data.message)
-          settings.value.minusClanBalance = 0
-          settings.value.minusRemark = ''
+  // ───── 幣別清單 ─────
+  const fetchClanCurrencies = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/clan-currencies`, {
+        method: 'GET',
+        headers: headers(ts),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      // 後端 isBaseCurrency 在 JSON 中會變成 baseCurrency（Jackson 預設行為）
+      clanCurrencies.value = data
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
-        }catch (e){
-          console.log(e)
-        }
+  const toggleCurrency = async (item: ClanCurrency) => {
+    const willEnable = !item.enabled
+    if (!willEnable) {
+      const result = await useAlert.confirm(
+        `確定要關閉「${item.currencyName}」幣別嗎？\n關閉後成員將無法在新的開單、轉帳等操作中使用此幣別（既有餘額不會被刪除）`,
+      )
+      if (!result?.isConfirmed) return
+    }
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/toggle-currency`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({
+          currencyName: item.currencyName,
+          enabled: willEnable,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
       }
+      useAlert.success(data.message)
+      item.enabled = willEnable
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
-
+  // ───── 公積金調整 ─────
   const handleUpdateBalance = async () => {
+    if (!selectedCurrency.value) return useAlert.error('請選擇幣別')
+    if (balanceAmount.value <= 0) return useAlert.error('請輸入大於 0 的金額')
+    if (!balanceRemark.value.trim()) return useAlert.error('請輸入調整原因')
 
-    if (selectedCurrency.value.length == 0){
-      useAlert.error("請選擇幣別")
-      return
-    }
-    if (settings.value.addClanBalance != 0){
-      requestUpdateClanBalanceAdd()
-      return
-    }
-    if (settings.value.minusClanBalance != 0){
-      requestUpdateClanBalanceMinus()
+    const path = balanceAction.value === 'add' ? '/updateClanBalanceAdd' : '/updateClanBalanceMinus'
+    const verb = balanceAction.value === 'add' ? '增加' : '扣除'
+    const result = await useAlert.confirm(
+      `確定要從「${selectedCurrency.value}」金庫${verb} ${balanceAmount.value.toLocaleString()} 嗎？`,
+    )
+    if (!result?.isConfirmed) return
+
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}${path}`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({
+          currency: selectedCurrency.value,
+          clanBalance: balanceAmount.value,
+          remark: balanceRemark.value,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      balanceAmount.value = 0
+      balanceRemark.value = ''
+    } catch (e) {
+      console.log(e)
     }
   }
 
+  // ───── 初始載入 ─────
   const getBasicInfo = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getClanBasicInfo', {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-      },
+    const ts = Math.floor(Date.now() / 1000).toString()
+    const res = await fetch(`${API}/getClanBasicInfo`, {
+      method: 'GET',
+      headers: headers(ts),
     })
     if (!res.ok) return
     const data = await res.json()
@@ -181,17 +200,43 @@ TimeStamp:currentTimeStamp
     settings.value.exchangeRate = data.exchangeRate
   }
 
+  // 從 /getBalance 同步 store，避免直接重新整理本頁時 store 為空
+  const fetchBalance = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/getBalance`, {
+        method: 'GET',
+        headers: headers(ts),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      balance.setBalanceList(data.memberBalanceResponseList)
+      balance.setClanBalanceList(data.clanBalanceResponseList)
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
-  onMounted(getBasicInfo)
-
+  onMounted(() => {
+    getBasicInfo()
+    fetchBalance()
+    fetchClanCurrencies()
+  })
 
   return {
-    handleUpdateBalance,
-    selectedCurrency,
+    settings,
     balance,
-    authStore,
+    selectedCurrency,
     handleSave,
     handleSaveRate,
-    settings,
+    handleUpdateBalance,
+    // 幣別管理
+    clanCurrencies,
+    fetchClanCurrencies,
+    toggleCurrency,
+    // 公積金調整
+    balanceAction,
+    balanceAmount,
+    balanceRemark,
   }
 }
