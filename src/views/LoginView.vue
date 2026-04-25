@@ -5,6 +5,9 @@ import { useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 const showApplyClanModal = ref(false)
+// 自動登入狀態
+const isAutoLoggingIn = ref(false)
+const autoLoginStage = ref<'verifying' | 'success' | 'failed'>('verifying')
 
 interface Clan {
   id: string
@@ -55,6 +58,9 @@ onMounted(() => {
 })
 
 const autoLoginByToken = async () => {
+  isAutoLoggingIn.value = true
+  autoLoginStage.value = 'verifying'
+  const startedAt = Date.now()
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
     const res = await fetch('https://api.gameshare-system.com/loginByToken', {
@@ -68,17 +74,28 @@ const autoLoginByToken = async () => {
     })
     const data = await res.json()
     if (!res.ok) {
+      autoLoginStage.value = 'failed'
+      // 失敗時讓使用者看到「驗證失敗」訊息再退回登入畫面
+      await new Promise((resolve) => setTimeout(resolve, 900))
+      isAutoLoggingIn.value = false
       return
     }
     authStore.setToken(data.authToken)
     authStore.setMember(data)
     console.log('登入成功 : ', data)
     showApplyClanModal.value = false
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    useAlert.success(`登入成功\n血盟：${selectedClanName.value}`)
+    autoLoginStage.value = 'success'
+    // 最少顯示 800ms 避免閃一下，且保留原本的 1500ms 體驗
+    const elapsed = Date.now() - startedAt
+    const remaining = Math.max(0, 2000 - elapsed)
+    await new Promise((resolve) => setTimeout(resolve, remaining))
+    isAutoLoggingIn.value = false
     router.replace('/clan')
   } catch (e) {
     console.log(e)
+    autoLoginStage.value = 'failed'
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    isAutoLoggingIn.value = false
   }
 }
 
@@ -256,6 +273,41 @@ const onForgotPassword = () => {
         </div>
       </div>
     </div>
+
+    <!-- 自動登入覆蓋層 -->
+    <Transition name="auto-fade">
+      <div v-if="isAutoLoggingIn" class="auto-login-overlay">
+        <div class="auto-login-card">
+          <div class="al-logo-wrap">
+            <div class="al-logo" :class="autoLoginStage">
+              {{ autoLoginStage === 'success' ? '✓' : autoLoginStage === 'failed' ? '✕' : '◆' }}
+            </div>
+            <div v-if="autoLoginStage === 'verifying'" class="al-ring"></div>
+          </div>
+
+          <h2 class="al-title">Diamond Core</h2>
+
+          <div class="al-stage">
+            <template v-if="autoLoginStage === 'verifying'">
+              <p class="al-msg">正在為您自動登入...</p>
+              <p class="al-sub">驗證登入憑證中，請稍候</p>
+            </template>
+            <template v-else-if="autoLoginStage === 'success'">
+              <p class="al-msg success">驗證成功</p>
+              <p class="al-sub">正在進入血盟大廳...</p>
+            </template>
+            <template v-else>
+              <p class="al-msg failed">憑證已過期</p>
+              <p class="al-sub">請重新登入</p>
+            </template>
+          </div>
+
+          <div v-if="autoLoginStage === 'verifying'" class="al-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    </Transition>
 
     <!-- 申請血盟 Modal -->
     <div v-if="showApplyClanModal" class="modal-mask">
@@ -555,5 +607,145 @@ button:disabled {
   100% {
     opacity: 1;
   }
+}
+
+/* ===== 自動登入覆蓋層 ===== */
+.auto-login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0d1a 100%);
+  padding: 24px;
+}
+
+.auto-login-card {
+  text-align: center;
+  max-width: 340px;
+}
+
+.al-logo-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  margin: 0 auto 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.al-logo {
+  font-size: 46px;
+  font-weight: 700;
+  color: #6cf2ff;
+  text-shadow: 0 0 16px rgba(108, 242, 255, 0.9), 0 0 36px rgba(180, 110, 255, 0.7);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: al-pulse 2s ease-in-out infinite;
+}
+.al-logo.success {
+  color: #6ee7b7;
+  text-shadow: 0 0 16px rgba(110, 231, 183, 0.9), 0 0 36px rgba(16, 185, 129, 0.6);
+  animation: al-pop 0.4s ease-out;
+}
+.al-logo.failed {
+  color: #fca5a5;
+  text-shadow: 0 0 16px rgba(252, 165, 165, 0.8), 0 0 36px rgba(239, 68, 68, 0.5);
+  animation: al-pop 0.4s ease-out;
+}
+
+/* 旋轉光環 */
+.al-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: #6cf2ff;
+  border-right-color: rgba(180, 110, 255, 0.6);
+  animation: al-spin 1.2s linear infinite;
+  box-shadow: 0 0 20px rgba(108, 242, 255, 0.3);
+}
+
+.al-title {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.al-stage {
+  min-height: 52px;
+}
+.al-msg {
+  margin: 0 0 5px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6faff;
+  letter-spacing: 0.5px;
+}
+.al-msg.success { color: #6ee7b7; }
+.al-msg.failed { color: #fca5a5; }
+.al-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #9aa4d6;
+  letter-spacing: 1px;
+}
+
+/* 三點點動畫 */
+.al-dots {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.al-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6cf2ff;
+  opacity: 0.3;
+  animation: al-dot 1.2s ease-in-out infinite;
+}
+.al-dots span:nth-child(2) { animation-delay: 0.15s; }
+.al-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes al-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes al-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+@keyframes al-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes al-dot {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+    box-shadow: 0 0 8px rgba(108, 242, 255, 0.7);
+  }
+}
+
+/* Transition 動畫 */
+.auto-fade-enter-active,
+.auto-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.auto-fade-enter-from,
+.auto-fade-leave-to {
+  opacity: 0;
 }
 </style>

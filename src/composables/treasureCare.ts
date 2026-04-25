@@ -1,4 +1,4 @@
-import { onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { useAlert } from '@/utils/alerts.ts'
@@ -162,13 +162,18 @@ export function useAuction() {
         useAlert.error('開單失敗!!!')
         return
       }
+      // 先清空 & 關閉原 modal
       itemName.value = ''
       bossName.value = ''
       remark.value = ''
       basePrice.value = ''
       error.value = ''
-      useAlert.success('開單成功!!!')
       showModal.value = false
+      loading.value = false
+      // 關鍵：等 Vue 真的把 modal 從 DOM 移除後再彈 Swal
+      // 不然兩層 backdrop-filter: blur 疊在一起會把瀏覽器合成卡住
+      await nextTick()
+      useAlert.success('開單成功!!!')
       fetchOngoingTreasures()
     } catch (e) {
       console.log(e)
@@ -452,7 +457,6 @@ export function useAuction() {
 
   // 提取成獨立函數
   const fetchOngoingTreasures = async () => {
-    console.trace('到底是誰在瘋狂呼叫我！？')
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
       const res = await fetch('https://api.gameshare-system.com/get-ongoing-treasure', {

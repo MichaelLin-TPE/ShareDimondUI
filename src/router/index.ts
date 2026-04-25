@@ -20,6 +20,7 @@ import MarketPlace from '@/components/MarketPlace.vue'
 import PersonalLog from '@/components/PersonalLog.vue'
 import TicketManagement from '@/components/TicketManagement.vue'
 import BossTimerPage from '@/views/BossTimerPage.vue'
+import Game1A2BPage from '@/views/Game1A2BPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -135,6 +136,10 @@ const router = createRouter({
         {
           path: 'bossTimer',
           component: BossTimerPage,
+        },
+        {
+          path: 'game1a2b',
+          component: Game1A2BPage,
         },
       ],
     },

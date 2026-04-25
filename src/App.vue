@@ -10,6 +10,74 @@ const showPricingModal = ref(false)
 const showUsageImage = ref(false)
 // 新增：控制 LINE QR Code 彈窗顯示狀態的變數
 const showLineQR = ref(false)
+// 新增：控制功能說明彈窗顯示狀態的變數
+const showFeaturesModal = ref(false)
+
+interface FeatureCategory {
+  title: string
+  color: string
+  items: { icon: string; name: string; desc: string }[]
+}
+
+const featureCategories: FeatureCategory[] = [
+  {
+    title: '💰 寶物分紅',
+    color: '#f5c451',
+    items: [
+      { icon: '🎯', name: '競標開單', desc: '設定底價、時間，成員競價出價搶標' },
+      { icon: '💵', name: '固定金額單', desc: '快速固定價格結標，多位得標者隨機抽選' },
+      { icon: '🙋', name: '參與 +1', desc: '一鍵加入分紅名單，到期自動結算' },
+      { icon: '📝', name: '備註/撤單', desc: '開單人可隨時更新備註或撤銷' },
+    ],
+  },
+  {
+    title: '💸 金流管理',
+    color: '#6366f1',
+    items: [
+      { icon: '🔁', name: '會員轉帳', desc: '公會內成員互轉多幣別貨幣' },
+      { icon: '📤', name: '申請提款', desc: '送出提款單，幹部審核後撥款' },
+      { icon: '✅', name: '提款審核', desc: '幹部/會長核准或退回提款單' },
+      { icon: '🎁', name: '基金分配', desc: '會長將公會金庫依比例分給成員' },
+    ],
+  },
+  {
+    title: '👥 公會管理',
+    color: '#a855f7',
+    items: [
+      { icon: '🙋‍♂️', name: '人員審核', desc: '新加入的成員由幹部審核放行' },
+      { icon: '👑', name: '權限管理', desc: '會長指派幹部、移交會長職權' },
+      { icon: '🚪', name: '成員管理', desc: '踢除成員、管理血盟名單' },
+      { icon: '⚙️', name: '血盟設定', desc: '調整匯率、競標時長等公會參數' },
+    ],
+  },
+  {
+    title: '⚔️ 戰鬥輔助',
+    color: '#ef4444',
+    items: [
+      { icon: '⏰', name: '首領重生追蹤', desc: '自訂首領清單、固定重生間隔' },
+      { icon: '☠️', name: '死亡回報', desc: '一鍵回報死亡，自動計算下次重生' },
+      { icon: '🔔', name: 'FCM 推播', desc: '首領重生前 5 分鐘自動推播提醒' },
+      { icon: '🔄', name: '即時同步', desc: 'WebSocket 同步，盟友動作畫面立即更新' },
+    ],
+  },
+  {
+    title: '🏦 帳戶中心',
+    color: '#10b981',
+    items: [
+      { icon: '💳', name: '成員帳戶', desc: '查看全體成員餘額、凍結金額' },
+      { icon: '💸', name: '個人帳戶', desc: '個人收支流水、分紅紀錄' },
+      { icon: '🏪', name: '個人掛賣區', desc: '成員間物品上架、下標交易' },
+      { icon: '📖', name: '歷史紀錄', desc: '完整的寶物結標、分紅紀錄' },
+    ],
+  },
+  {
+    title: '🎮 娛樂小物',
+    color: '#ec4899',
+    items: [
+      { icon: '🎯', name: '1A2B 猜數字', desc: '經典 Bulls & Cows，讓系統用最佳策略猜你想的數字' },
+    ],
+  },
+]
 
 const isLoginPage = computed(() => {
   return route.name === 'login' // 對應你 router 裡的 name: 'login'
@@ -39,6 +107,8 @@ const isLoginPage = computed(() => {
 
   <footer v-if="isLoginPage" class="bottom-nav">
     <button class="nav-link" @click="showUsageImage = true">核心用法</button>
+    <div class="divider"></div>
+    <button class="nav-link" @click="showFeaturesModal = true">功能說明</button>
     <div class="divider"></div>
     <button class="nav-link" @click="showLineQR = true">聯絡我們</button>
     <div class="divider"></div>
@@ -113,6 +183,46 @@ const isLoginPage = computed(() => {
         class="usage-image"
         style="background-color: white; padding: 15px"
       />
+    </div>
+  </div>
+
+  <!-- 功能說明彈窗 -->
+  <div
+    v-if="isLoginPage && showFeaturesModal"
+    class="image-modal-overlay"
+    @click="showFeaturesModal = false"
+  >
+    <div class="features-modal-container" @click.stop>
+      <button class="features-close-btn" @click="showFeaturesModal = false">✕</button>
+
+      <div class="features-header">
+        <h2>🚀 Diamond Core 功能總覽</h2>
+        <p>一站式血盟管理解決方案</p>
+      </div>
+
+      <div class="features-grid">
+        <div
+          v-for="(cat, idx) in featureCategories"
+          :key="idx"
+          class="features-category"
+          :style="{ '--cat-color': cat.color }"
+        >
+          <div class="features-category-title">{{ cat.title }}</div>
+          <div class="features-category-list">
+            <div v-for="(item, i) in cat.items" :key="i" class="features-item">
+              <span class="features-item-icon">{{ item.icon }}</span>
+              <div class="features-item-body">
+                <div class="features-item-name">{{ item.name }}</div>
+                <div class="features-item-desc">{{ item.desc }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="features-footer">
+        <span>🛡️ 完全零抽成 &nbsp;·&nbsp; 🔄 WebSocket 即時同步 &nbsp;·&nbsp; 🔔 FCM 推播通知</span>
+      </div>
     </div>
   </div>
 </template>
@@ -336,6 +446,151 @@ const isLoginPage = computed(() => {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* --- 功能說明彈窗樣式 --- */
+.features-modal-container {
+  position: relative;
+  width: 90vw;
+  max-width: 780px;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #1a1f2e;
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  color: #e2e8f0;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.features-modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+.features-modal-container::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+
+.features-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  z-index: 2;
+}
+.features-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+
+.features-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.features-header h2 {
+  margin: 0 0 6px;
+  font-size: 1.55rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.features-header p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #94a3b8;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.features-category {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 3px solid var(--cat-color);
+  border-radius: 12px;
+  padding: 14px 14px 10px;
+}
+.features-category-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--cat-color);
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+.features-category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.features-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: background 0.15s;
+}
+.features-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.features-item-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.features-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.features-item-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+.features-item-desc {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.features-footer {
+  text-align: center;
+  padding: 12px 8px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 640px) {
+  .features-modal-container {
+    padding: 28px 16px 18px;
+  }
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .features-header h2 {
+    font-size: 1.25rem;
   }
 }
 

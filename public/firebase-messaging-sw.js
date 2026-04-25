@@ -29,19 +29,63 @@ firebase.initializeApp(firebaseConfig)
 const messaging = firebase.messaging()
 
 
-// 2. 處理「後台」收到的 Data Message
+// 4. 處理「後台」收到的 Data Message
 messaging.onBackgroundMessage(function (payload) {
   console.log('[Service Worker] 收到背景推播: ', payload)
 
-  // 因為後端改成放 data 裡面了，所以我們從 data 取值
+  // 從 data 取值
   const title = payload.data?.title || '系統通知'
   const options = {
-    body: payload.data.body || '您有一則新通知',
+    body: payload.data?.body || '您有一則新通知',
+    icon: '/share_diamond_logo.png',
+    badge: '/share_diamond_logo.png',
+    // 把點擊要跳轉的 URL 與型別塞到 data，notificationclick 事件會用到
     data: {
-      type: payload.data.type,
+      url: payload.data?.url || '/',
+      type: payload.data?.type || '',
     },
   }
 
   // 手動觸發原生系統通知
   return self.registration.showNotification(title, options)
+})
+
+// 5. 監聽通知點擊：自動聚焦既有分頁，或開新視窗
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  // 後端可在 data 裡指定 url；沒指定就回到首頁
+  const targetUrl = event.notification.data?.url || '/'
+
+  event.waitUntil(
+    (async () => {
+      const allClients = await clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      })
+
+      // 嘗試聚焦既有同源分頁
+      for (const client of allClients) {
+        try {
+          const clientUrl = new URL(client.url)
+          if (clientUrl.origin === self.location.origin) {
+            // 若該分頁不在目標頁，先導向目標頁再聚焦
+            if ('navigate' in client && targetUrl && targetUrl !== '/') {
+              try {
+                await client.navigate(targetUrl)
+              } catch (e) {
+                // navigate 在某些瀏覽器/狀態下可能失敗，忽略後直接 focus
+              }
+            }
+            return client.focus()
+          }
+        } catch (e) {
+          // URL 解析失敗就跳過該 client
+        }
+      }
+
+      // 沒有任何分頁開著就開新分頁
+      return clients.openWindow(targetUrl)
+    })()
+  )
 })

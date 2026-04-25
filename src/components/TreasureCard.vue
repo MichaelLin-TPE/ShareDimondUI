@@ -119,143 +119,173 @@ const {
       </div>
     </div>
 
-    <div v-if="showPeopleList" class="show-people-list" @click.self="showPeopleList = false">
-      <div class="boss-container">
-        <h2 class="boss-title">參與名單</h2>
-        <ul class="people-list">
-          <li
-            v-for="(data, index) in getJoinList()"
-            :key="index"
-            class="person-item"
-            @click="handlePersonClick(data)"
-          >
-            <div class="person-info">
-              <span class="person-name">👤 {{ data.userName }} </span>
-              <span class="join-time"> , {{ formatTimestamp(data.joinTime) }}</span>
-            </div>
-          </li>
-        </ul>
-        <button class="close-btn" @click="showPeopleList = false">關閉</button>
-      </div>
-    </div>
-
-    <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h2 class="modal-title">創建拍賣清單</h2>
-          <p class="modal-subtitle">請填寫詳細寶物資訊</p>
-        </div>
-
-        <form @submit.prevent="handleSubmit" class="modal-form">
-          <div class="form-group">
-            <label>寶物名稱</label>
-            <select v-model="itemName" @change="handleItemChange" required class="styled-select">
-              <option disabled value="">請選擇要開單的寶物</option>
-              <option v-for="opt in itemOptions" :key="opt.itemId" :value="opt.itemId">
-                {{ opt.itemName }}
-              </option>
-            </select>
+    <Teleport to="body">
+      <div v-if="showPeopleList" class="ot-modal">
+        <div class="ot-modal__mask" @click="showPeopleList = false"></div>
+        <div class="ot-modal__panel ot-modal__panel--people" role="dialog">
+          <button class="ot-modal__close" type="button" @click="showPeopleList = false">×</button>
+          <div class="ot-modal__head">
+            <h2>參與名單</h2>
+            <p>點擊成員可管理其參與資格</p>
           </div>
-
-          <div class="form-group">
-            <label>首領名稱</label>
-            <select v-model="bossName" required class="styled-select">
-              <option disabled value="">請選擇掉落的首領</option>
-              <option v-for="boss in bossOptions" :key="boss.bossId" :value="boss.bossId">
-                {{ boss.bossName }}
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>分紅幣種</label>
-            <div class="radio-card-group">
-              <label v-for="item in balance.balanceList" :key="item.currency" class="radio-card">
-                <input
-                  type="radio"
-                  v-model="selectedCurrency"
-                  :value="item.currency"
-                  name="currency"
-                />
-                <div class="radio-content">{{ item.currency }}</div>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>開單種類</label>
-            <div class="radio-card-group binary">
-              <label class="radio-card">
-                <input type="radio" v-model="selectedType" value="bid" name="type" />
-                <div class="radio-content">競標模式</div>
-              </label>
-              <label class="radio-card">
-                <input type="radio" v-model="selectedType" value="fixed" name="type" />
-                <div class="radio-content">固定金額</div>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>起始底價</label>
-            <div class="input-wrapper">
-              <input
-                type="number"
-                v-model.number="basePrice"
-                class="styled-input"
-                required
-                placeholder="0"
-              />
-              <span class="input-suffix">{{ selectedCurrency || 'G' }}</span>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>備註說明</label>
-            <textarea
-              v-model="remark"
-              class="styled-input textarea"
-              placeholder="輸入特殊說明..."
-            ></textarea>
-          </div>
-
-          <div v-if="error" class="error-msg">{{ error }}</div>
-
-          <div class="modal-footer">
-            <button type="submit" class="btn-submit" :disabled="loading">
-              {{ loading ? '提交中...' : '確認開單' }}
-            </button>
-            <button type="button" class="btn-cancel" @click="showModal = false">取消</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div
-      v-if="showAddBossDialog || showAddTreasureDialog"
-      class="modal-overlay"
-      @click.self="showAddBossDialog = showAddTreasureDialog = false"
-    >
-      <div class="modal-card mini">
-        <h2 class="modal-title">{{ showAddBossDialog ? '新增首領' : '新增道具' }}</h2>
-        <input
-          v-if="showAddBossDialog"
-          v-model="addBossName"
-          class="styled-input"
-          placeholder="名稱"
-        />
-        <input v-else v-model="addItemName" class="styled-input" placeholder="名稱" />
-        <div v-if="error" class="error-msg">{{ error }}</div>
-        <div class="modal-footer">
-          <button class="btn-submit" @click="showAddBossDialog ? addBoss() : addTreasure()">
-            確認新增
-          </button>
-          <button class="btn-cancel" @click="showAddBossDialog = showAddTreasureDialog = false">
+          <ul class="ot-people-list">
+            <li
+              v-for="(data, index) in getJoinList()"
+              :key="index"
+              class="ot-people-item"
+              @click="handlePersonClick(data)"
+            >
+              <span class="ot-people-name">👤 {{ data.userName }}</span>
+              <span class="ot-people-time">{{ formatTimestamp(data.joinTime) }}</span>
+            </li>
+          </ul>
+          <button class="ot-btn ot-btn--cancel" style="width: 100%;" @click="showPeopleList = false">
             關閉
           </button>
         </div>
       </div>
-    </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showModal" class="ot-modal">
+        <div class="ot-modal__mask" @click="showModal = false"></div>
+        <div class="ot-modal__panel" role="dialog">
+          <button class="ot-modal__close" type="button" @click="showModal = false">×</button>
+          <div class="ot-modal__head">
+            <h2>創建拍賣清單</h2>
+            <p>請填寫詳細寶物資訊</p>
+          </div>
+
+          <form @submit.prevent="handleSubmit" class="ot-modal__form">
+            <div class="ot-field">
+              <label>寶物名稱</label>
+              <select v-model="itemName" @change="handleItemChange" required>
+                <option disabled value="">請選擇要開單的寶物</option>
+                <option v-for="opt in itemOptions" :key="opt.itemId" :value="opt.itemId">
+                  {{ opt.itemName }}
+                </option>
+              </select>
+            </div>
+
+            <div class="ot-field">
+              <label>首領名稱</label>
+              <select v-model="bossName" required>
+                <option disabled value="">請選擇掉落的首領</option>
+                <option v-for="boss in bossOptions" :key="boss.bossId" :value="boss.bossId">
+                  {{ boss.bossName }}
+                </option>
+              </select>
+            </div>
+
+            <div class="ot-field">
+              <label>分紅幣種</label>
+              <div class="ot-chips">
+                <label v-for="item in balance.balanceList" :key="item.currency" class="ot-chip">
+                  <input
+                    type="radio"
+                    v-model="selectedCurrency"
+                    :value="item.currency"
+                    name="ot-currency"
+                  />
+                  <span>{{ item.currency }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="ot-field">
+              <label>開單種類</label>
+              <div class="ot-chips ot-chips--two">
+                <label class="ot-chip">
+                  <input type="radio" v-model="selectedType" value="bid" name="ot-type" />
+                  <span>競標模式</span>
+                </label>
+                <label class="ot-chip">
+                  <input type="radio" v-model="selectedType" value="fixed" name="ot-type" />
+                  <span>固定金額</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="ot-field">
+              <label>起始底價</label>
+              <div class="ot-input-wrap">
+                <input type="number" v-model.number="basePrice" required placeholder="0" />
+                <span class="ot-suffix">{{ selectedCurrency || 'G' }}</span>
+              </div>
+            </div>
+
+            <div class="ot-field">
+              <label>備註說明</label>
+              <textarea v-model="remark" placeholder="輸入特殊說明..."></textarea>
+            </div>
+
+            <p v-if="error" class="ot-error">{{ error }}</p>
+
+            <div class="ot-actions">
+              <button type="button" class="ot-btn ot-btn--cancel" @click="showModal = false">
+                取消
+              </button>
+              <button type="submit" class="ot-btn ot-btn--submit" :disabled="loading">
+                {{ loading ? '提交中...' : '確認開單' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showAddBossDialog || showAddTreasureDialog" class="ot-modal">
+        <div
+          class="ot-modal__mask"
+          @click="showAddBossDialog = showAddTreasureDialog = false"
+        ></div>
+        <div class="ot-modal__panel ot-modal__panel--mini" role="dialog">
+          <button
+            class="ot-modal__close"
+            type="button"
+            @click="showAddBossDialog = showAddTreasureDialog = false"
+          >
+            ×
+          </button>
+          <div class="ot-modal__head">
+            <h2>{{ showAddBossDialog ? '新增首領' : '新增道具' }}</h2>
+            <p>輸入名稱後送出即可</p>
+          </div>
+
+          <div class="ot-field">
+            <label>{{ showAddBossDialog ? '首領名稱' : '道具名稱' }}</label>
+            <input
+              v-if="showAddBossDialog"
+              v-model="addBossName"
+              type="text"
+              placeholder="請輸入名稱"
+            />
+            <input v-else v-model="addItemName" type="text" placeholder="請輸入名稱" />
+          </div>
+
+          <p v-if="error" class="ot-error">{{ error }}</p>
+
+          <div class="ot-actions">
+            <button
+              type="button"
+              class="ot-btn ot-btn--cancel"
+              @click="showAddBossDialog = showAddTreasureDialog = false"
+            >
+              關閉
+            </button>
+            <button
+              type="button"
+              class="ot-btn ot-btn--submit"
+              :disabled="loading"
+              @click="showAddBossDialog ? addBoss() : addTreasure()"
+            >
+              {{ loading ? '處理中...' : '確認新增' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -710,5 +740,250 @@ const {
 .modal-footer {
   flex-shrink: 0; /* 防止按鈕被壓縮 */
   margin-top: auto;
+}
+</style>
+
+<!-- 新版開單彈窗：不用 scoped，因為 Teleport 到 body 外面 scoped 會失效 -->
+<style>
+.ot-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.ot-modal__mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  /* ⚠ 故意不用 backdrop-filter，避免兩層 blur 造成合成延遲 */
+}
+.ot-modal__panel {
+  position: relative;
+  background: #1a1f2e;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 28px 24px 24px;
+  color: #f1f5f9;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+}
+.ot-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+}
+.ot-modal__close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}
+.ot-modal__head {
+  text-align: center;
+  margin-bottom: 18px;
+}
+.ot-modal__head h2 {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  color: #f8fafc;
+  font-weight: 700;
+}
+.ot-modal__head p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+.ot-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ot-field label {
+  display: block;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.ot-field select,
+.ot-field textarea,
+.ot-field input[type='number'],
+.ot-field input[type='text'] {
+  width: 100%;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.ot-field select:focus,
+.ot-field textarea:focus,
+.ot-field input[type='number']:focus,
+.ot-field input[type='text']:focus {
+  border-color: #b46eff;
+}
+.ot-field textarea {
+  height: 56px;
+  resize: none;
+  font-family: inherit;
+}
+.ot-input-wrap {
+  position: relative;
+}
+.ot-suffix {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #f5c451;
+  font-weight: bold;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+.ot-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ot-chips--two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.ot-chip {
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+.ot-chip input {
+  display: none;
+}
+.ot-chip span {
+  display: block;
+  background: #0f172a;
+  border: 1px solid #334155;
+  padding: 9px 8px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  transition: all 0.12s;
+}
+.ot-chip input:checked + span {
+  border-color: #b46eff;
+  background: rgba(180, 110, 255, 0.12);
+  color: #fff;
+}
+.ot-error {
+  color: #ef4444;
+  font-size: 0.82rem;
+  text-align: center;
+  margin: 0;
+}
+.ot-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.ot-btn {
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+}
+.ot-btn--cancel {
+  flex: 1;
+  background: #334155;
+  color: #f1f5f9;
+}
+.ot-btn--cancel:hover {
+  background: #475569;
+}
+.ot-btn--submit {
+  flex: 2;
+  background: linear-gradient(135deg, #f5c451, #f59e0b);
+  color: #000;
+}
+.ot-btn--submit:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.ot-btn--submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 參與名單 Panel 變體 */
+.ot-modal__panel--people {
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+.ot-people-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px 0;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.ot-people-list::-webkit-scrollbar {
+  width: 6px;
+}
+.ot-people-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+.ot-people-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: #27293d;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ot-people-item:hover {
+  background: #2f3248;
+}
+.ot-people-name {
+  font-size: 0.9rem;
+  color: #f1f5f9;
+  font-weight: 500;
+}
+.ot-people-time {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+/* 新增道具 / 首領 Mini Panel 變體 */
+.ot-modal__panel--mini {
+  max-width: 360px;
 }
 </style>
