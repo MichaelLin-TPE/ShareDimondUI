@@ -49,6 +49,8 @@ const handleMenuClick = (item: Menu) => {
     router.replace('/clan/bossTimer')
   } else if (item.label == '🍄 小遊戲') {
     router.replace('/clan/game1a2b')
+  } else if (item.label == '💎 物品定價') {
+    router.replace('/clan/itemPriceManage')
   }
 }
 
