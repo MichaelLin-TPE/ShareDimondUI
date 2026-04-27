@@ -8,11 +8,14 @@ export function useAuction() {
   const authStore = useAuthStore()
   const selectedMemberId = ref('')
   const inputAmount = ref(0)
+  const submitting = ref(false)
   const handleTransfer = () => {
     transfer()
   }
   const selectedCurrency = ref('')
   const transfer = async () => {
+    if (submitting.value) return
+    submitting.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
       const res = await fetch('https://api.gameshare-system.com/transfer', {
@@ -37,6 +40,8 @@ export function useAuction() {
       useAlert.success(data.message)
     } catch (e) {
       console.log(e)
+    } finally {
+      submitting.value = false
     }
   }
   const balance = useBalanceStore()
@@ -90,5 +95,6 @@ export function useAuction() {
     memberList,
     getAllMember,
     handleTransfer,
+    submitting,
   }
 }

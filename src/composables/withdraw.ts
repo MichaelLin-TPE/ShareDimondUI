@@ -12,11 +12,14 @@ export function useAuction() {
   const authStore = useAuthStore()
   const selectedMemberId = ref('')
   const selectedCurrency = ref('')
+  const submitting = ref(false)
   const handleWithdraw = () => {
     withdraw();
   }
 
   const withdraw = async () => {
+    if (submitting.value) return
+    submitting.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
 const res= await fetch('https://api.gameshare-system.com/withdraw', {
@@ -41,6 +44,8 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
     } catch (e) {
       console.log(e)
+    } finally {
+      submitting.value = false
     }
   }
 
@@ -97,5 +102,6 @@ TimeStamp:currentTimeStamp
     memberList,
     getAllMember,
     handleWithdraw,
+    submitting,
   }
 }

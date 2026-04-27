@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/transfer.ts'
 // 靜態資料
-const { handleTransfer, memberList, selectedMemberId, inputAmount, balance, selectedCurrency } =
-  useAuction()
+const {
+  handleTransfer,
+  memberList,
+  selectedMemberId,
+  inputAmount,
+  balance,
+  selectedCurrency,
+  submitting,
+} = useAuction()
 </script>
 
 <template>
@@ -39,7 +46,9 @@ const { handleTransfer, memberList, selectedMemberId, inputAmount, balance, sele
         </div>
       </div>
 
-      <button class="submit-btn" @click="handleTransfer">確認送出</button>
+      <button class="submit-btn" @click="handleTransfer" :disabled="submitting">
+        {{ submitting ? '送出中…' : '確認送出' }}
+      </button>
 
       <p class="notice">※ 請確認對象與金額，轉帳後無法撤回</p>
     </div>
@@ -236,6 +245,13 @@ const { handleTransfer, memberList, selectedMemberId, inputAmount, balance, sele
 
 .submit-btn:hover {
   opacity: 0.9;
+}
+
+.submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 .notice {

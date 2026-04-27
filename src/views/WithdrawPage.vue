@@ -9,6 +9,7 @@ const {
   selectedMemberId,
   balanceTool,
   selectedCurrency,
+  submitting,
 } = useAuction()
 </script>
 
@@ -46,7 +47,9 @@ const {
         </div>
       </div>
 
-      <button class="withdraw-btn" @click="handleWithdraw">送出申請給幹部</button>
+      <button class="withdraw-btn" @click="handleWithdraw" :disabled="submitting">
+        {{ submitting ? '送出中…' : '送出申請給幹部' }}
+      </button>
 
       <div class="status-tip"><span class="dot pulse"></span> 申請後請靜候幹部於系統內核准撥款</div>
     </div>
@@ -254,6 +257,13 @@ const {
 
 .withdraw-btn:active {
   transform: scale(0.97);
+}
+
+.withdraw-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
 }
 
 /* 狀態提示 */

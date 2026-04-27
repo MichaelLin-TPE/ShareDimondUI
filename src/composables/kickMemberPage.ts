@@ -3,87 +3,95 @@ import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
+const API = 'https://api.gameshare-system.com'
+
+export type RoleFilter = 'ALL' | 'LEADER' | 'OFFICER' | 'MEMBER'
+
+export interface MemberData {
+  memberId: number
+  memberName: string
+  memberRole: string
+}
 
 export function useAuction() {
-  /** * 介面定義
-   * 確保符合 GameShare 專案中 Java 後端傳回的 BigDecimal 與 String 結構
-   */
-  interface MemberData {
-    memberId: number
-    memberName: string
-    memberRole:string
-  }
+  const authStore = useAuthStore()
+
+  const memberList = ref<MemberData[]>([])
   const searchQuery = ref('')
+  const selectedRole = ref<RoleFilter>('ALL')
   const showModal = ref(false)
   const selectedMember = ref<MemberData>()
+  const loading = ref(false)
 
-  // 獲取成員清單 (這裡可以複用你之前的 getAllMemberWallet 或專門的成員 API)
-  const fetchMembers = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getAllMembers', {
-      headers: { Authorization: `Bearer ${authStore.authToken}`, Sign: generateSignature(currentTimeStamp),TimeStamp:currentTimeStamp },
-    })
-    if (res.ok) memberList.value = await res.json()
-  }
-
-  const filteredMembers = computed(() => {
-    return memberList.value.filter((m:MemberData) =>
-      m.memberName.toLowerCase().includes(searchQuery.value.toLowerCase()),
-    )
-  })
-
-  const confirmKick = (member:MemberData) => {
-    selectedMember.value = member
-    showModal.value = true
-  }
   const roleLabels: Record<string, string> = {
     LEADER: '會長',
     OFFICER: '幹部',
     MEMBER: '成員',
   }
-  /** * Props 定義
-   * 使用 withDefaults 確保即使 API 尚未回傳資料，畫面也不會崩潰
-   */
 
-  const memberList = ref<MemberData[]>([])
+  const headers = (ts: string) => ({
+    Authorization: `Bearer ${authStore.authToken}`,
+    'Content-Type': 'application/json',
+    Sign: generateSignature(ts),
+    TimeStamp: ts,
+  })
 
-  const authStore = useAuthStore()
+  // 統計：四種角色人數
+  const stats = computed(() => ({
+    total: memberList.value.length,
+    leader: memberList.value.filter((m) => m.memberRole === 'LEADER').length,
+    officer: memberList.value.filter((m) => m.memberRole === 'OFFICER').length,
+    member: memberList.value.filter((m) => m.memberRole === 'MEMBER').length,
+  }))
 
-  const getBasicInfo = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/members', {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-      },
+  // 篩選與搜尋
+  const filteredMembers = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase()
+    return memberList.value.filter((m) => {
+      if (selectedRole.value !== 'ALL' && m.memberRole !== selectedRole.value) return false
+      if (q && !m.memberName.toLowerCase().includes(q)) return false
+      return true
     })
-    if (!res.ok) return
-    const data = await res.json()
-    memberList.value = data
+  })
+
+  const confirmKick = (member: MemberData) => {
+    selectedMember.value = member
+    showModal.value = true
+  }
+
+  const fetchMembers = async () => {
+    loading.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/members`, {
+        method: 'GET',
+        headers: headers(ts),
+      })
+      if (!res.ok) return
+      memberList.value = await res.json()
+    } catch (e) {
+      console.log(e)
+    } finally {
+      loading.value = false
+    }
   }
 
   const handleKick = async () => {
+    if (!selectedMember.value) return
     try {
-      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/removeMember', {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/removeMember`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authStore.authToken}`,
-          Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-        },
+        headers: headers(ts),
         body: JSON.stringify({
-          userId: selectedMember.value?.memberId,
+          userId: selectedMember.value.memberId,
         }),
       })
-
       const data = await res.json()
       showModal.value = false
       if (res.ok) {
         useAlert.success(data.message)
-        fetchMembers() // 重新整理清單
+        fetchMembers()
       } else {
         useAlert.error(data.message)
       }
@@ -92,17 +100,19 @@ TimeStamp:currentTimeStamp
     }
   }
 
-
-  onMounted(getBasicInfo)
+  onMounted(fetchMembers)
 
   return {
     roleLabels,
     searchQuery,
+    selectedRole,
     showModal,
     confirmKick,
     selectedMember,
     filteredMembers,
     handleKick,
     memberList,
+    stats,
+    loading,
   }
 }
