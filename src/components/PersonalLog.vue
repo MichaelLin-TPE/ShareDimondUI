@@ -259,9 +259,9 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .header-text {
-  font-size: 16px;
-  color: #ffffff;
-  font-weight: bold;
+  font-size: 1rem;
+  color: #e2e8f0;
+  font-weight: 700;
 }
 
 .currency-tabs {
@@ -281,9 +281,9 @@ const formatAmount = (value: number, currencyCode: string) => {
   padding: 8px 18px;
   border-radius: 20px;
   background: #161822;
-  border: 1px solid #2a2d3e;
-  color: #8e9db0;
-  font-size: 14px;
+  border: 1px solid #2e3147;
+  color: #94a3b8;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -291,7 +291,8 @@ const formatAmount = (value: number, currencyCode: string) => {
 
 .currency-tab:hover {
   background: #1f2233;
-  color: #ffffff;
+  color: #e2e8f0;
+  border-color: #3a3f5c;
 }
 
 /* 該幣別被選中時的高亮樣式 */
@@ -325,8 +326,8 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .dashboard-card {
-  background: linear-gradient(180deg, #1a1c26, #12141d);
-  border-radius: 12px;
+  background: rgba(22, 24, 34, 0.95);
+  border-radius: 14px;
   padding: 18px 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
@@ -335,25 +336,26 @@ const formatAmount = (value: number, currencyCode: string) => {
   border-top: 3px solid #ffd166;
 }
 .border-blue {
-  border-top: 3px solid #4a90e2;
+  border-top: 3px solid rgba(255, 255, 255, 0.18);
 }
 
 .dashboard-title {
-  font-size: 13px;
-  color: #8e9db0;
+  font-size: 0.85rem;
+  color: #94a3b8;
   margin-bottom: 6px;
 }
 
 .dashboard-value {
-  font-size: 26px;
-  font-weight: bold;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .text-gold {
   color: #ffd166;
 }
 .text-blue {
-  color: #4a90e2;
+  color: #e2e8f0;
 }
 
 .filter-section {
@@ -366,19 +368,22 @@ const formatAmount = (value: number, currencyCode: string) => {
 .search-input {
   width: 100%;
   padding: 12px 16px;
-  background: #161822;
-  border: 1px solid #2a2d3e;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 14px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.15s;
   box-sizing: border-box;
+}
+.search-input::placeholder {
+  color: #475569;
 }
 
 .search-input:focus {
   border-color: #ffd166;
-  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.15);
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 
 .status-tags {
@@ -388,21 +393,22 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .status-tag {
-  font-size: 13px;
+  font-size: 0.85rem;
   padding: 6px 14px;
   border-radius: 20px;
   cursor: pointer;
   white-space: nowrap;
   background: #161822;
-  color: #8e9db0;
-  border: 1px solid #2a2d3e;
+  color: #94a3b8;
+  border: 1px solid #2e3147;
   transition: all 0.2s ease;
   user-select: none;
 }
 
 .status-tag:hover {
   background: #1f2233;
-  color: #ffffff;
+  color: #e2e8f0;
+  border-color: #3a3f5c;
 }
 
 .status-tag.is-active {
@@ -458,9 +464,9 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .event-card {
-  background: linear-gradient(180deg, #161822, #0f111a);
+  background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   transition:
@@ -474,13 +480,14 @@ const formatAmount = (value: number, currencyCode: string) => {
 .event-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  border-color: #32354a;
+  border-color: rgba(245, 196, 81, 0.35);
 }
 
 .event-role {
-  font-size: 13px;
-  font-weight: bold;
+  font-size: 0.8rem;
+  font-weight: 700;
   margin-bottom: 8px;
+  letter-spacing: 0.3px;
 }
 
 .color-default-text {
@@ -509,8 +516,8 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .event-content {
-  font-size: 15px;
-  color: #e0e0e0;
+  font-size: 0.95rem;
+  color: #e2e8f0;
   margin-bottom: 12px;
   line-height: 1.5;
   white-space: pre-line;
@@ -518,8 +525,8 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .event-time {
-  font-size: 12px;
-  color: #6c757d;
+  font-size: 0.78rem;
+  color: #64748b;
   text-align: right;
   border-top: 1px solid #1f2233;
   padding-top: 8px;
@@ -529,11 +536,11 @@ const formatAmount = (value: number, currencyCode: string) => {
   grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
-  color: #5a6270;
-  font-size: 15px;
-  background: #12141d;
-  border-radius: 12px;
-  border: 1px dashed #2a2d3e;
+  color: #64748b;
+  font-size: 0.95rem;
+  background: rgba(22, 24, 34, 0.95);
+  border-radius: 14px;
+  border: 1px dashed #2e3147;
 }
 
 .empty-icon {

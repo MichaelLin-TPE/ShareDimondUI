@@ -1,55 +1,62 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/withdraw_verify.ts'
-// 靜態資料
-const { mockRequests, totalAmount, withdrawHistoryList, handleAction } = useAuction()
+
+const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
 </script>
 
 <template>
   <div class="audit-container">
-    <div class="header-section">
-      <h2 class="title">提款審核大廳</h2>
-      <p class="subtitle">管理所有成員的提領請求，請審慎核對金幣來源與用途</p>
+    <div class="title-wrap">
+      <h2 class="title">📤 提款審核大廳</h2>
+      <p class="subtitle">審慎核對金額來源與用途,確認無誤後撥款給成員</p>
     </div>
 
     <div class="stats-row">
-      <div class="stat-card">
-        <span class="label">待審核項目</span>
-        <span class="value warning">{{ withdrawHistoryList.length }}</span>
+      <div class="stat-card pending">
+        <span class="stat-label">待審核項目</span>
+        <span class="stat-value">{{ withdrawHistoryList.length }}</span>
       </div>
-      <div class="stat-card">
-        <span class="label">待撥款總額</span>
-        <span class="value">{{ totalAmount }}</span>
+      <div class="stat-card amount">
+        <span class="stat-label">待撥款總額</span>
+        <span class="stat-value">{{ totalAmount }}</span>
       </div>
     </div>
 
-    <div class="audit-card">
-      <div class="tab-header">
-        <div class="tab active">待審核</div>
-      </div>
+    <div v-if="withdrawHistoryList.length === 0" class="empty-card">
+      <div class="empty-icon">✅</div>
+      <div class="empty-text">目前沒有待審核的提款申請</div>
+    </div>
 
-      <div class="request-list">
-        <div v-for="req in withdrawHistoryList" :key="req.ticketCode" class="request-item">
-          <div class="requester-info">
-            <div class="avatar">{{ req.requestUserName.charAt(0) }}</div>
-            <div class="details">
-              <div class="name">{{ req.requestUserName }}</div>
-              <div class="request-time">{{ req.createTime }}</div>
-            </div>
+    <div v-else class="request-list">
+      <div
+        v-for="req in withdrawHistoryList"
+        :key="req.ticketCode"
+        class="request-card"
+      >
+        <div class="request-head">
+          <div class="avatar">{{ req.requestUserName.charAt(0) }}</div>
+          <div class="info">
+            <div class="name">{{ req.requestUserName }}</div>
+            <div class="time">{{ req.createTime }}</div>
           </div>
+          <div class="amount-block">
+            <span class="amount-currency">{{ req.currency }}</span>
+            <span class="amount-value">${{ req.requestAmount.toLocaleString() }}</span>
+          </div>
+        </div>
 
-          <div class="request-content">
-            <div class="amount">
-              💰 {{ req.requestAmount.toLocaleString() }} {{ req.currency.toLocaleString() }}
-            </div>
-            <div class="memo">" {{ req.remark }} "</div>
-          </div>
+        <div v-if="req.remark" class="memo">
+          <span class="memo-icon">💬</span>
+          <span class="memo-text">{{ req.remark }}</span>
+        </div>
 
-          <div class="audit-actions">
-            <button class="btn-reject" @click="handleAction(req.ticketCode, 'reject')">拒絕</button>
-            <button class="btn-approve" @click="handleAction(req.ticketCode, 'approve')">
-              核准
-            </button>
-          </div>
+        <div class="actions">
+          <button class="btn-reject" @click="handleAction(req.ticketCode, 'reject')">
+            拒絕
+          </button>
+          <button class="btn-approve" @click="handleAction(req.ticketCode, 'approve')">
+            核准撥款
+          </button>
         </div>
       </div>
     </div>
@@ -57,163 +64,261 @@ const { mockRequests, totalAmount, withdrawHistoryList, handleAction } = useAuct
 </template>
 
 <style scoped>
+/* === 統一規範(同 LoginView / CreateGuild / TransferPage / WithdrawPage)===
+   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
+   文字: #fff / #e2e8f0 / #94a3b8 / #64748b
+*/
+
 .audit-container {
-  padding: 40px 24px;
-  max-width: 1000px; /* 寬度放大，與管理頁面一致 */
+  padding: 32px 16px 80px;
+  max-width: 720px;
   margin: 0 auto;
 }
 
-.header-section {
-  margin-bottom: 32px;
+/* Header */
+.title-wrap {
+  text-align: center;
+  margin-bottom: 22px;
 }
 .title {
-  color: #fff;
-  font-size: 28px;
-  margin-bottom: 8px;
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 .subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.5;
 }
 
-/* 統計資訊 */
+/* === 統計卡 === */
 .stats-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 .stat-card {
-  flex: 1;
-  background: #161822;
+  background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  padding: 20px;
-  border-radius: 16px;
+  border-radius: 14px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
+  gap: 4px;
 }
-.stat-card .label {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 13px;
-  margin-bottom: 8px;
+.stat-label {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
-.stat-card .value {
-  color: #fff;
-  font-size: 24px;
+.stat-value {
+  color: #e2e8f0;
+  font-size: 1.6rem;
   font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
 }
-.stat-card .value.warning {
+.stat-card.pending {
+  border-top: 3px solid #ffd166;
+}
+.stat-card.pending .stat-value {
   color: #ffd166;
 }
+.stat-card.amount {
+  border-top: 3px solid rgba(255, 255, 255, 0.18);
+}
 
-/* 審核卡片 */
-.audit-card {
-  background: #161822;
+/* === Empty === */
+.empty-card {
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px dashed #2e3147;
+  border-radius: 16px;
+  padding: 56px 20px;
+  text-align: center;
+}
+.empty-icon {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+.empty-text {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* === Request 列表 === */
+.request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.request-card {
+  background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-radius: 24px;
-  overflow: hidden;
+  border-radius: 16px;
+  padding: 16px 18px 14px;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.2s;
+}
+.request-card:hover {
+  border-color: rgba(245, 196, 81, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
-.tab-header {
-  display: flex;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid #24263a;
-}
-.tab {
-  padding: 16px 32px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-.tab.active {
-  color: #ffd166;
-  border-bottom-color: #ffd166;
-  background: rgba(255, 209, 102, 0.05);
-}
-
-/* 列表項目 */
-.request-item {
+/* Head:頭像 + 名稱 + 金額 */
+.request-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 1px solid #24263a;
-}
-
-.requester-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 200px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 .avatar {
-  width: 44px;
-  height: 44px;
-  background: #24263a;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  background: rgba(245, 196, 81, 0.12);
+  border: 1px solid rgba(245, 196, 81, 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffd166;
-  font-weight: bold;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.info {
+  flex: 1;
+  min-width: 0;
 }
 .name {
-  color: #fff;
-  font-weight: 600;
-  font-size: 16px;
-}
-.request-time {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 12px;
-}
-
-.request-content {
-  flex: 1;
-  text-align: left;
-  padding: 0 40px;
-}
-.amount {
-  color: #ffd166;
-  font-size: 20px;
+  color: #e2e8f0;
   font-weight: 700;
-  margin-bottom: 4px;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.memo {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  font-style: italic;
+.time {
+  color: #64748b;
+  font-size: 0.78rem;
+  margin-top: 1px;
 }
 
-/* 按鈕動作 */
-.audit-actions {
+.amount-block {
+  flex: 0 0 auto;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
 }
-.btn-approve,
-.btn-reject {
-  padding: 10px 24px;
+.amount-currency {
+  display: inline-block;
+  padding: 1px 8px;
+  background: rgba(245, 196, 81, 0.12);
+  color: #ffd166;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.amount-value {
+  color: #ffd166;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+/* 備註 */
+.memo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  margin-bottom: 12px;
+}
+.memo-icon {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.memo-text {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* 動作按鈕 */
+.actions {
+  display: flex;
+  gap: 10px;
+}
+.btn-reject,
+.btn-approve {
+  height: 40px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   border: none;
-  transition: all 0.2s;
-}
-.btn-approve {
-  background: linear-gradient(135deg, #00ff88, #00bd65);
-  color: #0f111a;
+  transition: all 0.18s;
 }
 .btn-reject {
-  background: rgba(255, 77, 77, 0.1);
-  border: 1px solid #ff4d4d;
-  color: #ff4d4d;
-}
-.btn-approve:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+  flex: 1;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
 }
 .btn-reject:hover {
-  background: #ff4d4d;
-  color: #fff;
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fca5a5;
+}
+.btn-approve {
+  flex: 2;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}
+.btn-approve:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+}
+
+/* === Mobile === */
+@media (max-width: 480px) {
+  .audit-container {
+    padding: 24px 14px 80px;
+  }
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-value {
+    font-size: 1.4rem;
+  }
+  .request-card {
+    padding: 14px 14px 12px;
+  }
+  .request-head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .amount-block {
+    margin-left: auto;
+  }
 }
 </style>

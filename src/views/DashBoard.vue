@@ -377,9 +377,9 @@ const closeUpdateModal = () => {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
 }
 
 .btn-confirm:hover {
@@ -431,14 +431,14 @@ nav a:first-of-type {
 }
 
 .custom-modal-content {
-  background: #1e1e2e;
-  border: 1px solid #334155;
-  border-radius: 16px;
+  background: rgba(22, 24, 34, 0.98);
+  border: 1px solid #3a3f5c;
+  border-radius: 18px;
   padding: 30px;
   width: 90%;
   max-width: 400px;
   text-align: center;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   animation: popIn 0.3s ease-out;
 }
 
@@ -585,14 +585,14 @@ h1 {
 .update-modal {
   position: relative;
   overflow: hidden; /* 為了讓 modal-top-bar 裁切 */
-  background: #1e1e2e;
-  border: 1px solid #334155;
-  border-radius: 16px;
-  padding: 40px 30px 30px; /* 頂部加點空間給 bar */
+  background: rgba(22, 24, 34, 0.98);
+  border: 1px solid #3a3f5c;
+  border-radius: 18px;
+  padding: 40px 30px 30px;
   width: 90%;
-  max-width: 480px; /* 更新公告可以稍微寬一點點 */
-  text-align: left; /* 內容置左，方便閱讀 */
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  max-width: 480px;
+  text-align: left;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7);
   animation: popIn 0.3s ease-out;
 }
 
@@ -607,14 +607,14 @@ h1 {
   }
 }
 
-/* 頂部紫色漸層裝飾條 */
+/* 頂部金色漸層裝飾條 */
 .modal-top-bar {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 6px;
-  background: linear-gradient(90deg, #6366f1, #a855f7);
+  height: 4px;
+  background: linear-gradient(90deg, #ffd166, #f59e0b);
 }
 
 .modal-icon.update-icon {
@@ -635,45 +635,48 @@ h1 {
   }
 }
 
-.modal-title {
-  color: #f8fafc;
-  font-size: 1.4rem; /* 字大一點 */
+.update-modal .modal-title {
+  color: #ffd166;
+  font-size: 1.4rem;
   font-weight: 900;
   margin-bottom: 20px;
   line-height: 1.3;
-  letter-spacing: -0.5px;
-  text-align: center; /* 標題置中 */
+  letter-spacing: 0.5px;
+  text-align: center;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 
 .modal-desc.update-desc {
-  color: #cbd5e1; /* 文字顏色調亮，更清晰 */
+  color: #cbd5e1;
   font-size: 0.95rem;
   line-height: 1.6;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .update-desc .summary {
-  margin-bottom: 25px;
-  color: #f1f5f9;
+  margin-bottom: 22px;
+  color: #e2e8f0;
 }
 
 /* 功能清單列表樣式 */
 .feature-list {
   list-style: none;
-  padding: 0;
-  margin: 0 0 25px 0;
+  padding: 16px;
+  margin: 0 0 22px 0;
   border-radius: 12px;
-  background: rgba(30, 41, 59, 0.5); /* 加上背景區隔 */
-  padding: 15px;
-  border: 1px solid rgba(51, 65, 85, 0.5);
+  background: #0f111a;
+  border: 1px solid #2e3147;
 }
 
 .feature-list li {
   display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .feature-list li:last-child {
@@ -683,27 +686,40 @@ h1 {
 }
 
 .feature-list li .icon {
-  font-size: 1.8rem;
-  padding-top: 3px;
+  flex: 0 0 auto;
+  font-size: 1.4rem;
+  width: 28px;
+  text-align: center;
+}
+
+.feature-list li .text {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
 }
 
 .feature-list li strong {
-  color: #f1f5f9;
+  color: #e2e8f0;
   font-size: 1rem;
 }
 
 .feature-list li p {
-  margin: 2px 0 0;
-  color: #94a3b8;
-  font-size: 0.88rem;
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
 }
 
 .footer-msg {
   text-align: center;
   font-size: 0.85rem;
-  color: rgba(99, 102, 241, 0.7); /* 使用系統的紫色 */
+  color: #ffd166;
   font-style: italic;
-  margin-top: 20px;
+  margin-top: 18px;
+  opacity: 0.85;
 }
 
 .modal-actions {
@@ -726,15 +742,18 @@ h1 {
   width: 100%;
 }
 
-.btn-confirm {
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
-  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4); /* 陰影加深，突出按鈕 */
+.update-modal .btn-confirm {
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
 }
 
-.btn-confirm:hover {
-  filter: brightness(1.1);
-  transform: translateY(-3px) scale(1.02);
+.update-modal .btn-confirm:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.5);
 }
 /* 👇 自訂彈窗的樣式 👇 */
 .custom-modal-overlay {
@@ -752,14 +771,14 @@ h1 {
 }
 
 .custom-modal-content {
-  background: #1e1e2e;
-  border: 1px solid #334155;
-  border-radius: 16px;
+  background: rgba(22, 24, 34, 0.98);
+  border: 1px solid #3a3f5c;
+  border-radius: 18px;
   padding: 30px;
   width: 90%;
   max-width: 400px;
   text-align: center;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   animation: popIn 0.3s ease-out;
 }
 
@@ -820,9 +839,9 @@ h1 {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
 }
 
 .btn-confirm:hover {

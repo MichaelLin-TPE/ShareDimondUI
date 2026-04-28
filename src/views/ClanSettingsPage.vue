@@ -306,12 +306,13 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 }
 .cs-title {
   margin: 0 0 4px;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #a5b4fc, #f0abfc);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 1px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 .cs-sub {
   margin: 0;
@@ -331,7 +332,7 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 
 /* Card */
 .cs-card {
-  background: #161822;
+  background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
   border-radius: 18px;
   padding: 24px;
@@ -346,13 +347,13 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 }
 .cs-card-icon {
   font-size: 1.6rem;
-  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4));
+  filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.45));
 }
 .cs-card-head h3 {
   margin: 0 0 2px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #e2e8f0;
 }
 .cs-card-head p {
   margin: 0;
@@ -367,8 +368,8 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
   margin-bottom: 14px;
 }
 .cs-field label {
-  font-size: 0.82rem;
-  color: #cbd5e1;
+  font-size: 0.85rem;
+  color: #e2e8f0;
   margin-bottom: 6px;
   font-weight: 600;
 }
@@ -393,11 +394,11 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 .cs-textarea {
   width: 100%;
   background: #0f111a;
-  border: 1px solid #2d3047;
+  border: 1px solid #2e3147;
   border-radius: 10px;
   padding: 0 14px;
-  color: #f1f5f9;
-  font-size: 0.92rem;
+  color: #fff;
+  font-size: 0.95rem;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   box-sizing: border-box;
@@ -405,10 +406,14 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
   height: 44px;
   line-height: 42px;
 }
+.cs-input::placeholder,
+.cs-textarea::placeholder {
+  color: #475569;
+}
 .cs-input:focus,
 .cs-textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 .cs-textarea {
   resize: none;
@@ -456,7 +461,7 @@ select.cs-input {
   cursor: pointer;
   padding: 0 14px;
   background: #0f111a;
-  border: 1px solid #2d3047;
+  border: 1px solid #2e3147;
   border-radius: 10px;
   height: 44px;
   box-sizing: border-box;
@@ -464,14 +469,15 @@ select.cs-input {
 .cs-toggle-track {
   width: 42px;
   height: 22px;
-  background: #2d3047;
+  background: #2e3147;
   border-radius: 100px;
   position: relative;
   transition: background 0.25s;
   flex-shrink: 0;
 }
 .cs-toggle.active .cs-toggle-track {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  box-shadow: 0 0 8px rgba(245, 196, 81, 0.35);
 }
 .cs-toggle-handle {
   width: 16px;
@@ -487,7 +493,7 @@ select.cs-input {
   left: 23px;
 }
 .cs-toggle-text {
-  color: #f1f5f9;
+  color: #e2e8f0;
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -505,7 +511,7 @@ select.cs-input {
   justify-content: space-between;
   padding: 12px 16px;
   background: #0f111a;
-  border: 1px solid #2d3047;
+  border: 1px solid #2e3147;
   border-radius: 12px;
   transition: all 0.15s;
 }
@@ -525,7 +531,7 @@ select.cs-input {
 .cs-currency-name {
   font-size: 1rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #e2e8f0;
   letter-spacing: 0.5px;
 }
 .cs-currency-item.disabled .cs-currency-name {
@@ -541,12 +547,12 @@ select.cs-input {
 }
 .cs-currency-badge.base {
   background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #000;
+  color: #0f111a;
 }
 .cs-currency-badge.on {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(245, 196, 81, 0.14);
+  color: #ffd166;
+  border: 1px solid rgba(245, 196, 81, 0.4);
 }
 .cs-currency-badge.off {
   background: rgba(100, 116, 139, 0.15);
@@ -566,7 +572,8 @@ select.cs-input {
   padding: 0;
 }
 .cs-toggle-btn.on {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  box-shadow: 0 0 8px rgba(245, 196, 81, 0.35);
 }
 .cs-toggle-btn.off {
   background: #3a3f5c;
@@ -592,7 +599,7 @@ select.cs-input {
 .cs-empty {
   text-align: center;
   padding: 24px;
-  color: #475569;
+  color: #64748b;
   font-size: 0.85rem;
 }
 
@@ -629,7 +636,7 @@ select.cs-input {
   align-items: center;
   gap: 4px;
   background: #0f111a;
-  border: 1px solid #2d3047;
+  border: 1px solid #2e3147;
   border-radius: 10px;
   padding: 3px;
   height: 44px;
@@ -674,22 +681,24 @@ select.cs-input {
 }
 .cs-btn-primary {
   width: 100%;
-  padding: 14px 24px;
+  height: 48px;
+  padding: 0 24px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 1px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
   transition: all 0.2s;
   font-family: inherit;
 }
 .cs-btn-primary:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 8px 22px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
 }
 
 /* RWD */

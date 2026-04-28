@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
+import ClanSelect from '@/components/ClanSelect.vue'
 const showApplyClanModal = ref(false)
 // 自動登入狀態
 const isAutoLoggingIn = ref(false)
@@ -244,12 +245,7 @@ const onForgotPassword = () => {
       </div>
 
       <div class="form">
-        <select v-model="selectedClan" :class="{ selected: selectedClan !== '' }">
-          <option value="" disabled>選擇血盟</option>
-          <option v-for="clan in clans" :key="clan.id" :value="clan.clanId">
-            {{ clan.name }}
-          </option>
-        </select>
+        <ClanSelect v-model="selectedClan" :clans="clans" placeholder="選擇血盟" />
 
         <input v-model="account" placeholder="Account" autocomplete="username" />
         <input
@@ -314,12 +310,7 @@ const onForgotPassword = () => {
       <div class="modal-card">
         <h3>申請加入血盟</h3>
 
-        <select v-model="selectedClanForAppyly" :class="{ selected: selectedClanForAppyly !== '' }">
-          <option value="" disabled selected>選擇血盟</option>
-          <option v-for="clan in clans" :key="clan.id" :value="clan.clanId">
-            {{ clan.name }}
-          </option>
-        </select>
+        <ClanSelect v-model="selectedClanForAppyly" :clans="clans" placeholder="選擇血盟" />
 
         <input v-model="accountForApply" placeholder="請輸入帳號" />
 
@@ -341,156 +332,31 @@ const onForgotPassword = () => {
 </template>
 
 <style scoped>
-/* ===== Modal 遮罩 ===== */
-.modal-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9); /* ⬅ 更深 */
-  backdrop-filter: blur(4px); /* ⬅ 模糊降低 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-/* ===== Modal 卡片 ===== */
-.modal-card {
-  width: 380px;
-  padding: 28px;
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.1));
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  color: #e6f0ff;
-}
-
-.modal-card h3 {
-  text-align: center;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-/* ===== Input / Select ===== */
-.modal-card input,
-.modal-card select {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  border-radius: 10px;
-  padding: 12px;
-  color: var(--text-placeholder);
-  font-size: 14px;
-  outline: none;
-}
-
-/* ===== 提交按鈕 ===== */
-.submit-btn {
-  margin-top: 10px;
-  padding: 12px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  color: #000;
-  background: linear-gradient(90deg, #6be9ff, #b388ff);
-  cursor: pointer;
-}
-
-/* ===== 關閉按鈕 ===== */
-.close-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  font-size: 13px;
-}
-
-/* ===== 底部操作連結 ===== */
-.action-links {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 14px;
-  font-size: 14px;
-}
-
-.link {
-  color: var(--text-placeholder);
-  cursor: pointer;
-  user-select: none;
-  transition:
-    color 0.2s,
-    text-shadow 0.2s;
-}
-
-.link:hover {
-  color: var(--text-primary);
-  text-shadow: 0 0 8px rgba(108, 242, 255, 0.4);
-}
-
-/* ===== Mobile 微調 ===== */
-@media (max-width: 480px) {
-  .page {
-    align-items: flex-start; /* 不再垂直置中 */
-    padding-bottom: 200px; /* 往上推，但不要貼頂 */
-  }
-}
-
-:root {
-  --text-primary: #e6faff; /* 跟 input 輸入後一致 */
-  --text-placeholder: #b5b9e3; /* 跟 Account placeholder 一致 */
-}
-
-select {
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-placeholder); /* 像 Account placeholder */
-  font-size: 14px;
-  appearance: none;
-  cursor: pointer;
-}
-
-/* 當真的選到血盟 */
-select.selected {
-  color: var(--text-primary);
-}
-
-select option {
-  color: #000;
-}
-
-select:focus {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 0 0 1px rgba(108, 242, 255, 0.6),
-    0 0 12px rgba(108, 242, 255, 0.35);
-}
+/* === 統一設計變數 (跟 CreateGuild 同一套) ===
+   主色: #ffd166 (金) / linear-gradient(135deg, #ffd166, #f59e0b)
+   字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
+   文字: #fff / #e2e8f0 / #94a3b8 / #64748b
+*/
 
 /* ===== 背景 ===== */
 .page {
-  --text-primary: #e6faff;
-  --text-placeholder: #b5b9e3;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-family: 'Inter', 'PingFang TC', system-ui, sans-serif;
+  padding: 40px 20px;
 }
 
-/* ===== 卡片 ===== */
+/* ===== 登入卡片 ===== */
 .login-card {
   width: 360px;
   padding: 32px 28px 36px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  border-radius: 16px;
-  backdrop-filter: blur(12px);
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.45),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: rgba(22, 24, 34, 0.95);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
 }
 
 /* ===== LOGO 區 ===== */
@@ -498,28 +364,31 @@ select:focus {
   text-align: center;
   margin-bottom: 24px;
 }
-
 .logo-glow {
   font-size: 42px;
-  color: #6cf2ff;
+  color: #ffd166;
   margin-bottom: 8px;
   text-shadow:
-    0 0 12px rgba(108, 242, 255, 0.9),
-    0 0 32px rgba(180, 110, 255, 0.8);
+    0 0 12px rgba(245, 196, 81, 0.85),
+    0 0 32px rgba(245, 158, 11, 0.6);
 }
-
 .logo-area h2 {
   margin: 0;
-  font-size: 20px;
-  letter-spacing: 1px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.5),
+    0 2px 12px rgba(245, 158, 11, 0.25);
 }
-
 .subtitle {
   margin-top: 4px;
-  font-size: 12px;
-  color: #9aa4d6;
+  font-size: 0.78rem;
+  color: #64748b;
   letter-spacing: 2px;
   text-transform: uppercase;
+  font-weight: 600;
 }
 
 /* ===== 表單 ===== */
@@ -533,80 +402,179 @@ input {
   height: 42px;
   padding: 0 14px;
   border-radius: 10px;
-  border: none;
+  border: 1px solid #2e3147;
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
+  background: #0f111a;
   color: #fff;
-  font-size: 14px;
-  transition:
-    box-shadow 0.2s,
-    background 0.2s;
+  font-size: 0.95rem;
+  transition: all 0.15s;
+  box-sizing: border-box;
 }
-
 input::placeholder {
-  color: #b5b9e3;
+  color: #475569;
 }
-
 input:focus {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 0 0 1px rgba(108, 242, 255, 0.6),
-    0 0 12px rgba(108, 242, 255, 0.35);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 
-/* ===== 按鈕 ===== */
+/* ===== 按鈕 (主動作 — 金色漸層) ===== */
 button {
-  height: 44px;
+  height: 48px;
   width: 100%;
   margin-top: 6px;
   border-radius: 12px;
   border: none;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 800;
   letter-spacing: 1px;
-  color: #0b0f1a;
-  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  color: #0f111a;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   cursor: pointer;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  transition: all 0.2s;
 }
-
 button:hover:not(:disabled) {
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 30px rgba(180, 110, 255, 0.45);
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
 }
-
 button:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* ===== 錯誤 ===== */
+/* ===== 錯誤訊息 ===== */
 .errorForApply,
 .error {
   margin-top: 4px;
-  font-size: 13px;
-  color: #ff6b6b;
+  font-size: 0.85rem;
+  color: #f87171;
   text-align: center;
 }
 
-/* ===== loading ===== */
+/* ===== loading 動畫 ===== */
 .loadingForApply,
 .loading {
   animation: pulse 1.2s infinite;
 }
 
+/* ===== 底部操作連結 ===== */
+.action-links {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 0.85rem;
+}
+.link {
+  color: #94a3b8;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  transition:
+    color 0.18s,
+    text-shadow 0.18s;
+}
+.link:hover {
+  color: #ffd166;
+  text-shadow: 0 0 8px rgba(245, 196, 81, 0.4);
+}
+
+/* ===== Modal 遮罩 ===== */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 24px;
+}
+
+/* ===== Modal 卡片 ===== */
+.modal-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 24px 22px;
+  border-radius: 24px;
+  background: rgba(22, 24, 34, 0.98);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: #e2e8f0;
+}
+.modal-card h3 {
+  text-align: center;
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Modal 共用 input / select(讓 .modal-card 內的覆蓋全域 button 的金色) */
+.modal-card input,
+.modal-card select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ===== Modal 關閉鈕 — 次要按鈕風格 ===== */
+.close-btn {
+  height: 42px;
+  background: #1e2233;
+  border: 1px solid #3a3f5c;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 4px;
+  box-shadow: none;
+  transition: all 0.15s;
+}
+.close-btn:hover:not(:disabled) {
+  background: #2a2f44;
+  color: #fff;
+  border-color: #555a78;
+  filter: none;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 480px) {
+  .page {
+    align-items: flex-start;
+    padding: 24px 14px 180px;
+  }
+  .login-card {
+    width: 100%;
+    max-width: none;
+    padding: 32px 22px 34px;
+    border-radius: 20px;
+  }
+  .logo-glow {
+    font-size: 38px;
+  }
+  .logo-area h2 {
+    font-size: 1.4rem;
+  }
+}
+
 @keyframes pulse {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 1;
-  }
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
 }
 
 /* ===== 自動登入覆蓋層 ===== */
@@ -617,7 +585,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse at center, #1a1f3a 0%, #0a0d1a 100%);
+  background: #000;
   padding: 24px;
 }
 
@@ -639,19 +607,25 @@ button:disabled {
 .al-logo {
   font-size: 46px;
   font-weight: 700;
-  color: #6cf2ff;
-  text-shadow: 0 0 16px rgba(108, 242, 255, 0.9), 0 0 36px rgba(180, 110, 255, 0.7);
+  color: #ffd166;
+  text-shadow:
+    0 0 16px rgba(245, 196, 81, 0.9),
+    0 0 36px rgba(245, 158, 11, 0.6);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   animation: al-pulse 2s ease-in-out infinite;
 }
 .al-logo.success {
   color: #6ee7b7;
-  text-shadow: 0 0 16px rgba(110, 231, 183, 0.9), 0 0 36px rgba(16, 185, 129, 0.6);
+  text-shadow:
+    0 0 16px rgba(110, 231, 183, 0.9),
+    0 0 36px rgba(16, 185, 129, 0.6);
   animation: al-pop 0.4s ease-out;
 }
 .al-logo.failed {
   color: #fca5a5;
-  text-shadow: 0 0 16px rgba(252, 165, 165, 0.8), 0 0 36px rgba(239, 68, 68, 0.5);
+  text-shadow:
+    0 0 16px rgba(252, 165, 165, 0.8),
+    0 0 36px rgba(239, 68, 68, 0.5);
   animation: al-pop 0.4s ease-out;
 }
 
@@ -661,18 +635,18 @@ button:disabled {
   inset: 0;
   border-radius: 50%;
   border: 2px solid transparent;
-  border-top-color: #6cf2ff;
-  border-right-color: rgba(180, 110, 255, 0.6);
+  border-top-color: #ffd166;
+  border-right-color: rgba(245, 158, 11, 0.6);
   animation: al-spin 1.2s linear infinite;
-  box-shadow: 0 0 20px rgba(108, 242, 255, 0.3);
+  box-shadow: 0 0 20px rgba(245, 196, 81, 0.3);
 }
 
 .al-title {
   margin: 0 0 18px;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
   letter-spacing: 2px;
-  background: linear-gradient(135deg, #6cf2ff, #b46eff);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -683,17 +657,21 @@ button:disabled {
 }
 .al-msg {
   margin: 0 0 5px;
-  font-size: 15px;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: #e6faff;
+  color: #e2e8f0;
   letter-spacing: 0.5px;
 }
-.al-msg.success { color: #6ee7b7; }
-.al-msg.failed { color: #fca5a5; }
+.al-msg.success {
+  color: #6ee7b7;
+}
+.al-msg.failed {
+  color: #fca5a5;
+}
 .al-sub {
   margin: 0;
-  font-size: 13px;
-  color: #9aa4d6;
+  font-size: 0.85rem;
+  color: #94a3b8;
   letter-spacing: 1px;
 }
 
@@ -708,34 +686,55 @@ button:disabled {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #6cf2ff;
+  background: #ffd166;
   opacity: 0.3;
   animation: al-dot 1.2s ease-in-out infinite;
 }
-.al-dots span:nth-child(2) { animation-delay: 0.15s; }
-.al-dots span:nth-child(3) { animation-delay: 0.3s; }
+.al-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.al-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
 
 @keyframes al-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @keyframes al-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
 }
 @keyframes al-pop {
-  0% { transform: scale(0.5); opacity: 0; }
-  60% { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 @keyframes al-dot {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     opacity: 0.3;
     transform: scale(0.8);
   }
   40% {
     opacity: 1;
     transform: scale(1.2);
-    box-shadow: 0 0 8px rgba(108, 242, 255, 0.7);
+    box-shadow: 0 0 8px rgba(245, 196, 81, 0.7);
   }
 }
 

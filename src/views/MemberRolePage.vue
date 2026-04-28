@@ -1,338 +1,438 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useAuction } from '@/composables/memberRole.ts'
 import { useAlert } from '@/utils/alerts.ts'
-// 靜態資料
+
 const { changedMemberIds, memberList, setRole, roleClassMap, updateRolesApi } = useAuction()
 
 const roleLabels: Record<string, string> = {
-  leader: '會長',
-  officer: '幹部',
-  member: '成員',
+  LEADER: '會長',
+  OFFICER: '幹部',
+  MEMBER: '成員',
 }
 
+const keyword = ref('')
+const filteredList = computed(() => {
+  const k = keyword.value.trim().toLowerCase()
+  if (!k) return memberList.value
+  return memberList.value.filter((m) =>
+    String(m.memberName).toLowerCase().includes(k),
+  )
+})
+
+const changedCount = computed(() => changedMemberIds.value.size)
+
 const handleSave = async () => {
-  // 1. 檢查會長數量 (確保唯一性)
   const leaderCount = memberList.value.filter((m) => m.memberRole === 'LEADER').length
 
   if (leaderCount === 0) {
-    useAlert.success('錯誤：血盟必須擁有一位會長！')
+    useAlert.error('血盟必須擁有一位會長!')
     return
   }
   if (leaderCount > 1) {
-    useAlert.success('錯誤：會長只能有一位，請先將其他成員降職。')
+    useAlert.error('會長只能有一位,請先將其他成員降職')
     return
   }
 
-  // 2. 收集變動過的資料清單 (格式為 [{memberId, role}])
   const payload = memberList.value
     .filter((m) => changedMemberIds.value.has(m.memberId))
-    .map((m) => ({
-      memberId: m.memberId,
-      role: m.memberRole,
-    }))
+    .map((m) => ({ memberId: m.memberId, role: m.memberRole }))
 
   if (payload.length === 0) {
-    useAlert.success('資料未變動，無需儲存。')
+    useAlert.error('資料未變動,無需儲存')
     return
   }
 
-  // 3. 呼叫後端 API
   try {
     await updateRolesApi(payload)
-    // 儲存成功後重置追蹤狀態
     changedMemberIds.value.clear()
   } catch (error) {
-    useAlert.success('更新失敗，請稍後再試。' + error)
+    useAlert.error('更新失敗,請稍後再試。' + error)
   }
 }
 </script>
 
 <template>
-  <div class="admin-container">
-    <div class="header-section">
-      <h2 class="title">成員權限管理</h2>
-      <p class="subtitle">僅會長可用：調整成員職位或移交會長職權</p>
+  <div class="role-container">
+    <div class="title-wrap">
+      <h2 class="title">👑 成員權限管理</h2>
+      <p class="subtitle">調整成員職位或移交會長職權,僅會長可用</p>
     </div>
 
-    <div class="management-card">
-      <div class="search-bar">
-        <input type="text" placeholder="搜尋成員 ID 或 名稱..." class="search-input" />
-      </div>
+    <div class="search-bar">
+      <input
+        v-model="keyword"
+        type="text"
+        placeholder="🔍 搜尋成員名稱..."
+        class="search-input"
+      />
+      <span v-if="changedCount > 0" class="changed-pill">
+        待儲存 {{ changedCount }}
+      </span>
+    </div>
 
-      <div class="member-list">
-        <div v-for="member in memberList" :key="member.memberId" class="member-item">
-          <div class="member-info">
-            <div class="avatar">{{ member.memberName.charAt(0) }}</div>
-            <div class="details">
-              <div class="name">{{ member.memberName }}</div>
-              <div class="current-role" :class="roleClassMap[member.memberRole]">
-                {{ roleLabels[member.memberRole] }}
-              </div>
+    <div v-if="filteredList.length === 0" class="empty-card">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-text">沒有符合條件的成員</div>
+    </div>
+
+    <div v-else class="member-list">
+      <div
+        v-for="member in filteredList"
+        :key="member.memberId"
+        class="member-card"
+        :class="{ changed: changedMemberIds.has(member.memberId) }"
+      >
+        <div class="member-head">
+          <div class="avatar">{{ member.memberName.charAt(0) }}</div>
+          <div class="info">
+            <div class="name">{{ member.memberName }}</div>
+            <div class="current-role" :class="roleClassMap[member.memberRole]">
+              {{ roleLabels[member.memberRole] }}
             </div>
           </div>
+          <span v-if="changedMemberIds.has(member.memberId)" class="dot-changed" title="已變更"></span>
+        </div>
 
-          <div class="role-actions">
-            <button
-              class="action-btn btn-member"
-              :class="{ active: member.memberRole === 'MEMBER' }"
-              @click="setRole(member, 'MEMBER')"
-            >
-              會員
-            </button>
-
-            <button
-              class="action-btn btn-officer"
-              :class="{ active: member.memberRole === 'OFFICER' }"
-              @click="setRole(member, 'OFFICER')"
-            >
-              幹部
-            </button>
-
-            <button
-              class="action-btn btn-leader"
-              :class="{ active: member.memberRole === 'LEADER' }"
-              @click="setRole(member, 'LEADER')"
-            >
-              會長
-            </button>
-          </div>
+        <div class="role-segments">
+          <button
+            type="button"
+            class="seg-btn seg-member"
+            :class="{ active: member.memberRole === 'MEMBER' }"
+            @click="setRole(member, 'MEMBER')"
+          >
+            會員
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-officer"
+            :class="{ active: member.memberRole === 'OFFICER' }"
+            @click="setRole(member, 'OFFICER')"
+          >
+            幹部
+          </button>
+          <button
+            type="button"
+            class="seg-btn seg-leader"
+            :class="{ active: member.memberRole === 'LEADER' }"
+            @click="setRole(member, 'LEADER')"
+          >
+            會長
+          </button>
         </div>
       </div>
+    </div>
 
-      <div class="footer-actions">
-        <button class="save-btn" @click="handleSave">儲存並更新權限</button>
-      </div>
+    <div class="footer-actions">
+      <button
+        class="save-btn"
+        :disabled="changedCount === 0"
+        @click="handleSave"
+      >
+        {{ changedCount > 0 ? `儲存並更新 ${changedCount} 位成員` : '儲存並更新權限' }}
+      </button>
     </div>
 
     <div class="warning-box">
-      <div class="warning-icon">⚠️</div>
-      <div class="warning-text">
-        注意：若將其他成員設為「會長」，您將立即失去管理權限並降職為一般成員。
-      </div>
+      <span class="warning-icon">⚠️</span>
+      <span class="warning-text">
+        若將其他成員設為「會長」,你將立即失去管理權限並降職為一般成員
+      </span>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* =========================
-   Layout
-========================= */
-.admin-container {
-  padding: 40px 24px;
-  max-width: 1000px;
+/* === 統一規範 ===
+   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
+   文字: #fff / #e2e8f0 / #94a3b8 / #64748b
+*/
+
+.role-container {
+  padding: 32px 16px 80px;
+  max-width: 720px;
   margin: 0 auto;
 }
 
-.header-section {
-  margin-bottom: 24px;
+/* Header */
+.title-wrap {
+  text-align: center;
+  margin-bottom: 22px;
 }
-
 .title {
-  color: #fff;
-  font-size: 24px;
-  margin-bottom: 4px;
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
-
 .subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.5;
 }
 
-/* =========================
-   Card
-========================= */
-.management-card {
-  background: #161822;
-  border: 1px solid #24263a;
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-}
-
-/* =========================
-   Search
-========================= */
+/* Search */
 .search-bar {
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid #24263a;
-}
-
-.search-input {
-  width: 100%;
-  background: #0f111a;
-  border: 1px solid #2d3047;
-  border-radius: 10px;
-  padding: 10px 16px;
-  color: #fff;
-  outline: none;
-}
-
-/* =========================
-   Member List
-========================= */
-.member-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.member-item {
+  position: relative;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 1px solid #24263a;
+  gap: 10px;
+}
+.search-input {
+  flex: 1;
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.15s;
+  box-sizing: border-box;
+}
+.search-input::placeholder {
+  color: #475569;
+}
+.search-input:focus {
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+}
+.changed-pill {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: rgba(245, 196, 81, 0.14);
+  color: #ffd166;
+  border: 1px solid rgba(245, 196, 81, 0.4);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.member-item:hover {
-  background: rgba(255, 255, 255, 0.02);
+/* Empty */
+.empty-card {
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px dashed #2e3147;
+  border-radius: 16px;
+  padding: 56px 20px;
+  text-align: center;
+}
+.empty-icon {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+.empty-text {
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
-.member-info {
+/* Member 列表 */
+.member-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.member-card {
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px solid #24263a;
+  border-radius: 16px;
+  padding: 14px 16px;
+  transition: all 0.18s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.member-card:hover {
+  border-color: rgba(245, 196, 81, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.member-card.changed {
+  border-color: rgba(245, 196, 81, 0.45);
+  background: rgba(245, 196, 81, 0.04);
+}
+
+.member-head {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
 .avatar {
-  width: 48px;
-  height: 48px;
-  font-size: 18px;
-}
-
-.name {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-/* =========================
-   Current Role Badge
-========================= */
-.current-role {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-top: 2px;
-  display: inline-block;
-}
-
-.current-role.member {
-  background: rgba(255, 255, 255, 0.1);
-  color: #aaa;
-}
-
-.current-role.officer {
-  background: rgba(0, 255, 136, 0.15);
-  color: #00ff88;
-}
-
-.current-role.leader {
-  background: rgba(255, 209, 102, 0.2);
-  color: #ffd166;
-}
-
-/* =========================
-   Role Buttons
-========================= */
-.role-actions {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  background: rgba(245, 196, 81, 0.12);
+  border: 1px solid rgba(245, 196, 81, 0.35);
+  border-radius: 50%;
   display: flex;
-  gap: 10px;
-  flex-wrap: nowrap; /* 不換行 */
-  flex-shrink: 0; /* 不被擠扁 */
+  align-items: center;
+  justify-content: center;
+  color: #ffd166;
+  font-weight: 800;
+  font-size: 1rem;
 }
-
-.details {
+.info {
+  flex: 1;
   min-width: 0;
 }
-
 .name {
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 420px; /* 你要更短/更長自己調 */
+}
+.current-role {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.current-role.member {
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+}
+.current-role.officer {
+  background: rgba(245, 196, 81, 0.15);
+  color: #ffd166;
+}
+.current-role.leader {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
 }
 
-/* Base button */
-.action-btn {
-  padding: 6px 14px;
-  border-radius: 10px;
-  border: 1px solid #2d3047;
+.dot-changed {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffd166;
+  box-shadow: 0 0 8px rgba(245, 196, 81, 0.7);
+}
+
+/* 角色分段控制 (segmented control) — 三段填滿整列 */
+.role-segments {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
   background: #0f111a;
-  color: #aaa;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  overflow: hidden;
 }
-
-.action-btn:hover {
-  color: #fff;
-}
-
-/* ---------- Active common ---------- */
-.action-btn.active {
-  color: #fff;
-  border-color: transparent;
-}
-
-/* ---------- Member ---------- */
-.btn-member.active {
-  background: #2d3047;
-}
-
-/* ---------- Officer ---------- */
-.btn-officer.active {
-  background: linear-gradient(135deg, #ffd166, #e6b800);
-  color: #0f111a;
-  box-shadow: 0 4px 15px rgba(255, 209, 102, 0.3);
-}
-
-/* ---------- Leader ---------- */
-.btn-leader.active {
-  background: linear-gradient(135deg, #ff4d4d, #d90429);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
-}
-
-.btn-leader:hover {
-  background: #ff4d4d;
-  border-color: #ff4d4d;
-  color: #fff;
-}
-
-/* =========================
-   Footer
-========================= */
-.footer-actions {
-  padding: 32px;
+.seg-btn {
+  width: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
+  text-align: center;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    color 0.18s;
+}
+.seg-btn:hover:not(.active) {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.04);
 }
 
+/* Active 各色 */
+.seg-member.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+.seg-officer.active {
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+}
+.seg-leader.active {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+/* Footer */
+.footer-actions {
+  margin-top: 22px;
+}
 .save-btn {
   width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 18px;
-  font-size: 18px;
-  letter-spacing: 2px;
-}
-
-/* =========================
-   Warning
-========================= */
-.warning-box {
-  margin-top: 20px;
-  background: rgba(255, 77, 77, 0.1);
-  border: 1px solid rgba(255, 77, 77, 0.3);
-  padding: 12px 16px;
+  height: 48px;
+  border: none;
   border-radius: 12px;
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  transition: all 0.2s;
+}
+.save-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
+}
+.save-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  background: #1e2233;
+  color: #94a3b8;
+  box-shadow: none;
 }
 
+/* Warning */
+.warning-box {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+}
+.warning-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
 .warning-text {
-  color: #ff8888;
-  font-size: 12px;
+  color: #f87171;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .role-container {
+    padding: 24px 14px 80px;
+  }
+  .seg-btn {
+    font-size: 0.85rem;
+  }
 }
 </style>

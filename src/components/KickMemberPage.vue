@@ -181,21 +181,22 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 }
 .km-icon {
   font-size: 2rem;
-  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4));
+  filter: drop-shadow(0 0 8px rgba(245, 196, 81, 0.45));
 }
 .km-title {
   margin: 0 0 4px;
   font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #fca5a5, #ef4444);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  letter-spacing: 1px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 .km-sub {
   margin: 0;
-  font-size: 0.82rem;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: #94a3b8;
 }
 
 /* Stats */
@@ -219,33 +220,31 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 .km-stat-num {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #f1f5f9;
+  color: #e2e8f0;
   line-height: 1;
   margin-bottom: 6px;
 }
 .km-stat-label {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   color: #94a3b8;
 }
 .km-stat.leader { border-color: rgba(239, 68, 68, 0.3); }
 .km-stat.leader .km-stat-num { color: #f87171; }
-.km-stat.officer { border-color: rgba(245, 158, 11, 0.3); }
-.km-stat.officer .km-stat-num { color: #fbbf24; }
-.km-stat.member { border-color: rgba(99, 102, 241, 0.3); }
-.km-stat.member .km-stat-num { color: #a5b4fc; }
+.km-stat.officer { border-color: rgba(245, 196, 81, 0.4); }
+.km-stat.officer .km-stat-num { color: #ffd166; }
+.km-stat.member { border-color: rgba(255, 255, 255, 0.12); }
+.km-stat.member .km-stat-num { color: #e2e8f0; }
 
 /* Toolbar */
 .km-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 20px;
-  align-items: center;
 }
 .km-search {
   position: relative;
-  flex: 1;
-  min-width: 240px;
+  width: 100%;
 }
 .km-search-icon {
   position: absolute;
@@ -258,20 +257,28 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 }
 .km-search-input {
   width: 100%;
-  height: 42px;
-  background: #1a1c26;
-  border: 1px solid #2d3047;
+  height: 48px;
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px solid #3a3f5c;
   border-radius: 12px;
-  padding: 0 38px 0 38px;
+  padding: 0 40px;
   color: #fff;
-  font-size: 0.92rem;
+  font-size: 1rem;
   outline: none;
   box-sizing: border-box;
-  transition: all 0.2s;
+  transition: all 0.15s;
+}
+.km-search-input::placeholder {
+  color: #64748b;
 }
 .km-search-input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #ffd166;
+  background: rgba(22, 24, 34, 1);
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+}
+.km-search-icon {
+  font-size: 1.05rem;
+  opacity: 0.8;
 }
 .km-search-clear {
   position: absolute;
@@ -297,33 +304,41 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 }
 
 .km-filters {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  width: 100%;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  overflow: hidden;
 }
 .km-filter-chip {
-  height: 36px;
-  padding: 0 14px;
-  background: #1a1c26;
-  border: 1px solid #2d3047;
-  border-radius: 18px;
+  width: 100%;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   color: #94a3b8;
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.92rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
   font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
-.km-filter-chip:hover {
-  background: #1f2230;
-  color: #f1f5f9;
+.km-filter-chip:hover:not(.active) {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.04);
 }
 .km-filter-chip.active {
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  border-color: transparent;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-weight: 800;
 }
 
 /* Member Grid */
@@ -353,12 +368,12 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   height: 3px;
   background: rgba(255, 255, 255, 0.05);
 }
-.km-card.leader::before { background: linear-gradient(90deg, #ef4444, #f87171); }
-.km-card.officer::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-.km-card.member::before { background: linear-gradient(90deg, #6366f1, #a5b4fc); }
+.km-card.leader::before { background: linear-gradient(90deg, #ef4444, #b91c1c); }
+.km-card.officer::before { background: linear-gradient(90deg, #ffd166, #f59e0b); }
+.km-card.member::before { background: linear-gradient(90deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)); }
 .km-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(245, 196, 81, 0.35);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
@@ -381,8 +396,8 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 .km-avatar.leader { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-.km-avatar.officer { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1c26; }
-.km-avatar.member { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.km-avatar.officer { background: linear-gradient(135deg, #ffd166, #f59e0b); color: #0f111a; }
+.km-avatar.member { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; }
 
 .km-card-info {
   flex: 1;
@@ -392,9 +407,9 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   gap: 6px;
 }
 .km-card-name {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #e2e8f0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -415,14 +430,14 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 .km-role-badge.officer {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(245, 196, 81, 0.14);
+  color: #ffd166;
+  border: 1px solid rgba(245, 196, 81, 0.4);
 }
 .km-role-badge.member {
-  background: rgba(99, 102, 241, 0.12);
-  color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .km-kick-btn {
@@ -457,10 +472,10 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 .km-empty {
   text-align: center;
   padding: 60px 20px;
-  color: #475569;
-  background: rgba(17, 19, 28, 0.5);
+  color: #64748b;
+  background: rgba(22, 24, 34, 0.95);
   border-radius: 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border: 1px dashed #2e3147;
 }
 .km-empty-icon {
   font-size: 3rem;
@@ -468,13 +483,13 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 }
 .km-empty p {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 .km-spinner {
   width: 38px;
   height: 38px;
-  border: 3px solid rgba(99, 102, 241, 0.2);
-  border-top-color: #6366f1;
+  border: 3px solid rgba(245, 196, 81, 0.2);
+  border-top-color: #ffd166;
   border-radius: 50%;
   margin: 0 auto 14px;
   animation: km-spin 0.8s linear infinite;
@@ -555,17 +570,17 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   color: #fff;
 }
 .km-modal__avatar.leader { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-.km-modal__avatar.officer { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1c26; }
-.km-modal__avatar.member { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.km-modal__avatar.officer { background: linear-gradient(135deg, #ffd166, #f59e0b); color: #0f111a; }
+.km-modal__avatar.member { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; }
 .km-modal__name {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #e2e8f0;
 }
 .km-modal__warn {
   margin: 0 0 18px;
-  font-size: 0.82rem;
-  color: #cbd5e1;
+  font-size: 0.85rem;
+  color: #94a3b8;
   line-height: 1.6;
   text-align: center;
 }
@@ -586,12 +601,14 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   transition: all 0.15s;
 }
 .km-modal__btn.cancel {
-  background: #2d3047;
-  color: #cbd5e1;
+  background: #1e2233;
+  color: #e2e8f0;
+  border: 1px solid #3a3f5c;
 }
 .km-modal__btn.cancel:hover {
-  background: #3a3f5c;
+  background: #2a2f44;
   color: #fff;
+  border-color: #555a78;
 }
 .km-modal__btn.danger {
   flex: 1.4;
@@ -614,10 +631,7 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   .km-stat { padding: 12px 10px; }
   .km-stat-num { font-size: 1.4rem; }
   .km-grid { grid-template-columns: 1fr; gap: 10px; }
-  .km-toolbar { flex-direction: column; align-items: stretch; }
-  .km-filters { justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; }
-  .km-filters::-webkit-scrollbar { height: 4px; }
-  .km-filters::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.2); border-radius: 4px; }
+  .km-filter-chip { font-size: 0.8rem; padding: 0 6px; }
 }
 @media (max-width: 480px) {
   .km-card { padding: 14px; }

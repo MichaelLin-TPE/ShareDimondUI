@@ -18,6 +18,7 @@ export function useAuction() {
     password: '',
     passwordConfirm: '',
     email: '',
+    referralCode: '',
   })
   const newCurrency = ref('')
   const submitting = ref(false)
@@ -108,6 +109,7 @@ export function useAuction() {
           currencyList: [...form.value.currencies],
           baseCurrency: form.value.baseCurrency,
           exchangeRate: needExchangeRate.value ? form.value.exchangeRate : 1,
+          referralCode: form.value.referralCode.trim() || null,
         }),
       })
       const data = await res.json()

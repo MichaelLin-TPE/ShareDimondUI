@@ -1,57 +1,106 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
-// 控制側邊欄伸縮的變數
 const isCollapsed = ref(true)
-
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
 
-const handleMenuClick = (item: Menu) => {
-  // 點擊後自動收起選單
-  isCollapsed.value = true
+interface Menu {
+  label: string
+  category?: string | null
+  categorySort?: number | null
+}
 
-  if (item.label === '🏛️ 血盟大廳') {
-    router.replace('/clan/dashboard')
-  } else if (item.label == '📖 歷史紀錄') {
-    router.replace('/clan/treasures')
-  } else if (item.label == '💸 轉帳') {
-    router.replace('/clan/transfer')
-  } else if (item.label == '📤 申請提款') {
-    router.replace('/clan/withdraw')
-  } else if (item.label == '👑 權限管理') {
-    router.replace('/clan/memberRole')
-  } else if (item.label == '📤 提款審核') {
-    router.replace('/clan/verifyWithdraw')
-  } else if (item.label == '💰 基金分配') {
-    router.replace('/clan/distributionPage')
-  } else if (item.label == '🙋‍♂️ 人員審核') {
-    router.replace('/clan/approvalPage')
-  } else if (item.label == '⚙️ 血盟設置') {
-    router.replace('/clan/clanSettingsPage')
-  } else if (item.label == '💳 成員帳戶') {
-    router.replace('/clan/allMemberBalance')
-  } else if (item.label == '🚪 成員管理') {
-    router.replace('/clan/kickMemberPage')
-  } else if (item.label == '💰 個人掛賣區') {
-    router.replace('/clan/marketPlace')
-  } else if (item.label == '💸 個人帳戶') {
-    router.replace('/clan/personalLog')
-  } else if (item.label == '⚔️ 首領追蹤') {
-    router.replace('/clan/bossTimer')
-  } else if (item.label == '🍄 小遊戲') {
-    router.replace('/clan/game1a2b')
-  } else if (item.label == '💎 物品定價') {
-    router.replace('/clan/itemPriceManage')
+interface MenuGroup {
+  name: string
+  sort: number
+  items: Menu[]
+}
+
+const menuList = ref<Menu[]>([])
+
+const labelToRoute: Record<string, string> = {
+  '🏛️ 血盟大廳': '/clan/dashboard',
+  '📖 歷史紀錄': '/clan/treasures',
+  '💸 轉帳': '/clan/transfer',
+  '📤 申請提款': '/clan/withdraw',
+  '👑 權限管理': '/clan/memberRole',
+  '📤 提款審核': '/clan/verifyWithdraw',
+  '💰 基金分配': '/clan/distributionPage',
+  '🙋‍♂️ 人員審核': '/clan/approvalPage',
+  '⚙️ 血盟設置': '/clan/clanSettingsPage',
+  '💳 成員帳戶': '/clan/allMemberBalance',
+  '🚪 成員管理': '/clan/kickMemberPage',
+  '💰 個人掛賣區': '/clan/marketPlace',
+  '💸 個人帳戶': '/clan/personalLog',
+  '⚔️ 首領追蹤': '/clan/bossTimer',
+  '🍄 小遊戲': '/clan/game1a2b',
+  '💎 物品定價': '/clan/itemPriceManage',
+}
+
+const handleMenuClick = (item: Menu) => {
+  isCollapsed.value = true
+  const target = labelToRoute[item.label]
+  if (target) router.replace(target)
+}
+
+const isActive = (item: Menu) => {
+  const target = labelToRoute[item.label]
+  return target ? route.path === target : false
+}
+
+const topLevelItems = computed<Menu[]>(() =>
+  menuList.value.filter((m) => !m.category),
+)
+
+const groupedMenus = computed<MenuGroup[]>(() => {
+  const map = new Map<string, MenuGroup>()
+  for (const m of menuList.value) {
+    if (!m.category) continue
+    const sort = m.categorySort ?? 999
+    let g = map.get(m.category)
+    if (!g) {
+      g = { name: m.category, sort, items: [] }
+      map.set(m.category, g)
+    } else {
+      g.sort = Math.min(g.sort, sort)
+    }
+    g.items.push(m)
   }
+  return Array.from(map.values()).sort((a, b) => a.sort - b.sort)
+})
+
+// 反向儲存:只記錄「使用者主動收起」的分類,沒被收起的全部視為展開
+// 預設(空集合)= 全部展開;新加的分類也自動展開(不在 collapsed 清單裡)
+const STORAGE_KEY = 'sidebarCollapsedCategories'
+const collapsedSet = ref<Set<string>>(new Set())
+
+const loadCollapsed = () => {
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY)
+    if (saved !== null) collapsedSet.value = new Set(JSON.parse(saved))
+  } catch {
+    /* ignore */
+  }
+}
+const saveCollapsed = () => {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...collapsedSet.value]))
+}
+const isExpanded = (name: string) => !collapsedSet.value.has(name)
+const toggleCategory = (name: string) => {
+  if (collapsedSet.value.has(name)) collapsedSet.value.delete(name)
+  else collapsedSet.value.add(name)
+  collapsedSet.value = new Set(collapsedSet.value)
+  saveCollapsed()
 }
 
 const logout = async () => {
@@ -79,12 +128,8 @@ const logout = async () => {
   }
 }
 
-const menuList = ref<Menu[]>([])
-interface Menu {
-  label: string
-}
-
 onMounted(async () => {
+  loadCollapsed()
   try {
     const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
     const res = await fetch('https://api.gameshare-system.com/get-menu', {
@@ -121,95 +166,117 @@ onMounted(async () => {
       <div class="clan">
         <img class="logo" src="/share_diamond_logo.png" />
         <div v-if="authStore.member" class="clan-info">
+          <div class="clan-tag">血盟</div>
           <div class="name">{{ authStore.member.clanName }}</div>
         </div>
-        <button class="logout" @click="logout">登出</button>
+        <button class="logout" @click="logout" title="登出">⏻</button>
       </div>
+
       <nav class="menu-list">
-        <div
-          v-for="item in menuList"
+        <!-- 頂層項目 (沒分類) -->
+        <a
+          v-for="item in topLevelItems"
           :key="item.label"
           class="menu-item"
+          :class="{ 'is-active': isActive(item) }"
           @click="handleMenuClick(item)"
         >
           {{ item.label }}
-        </div>
+        </a>
+
+        <!-- 分類折疊 -->
+        <section
+          v-for="group in groupedMenus"
+          :key="group.name"
+          class="menu-group"
+          :class="{ 'is-open': isExpanded(group.name) }"
+        >
+          <button
+            type="button"
+            class="group-header"
+            @click="toggleCategory(group.name)"
+          >
+            <svg class="group-chevron" viewBox="0 0 24 24" width="12" height="12">
+              <path
+                d="M9 6l6 6-6 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            <span class="group-name">{{ group.name }}</span>
+          </button>
+
+          <div class="group-items">
+            <div class="group-items-inner">
+              <a
+                v-for="item in group.items"
+                :key="item.label"
+                class="menu-item"
+                :class="{ 'is-active': isActive(item) }"
+                @click="handleMenuClick(item)"
+              >
+                {{ item.label }}
+              </a>
+            </div>
+          </div>
+        </section>
       </nav>
     </div>
   </aside>
 </template>
 
 <style scoped>
-/* 1. 調整遮罩層的 z-index，確保它蓋住 dashboard，但又在選單之下 */
-.sidebar-overlay {
-  /* ... 原本的設定 ... */
-  z-index: 1040; /* 建議調高一點，確保能蓋住其他可能設定了 z-index 的卡片 */
-}
-
-/* 2. 調整側邊欄的 z-index */
-.sidebar {
-  /* ... 原本的設定 ... */
-  z-index: 1050; /* 確保選單在遮罩層之上 */
-}
-
-/* 3. 調整按鈕的 z-index */
-.toggle-btn {
-  /* ... 原本的設定 ... */
-  z-index: 1030; /* 按鈕在最底層，這樣抽屜滑出來時，三條線按鈕會被遮罩蓋住，視覺比較乾淨 */
-}
-
-/* 切換按鈕樣式 - 固定在左側 */
 .toggle-btn {
   position: fixed;
   left: 15px;
   top: 15px;
-  z-index: 998;
+  z-index: 1030;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  background: #1a1f2e;
-  color: #00d4ff;
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  border-radius: 10px;
+  background: #14171f;
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
-  transition: all 0.3s ease;
+  font-size: 18px;
+  transition: all 0.15s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
-
-/* 遮罩層 */
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
-  z-index: 999; /* 介於按鈕與側邊欄之間 */
+.toggle-btn:hover {
+  background: #1a1f2a;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
-/* 側邊欄主體 */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 1040;
+}
+
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  /* 寬度設為螢幕寬度的 80%，但最大不超過 320px */
-  width: 80vw;
-  max-width: 320px;
+  width: 78vw;
+  max-width: 280px;
   height: 100vh;
-  background: #0e0f13;
+  background: #0c0e14;
   color: #fff;
-  z-index: 1000;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
-
-/* 收起狀態 */
 .is-collapsed {
   transform: translateX(-100%);
 }
@@ -218,94 +285,176 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 20px 16px;
+  padding: 14px 8px 10px;
 }
 
-/* 選單區域加上捲軸 */
-.menu-list {
-  flex: 1;
-  overflow-y: auto; /* 超過高度時顯示捲軸 */
-  padding-right: 4px;
-}
-
-/* 自定義捲軸樣式 */
-.menu-list::-webkit-scrollbar {
-  width: 4px;
-}
-.menu-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 212, 255, 0.2);
-  border-radius: 10px;
-}
-
-/* 餘下樣式保持不變 */
+/* === Clan header === */
 .clan {
   display: flex;
   align-items: center;
-  gap: 10px; /* 減少間距，讓資訊更緊湊 */
-  margin-bottom: 10px;
-  justify-content: space-between; /* 關鍵：把文字和按鈕推到兩邊 */
+  gap: 10px;
+  padding: 6px 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
 }
-
 .logo {
-  width: 40px; /* 稍微縮小 LOGO，讓畫面更精緻 */
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
+  flex-shrink: 0;
 }
-
 .clan-info {
-  flex: 1; /* 關鍵：佔滿剩餘空間，推開登出按鈕 */
-  overflow: hidden; /* 避免文字過長撐壞佈局 */
+  flex: 1;
+  min-width: 0;
 }
-
-.name {
-  font-size: 15px; /* 稍微縮小字體 */
-  font-weight: bold;
-  white-space: nowrap; /* 避免換行 */
-  overflow: hidden;
-  text-overflow: ellipsis; /* 文字過長時顯示省略號 (...) */
-}
-
-/* 登出按鈕微調 */
-.logout {
-  padding: 3px 6px; /* 關鍵：減少內距，讓按鈕變小 */
+.clan-tag {
   font-size: 10px;
-  border-radius: 6px;
-  color: #00d4ff;
-  background: #12141d;
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  cursor: pointer;
-  white-space: nowrap; /* 避免換行 */
-  margin-left: auto; /* 關鍵：推到最右邊 */
-  width: 40px;
-  height: 40px;
+  letter-spacing: 1.5px;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  font-weight: 700;
+  line-height: 1.4;
 }
-
+.name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.logout {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.55);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .logout:hover {
-  background: rgba(0, 212, 255, 0.1);
-  border-color: #00d4ff;
+  color: #ff8a8a;
+  border-color: rgba(255, 138, 138, 0.4);
 }
 
-.balance_view {
-  font-size: 13px; /* 稍微縮小字體 */
-  color: #f5c451;
-  padding: 10px;
-  background: rgba(245, 196, 81, 0.08);
-  border-radius: 8px;
-  margin-bottom: 10px;
+/* === Menu list === */
+.menu-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 2px;
+}
+.menu-list::-webkit-scrollbar {
+  width: 3px;
+}
+.menu-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
 }
 
+/* === Items (universal: top-level 與分類內共用) === */
 .menu-item {
-  padding: 10px 12px; /* 稍微減少內距 */
-  border-radius: 8px;
+  display: block;
+  padding: 7px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  margin-bottom: 4px;
-  transition: all 0.2s;
-  font-size: 14px; /* 稍微縮小選單字體 */
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.35;
+  transition:
+    color 0.12s,
+    background 0.12s;
+  position: relative;
+  text-decoration: none;
+  user-select: none;
+}
+.menu-item:hover {
+  color: #fff;
+}
+.menu-item.is-active {
+  color: #ffffff;
+  background: linear-gradient(
+    90deg,
+    rgba(68, 214, 44, 0.22) 0%,
+    rgba(68, 214, 44, 0.05) 100%
+  );
+  font-weight: 700;
+}
+.menu-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 3px;
+  background: #44d62c;
+  box-shadow:
+    0 0 6px #44d62c,
+    0 0 12px rgba(68, 214, 44, 0.7);
 }
 
-.menu-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #00d4ff;
-  padding-left: 16px; /* 懸停時稍微右移增加動感 */
+/* === Category group === */
+.menu-group {
+  margin-top: 0;
+}
+.group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 32px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  transition:
+    color 0.12s,
+    background 0.12s;
+}
+.group-header:hover {
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.04);
+}
+.menu-group.is-open .group-header {
+  color: rgba(255, 255, 255, 0.85);
+}
+.group-name {
+  text-align: left;
+}
+.group-chevron {
+  color: currentColor;
+  opacity: 0.6;
+  transition: transform 0.22s ease;
+}
+.menu-group.is-open .group-chevron {
+  transform: rotate(90deg);
+}
+
+/* === 分類內子項目 折疊動畫 === */
+.group-items {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.22s ease;
+}
+.menu-group.is-open .group-items {
+  grid-template-rows: 1fr;
+}
+.group-items-inner {
+  overflow: hidden;
+}
+.group-items-inner .menu-item {
+  padding-left: 18px;
 }
 </style>

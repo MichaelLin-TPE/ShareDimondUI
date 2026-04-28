@@ -2,208 +2,273 @@
 import { useAuction } from '@/composables/approvalPage.ts'
 
 const { pendingRequests, handleApproval } = useAuction()
-// 模擬待審核資料
 </script>
 
 <template>
-  <div class="admin-container">
-    <div class="header-section">
-      <h2 class="title">人員加入審核</h2>
-      <p class="subtitle">審核新成員的加入申請：點擊「准許」將其加入聯盟</p>
+  <div class="approval-container">
+    <div class="title-wrap">
+      <h2 class="title">🙋‍♂️ 人員審核</h2>
+      <p class="subtitle">審核新成員的加入申請,點擊「准許」將其加入血盟</p>
     </div>
 
-    <div class="management-card">
-      <div class="search-bar flex justify-between items-center">
-        <span class="text-sm text-gray-400">
-          待處理申請：<span class="text-indigo-400 font-bold">{{ pendingRequests.length }}</span> 筆
-        </span>
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-label">待審核申請</span>
+        <span class="stat-value">{{ pendingRequests.length }}</span>
       </div>
+    </div>
 
-      <div class="member-list">
-        <div v-if="pendingRequests.length === 0" class="empty-state">
-          <div class="empty-icon">✨</div>
-          <p>暫無待處理的申請資料</p>
+    <div v-if="pendingRequests.length === 0" class="empty-card">
+      <div class="empty-icon">✨</div>
+      <div class="empty-text">目前沒有待處理的加入申請</div>
+    </div>
+
+    <div v-else class="member-list">
+      <div
+        v-for="req in pendingRequests"
+        :key="req.memberId"
+        class="member-card"
+      >
+        <div class="member-head">
+          <div class="avatar">{{ req.userName.charAt(0) }}</div>
+          <div class="info">
+            <div class="name">{{ req.userName }}</div>
+            <div class="role-tag">申請加入</div>
+          </div>
         </div>
 
-        <div v-for="request in pendingRequests" :key="request.memberId" class="member-item">
-          <div class="member-info">
-            <div class="avatar">{{ request.userName.charAt(0) }}</div>
-            <div class="details">
-              <div class="name">{{ request.userName }}</div>
-            </div>
-          </div>
-
-          <div class="role-actions">
-            <button
-              class="action-btn btn-approve"
-              @click="handleApproval(request.memberId, 'APPROVE')"
-            >
-              准許加入
-            </button>
-            <button
-              class="action-btn btn-reject"
-              @click="handleApproval(request.memberId, 'REJECT')"
-            >
-              拒絕
-            </button>
-          </div>
+        <div class="actions">
+          <button class="btn-reject" @click="handleApproval(req.memberId, 'REJECT')">
+            拒絕
+          </button>
+          <button class="btn-approve" @click="handleApproval(req.memberId, 'APPROVE')">
+            准許加入
+          </button>
         </div>
       </div>
     </div>
 
     <div class="info-box">
-      <div class="info-icon">ℹ️</div>
-      <div class="info-text">注意：核准後，該成員將以「一般成員」職位自動進入聯盟清單。</div>
+      <span class="info-icon">ℹ️</span>
+      <span class="info-text">核准後該成員會以「一般成員」職位自動進入血盟名單</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* 直接引用你原本 Page 的變數與結構 */
-.admin-container {
-  padding: 40px 24px;
-  max-width: 1000px;
+/* === 統一規範 ===
+   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
+   文字: #fff / #e2e8f0 / #94a3b8 / #64748b
+*/
+
+.approval-container {
+  padding: 32px 16px 80px;
+  max-width: 720px;
   margin: 0 auto;
 }
 
-.header-section {
-  margin-bottom: 24px;
+/* Header */
+.title-wrap {
+  text-align: center;
+  margin-bottom: 22px;
 }
 .title {
-  color: #fff;
-  font-size: 24px;
-  margin-bottom: 4px;
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 .subtitle {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 13px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.5;
 }
 
-.management-card {
-  background: #161822;
+/* Stats */
+.stats-row {
+  margin-bottom: 18px;
+}
+.stat-card {
+  background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border-top: 3px solid #ffd166;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-label {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.stat-value {
+  color: #ffd166;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1.1;
 }
 
-.search-bar {
-  padding: 16px 32px;
-  background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid #24263a;
+/* Empty */
+.empty-card {
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px dashed #2e3147;
+  border-radius: 16px;
+  padding: 56px 20px;
+  text-align: center;
+}
+.empty-icon {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+.empty-text {
+  color: #64748b;
+  font-size: 0.95rem;
 }
 
+/* Member 列表 */
 .member-list {
-  max-height: 500px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.member-item {
+.member-card {
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px solid #24263a;
+  border-radius: 16px;
+  padding: 16px 18px 14px;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.2s;
+}
+.member-card:hover {
+  border-color: rgba(245, 196, 81, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.member-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px;
-  border-bottom: 1px solid #24263a;
+  gap: 12px;
+  margin-bottom: 12px;
 }
-
-.member-item:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.member-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 .avatar {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #6366f1, #4338ca);
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  background: rgba(245, 196, 81, 0.12);
+  border: 1px solid rgba(245, 196, 81, 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
+  color: #ffd166;
+  font-weight: 800;
+  font-size: 1rem;
 }
-
+.info {
+  flex: 1;
+  min-width: 0;
+}
 .name {
-  color: #fff;
-  font-size: 18px;
-  font-weight: 600;
+  color: #e2e8f0;
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.apply-time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
+.role-tag {
+  display: inline-block;
   margin-top: 4px;
-}
-
-/* 按鈕風格統一樣式 */
-.role-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.action-btn {
-  padding: 8px 20px;
-  border-radius: 10px;
-  font-size: 14px;
+  padding: 1px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border-radius: 999px;
+  font-size: 0.72rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid #2d3047;
 }
 
-/* 准許按鈕：使用類似「幹部」的亮眼色系，但改為青藍色調 */
-.btn-approve {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
-  border: none;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
-}
-
-.btn-approve:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
-}
-
-/* 拒絕按鈕：深色背景紅框，低調但不失警示 */
-.btn-reject {
-  background: transparent;
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.btn-reject:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-}
-
-.empty-state {
-  padding: 60px;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.empty-icon {
-  font-size: 40px;
-  margin-bottom: 12px;
-}
-
-.info-box {
-  margin-top: 20px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  padding: 12px 16px;
-  border-radius: 12px;
+/* 動作按鈕 */
+.actions {
   display: flex;
-  gap: 12px;
-  align-items: center;
+  gap: 10px;
+}
+.btn-reject,
+.btn-approve {
+  height: 40px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.18s;
+}
+.btn-reject {
+  flex: 1;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+.btn-reject:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fca5a5;
+}
+.btn-approve {
+  flex: 2;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+}
+.btn-approve:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
 }
 
+/* Info box */
+.info-box {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(245, 196, 81, 0.06);
+  border: 1px solid rgba(245, 196, 81, 0.22);
+  border-radius: 12px;
+}
+.info-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
 .info-text {
-  color: #a5b4fc;
-  font-size: 12px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .approval-container {
+    padding: 24px 14px 80px;
+  }
+  .member-card {
+    padding: 14px 14px 12px;
+  }
+  .stat-value {
+    font-size: 1.4rem;
+  }
 }
 </style>

@@ -186,6 +186,16 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
             兩次密碼不一致
           </p>
         </div>
+
+        <div class="cg-field">
+          <label>推薦碼 <span class="optional">(可選)</span></label>
+          <input
+            v-model="form.referralCode"
+            placeholder="若有推廣人提供的代碼,請填入"
+            class="cg-input"
+          />
+          <p class="cg-hint">透過推廣人介紹建立可在此填入,沒有可空白</p>
+        </div>
       </section>
         </div>
       </div>
@@ -212,7 +222,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   justify-content: center;
   align-items: flex-start;
   padding: 40px 24px;
-  background: radial-gradient(ellipse at top, #1a1f3a 0%, #0a0d1a 100%);
+  background: transparent;
 }
 
 .cg-card {
@@ -221,7 +231,6 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   padding: 36px 40px 32px;
   background: rgba(22, 24, 34, 0.95);
   border-radius: 24px;
-  border: 1px solid #2e3147;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
@@ -238,6 +247,13 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   gap: 24px;
 }
 
+/* === 統一設計變數 === */
+/*
+  字體階層: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
+  顏色階層: #fff / #e2e8f0 / #94a3b8 / #64748b
+  主色: #ffd166 (金) + linear-gradient(135deg, #ffd166, #f59e0b)
+*/
+
 /* Header */
 .cg-header {
   text-align: center;
@@ -246,15 +262,14 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 .cg-icon {
   font-size: 2.4rem;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));
+  filter: drop-shadow(0 0 10px rgba(245, 196, 81, 0.5));
 }
 .cg-title {
   margin: 0 0 6px;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #fff;
   letter-spacing: 1px;
-  background: linear-gradient(135deg, #a5b4fc, #f0abfc);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -265,7 +280,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   color: #94a3b8;
 }
 
-/* Section（雙欄版改為獨立面板） */
+/* Section */
 .cg-section {
   background: rgba(15, 17, 26, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -284,8 +299,8 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
   font-size: 0.78rem;
   font-weight: 800;
   display: flex;
@@ -296,7 +311,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 .cg-section-head h3 {
   margin: 0;
   font-size: 1rem;
-  color: #f1f5f9;
+  color: #e2e8f0;
   font-weight: 700;
 }
 
@@ -307,13 +322,19 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 .cg-field label {
   display: block;
   margin-bottom: 6px;
-  font-size: 0.82rem;
-  color: #cbd5e1;
+  font-size: 0.85rem;
+  color: #e2e8f0;
   font-weight: 600;
 }
 .required {
   color: #f87171;
   margin-left: 2px;
+}
+.optional {
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.78rem;
+  margin-left: 4px;
 }
 
 .cg-input {
@@ -324,14 +345,14 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   border: 1px solid #2e3147;
   border-radius: 10px;
   color: #fff;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.15s;
   box-sizing: border-box;
 }
 .cg-input:focus {
-  border-color: #a855f7;
-  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 .cg-input::placeholder {
   color: #475569;
@@ -345,7 +366,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 
 .cg-hint {
   margin: 4px 0 0;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   color: #64748b;
   line-height: 1.4;
 }
@@ -353,10 +374,10 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   color: #f87171;
 }
 .cg-hint strong {
-  color: #fbbf24;
+  color: #ffd166;
 }
 
-/* Currency input */
+/* Currency input + add button */
 .cg-currency-input {
   display: flex;
   gap: 8px;
@@ -373,9 +394,9 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   margin: 0;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #fff;
-  font-weight: 700;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-weight: 800;
   font-size: 0.85rem;
   line-height: 1;
   cursor: pointer;
@@ -386,9 +407,10 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
 }
 .cg-btn-add:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
@@ -407,7 +429,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   background: #1e2233;
   border: 1px solid #3a3f5c;
   border-radius: 20px;
-  color: #f1f5f9;
+  color: #e2e8f0;
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -417,10 +439,10 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   color: #ffd166;
 }
 .cg-tag-badge {
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   padding: 1px 6px;
   background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #000;
+  color: #0f111a;
   border-radius: 10px;
   font-weight: 800;
 }
@@ -454,7 +476,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   border: 1px solid #2e3147;
   border-radius: 10px;
   color: #94a3b8;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
   transition: all 0.15s;
 }
@@ -484,7 +506,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   min-width: 0;
 }
 
-/* Actions */
+/* Actions — 兩顆按鈕同高同字級,只用顏色 + 寬度比區分主次 */
 .cg-actions {
   display: flex;
   gap: 14px;
@@ -493,35 +515,34 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   margin-left: auto;
   margin-right: auto;
 }
-.cg-btn-cancel {
-  flex: 1;
+.cg-btn-cancel,
+.cg-btn-submit {
   height: 48px;
-  background: #1e2233;
-  border: 1px solid #3a3f5c;
-  color: #cbd5e1;
   border-radius: 12px;
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.15s;
+  letter-spacing: 0.5px;
+}
+.cg-btn-cancel {
+  flex: 1;
+  background: #1e2233;
+  border: 1px solid #3a3f5c;
+  color: #e2e8f0;
 }
 .cg-btn-cancel:hover {
   background: #2a2f44;
   color: #fff;
+  border-color: #555a78;
 }
 .cg-btn-submit {
   flex: 2;
-  height: 48px;
   background: linear-gradient(135deg, #ffd166, #f59e0b);
   border: none;
   color: #0f111a;
-  border-radius: 12px;
-  font-size: 0.95rem;
   font-weight: 800;
-  letter-spacing: 1px;
-  cursor: pointer;
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
-  transition: all 0.2s;
 }
 .cg-btn-submit:hover:not(:disabled) {
   filter: brightness(1.08);

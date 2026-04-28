@@ -1,237 +1,324 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/allMemberBalance.ts'
 
-const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies,memberList } =
+const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberList } =
   useAuction()
 </script>
 
 <template>
-  <div class="guild-master-dashboard">
-    <section class="summary-row">
-      <div class="card total-card" v-for="currency in allCurrencies" :key="currency">
-        <div class="label">全體總 {{ currency }}</div>
-        <div class="value">{{ formatNumber(totalStats[currency] ?? 0) }}</div>
+  <div class="balance-container">
+    <div class="title-wrap">
+      <h2 class="title">💳 成員資產監控</h2>
+      <div class="subtitle-row">
+        <span class="subtitle">查看所有成員的多幣別錢包餘額</span>
+        <span v-if="isLive" class="live-tag">
+          <span class="live-dot"></span>
+          即時同步
+        </span>
       </div>
+    </div>
 
-      <div class="card member-count">
-        <div class="label">成員總數</div>
-        <div class="value">{{ memberList.length }} <small>人</small></div>
+    <!-- 統計卡 -->
+    <section class="stats-grid">
+      <div v-for="currency in allCurrencies" :key="currency" class="stat-card">
+        <div class="stat-label">全體 {{ currency }}</div>
+        <div class="stat-value gold">{{ formatNumber(totalStats[currency] ?? 0) }}</div>
+      </div>
+      <div class="stat-card members">
+        <div class="stat-label">成員總數</div>
+        <div class="stat-value">
+          {{ memberList.length }}<span class="unit">人</span>
+        </div>
       </div>
     </section>
 
-    <section class="list-container">
-      <div class="table-header">
-        <div class="title-group">
-          <h2>會長管理面板 - 資產監控</h2>
-          <span class="project-tag">GameShare System</span>
-        </div>
-        <div class="refresh-tag" v-if="isLive">● 即時數據同步中 (WS)</div>
+    <!-- 成員清單 -->
+    <section class="list-card">
+      <div class="list-head">
+        <h3 class="list-title">成員清單</h3>
+        <span class="list-count">{{ memberList.length }} 位成員</span>
       </div>
 
-      <div class="table-responsive">
-        <table class="wallet-table">
+      <div class="table-wrap">
+        <table class="balance-table">
           <thead>
             <tr>
               <th class="text-left">UID</th>
-              <th class="text-left">成員名稱</th>
-              <th v-for="currency in allCurrencies" :key="currency" class="text-right">
+              <th class="text-left">成員</th>
+              <th
+                v-for="currency in allCurrencies"
+                :key="currency"
+                class="text-right"
+              >
                 {{ currency }}
               </th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="user in memberList" :key="user.userId">
-              <td class="uid">#{{ user.userId }}</td>
-              <td class="username">{{ user.userName }}</td>
-
-              <td v-for="currency in allCurrencies" :key="currency" class="balance-cell">
+              <td class="cell-uid">#{{ user.userId }}</td>
+              <td class="cell-name">{{ user.userName }}</td>
+              <td
+                v-for="currency in allCurrencies"
+                :key="currency"
+                class="cell-balance"
+              >
                 <span :class="{ 'has-value': getRawBalance(user, currency) > 0 }">
                   {{ formatNumber(getRawBalance(user, currency)) }}
                 </span>
               </td>
-
-
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div v-if="memberList.length === 0" class="empty">
+        <div class="empty-icon">👥</div>
+        <div class="empty-text">目前沒有成員資料</div>
       </div>
     </section>
   </div>
 </template>
 
 <style scoped>
-/* 全域容器樣式 */
-.guild-master-dashboard {
-  padding: 24px;
-  background: #121212; /* 更深的暗黑模式背景 */
-  color: #e0e0e0;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+/* === 統一規範 ===
+   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
+   文字: #fff / #e2e8f0 / #94a3b8 / #64748b
+*/
+
+.balance-container {
+  padding: 32px 16px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-/* 總結卡片佈局 */
-.summary-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.card {
-  flex: 1;
-  min-width: 200px;
-  background: #1e1e1e;
-  padding: 20px;
-  border-radius: 12px;
-  border-bottom: 4px solid #3498db;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.total-card {
-  border-bottom-color: #f1c40f;
-} /* 強化金幣感 */
-
-.label {
-  font-size: 0.85rem;
-  color: #999;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #fff;
-}
-
-/* 清單容器樣式 */
-.list-container {
-  background: #1e1e1e;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 16px;
-}
-
-.project-tag {
-  font-size: 0.75rem;
-  background: #333;
-  padding: 2px 8px;
-  border-radius: 4px;
-  color: #4a90e2;
-}
-
-.refresh-tag {
-  color: #2ecc71;
-  font-size: 0.8rem;
-  font-weight: bold;
-  animation: blink 2s infinite;
-}
-
-/* 表格樣式優化 */
-.table-responsive {
-  overflow-x: auto;
-}
-
-.wallet-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.wallet-table th {
-  padding: 12px 16px;
-  color: #888;
-  font-weight: 500;
-  border-bottom: 2px solid #333;
-}
-
-.wallet-table td {
-  padding: 16px;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.uid {
-  color: #555;
-  font-family: 'Courier New', monospace;
-}
-.username {
-  font-weight: 600;
-  color: #fff;
-}
-
-.balance-cell {
-  text-align: right;
-  font-family: 'Consolas', 'Monaco', monospace;
-  color: #666; /* 預設 0 的顏色較淡 */
-}
-
-.has-value {
-  color: #f1c40f; /* 有錢的幣種亮金色 */
-  font-weight: 500;
-}
-
-/* 操作按鈕 */
-.actions {
+/* Header */
+.title-wrap {
   text-align: center;
-  white-space: nowrap;
+  margin-bottom: 22px;
 }
-
-button {
-  margin: 0 4px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
+.title {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffd166;
+  text-shadow:
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
+}
+.subtitle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.subtitle {
   font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  color: #94a3b8;
 }
-
-.btn-history {
-  background: #333;
-  color: #bbb;
+.live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgba(0, 255, 136, 0.1);
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  color: #6ee7b7;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
-.btn-history:hover {
-  background: #444;
-  color: #fff;
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ff88;
+  animation: live-pulse 1.5s infinite;
 }
-
-.btn-edit {
-  background: #4a90e2;
-  color: #fff;
-}
-.btn-edit:hover {
-  background: #357abd;
-  box-shadow: 0 0 10px rgba(74, 144, 226, 0.4);
-}
-
-@keyframes blink {
-  0% {
-    opacity: 1;
+@keyframes live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.5);
   }
   50% {
-    opacity: 0.4;
+    box-shadow: 0 0 0 5px rgba(0, 255, 136, 0);
   }
-  100% {
-    opacity: 1;
-  }
+}
+
+/* Stats — 用 flex 讓卡片寬度依內容自動伸縮 */
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.stat-card {
+  flex: 1 1 auto;
+  min-width: 180px;
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px solid #24263a;
+  border-top: 3px solid #ffd166;
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.stat-card.members {
+  border-top-color: rgba(255, 255, 255, 0.18);
+}
+.stat-label {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.stat-value {
+  color: #e2e8f0;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  line-height: 1.1;
+  font-family: 'Consolas', 'Monaco', monospace;
+  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
+.stat-value.gold {
+  color: #ffd166;
+}
+.unit {
+  font-size: 1rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* List card */
+.list-card {
+  background: rgba(22, 24, 34, 0.95);
+  border: 1px solid #24263a;
+  border-radius: 16px;
+  padding: 22px;
+}
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.list-title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #e2e8f0;
+  font-weight: 700;
+}
+.list-count {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+/* Table */
+.table-wrap {
+  overflow-x: auto;
+}
+.balance-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 480px;
+}
+.balance-table th {
+  padding: 14px 14px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #24263a;
+  position: sticky;
+  top: 0;
+  background: rgba(22, 24, 34, 0.95);
+}
+.balance-table td {
+  padding: 16px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 1rem;
+}
+.balance-table tbody tr:hover {
+  background: rgba(245, 196, 81, 0.04);
+}
+.balance-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.cell-uid {
+  color: #64748b;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.92rem;
+}
+.cell-name {
+  font-weight: 600;
+  color: #e2e8f0;
+  font-size: 1rem;
+}
+.cell-balance {
+  text-align: right;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: #475569;
+  font-size: 1rem;
+}
+.cell-balance .has-value {
+  color: #ffd166;
+  font-weight: 700;
 }
 
 .text-right {
   text-align: right;
 }
-.text-center {
-  text-align: center;
-}
 .text-left {
   text-align: left;
+}
+
+/* Empty */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+.empty-icon {
+  font-size: 2.4rem;
+  margin-bottom: 10px;
+  opacity: 0.6;
+}
+.empty-text {
+  font-size: 0.95rem;
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .balance-container {
+    padding: 24px 12px 60px;
+  }
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 16px 14px;
+  }
+  .stat-value {
+    font-size: 1.6rem;
+  }
+  .balance-table th,
+  .balance-table td {
+    padding: 12px 10px;
+  }
 }
 </style>
