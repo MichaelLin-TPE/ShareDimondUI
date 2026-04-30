@@ -4,17 +4,15 @@ import TreasureCard from '@/components/TreasureCard.vue'
 import ClanNotice from '@/components/ClanNotice.vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import BiddingManagement from '@/components/BiddingManagement.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import type { Balance } from '@/types/balance.ts'
-import Stomp from 'stompjs'
-import SockJS from 'sockjs-client'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { messaging } from '@/utils/firebase'
 import { getToken } from 'firebase/messaging'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
 
-const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
-const stompClient = Stomp.over(socket)
+let wsHandle: StompHandle | null = null
 
 const memberBalance = ref<Balance[]>([])
 const clanBalance = ref<Balance[]>([])
@@ -210,17 +208,19 @@ const checkUpdateInformation = async () => {
   }
 }
 
-stompClient.connect({}, () => {
-  stompClient.subscribe('/topic/balance/' + authStore?.member?.clanId, () => {
-    getBalance()
-  })
-})
 const isUpdateModalOpen = ref(false)
 // 8. 掛載生命週期
 onMounted(() => {
   checkUpdate()
   getBalance()
   checkNotificationPermission()
+  wsHandle = createReconnectingStomp('/topic/balance/' + authStore?.member?.clanId, () => {
+    getBalance()
+  })
+})
+onUnmounted(() => {
+  wsHandle?.disconnect()
+  wsHandle = null
 })
 const closeUpdateModal = () => {
   isUpdateModalOpen.value = false

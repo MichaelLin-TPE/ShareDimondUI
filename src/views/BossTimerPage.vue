@@ -3,8 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 import { useAlert } from '@/utils/alerts.ts'
-import Stomp from 'stompjs'
-import SockJS from 'sockjs-client'
+import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
 
 const API = 'https://api.gameshare-system.com'
 const authStore = useAuthStore()
@@ -214,35 +213,22 @@ const countdownLabel = (mins: number | null) => {
 }
 
 let refreshTimer: ReturnType<typeof setInterval> | null = null
-let stompClient: Stomp.Client | null = null
-
-const connectWebSocket = () => {
-  try {
-    const socket = new SockJS(`${API}/ws-gs`)
-    stompClient = Stomp.over(socket)
-    stompClient.debug = () => {} // 關閉 debug log
-    stompClient.connect({}, () => {
-      const clanId = authStore?.member?.clanId
-      if (!clanId) return
-      stompClient?.subscribe(`/topic/bossTimer/${clanId}`, () => {
-        fetchBossList()
-      })
-    })
-  } catch (e) {
-    console.error('WebSocket 連線失敗', e)
-  }
-}
+let wsHandle: StompHandle | null = null
 
 onMounted(async () => {
   await fetchBossList()
-  connectWebSocket()
+  const clanId = authStore?.member?.clanId
+  if (clanId) {
+    wsHandle = createReconnectingStomp(`/topic/bossTimer/${clanId}`, () => {
+      fetchBossList()
+    })
+  }
   refreshTimer = setInterval(fetchBossList, 30000)
 })
 onUnmounted(() => {
   if (refreshTimer) clearInterval(refreshTimer)
-  if (stompClient && stompClient.connected) {
-    stompClient.disconnect(() => {})
-  }
+  wsHandle?.disconnect()
+  wsHandle = null
 })
 </script>
 
