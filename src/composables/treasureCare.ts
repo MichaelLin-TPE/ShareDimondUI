@@ -316,7 +316,9 @@ export function useAuction() {
       error.value = ''
       useAlert.success('新增成功!')
       loading.value = false
-      showAddBossDialog.value = false
+      // 新增後刷新清單
+      await getBossList()
+      addBossName.value = ''
     } catch (e) {
       console.log(e)
       loading.value = false
@@ -355,12 +357,126 @@ export function useAuction() {
       error.value = ''
       useAlert.success('新增成功!')
       loading.value = false
-      showAddTreasureDialog.value = false
+      // 新增後刷新清單
+      await getTreasureItemList()
+      addItemName.value = ''
     } catch (e) {
       console.log(e)
       loading.value = false
     } finally {
       loading.value = false
+    }
+  }
+
+  // === 編輯 / 刪除 道具 ===
+  const updateTreasureItem = async (itemId: string, newName: string) => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/update-treasure', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(ts),
+          TimeStamp: ts,
+        },
+        body: JSON.stringify({ itemId, newName }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '更新失敗')
+        return false
+      }
+      useAlert.success(data.message ?? '已更新')
+      await getTreasureItemList()
+      return true
+    } catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  const deleteTreasureItem = async (itemId: string, itemName: string) => {
+    const ok = await useAlert.confirm(`確定刪除道具「${itemName}」?`)
+    if (!ok.isConfirmed) return false
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`https://api.gameshare-system.com/delete-treasure/${itemId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Accept: 'application/json',
+          Sign: generateSignature(ts),
+          TimeStamp: ts,
+        },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '刪除失敗')
+        return false
+      }
+      useAlert.success(data.message ?? '已刪除')
+      await getTreasureItemList()
+      return true
+    } catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  // === 編輯 / 刪除 首領 ===
+  const updateBoss = async (bossId: string, newName: string) => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/update-boss', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(ts),
+          TimeStamp: ts,
+        },
+        body: JSON.stringify({ bossId, newName }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '更新失敗')
+        return false
+      }
+      useAlert.success(data.message ?? '已更新')
+      await getBossList()
+      return true
+    } catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  const deleteBoss = async (bossId: string, bossName: string) => {
+    const ok = await useAlert.confirm(`確定刪除首領「${bossName}」?`)
+    if (!ok.isConfirmed) return false
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`https://api.gameshare-system.com/delete-boss/${bossId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Accept: 'application/json',
+          Sign: generateSignature(ts),
+          TimeStamp: ts,
+        },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '刪除失敗')
+        return false
+      }
+      useAlert.success(data.message ?? '已刪除')
+      await getBossList()
+      return true
+    } catch (e) {
+      console.log(e)
+      return false
     }
   }
 
@@ -707,5 +823,9 @@ export function useAuction() {
     openAddBossDialog,
     createTicket,
     handleJoinItem,
+    updateTreasureItem,
+    deleteTreasureItem,
+    updateBoss,
+    deleteBoss,
   }
 }

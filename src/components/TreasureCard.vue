@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuction } from '@/composables/treasureCare.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 
@@ -37,6 +37,10 @@ const {
   addBoss,
   getJoinList,
   openAddBossDialog,
+  updateTreasureItem,
+  deleteTreasureItem,
+  updateBoss,
+  deleteBoss,
 } = useAuction()
 
 interface ItemOpt { itemId: string; itemName: string }
@@ -50,6 +54,42 @@ const bossSelectOptions = computed(() =>
 const onItemChange = (v: string) => {
   itemName.value = v
   handleItemChange()
+}
+
+// 管理彈窗 — 用統一的 { id, name } 結構簡化 template 的 union type 問題
+const manageList = computed<{ id: string; name: string }[]>(() => {
+  if (showAddBossDialog.value) {
+    return (bossOptions.value as BossOpt[]).map((b) => ({ id: b.bossId, name: b.bossName }))
+  }
+  return (itemOptions.value as ItemOpt[]).map((i) => ({ id: i.itemId, name: i.itemName }))
+})
+
+// 管理彈窗:正在編輯的列(itemId / bossId),以及暫存的編輯名稱
+const editingId = ref('')
+const editingName = ref('')
+
+const startEdit = (id: string, name: string) => {
+  editingId.value = id
+  editingName.value = name
+}
+const cancelEdit = () => {
+  editingId.value = ''
+  editingName.value = ''
+}
+const saveEditTreasure = async () => {
+  if (!editingName.value.trim()) return
+  const ok = await updateTreasureItem(editingId.value, editingName.value.trim())
+  if (ok) cancelEdit()
+}
+const saveEditBoss = async () => {
+  if (!editingName.value.trim()) return
+  const ok = await updateBoss(editingId.value, editingName.value.trim())
+  if (ok) cancelEdit()
+}
+const closeManageDialog = () => {
+  showAddBossDialog.value = false
+  showAddTreasureDialog.value = false
+  cancelEdit()
 }
 </script>
 
@@ -250,53 +290,113 @@ const onItemChange = (v: string) => {
 
     <Teleport to="body">
       <div v-if="showAddBossDialog || showAddTreasureDialog" class="ot-modal">
-        <div
-          class="ot-modal__mask"
-          @click="showAddBossDialog = showAddTreasureDialog = false"
-        ></div>
-        <div class="ot-modal__panel ot-modal__panel--mini" role="dialog">
-          <button
-            class="ot-modal__close"
-            type="button"
-            @click="showAddBossDialog = showAddTreasureDialog = false"
-          >
-            ×
-          </button>
+        <div class="ot-modal__mask" @click="closeManageDialog"></div>
+        <div class="ot-modal__panel ot-modal__panel--mini ot-mgmt" role="dialog">
+          <button class="ot-modal__close" type="button" @click="closeManageDialog">×</button>
           <div class="ot-modal__head">
-            <h2>{{ showAddBossDialog ? '新增首領' : '新增道具' }}</h2>
-            <p>輸入名稱後送出即可</p>
+            <h2>{{ showAddBossDialog ? '管理首領' : '管理道具' }}</h2>
+            <p>新增、改名、刪除</p>
           </div>
 
-          <div class="ot-field">
-            <label>{{ showAddBossDialog ? '首領名稱' : '道具名稱' }}</label>
+          <!-- 新增區 -->
+          <div class="mgmt-add-row">
             <input
               v-if="showAddBossDialog"
               v-model="addBossName"
               type="text"
-              placeholder="請輸入名稱"
+              placeholder="輸入新首領名稱"
+              class="mgmt-input"
             />
-            <input v-else v-model="addItemName" type="text" placeholder="請輸入名稱" />
+            <input
+              v-else
+              v-model="addItemName"
+              type="text"
+              placeholder="輸入新道具名稱"
+              class="mgmt-input"
+            />
+            <button
+              type="button"
+              class="mgmt-add-btn"
+              :disabled="loading"
+              @click="showAddBossDialog ? addBoss() : addTreasure()"
+            >
+              + 新增
+            </button>
           </div>
 
           <p v-if="error" class="ot-error">{{ error }}</p>
 
-          <div class="ot-actions">
-            <button
-              type="button"
-              class="ot-btn ot-btn--cancel"
-              @click="showAddBossDialog = showAddTreasureDialog = false"
-            >
-              關閉
-            </button>
-            <button
-              type="button"
-              class="ot-btn ot-btn--submit"
-              :disabled="loading"
-              @click="showAddBossDialog ? addBoss() : addTreasure()"
-            >
-              {{ loading ? '處理中...' : '確認新增' }}
-            </button>
+          <!-- 列表 -->
+          <div class="mgmt-list-head">
+            <span class="mgmt-list-title">
+              {{ showAddBossDialog ? '已建立的首領' : '已建立的道具' }}
+            </span>
+            <span class="mgmt-list-count">{{ manageList.length }} 項</span>
           </div>
+
+          <ul class="mgmt-list">
+            <li v-for="opt in manageList" :key="opt.id" class="mgmt-row">
+              <template v-if="editingId === opt.id">
+                <input
+                  v-model="editingName"
+                  type="text"
+                  class="mgmt-input mgmt-input--inline"
+                  @keyup.enter="showAddBossDialog ? saveEditBoss() : saveEditTreasure()"
+                  @keyup.esc="cancelEdit"
+                />
+                <button
+                  type="button"
+                  class="mgmt-icon-btn mgmt-confirm"
+                  title="儲存"
+                  @click="showAddBossDialog ? saveEditBoss() : saveEditTreasure()"
+                >
+                  ✓
+                </button>
+                <button
+                  type="button"
+                  class="mgmt-icon-btn mgmt-cancel"
+                  title="取消"
+                  @click="cancelEdit"
+                >
+                  ✕
+                </button>
+              </template>
+              <template v-else>
+                <span class="mgmt-name">{{ opt.name }}</span>
+                <button
+                  type="button"
+                  class="mgmt-icon-btn mgmt-edit"
+                  title="改名"
+                  @click="startEdit(opt.id, opt.name)"
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  class="mgmt-icon-btn mgmt-del"
+                  title="刪除"
+                  @click="
+                    showAddBossDialog
+                      ? deleteBoss(opt.id, opt.name)
+                      : deleteTreasureItem(opt.id, opt.name)
+                  "
+                >
+                  🗑
+                </button>
+              </template>
+            </li>
+            <li v-if="manageList.length === 0" class="mgmt-empty">
+              還沒有任何項目
+            </li>
+          </ul>
+
+          <button
+            type="button"
+            class="ot-btn ot-btn--cancel mgmt-close"
+            @click="closeManageDialog"
+          >
+            關閉
+          </button>
         </div>
       </div>
     </Teleport>
@@ -999,5 +1099,168 @@ const onItemChange = (v: string) => {
 /* 新增道具 / 首領 Mini Panel 變體 */
 .ot-modal__panel--mini {
   max-width: 360px;
+}
+
+/* === 管理彈窗 (道具 / 首領) === */
+.ot-mgmt {
+  max-width: 440px;
+}
+.mgmt-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mgmt-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.mgmt-input:focus {
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+}
+.mgmt-input--inline {
+  height: 32px;
+}
+.mgmt-add-btn {
+  flex: 0 0 auto;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.mgmt-add-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.mgmt-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mgmt-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+.mgmt-list-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.mgmt-list-count {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.mgmt-list {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: rgba(15, 17, 26, 0.5);
+}
+.mgmt-list::-webkit-scrollbar {
+  width: 6px;
+}
+.mgmt-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+.mgmt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.mgmt-row:last-child {
+  border-bottom: none;
+}
+.mgmt-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.mgmt-name {
+  flex: 1;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mgmt-icon-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.mgmt-icon-btn.mgmt-edit:hover {
+  background: rgba(245, 196, 81, 0.12);
+  border-color: rgba(245, 196, 81, 0.4);
+}
+.mgmt-icon-btn.mgmt-del:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+.mgmt-icon-btn.mgmt-confirm {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #86efac;
+  font-weight: 800;
+}
+.mgmt-icon-btn.mgmt-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.mgmt-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.mgmt-close {
+  width: 100%;
 }
 </style>
