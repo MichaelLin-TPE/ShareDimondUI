@@ -115,7 +115,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
               </button>
             </div>
 
-            <div class="item-main">
+            <div class="item-main" :class="{ 'has-tools': item.showDeleteTicket }">
               <div class="item-name gold">{{ item.itemName }}</div>
               <div class="boss-name">頭目：{{ item.bossName }}</div>
             </div>
@@ -537,10 +537,16 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   margin-bottom: 15px;
 }
 
+/* 有備註/撤單按鈕時,留右側空間避免長名字被蓋住 */
+.item-main.has-tools {
+  padding-right: 110px;
+}
+
 .item-name {
   font-size: 1.2rem;
   font-weight: bold;
   margin-bottom: 4px;
+  word-break: break-word;
 }
 .value {
   color: #f1f5f9;
