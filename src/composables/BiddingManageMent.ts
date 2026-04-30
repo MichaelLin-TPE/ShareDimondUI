@@ -1,8 +1,8 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
-import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
+import { useBiddingTreasureStore } from '@/stores/biddingTreasure'
 
 export function useAuction() {
   const showModal = ref(false)
@@ -28,7 +28,8 @@ export function useAuction() {
     showPeopleList.value = true
     selectPeopleItem.value = item
   }
-  let wsHandle: StompHandle | null = null
+  const biddingStore = useBiddingTreasureStore()
+  let unsubscribeWS: (() => void) | null = null
 
   interface TreasureItem {
     itemName: string
@@ -435,60 +436,45 @@ TimeStamp:currentTimeStamp
     | 'CANCELED'
     | 'FAILED'
 
-  // 提取成獨立函數
-  const fetchOngoingTreasures = async () => {
-    try {
-      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/get-ongoing-bidding-treasure', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          Accept: 'application/json',
-          Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-        },
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        console.log(data)
-        return
-      }
-      const data = await res.json()
-      auctions.value = data
-      // 假設 data 是一個陣列
-      auctions.value = data.filter((item: Treasure) => item.status === 'WAIT_PAY')
-      auctions.value.forEach((item) => {
+  // 共用 store 的 raw 資料,在這裡 filter 出 WAIT_PAY 並做本地 post-processing
+  const rebuildAuctions = () => {
+    auctions.value = (biddingStore.rawTreasures as unknown as Treasure[])
+      .filter((item) => item.status === 'WAIT_PAY')
+      .map((src) => {
+        const item = { ...src } as Treasure
         item.biddingPrice = item.lowestPrice
         item.isBidding = item.status === 'BIDDING'
-        // console.log(`道具名 : ${item.itemName} , isBidding : ${item.isBidding}`)
         if (item.biddingName == null || item.biddingName == '') {
           item.biddingName = '尚未有得標者'
         }
         if (item.biddingMemberList != null && item.biddingMemberList.length != 0) {
-          item.biddingMemberContent = item.biddingMemberList.map((data) => data.userName).join(',')
+          item.biddingMemberContent = item.biddingMemberList
+            .map((data) => data.userName)
+            .join(',')
         }
+        return item
       })
-      startCountdown()
-    } catch (e) {
-      console.log(e)
-    }
+    startCountdown()
   }
 
-  // onMounted 改成呼叫它
+  // 既有 caller 還是會呼叫 fetchOngoingTreasures(); 改成由 store 統一發 API
+  const fetchOngoingTreasures = async () => {
+    await biddingStore.refresh()
+  }
+
+  watch(() => biddingStore.rawTreasures, rebuildAuctions, { immediate: false })
+
   onMounted(() => {
-    fetchOngoingTreasures()
-    wsHandle = createReconnectingStomp(
-      '/topic/bidding/' + authStore?.member?.clanId,
-      (body) => {
-        if (body === 'BIDDING_LIST_UPDATED') {
-          fetchOngoingTreasures()
-        }
-      },
-    )
+    rebuildAuctions()
+    biddingStore.refresh()
+    const clanId = authStore?.member?.clanId
+    if (clanId) {
+      unsubscribeWS = biddingStore.subscribe(clanId)
+    }
   })
   onUnmounted(() => {
-    wsHandle?.disconnect()
-    wsHandle = null
+    unsubscribeWS?.()
+    unsubscribeWS = null
   })
 
   let timer: number | null = null // 用來存放計時器
