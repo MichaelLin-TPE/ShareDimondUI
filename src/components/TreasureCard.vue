@@ -1107,21 +1107,26 @@ const closeManageDialog = () => {
 }
 .mgmt-add-row {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
   margin-bottom: 14px;
 }
 .mgmt-input {
-  flex: 1;
-  height: 40px;
-  padding: 0 12px;
+  width: 100%;
+  height: 46px;
+  margin: 0;
+  padding: 0 14px;
   background: #0f172a;
   border: 1px solid #334155;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #f1f5f9;
-  font-size: 0.92rem;
+  font-size: 1rem;
+  line-height: 1;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   font-family: inherit;
 }
 .mgmt-input:focus {
@@ -1129,21 +1134,26 @@ const closeManageDialog = () => {
   box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 .mgmt-input--inline {
-  height: 32px;
+  height: 36px;
+  font-size: 0.92rem;
+  border-radius: 8px;
 }
 .mgmt-add-btn {
-  flex: 0 0 auto;
-  height: 40px;
-  padding: 0 16px;
+  width: 100%;
+  height: 44px;
+  margin: 0;
+  padding: 0;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #ffd166, #f59e0b);
   color: #0f111a;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 800;
+  letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.15s;
   font-family: inherit;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
 }
 .mgmt-add-btn:hover:not(:disabled) {
   filter: brightness(1.08);

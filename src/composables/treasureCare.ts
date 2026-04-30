@@ -25,6 +25,8 @@ export function useAuction() {
   const showPeopleList = ref(false)
   const openAddBossDialog = () => {
     showAddBossDialog.value = true
+    // 確保管理彈窗打開時清單是最新的
+    getBossList()
   }
   const balance = useBalanceStore()
 
@@ -63,10 +65,10 @@ export function useAuction() {
   const handleSubmit = () => {
     createTicket()
   }
-  // 開啟彈窗的函數 (綁定到您的開單按鈕)
-  const openTicket = () => {
-    getTreasureItemList()
-    getBossList()
+  // 開啟開單彈窗 (綁定到您的開單按鈕)
+  const openTicket = async () => {
+    await Promise.all([getTreasureItemList(), getBossList()])
+    showModal.value = true
   }
 
   const getBossList = async () => {
@@ -108,7 +110,6 @@ export function useAuction() {
       }
       const data: TreasureItem[] = await res.json()
       itemOptions.value = data
-      showModal.value = true
     } catch (e) {
       console.log(e)
     }
@@ -116,6 +117,8 @@ export function useAuction() {
 
   const openAddTreasureDialog = () => {
     showAddTreasureDialog.value = true
+    // 確保管理彈窗打開時清單是最新的
+    getTreasureItemList()
   }
   const createTicket = async () => {
     if (!bossName.value) {

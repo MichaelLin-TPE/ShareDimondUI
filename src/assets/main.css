@@ -78,3 +78,8 @@ a,
   max-width: 400px !important;
   border-radius: 16px !important; /* 既然 JS 不能寫，我們就寫在 CSS 裡 */
 }
+
+/* 4. SweetAlert2 永遠浮在所有自訂 modal 之上(本專案最高 modal 是 z-index: 9999) */
+.swal2-container {
+  z-index: 100000 !important;
+}
