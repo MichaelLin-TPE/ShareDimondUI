@@ -41,16 +41,7 @@ export function installFetchInterceptor() {
     try {
       const res = await originalFetch(input, { ...init, signal: controller.signal })
       clearTimeout(timer)
-
-      // 5xx 但不是 500(500 通常是 backend 邏輯錯誤,讓既有處理) — 502/503/504 是常見維護/閘道錯誤
-      if (res.status === 502 || res.status === 503 || res.status === 504) {
-        try {
-          useErrorOverlayStore().triggerMaintenance()
-        } catch {
-          /* pinia not ready, ignore */
-        }
-      }
-
+      // 暫時停用維護中彈窗(會誤觸發,先不處理 502/503/504)
       return res
     } catch (err: unknown) {
       clearTimeout(timer)
@@ -63,19 +54,8 @@ export function installFetchInterceptor() {
         } catch {
           /* ignore */
         }
-      } else if (
-        err instanceof TypeError &&
-        !isAbort &&
-        // 不是因為被使用者 abort
-        !(init?.signal?.aborted ?? false)
-      ) {
-        // 通常代表網路斷線、CORS、或 server 完全沒回(net::ERR_*)
-        try {
-          useErrorOverlayStore().triggerMaintenance()
-        } catch {
-          /* ignore */
-        }
       }
+      // 網路 TypeError 也暫不顯示維護中彈窗,讓各頁自行用 useAlert 處理
       throw err
     }
   } as typeof fetch
