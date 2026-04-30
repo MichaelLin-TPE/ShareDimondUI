@@ -186,6 +186,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   justify-content: space-between;
   gap: 12px;
   width: 100%;
+  min-height: 56px;
   padding: 14px 16px;
   background: transparent;
   border: none;
@@ -194,11 +195,12 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   text-align: left;
   font-family: inherit;
   transition: background 0.15s;
+  box-sizing: border-box;
 }
 .setting-row:last-child {
   border-bottom: none;
 }
-.setting-row:not(.readonly):not(:disabled):hover {
+.setting-row:not(.readonly):not(.danger-row):not(:disabled):hover {
   background: rgba(245, 196, 81, 0.04);
 }
 .setting-row:disabled {
@@ -207,6 +209,16 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
 }
 .setting-row.readonly {
   cursor: default;
+}
+
+/* 危險動作 row(退出血盟):整列紅底,看起來就是危險按鈕 */
+.setting-row.danger-row {
+  min-height: 64px;
+  background: rgba(239, 68, 68, 0.08);
+  border-bottom: none;
+}
+.setting-row.danger-row:not(:disabled):hover {
+  background: rgba(239, 68, 68, 0.18);
 }
 
 .row-label {

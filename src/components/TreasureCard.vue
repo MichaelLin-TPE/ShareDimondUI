@@ -1226,20 +1226,23 @@ const closeManageDialog = () => {
 
 .mgmt-icon-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   padding: 0;
+  margin: 0;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: #94a3b8;
   font-size: 0.95rem;
+  line-height: 1;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
   font-family: inherit;
+  box-sizing: border-box;
 }
 .mgmt-icon-btn.mgmt-edit:hover {
   background: rgba(245, 196, 81, 0.12);
