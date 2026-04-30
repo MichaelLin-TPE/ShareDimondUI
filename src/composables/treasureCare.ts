@@ -1,12 +1,9 @@
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { useAlert } from '@/utils/alerts.ts'
-import SockJS from 'sockjs-client'
-import Stomp from 'stompjs'
 import { generateSignature } from '@/utils/SignTools.ts'
-let stompClient: Stomp.Client | null = null
-let isSubscribed = false
+import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
 export function useAuction() {
   const showModal = ref(false)
   const itemName = ref('')
@@ -30,29 +27,7 @@ export function useAuction() {
   }
   const balance = useBalanceStore()
 
-  const initWebSocket = () => {
-    // 如果已經連線或訂閱過，就直接 return，避免重複連線
-    if (stompClient && isSubscribed) return
-
-    const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
-    stompClient = Stomp.over(socket)
-
-    stompClient.connect({}, (frame) => {
-      console.log('Connected : ' + frame)
-
-      const clanId = authStore?.member?.clanId
-      if (clanId && !isSubscribed) {
-        stompClient!.subscribe('/topic/treasure/' + clanId, (message) => {
-          if (message.body === 'STATUS_UPDATED') {
-            console.log('有人開新單啦！馬上更新列表！')
-            fetchOngoingTreasures()
-          }
-        })
-        isSubscribed = true // 標記為已訂閱
-      }
-    })
-  }
-  initWebSocket()
+  let wsHandle: StompHandle | null = null
   interface TreasureItem {
     itemName: string
     itemId: string
@@ -606,6 +581,18 @@ export function useAuction() {
   // onMounted 改成呼叫它
   onMounted(() => {
     fetchOngoingTreasures()
+    const clanId = authStore?.member?.clanId
+    if (clanId) {
+      wsHandle = createReconnectingStomp('/topic/treasure/' + clanId, (body) => {
+        if (body === 'STATUS_UPDATED') {
+          fetchOngoingTreasures()
+        }
+      })
+    }
+  })
+  onUnmounted(() => {
+    wsHandle?.disconnect()
+    wsHandle = null
   })
 
   let timer: number | null = null // 用來存放計時器

@@ -1,9 +1,8 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
-import SockJS from 'sockjs-client'
-import Stomp from 'stompjs'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
 
 export function useAuction() {
   const showModal = ref(false)
@@ -25,21 +24,11 @@ export function useAuction() {
   }
   const showPeopleList = ref(false)
   const selectPeopleItem = ref<Treasure>()
-  const socket = new SockJS('https://api.gameshare-system.com/ws-gs')
-  const stompClient = Stomp.over(socket)
   const handlePeopleCount = (item: Treasure) => {
     showPeopleList.value = true
     selectPeopleItem.value = item
   }
-  stompClient.connect({}, (frame) => {
-    console.log('Connected : ' + frame)
-    stompClient.subscribe('/topic/bidding/' + authStore?.member?.clanId, (message) => {
-      if (message.body === 'BIDDING_LIST_UPDATED') {
-        console.log('收到更新訊息 : /topic/bidding/' + authStore?.member?.clanId)
-        fetchOngoingTreasures()
-      }
-    })
-  })
+  let wsHandle: StompHandle | null = null
 
   interface TreasureItem {
     itemName: string
@@ -488,6 +477,18 @@ TimeStamp:currentTimeStamp
   // onMounted 改成呼叫它
   onMounted(() => {
     fetchOngoingTreasures()
+    wsHandle = createReconnectingStomp(
+      '/topic/bidding/' + authStore?.member?.clanId,
+      (body) => {
+        if (body === 'BIDDING_LIST_UPDATED') {
+          fetchOngoingTreasures()
+        }
+      },
+    )
+  })
+  onUnmounted(() => {
+    wsHandle?.disconnect()
+    wsHandle = null
   })
 
   let timer: number | null = null // 用來存放計時器
