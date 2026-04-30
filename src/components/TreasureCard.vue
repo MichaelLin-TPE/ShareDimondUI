@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useAuction } from '@/composables/treasureCare.ts'
+import SearchableSelect from '@/components/SearchableSelect.vue'
 
 const {
   auctions,
@@ -36,6 +38,19 @@ const {
   getJoinList,
   openAddBossDialog,
 } = useAuction()
+
+interface ItemOpt { itemId: string; itemName: string }
+interface BossOpt { bossId: string; bossName: string }
+const itemSelectOptions = computed(() =>
+  (itemOptions.value as ItemOpt[]).map((it) => ({ value: it.itemId, label: it.itemName })),
+)
+const bossSelectOptions = computed(() =>
+  (bossOptions.value as BossOpt[]).map((b) => ({ value: b.bossId, label: b.bossName })),
+)
+const onItemChange = (v: string) => {
+  itemName.value = v
+  handleItemChange()
+}
 </script>
 
 <template>
@@ -159,22 +174,21 @@ const {
           <form @submit.prevent="handleSubmit" class="ot-modal__form">
             <div class="ot-field">
               <label>寶物名稱</label>
-              <select v-model="itemName" @change="handleItemChange" required>
-                <option disabled value="">請選擇要開單的寶物</option>
-                <option v-for="opt in itemOptions" :key="opt.itemId" :value="opt.itemId">
-                  {{ opt.itemName }}
-                </option>
-              </select>
+              <SearchableSelect
+                :model-value="itemName"
+                @update:model-value="onItemChange"
+                :options="itemSelectOptions"
+                placeholder="輸入關鍵字搜尋寶物..."
+              />
             </div>
 
             <div class="ot-field">
               <label>首領名稱</label>
-              <select v-model="bossName" required>
-                <option disabled value="">請選擇掉落的首領</option>
-                <option v-for="boss in bossOptions" :key="boss.bossId" :value="boss.bossId">
-                  {{ boss.bossName }}
-                </option>
-              </select>
+              <SearchableSelect
+                v-model="bossName"
+                :options="bossSelectOptions"
+                placeholder="輸入關鍵字搜尋首領..."
+              />
             </div>
 
             <div class="ot-field">
@@ -824,7 +838,7 @@ const {
 .ot-field select,
 .ot-field textarea,
 .ot-field input[type='number'],
-.ot-field input[type='text'] {
+.ot-field input[type='text']:not(.ss-input) {
   width: 100%;
   background: #0f172a;
   border: 1px solid #334155;
@@ -839,7 +853,7 @@ const {
 .ot-field select:focus,
 .ot-field textarea:focus,
 .ot-field input[type='number']:focus,
-.ot-field input[type='text']:focus {
+.ot-field input[type='text']:not(.ss-input):focus {
   border-color: #b46eff;
 }
 .ot-field textarea {

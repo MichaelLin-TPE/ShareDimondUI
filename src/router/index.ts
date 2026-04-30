@@ -22,6 +22,8 @@ import TicketManagement from '@/components/TicketManagement.vue'
 import BossTimerPage from '@/views/BossTimerPage.vue'
 import Game1A2BPage from '@/views/Game1A2BPage.vue'
 import ItemPriceManagePage from '@/views/ItemPriceManagePage.vue'
+import LootTrackerPage from '@/views/LootTrackerPage.vue'
+import SettingsPage from '@/views/SettingsPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -145,6 +147,14 @@ const router = createRouter({
         {
           path: 'itemPriceManage',
           component: ItemPriceManagePage,
+        },
+        {
+          path: 'lootTracker',
+          component: LootTrackerPage,
+        },
+        {
+          path: 'settings',
+          component: SettingsPage,
         },
       ],
     },

@@ -45,6 +45,8 @@ const labelToRoute: Record<string, string> = {
   '⚔️ 首領追蹤': '/clan/bossTimer',
   '🍄 小遊戲': '/clan/game1a2b',
   '💎 物品定價': '/clan/itemPriceManage',
+  '📦 掉寶追蹤': '/clan/lootTracker',
+  '⚙️ 設置': '/clan/settings',
 }
 
 const handleMenuClick = (item: Menu) => {
@@ -325,11 +327,12 @@ onMounted(async () => {
   line-height: 1.3;
 }
 .logout {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  font-size: 16px;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 17px;
+  line-height: 1;
   color: rgba(255, 255, 255, 0.55);
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -338,6 +341,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
 }
 .logout:hover {
   color: #ff8a8a;

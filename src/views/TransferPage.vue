@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useAuction } from '@/composables/transfer.ts'
-import MemberSelect from '@/components/MemberSelect.vue'
+import SearchableSelect from '@/components/SearchableSelect.vue'
 
 const {
   handleTransfer,
@@ -11,6 +12,20 @@ const {
   selectedCurrency,
   submitting,
 } = useAuction()
+
+interface MemberOpt { memberId: number; memberName: string; memberRole: string }
+const memberSelectOptions = computed(() =>
+  (memberList.value as MemberOpt[]).map((m) => ({
+    value: String(m.memberId),
+    label: `${m.memberName} (${m.memberRole})`,
+  })),
+)
+const memberIdStr = computed({
+  get: () => String(selectedMemberId.value ?? ''),
+  set: (v: string) => {
+    selectedMemberId.value = v
+  },
+})
 </script>
 
 <template>
@@ -23,10 +38,10 @@ const {
 
       <div class="field">
         <label>收款對象</label>
-        <MemberSelect
-          v-model="selectedMemberId"
-          :members="memberList"
-          placeholder="請選擇接收者"
+        <SearchableSelect
+          v-model="memberIdStr"
+          :options="memberSelectOptions"
+          placeholder="輸入名稱搜尋接收者..."
         />
       </div>
 

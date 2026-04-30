@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router'
+import { installFetchInterceptor } from './utils/fetchInterceptor'
 
 /* --- 導入 FontAwesome 核心 --- */
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -26,6 +27,10 @@ pinia.use(piniaPluginPersistedstate)
 // 2. 依序把設定好的 pinia、router 和 FontAwesome 元件掛載到 app 上
 app.use(pinia)
 app.use(router)
+
+// 全域 fetch 攔截:處理 timeout / 502 等非預期錯誤,顯示重試 / 維護中彈窗
+// 必須在 pinia 掛載後才能使用 store
+installFetchInterceptor()
 
 // 註冊全域組件，這樣你在任何 .vue 檔案都能直接用 <font-awesome-icon>
 app.component('font-awesome-icon', FontAwesomeIcon)

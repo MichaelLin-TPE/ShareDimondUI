@@ -352,6 +352,7 @@ const onForgotPassword = () => {
 /* ===== 登入卡片 ===== */
 .login-card {
   width: 360px;
+  max-width: 100%;
   padding: 32px 28px 36px;
   background: rgba(22, 24, 34, 0.95);
   border-radius: 24px;
@@ -552,16 +553,18 @@ button:disabled {
 }
 
 /* ===== Mobile ===== */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .page {
     align-items: flex-start;
-    padding: 24px 14px 180px;
+    padding: 18px 0 180px;
+    margin: 0;
   }
   .login-card {
-    width: 100%;
-    max-width: none;
-    padding: 32px 22px 34px;
-    border-radius: 20px;
+    width: calc(100vw - 48px);
+    max-width: calc(100vw - 48px);
+    margin: 0 24px;
+    padding: 28px 20px 30px;
+    border-radius: 16px;
   }
   .logo-glow {
     font-size: 38px;

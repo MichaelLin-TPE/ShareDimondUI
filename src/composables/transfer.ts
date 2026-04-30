@@ -47,7 +47,31 @@ export function useAuction() {
   const balance = useBalanceStore()
   onMounted(async () => {
     getAllMember()
+    ensureBalance()
   })
+
+  // F5 後 pinia state 重置會導致 balanceList 為空 → 補抓一次
+  const ensureBalance = async () => {
+    if (balance.balanceList.length > 0) return
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/getBalance', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Accept: 'application/json',
+          Sign: generateSignature(ts),
+          TimeStamp: ts,
+        },
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      balance.setBalanceList(data.memberBalanceResponseList ?? [])
+      balance.setClanBalanceList(data.clanBalanceResponseList ?? [])
+    } catch (e) {
+      console.log(e)
+    }
+  }
   const memberList = ref<MemberResponse[]>([])
   interface MemberResponse {
     memberId: number

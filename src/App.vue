@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import ErrorOverlay from './components/ErrorOverlay.vue'
 
 const route = useRoute()
 // 新增：控制收費方式彈窗顯示狀態的變數
@@ -85,6 +86,8 @@ const isLoginPage = computed(() => {
 </script>
 
 <template>
+  <ErrorOverlay />
+
   <div v-if="route.meta.fullscreen" id="app" :class="{ fullscreen: route.meta.fullscreen }">
     <RouterView />
   </div>
@@ -606,8 +609,10 @@ const isLoginPage = computed(() => {
   gap: 15px;
   padding: 25px 0;
   width: auto;
+  max-width: 100vw;
   z-index: 9999;
   background: transparent;
+  box-sizing: border-box;
 }
 
 .nav-link {
@@ -617,7 +622,9 @@ const isLoginPage = computed(() => {
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition:
+    color 0.18s,
+    text-shadow 0.18s;
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -625,15 +632,43 @@ const isLoginPage = computed(() => {
 }
 
 .nav-link:hover {
-  color: #6366f1;
-  text-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+  color: #ffd166;
+  text-shadow: 0 0 8px rgba(245, 196, 81, 0.4);
 }
 
 .divider {
-  margin-top: 25px;
   width: 1px;
   height: 12px;
   background-color: #334155;
+  flex-shrink: 0;
+}
+
+/* 手機:緊湊 + 取消分隔線 */
+@media (max-width: 480px) {
+  .bottom-nav {
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-around;
+    gap: 0;
+    padding: 12px 4px;
+    box-sizing: border-box;
+  }
+  .nav-link {
+    flex: 1 1 0;
+    min-width: 0;
+    display: inline-flex;
+    justify-content: center;
+    font-size: 0.78rem;
+    padding: 4px 4px;
+    white-space: nowrap;
+  }
+  .divider {
+    display: none;
+  }
 }
 
 /* --- 基本佈局樣式 --- */
@@ -670,12 +705,9 @@ header {
     display: none !important;
   }
   #app {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
     min-height: 100vh !important;
-    padding: 20px !important;
     box-sizing: border-box !important;
   }
 }

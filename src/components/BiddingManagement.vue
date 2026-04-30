@@ -23,6 +23,33 @@ const {
   handleStorageChange,
   selectedTreasure,
 } = useAuction()
+
+interface GroupItem {
+  treasureCode: string
+  itemName: string
+  currency: string
+  currentPrice: number
+  biddingName: string
+}
+
+const summaryTotals = (items: GroupItem[]) => {
+  const totals: Record<string, number> = {}
+  for (const it of items) {
+    if (!it.currentPrice || !it.currency) continue
+    totals[it.currency] = (totals[it.currency] || 0) + Number(it.currentPrice)
+  }
+  return totals
+}
+
+const itemNameCounts = (items: GroupItem[]) => {
+  const counts: Record<string, number> = {}
+  for (const it of items) {
+    counts[it.itemName] = (counts[it.itemName] || 0) + 1
+  }
+  return Object.entries(counts).map(([name, count]) => ({ name, count }))
+}
+
+const isAssigned = (title: string) => !title.includes('尚未分配')
 </script>
 
 <template>
@@ -44,7 +71,30 @@ const {
 
     <div class="auction-container">
       <div v-for="group in groupedAuctionsList" :key="group.title" class="group-wrapper">
-        <h4 class="group-title">{{ group.title }}</h4>
+        <div class="group-head">
+          <h4 class="group-title">{{ group.title }}</h4>
+          <div v-if="isAssigned(group.title)" class="group-summary">
+            <span class="sum-count">共 {{ (group.items ?? []).length }} 件</span>
+            <span
+              v-for="(amt, ccy) in summaryTotals((group.items ?? []) as GroupItem[])"
+              :key="String(ccy)"
+              class="sum-amount"
+            >
+              {{ ccy }}<span class="sum-amount-num">{{ amt.toLocaleString() }}</span>
+            </span>
+          </div>
+        </div>
+
+        <div v-if="isAssigned(group.title)" class="group-items-preview">
+          <span
+            v-for="entry in itemNameCounts((group.items ?? []) as GroupItem[])"
+            :key="entry.name"
+            class="item-chip"
+            :title="entry.name"
+          >
+            {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
+          </span>
+        </div>
 
         <div class="auction-grid">
           <div v-for="item in group.items" :key="item.treasureCode" class="auction-card">
@@ -292,15 +342,100 @@ const {
   margin-bottom: 40px;
 }
 
-.group-title {
-  color: #f1f5f9;
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid rgba(99, 102, 241, 0.3); /* 使用與你按鈕相呼應的紫色調 */
+.group-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid rgba(245, 196, 81, 0.35);
+}
+.group-title {
+  color: #ffd166;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* 群組總計區 */
+.group-summary {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sum-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.sum-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.22), rgba(245, 158, 11, 0.12));
+  border: 1px solid rgba(245, 196, 81, 0.55);
+  color: #ffd166;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.15);
+}
+.sum-amount-num {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+/* 道具 chips 預覽列 */
+.group-items-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(245, 196, 81, 0.1);
+  border: 1px solid rgba(245, 196, 81, 0.35);
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffd166;
+  white-space: nowrap;
+  max-width: 240px;
+  overflow: hidden;
+}
+.item-chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 0 8px;
+  height: 22px;
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  color: #0f111a;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  font-family: 'Consolas', 'Monaco', monospace;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
 }
 
 /* -------------------------------------- */
