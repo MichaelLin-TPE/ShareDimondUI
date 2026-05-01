@@ -4,7 +4,7 @@ import TreasureCard from '@/components/TreasureCard.vue'
 import ClanNotice from '@/components/ClanNotice.vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import BiddingManagement from '@/components/BiddingManagement.vue'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Balance } from '@/types/balance.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { messaging } from '@/utils/firebase'
@@ -19,6 +19,28 @@ const clanBalance = ref<Balance[]>([])
 const authStore = useAuthStore()
 const balance = useBalanceStore()
 const showPushModal = ref<boolean>(false)
+
+// 血盟試用倒數 — 後端在 /getBasicInfo 回傳 clanExpiresAt (epoch millis)
+const trialDaysRemaining = computed<number | null>(() => {
+  const expiresAt = authStore.member?.clanExpiresAt
+  if (!expiresAt) return null
+  const ms = expiresAt - Date.now()
+  return Math.ceil(ms / (24 * 60 * 60 * 1000))
+})
+const trialChipText = computed(() => {
+  const d = trialDaysRemaining.value
+  if (d === null) return ''
+  if (d <= 0) return '⛔ 試用已到期'
+  if (d === 1) return '⚠️ 試用剩 1 天'
+  return `🕐 試用剩 ${d} 天`
+})
+const trialChipClass = computed(() => {
+  const d = trialDaysRemaining.value
+  if (d === null) return ''
+  if (d <= 0) return 'trial-expired'
+  if (d <= 3) return 'trial-warning'
+  return 'trial-normal'
+})
 
 // 1. 取得裝置類型
 const getDeviceType = () => {
@@ -278,7 +300,17 @@ const closeUpdateModal = () => {
       </div>
     </div>
 
-    <h1 v-if="authStore.member">{{ authStore.member.clanName }} 血盟大廳</h1>
+    <div v-if="authStore.member" class="page-title-row">
+      <h1>{{ authStore.member.clanName }} 血盟大廳</h1>
+      <span
+        v-if="trialDaysRemaining !== null"
+        class="trial-chip"
+        :class="trialChipClass"
+        title="若需延長使用期限,請聯絡客服"
+      >
+        {{ trialChipText }}
+      </span>
+    </div>
 
     <ClanNotice />
 
@@ -847,5 +879,40 @@ h1 {
 .btn-confirm:hover {
   filter: brightness(1.1);
   transform: translateY(-2px);
+}
+
+/* 血盟大廳標題 + 試用倒數 chip */
+.page-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.page-title-row h1 {
+  margin: 0;
+}
+.trial-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  cursor: help;
+}
+.trial-chip.trial-warning {
+  background: rgba(245, 158, 11, 0.14);
+  color: #ffd166;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.trial-chip.trial-expired {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
 }
 </style>
