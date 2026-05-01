@@ -22,7 +22,8 @@ const route = useRoute()
 
 // ===== state =====
 const isOpen = ref(false)
-const marketCount = ref(0)
+const marketCount = ref(0)             // 市場 OPEN 掛單總數 (公會層級)
+const myWaitPaySellingCount = ref(0)   // 我的賣單 WAIT_PAY 數 (個人,要去確認付款)
 const isPulsing = ref(false)
 let wsHandle: StompHandle | null = null
 
@@ -30,7 +31,22 @@ let wsHandle: StompHandle | null = null
 const alerts = computed<AlertItem[]>(() => {
   const items: AlertItem[] = []
 
-  // 1. 市場掛單 (在市場頁時不顯示,因為使用者已經看到了)
+  // 1. 個人:等我確認付款 (有人買了我的東西) — 優先顯示在最上面 (越高優先級越要先看到)
+  if (myWaitPaySellingCount.value > 0) {
+    items.push({
+      id: 'wait-pay-selling',
+      icon: '💰',
+      count: myWaitPaySellingCount.value,
+      title: `${myWaitPaySellingCount.value} 筆賣單等你確認付款`,
+      bg: 'linear-gradient(135deg, #10b981, #059669)',
+      onClick: () => {
+        router.replace('/clan/marketPlace')
+        isOpen.value = false
+      },
+    })
+  }
+
+  // 2. 市場掛單 (在市場頁時不顯示,因為使用者已經看到了)
   if (marketCount.value > 0 && !route.path.startsWith('/clan/marketPlace')) {
     items.push({
       id: 'market',
@@ -65,28 +81,53 @@ const totalCount = computed(() =>
 )
 
 // ===== fetch =====
+const headers = (): Record<string, string> => {
+  const ts = Math.floor(Date.now() / 1000).toString()
+  return {
+    Authorization: `Bearer ${authStore.authToken}`,
+    Sign: generateSignature(ts),
+    TimeStamp: ts,
+  }
+}
+
+const triggerPulse = () => {
+  isPulsing.value = true
+  window.setTimeout(() => (isPulsing.value = false), 900)
+}
+
 const fetchMarketCount = async () => {
   if (!authStore.authToken) return
   try {
-    const ts = Math.floor(Date.now() / 1000).toString()
-    const res = await fetch(`${API}/personal-listing/list`, {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign: generateSignature(ts),
-        TimeStamp: ts,
-      },
-    })
+    const res = await fetch(`${API}/personal-listing/list`, { headers: headers() })
     if (!res.ok) return
     const data = await res.json()
     const newCount = Array.isArray(data) ? data.length : 0
-    if (newCount > marketCount.value) {
-      isPulsing.value = true
-      window.setTimeout(() => (isPulsing.value = false), 900)
-    }
+    if (newCount > marketCount.value) triggerPulse()
     marketCount.value = newCount
   } catch {
     /* ignore */
   }
+}
+
+const fetchMyWaitPaySelling = async () => {
+  if (!authStore.authToken) return
+  try {
+    const res = await fetch(`${API}/personal-listing/my-listings`, { headers: headers() })
+    if (!res.ok) return
+    const data = await res.json()
+    const newCount = Array.isArray(data)
+      ? data.filter((l: { status?: string }) => l.status === 'WAIT_PAY').length
+      : 0
+    if (newCount > myWaitPaySellingCount.value) triggerPulse()
+    myWaitPaySellingCount.value = newCount
+  } catch {
+    /* ignore */
+  }
+}
+
+const refreshAll = () => {
+  fetchMarketCount()
+  fetchMyWaitPaySelling()
 }
 
 // ===== UI actions =====
@@ -112,12 +153,12 @@ watch(
 
 // ===== lifecycle =====
 onMounted(() => {
-  fetchMarketCount()
+  refreshAll()
   document.addEventListener('mousedown', closeOnOutside)
   const clanId = authStore.member?.clanId
   if (clanId) {
     wsHandle = createReconnectingStomp(`/topic/listing/${clanId}`, () => {
-      fetchMarketCount()
+      refreshAll()
     })
   }
 })
