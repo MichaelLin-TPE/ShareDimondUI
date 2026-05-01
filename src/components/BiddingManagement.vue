@@ -54,7 +54,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 
 <template>
   <div class="whole_page">
-    <div class="page-header">
+    <div class="dash-card-head">
       <h3>待分配單 共 {{ auctions.length }} 件待分配道具</h3>
       <div class="tooltip-wrapper">
         <font-awesome-icon :icon="['far', 'circle-question']" class="info-icon" />
@@ -473,20 +473,37 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   box-sizing: border-box;
 }
 
-.page-header {
-  margin-bottom: 20px;
-  border-left: 4px solid #6366f1;
-  padding-left: 15px;
+.dash-card-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
+  margin-bottom: 20px;
+  position: relative;
+  padding-left: 8px;
+}
+.dash-card-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background: #6366f1;
+  border-radius: 2px;
+}
+.dash-card-head h3 {
+  font-size: 1.1rem;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  margin: 0;
 }
 
 /* 核心：Grid 排版，自動換行，一排約 3-4 個 */
 .auction-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 

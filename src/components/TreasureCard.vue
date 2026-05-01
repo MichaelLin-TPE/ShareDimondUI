@@ -95,7 +95,7 @@ const closeManageDialog = () => {
 
 <template>
   <div class="whole_page">
-    <div class="page-header">
+    <div class="dash-card-head">
       <h3 class="page-title">
         寶物分紅參與
 
@@ -477,26 +477,37 @@ const closeManageDialog = () => {
   padding: 20px;
   color: #e2e8f0;
 }
-.page-header {
+.dash-card-head {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  position: relative;
+  padding-left: 8px;
 }
+.dash-card-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background: #6366f1;
+  border-radius: 2px;
+}
+.dash-card-head h3,
 .page-title {
-  /* 將原本的 1.5rem 縮小至 1.25rem，視覺上更平衡 */
-  font-size: 1.25rem;
-  font-weight: normal; /* 取消粗體 */
+  font-size: 1.1rem;
+  font-weight: normal;
   letter-spacing: 0.5px;
-
-  /* 縮小左邊裝飾條，使其與文字高度更契合 */
-  border-left: 3px solid #b46eff;
-  padding-left: 10px;
-
-  /* 確保與右邊按鈕垂直對齊 */
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   margin: 0;
+}
+.dash-card-head .header-btns {
+  margin-left: auto;
 }
 
 .page-title span {
