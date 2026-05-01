@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SideBar from '@/components/SideBar.vue'
+import NotifierHub from '@/components/NotifierHub.vue'
 </script>
 
 <template>
@@ -8,6 +9,7 @@ import SideBar from '@/components/SideBar.vue'
     <main class="content">
       <router-view />
     </main>
+    <NotifierHub />
   </div>
 </template>
 
