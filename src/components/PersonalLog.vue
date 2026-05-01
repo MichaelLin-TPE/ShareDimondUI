@@ -256,6 +256,7 @@ const formatAmount = (value: number, currencyCode: string) => {
 
 .section-header {
   margin-bottom: 14px;
+  padding-left: 48px;
 }
 
 .header-text {

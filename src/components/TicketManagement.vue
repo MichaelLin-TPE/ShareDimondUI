@@ -383,6 +383,7 @@ const viewDetail = (order: MarketOrder) => {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 24px;
+  padding-left: 48px;
   color: #ffffff;
 }
 

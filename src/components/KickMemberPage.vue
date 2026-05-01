@@ -172,7 +172,6 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 /* Header */
 .km-header {
   margin-bottom: 24px;
-  margin-left: 48px;
 }
 .km-title-row {
   display: flex;
@@ -625,7 +624,6 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 /* RWD */
 @media (max-width: 768px) {
   .km-page { padding: 20px 12px 40px; }
-  .km-header { margin-left: 48px; }
   .km-title { font-size: 1.25rem; }
   .km-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .km-stat { padding: 12px 10px; }

@@ -463,7 +463,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
-  margin-left: 48px;
 }
 .header-left {
   display: flex;

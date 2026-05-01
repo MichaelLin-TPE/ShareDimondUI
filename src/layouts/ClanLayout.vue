@@ -24,4 +24,15 @@ import SideBar from '@/components/SideBar.vue'
   background: #0e0f13;
   min-height: 100vh;
 }
+
+/* 漢堡按鈕浮在 top:15 left:15 (40x40)。各頁標題列保留左側 48px,
+   讓 ICON 跟標題視覺上同處一排,不再吃掉整個頂部 */
+.content :deep(.page-title-row),
+.content :deep(.page-header),
+.content :deep(.km-header),
+.content :deep(.cs-header),
+.content :deep(.g-header),
+.content :deep(.header-content) {
+  padding-left: 48px;
+}
 </style>
