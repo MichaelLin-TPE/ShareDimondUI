@@ -1053,12 +1053,12 @@ select.field {
 }
 .preset-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
-  padding: 12px 14px;
-  height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 16px;
+  height: 56px;
+  width: 100%;
   min-width: 0;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1066,9 +1066,8 @@ select.field {
   cursor: pointer;
   transition: all 0.15s;
   font-family: inherit;
-  text-align: left;
   color: #cbd5e1;
-  overflow: hidden;
+  white-space: nowrap;
 }
 .preset-card:hover {
   border-color: rgba(245, 196, 81, 0.4);
@@ -1083,21 +1082,14 @@ select.field {
 .preset-label {
   font-weight: 800;
   font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 .preset-sub {
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  font-variant-numeric: tabular-nums;
 }
 .preset-card.active .preset-sub {
-  color: rgba(255, 209, 102, 0.7);
+  color: rgba(255, 209, 102, 0.75);
 }
 
 .divider {
