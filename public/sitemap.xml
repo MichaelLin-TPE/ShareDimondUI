@@ -3,6 +3,11 @@
   <url>
     <loc>https://gameshare-system.com/</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gameshare-system.com/landing/</loc>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 </urlset>
