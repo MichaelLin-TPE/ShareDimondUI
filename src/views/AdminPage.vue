@@ -45,10 +45,10 @@ async function callApi<T>(method: string, path: string, body?: unknown): Promise
 // ===== Tabs =====
 const activeTab = ref<'codes' | 'extend' | 'payments' | 'commissions'>('codes')
 const tabs = [
-  { key: 'codes', label: '🎟️ 推廣碼', desc: '管理推廣者' },
-  { key: 'extend', label: '⏰ 血盟延期', desc: '收款 + 延長 + 自動算抽成' },
-  { key: 'payments', label: '💵 付款記錄', desc: '查所有收款' },
-  { key: 'commissions', label: '💰 抽成結算', desc: '撥款給推廣者' },
+  { key: 'codes', label: '推廣碼', emoji: '🎟️', desc: '管理推廣者' },
+  { key: 'extend', label: '血盟延期', emoji: '⏰', desc: '收款 + 自動算抽成' },
+  { key: 'payments', label: '付款記錄', emoji: '💵', desc: '查所有收款' },
+  { key: 'commissions', label: '抽成結算', emoji: '💰', desc: '撥款給推廣者' },
 ] as const
 
 // ===== Toast =====
@@ -141,12 +141,12 @@ const extendResult = ref<{
 } | null>(null)
 
 const planPresets = [
-  { plan: 'MONTHLY', label: '月繳', days: 30, amount: 2000 },
-  { plan: 'YEARLY', label: '年繳', days: 365, amount: 20000 },
-  { plan: 'LARGE_MONTHLY', label: '100人月', days: 30, amount: 3500 },
-  { plan: 'LARGE_YEARLY', label: '100人年', days: 365, amount: 35000 },
-  { plan: 'TRIAL_EXTENSION', label: '試用延長', days: 7, amount: 0 },
-  { plan: 'CUSTOM', label: '自訂', days: 0, amount: 0 },
+  { plan: 'MONTHLY', label: '月繳', sub: '30 天 / NT$2,000', days: 30, amount: 2000 },
+  { plan: 'YEARLY', label: '年繳', sub: '365 天 / NT$20,000', days: 365, amount: 20000 },
+  { plan: 'LARGE_MONTHLY', label: '100 人月', sub: '30 天 / NT$3,500', days: 30, amount: 3500 },
+  { plan: 'LARGE_YEARLY', label: '100 人年', sub: '365 天 / NT$35,000', days: 365, amount: 35000 },
+  { plan: 'TRIAL_EXTENSION', label: '試用延長', sub: '7 天 / 免費', days: 7, amount: 0 },
+  { plan: 'CUSTOM', label: '自訂', sub: '手動填', days: 0, amount: 0 },
 ] as const
 
 function applyPlanPreset(plan: ExtendForm['plan']) {
@@ -154,7 +154,7 @@ function applyPlanPreset(plan: ExtendForm['plan']) {
   if (!p) return
   extendForm.value.plan = p.plan
   if (p.days) extendForm.value.days = p.days
-  if (p.amount) extendForm.value.amount = p.amount
+  if (p.plan !== 'CUSTOM') extendForm.value.amount = p.amount
 }
 async function submitExtend() {
   if (!extendForm.value.clanId.trim()) {
@@ -323,10 +323,10 @@ onMounted(() => {
           v-model="tokenInput"
           type="password"
           placeholder="X-Admin-Token"
-          class="gate-input"
+          class="field"
           @keyup.enter="saveToken"
         />
-        <button class="btn primary block" @click="saveToken">進入</button>
+        <button class="btn btn-primary btn-block" @click="saveToken">進入</button>
         <p class="gate-hint">Token 會儲存在本機,下次自動登入</p>
       </div>
     </div>
@@ -340,8 +340,8 @@ onMounted(() => {
           <span class="brand-text">Diamond Core Admin</span>
         </div>
         <div class="topbar-right">
-          <button class="btn ghost sm" @click="refreshAll">🔄 全部重新整理</button>
-          <button class="btn danger-ghost sm" @click="clearToken">登出</button>
+          <button class="btn btn-ghost" @click="refreshAll">🔄 全部重新整理</button>
+          <button class="btn btn-danger-ghost" @click="clearToken">登出</button>
         </div>
       </header>
 
@@ -354,261 +354,386 @@ onMounted(() => {
           :class="{ active: activeTab === t.key }"
           @click="activeTab = t.key"
         >
-          <div class="tab-label">{{ t.label }}</div>
-          <div class="tab-desc">{{ t.desc }}</div>
+          <span class="tab-emoji">{{ t.emoji }}</span>
+          <span class="tab-text">
+            <span class="tab-label">{{ t.label }}</span>
+            <span class="tab-desc">{{ t.desc }}</span>
+          </span>
         </button>
       </nav>
 
       <!-- ===== Tab: 推廣碼 ===== -->
       <section v-if="activeTab === 'codes'" class="panel">
-        <div class="panel-head">
-          <h2>🎟️ 推廣碼管理</h2>
-          <button class="btn ghost sm" @click="loadCodes">重新整理</button>
-        </div>
-
-        <div class="card form-card">
-          <div class="card-title">➕ 新增推廣碼</div>
-          <div class="grid-form">
-            <label>
-              <span>推廣碼 *</span>
-              <input v-model="codeForm.code" placeholder="例: PROMO001" />
-            </label>
-            <label>
-              <span>推廣人姓名 *</span>
-              <input v-model="codeForm.ownerName" placeholder="例: 王小明" />
-            </label>
-            <label>
-              <span>聯絡方式</span>
-              <input v-model="codeForm.ownerContact" placeholder="LINE / 電話 / Email" />
-            </label>
-            <label>
-              <span>抽成 % *</span>
-              <input v-model.number="codeForm.commissionRate" type="number" min="0" max="100" step="0.01" />
-            </label>
-          </div>
-          <button class="btn primary" @click="createCode">建立</button>
-        </div>
-
+        <!-- 新增 -->
         <div class="card">
-          <div class="card-title">📋 所有推廣碼 ({{ codes.length }})</div>
-          <div v-if="codesLoading" class="loading">載入中...</div>
-          <div v-else-if="!codes.length" class="empty">還沒有任何推廣碼</div>
-          <table v-else class="data-table">
-            <thead>
-              <tr>
-                <th>推廣碼</th>
-                <th>推廣人</th>
-                <th>聯絡</th>
-                <th>抽成</th>
-                <th>狀態</th>
-                <th>建立時間</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="c in codes" :key="c.id">
-                <td>
-                  <code class="code-tag" @click="copy(c.code)">{{ c.code }}</code>
-                </td>
-                <td>{{ c.ownerName }}</td>
-                <td class="muted">{{ c.ownerContact || '-' }}</td>
-                <td>{{ c.commissionRate }}%</td>
-                <td>
-                  <span :class="['pill', c.enabled ? 'pill-on' : 'pill-off']">
-                    {{ c.enabled ? '啟用' : '停用' }}
-                  </span>
-                </td>
-                <td class="muted">{{ fmtDate(c.createdAt) }}</td>
-                <td>
-                  <button class="btn sm" :class="c.enabled ? 'danger-ghost' : 'primary'" @click="toggleCode(c)">
-                    {{ c.enabled ? '停用' : '啟用' }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>➕ 新增推廣碼</h2>
+              <p>建立新推廣者的推廣碼,推廣者把碼給盟主,盟主建立血盟時填入</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <label class="field-wrap">
+                <span class="label">推廣碼 *</span>
+                <input v-model="codeForm.code" class="field" placeholder="例: PROMO001" />
+              </label>
+              <label class="field-wrap">
+                <span class="label">推廣人姓名 *</span>
+                <input v-model="codeForm.ownerName" class="field" placeholder="例: 王小明" />
+              </label>
+              <label class="field-wrap">
+                <span class="label">聯絡方式</span>
+                <input v-model="codeForm.ownerContact" class="field" placeholder="LINE / 電話 / Email" />
+              </label>
+              <label class="field-wrap">
+                <span class="label">抽成 % *</span>
+                <input
+                  v-model.number="codeForm.commissionRate"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  class="field"
+                />
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary btn-lg" @click="createCode">建立推廣碼</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 列表 -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>📋 所有推廣碼</h2>
+              <p>共 {{ codes.length }} 筆</p>
+            </div>
+            <button class="btn btn-ghost" @click="loadCodes">🔄 重新整理</button>
+          </div>
+          <div class="card-body p-0">
+            <div v-if="codesLoading" class="state state-loading">載入中...</div>
+            <div v-else-if="!codes.length" class="state state-empty">
+              <div class="state-emoji">📭</div>
+              <div>還沒有任何推廣碼</div>
+            </div>
+            <div v-else class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>推廣碼</th>
+                    <th>推廣人</th>
+                    <th>聯絡</th>
+                    <th>抽成</th>
+                    <th>狀態</th>
+                    <th>建立時間</th>
+                    <th class="th-actions">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="c in codes" :key="c.id">
+                    <td>
+                      <code class="code-tag" @click="copy(c.code)">{{ c.code }}</code>
+                    </td>
+                    <td><strong>{{ c.ownerName }}</strong></td>
+                    <td class="muted">{{ c.ownerContact || '-' }}</td>
+                    <td><strong class="rate">{{ c.commissionRate }}%</strong></td>
+                    <td>
+                      <span :class="['pill', c.enabled ? 'pill-on' : 'pill-off']">
+                        {{ c.enabled ? '啟用中' : '已停用' }}
+                      </span>
+                    </td>
+                    <td class="muted small">{{ fmtDate(c.createdAt) }}</td>
+                    <td class="td-actions">
+                      <button
+                        class="btn btn-row"
+                        :class="c.enabled ? 'btn-danger-ghost' : 'btn-primary'"
+                        @click="toggleCode(c)"
+                      >
+                        {{ c.enabled ? '停用' : '啟用' }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- ===== Tab: 延期 ===== -->
       <section v-if="activeTab === 'extend'" class="panel">
-        <div class="panel-head">
-          <h2>⏰ 血盟延期 + 收款</h2>
-          <span class="head-hint">這個動作會: 延長血盟有效期 + 紀錄付款 + 自動建抽成 (如有推廣碼)</span>
-        </div>
-
-        <div class="card form-card">
-          <div class="card-title">📥 收到匯款後填這裡</div>
-
-          <div class="preset-row">
-            <button
-              v-for="p in planPresets"
-              :key="p.plan"
-              class="preset-btn"
-              :class="{ active: extendForm.plan === p.plan }"
-              @click="applyPlanPreset(p.plan)"
-            >
-              {{ p.label }}
-            </button>
-          </div>
-
-          <div class="grid-form">
-            <label class="span-2">
-              <span>血盟 ID *</span>
-              <input v-model="extendForm.clanId" placeholder="從血盟設定頁複製" />
-            </label>
-            <label>
-              <span>延長天數 *</span>
-              <input v-model.number="extendForm.days" type="number" min="1" />
-            </label>
-            <label>
-              <span>收款金額 (NT$)</span>
-              <input v-model.number="extendForm.amount" type="number" min="0" />
-            </label>
-            <label class="span-2">
-              <span>備註 (匯款帳號末五碼等)</span>
-              <input v-model="extendForm.note" placeholder="例: 玉山末五 12345" />
-            </label>
-          </div>
-
-          <button class="btn primary lg" @click="submitExtend">🚀 送出延期 + 紀錄收款</button>
-        </div>
-
-        <div v-if="extendResult" class="card result-card">
-          <div class="card-title">✅ 處理完成</div>
-          <div class="result-grid">
-            <div><span class="muted">血盟 ID</span><strong>{{ extendResult.clanId }}</strong></div>
-            <div><span class="muted">新到期時間</span><strong>{{ fmtDateMs(extendResult.expiresAtMs) }}</strong></div>
-            <div><span class="muted">付款記錄 ID</span><strong>#{{ extendResult.paymentId }}</strong></div>
-            <div v-if="extendResult.commissionId">
-              <span class="muted">抽成記錄 ID</span>
-              <strong>#{{ extendResult.commissionId }} ({{ fmtMoney(extendResult.commissionAmount) }})</strong>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>📥 收到匯款後填這裡</h2>
+              <p>會自動延長血盟有效期 + 紀錄付款 + 建立抽成 (如有推廣碼)</p>
             </div>
-            <div v-else class="muted">此血盟未綁定推廣碼,無抽成</div>
+          </div>
+          <div class="card-body">
+            <!-- preset -->
+            <div class="preset-section">
+              <div class="label" style="margin-bottom: 10px">快速套用方案</div>
+              <div class="preset-grid">
+                <button
+                  v-for="p in planPresets"
+                  :key="p.plan"
+                  class="preset-card"
+                  :class="{ active: extendForm.plan === p.plan }"
+                  @click="applyPlanPreset(p.plan)"
+                >
+                  <span class="preset-label">{{ p.label }}</span>
+                  <span class="preset-sub">{{ p.sub }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- form -->
+            <div class="form-grid">
+              <label class="field-wrap span-2">
+                <span class="label">血盟 ID *</span>
+                <input v-model="extendForm.clanId" class="field" placeholder="從血盟設定頁複製" />
+              </label>
+              <label class="field-wrap">
+                <span class="label">延長天數 *</span>
+                <input v-model.number="extendForm.days" type="number" min="1" class="field" />
+              </label>
+              <label class="field-wrap">
+                <span class="label">收款金額 (NT$)</span>
+                <input v-model.number="extendForm.amount" type="number" min="0" class="field" />
+              </label>
+              <label class="field-wrap span-2">
+                <span class="label">備註 (匯款帳號末五碼等)</span>
+                <input v-model="extendForm.note" class="field" placeholder="例: 玉山末五 12345" />
+              </label>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn btn-primary btn-block btn-lg" @click="submitExtend">
+                🚀 送出延期 + 紀錄收款
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="extendResult" class="card card-success">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>✅ 處理完成</h2>
+              <p>血盟已成功延長</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="result-grid">
+              <div class="result-item">
+                <span class="result-label">血盟 ID</span>
+                <strong>{{ extendResult.clanId }}</strong>
+              </div>
+              <div class="result-item">
+                <span class="result-label">新到期時間</span>
+                <strong>{{ fmtDateMs(extendResult.expiresAtMs) }}</strong>
+              </div>
+              <div class="result-item">
+                <span class="result-label">付款記錄 ID</span>
+                <strong>#{{ extendResult.paymentId }}</strong>
+              </div>
+              <div v-if="extendResult.commissionId" class="result-item result-item-money">
+                <span class="result-label">抽成記錄 #{{ extendResult.commissionId }}</span>
+                <strong class="money-big">{{ fmtMoney(extendResult.commissionAmount) }}</strong>
+              </div>
+              <div v-else class="result-item result-item-muted">
+                <span class="result-label">抽成</span>
+                <strong>此血盟未綁推廣碼</strong>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- ===== Tab: 付款記錄 ===== -->
       <section v-if="activeTab === 'payments'" class="panel">
-        <div class="panel-head">
-          <h2>💵 付款記錄</h2>
-        </div>
-
-        <div class="card filter-card">
-          <div class="filter-row">
-            <input v-model="paymentFilter.clanId" placeholder="血盟 ID" />
-            <input v-model="paymentFilter.referralCode" placeholder="推廣碼" />
-            <button class="btn primary sm" @click="loadPayments">查詢</button>
+        <!-- filter -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>🔍 查詢付款記錄</h2>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="filter-grid">
+              <label class="field-wrap">
+                <span class="label">血盟 ID</span>
+                <input v-model="paymentFilter.clanId" class="field" placeholder="留空查全部" />
+              </label>
+              <label class="field-wrap">
+                <span class="label">推廣碼</span>
+                <input v-model="paymentFilter.referralCode" class="field" placeholder="留空查全部" />
+              </label>
+              <div class="filter-action">
+                <button class="btn btn-primary btn-block" @click="loadPayments">查詢</button>
+              </div>
+            </div>
           </div>
         </div>
 
+        <!-- 列表 -->
         <div class="card">
-          <div class="card-title">{{ payments.length }} 筆付款</div>
-          <div v-if="paymentsLoading" class="loading">載入中...</div>
-          <div v-else-if="!payments.length" class="empty">沒有資料</div>
-          <table v-else class="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>血盟 ID</th>
-                <th>方案</th>
-                <th>金額</th>
-                <th>延長</th>
-                <th>推廣碼</th>
-                <th>備註</th>
-                <th>時間</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="p in payments" :key="p.id">
-                <td>#{{ p.id }}</td>
-                <td><code class="code-tag" @click="copy(p.clanId)">{{ p.clanId }}</code></td>
-                <td>{{ p.plan }}</td>
-                <td class="money">{{ fmtMoney(p.amount) }}</td>
-                <td>{{ p.extendDays }} 天</td>
-                <td>
-                  <code v-if="p.referralCodeSnapshot" class="code-tag">{{ p.referralCodeSnapshot }}</code>
-                  <span v-else class="muted">-</span>
-                </td>
-                <td class="muted">{{ p.note || '-' }}</td>
-                <td class="muted">{{ fmtDate(p.receivedAt) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>📋 付款記錄</h2>
+              <p>共 {{ payments.length }} 筆</p>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div v-if="paymentsLoading" class="state state-loading">載入中...</div>
+            <div v-else-if="!payments.length" class="state state-empty">
+              <div class="state-emoji">📭</div>
+              <div>沒有資料</div>
+            </div>
+            <div v-else class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>血盟 ID</th>
+                    <th>方案</th>
+                    <th>金額</th>
+                    <th>延長</th>
+                    <th>推廣碼</th>
+                    <th>備註</th>
+                    <th>時間</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in payments" :key="p.id">
+                    <td><strong>#{{ p.id }}</strong></td>
+                    <td><code class="code-tag" @click="copy(p.clanId)">{{ p.clanId }}</code></td>
+                    <td><span class="pill pill-info">{{ p.plan }}</span></td>
+                    <td class="money">{{ fmtMoney(p.amount) }}</td>
+                    <td class="muted">{{ p.extendDays }} 天</td>
+                    <td>
+                      <code v-if="p.referralCodeSnapshot" class="code-tag">{{ p.referralCodeSnapshot }}</code>
+                      <span v-else class="muted">-</span>
+                    </td>
+                    <td class="muted small">{{ p.note || '-' }}</td>
+                    <td class="muted small">{{ fmtDate(p.receivedAt) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- ===== Tab: 抽成 ===== -->
       <section v-if="activeTab === 'commissions'" class="panel">
-        <div class="panel-head">
-          <h2>💰 抽成結算</h2>
-        </div>
-
-        <div class="card filter-card">
-          <div class="filter-row">
-            <select v-model="commissionFilter.status">
-              <option value="">全部狀態</option>
-              <option value="PENDING">待結算 PENDING</option>
-              <option value="SETTLED">已結算 SETTLED</option>
-              <option value="CANCELLED">已取消 CANCELLED</option>
-            </select>
-            <input v-model="commissionFilter.referralCode" placeholder="推廣碼" />
-            <button class="btn primary sm" @click="loadCommissions">查詢</button>
-          </div>
-        </div>
-
-        <div class="card sum-card">
-          <div class="sum-row">
-            <span>共 <strong>{{ commissions.length }}</strong> 筆</span>
-            <span>總金額 <strong class="money-big">{{ fmtMoney(commissionTotal) }}</strong></span>
-          </div>
-        </div>
-
+        <!-- filter -->
         <div class="card">
-          <div v-if="commissionsLoading" class="loading">載入中...</div>
-          <div v-else-if="!commissions.length" class="empty">沒有資料</div>
-          <table v-else class="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>推廣碼 / 推廣人</th>
-                <th>血盟 ID</th>
-                <th>基準金額</th>
-                <th>抽成%</th>
-                <th>抽成金額</th>
-                <th>狀態</th>
-                <th>建立時間</th>
-                <th>結算時間</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="c in commissions" :key="c.id">
-                <td>#{{ c.id }}</td>
-                <td>
-                  <code class="code-tag">{{ c.referralCode }}</code>
-                  <div class="muted-sm">{{ c.ownerName }}</div>
-                </td>
-                <td><code class="code-tag" @click="copy(c.clanId)">{{ c.clanId }}</code></td>
-                <td>{{ fmtMoney(c.baseAmount) }}</td>
-                <td>{{ c.commissionRate }}%</td>
-                <td class="money">{{ fmtMoney(c.commissionAmount) }}</td>
-                <td>
-                  <span :class="['pill', `pill-${c.status.toLowerCase()}`]">{{ c.status }}</span>
-                </td>
-                <td class="muted">{{ fmtDate(c.createdAt) }}</td>
-                <td class="muted">{{ fmtDate(c.settledAt) }}</td>
-                <td>
-                  <div class="btn-group" v-if="c.status === 'PENDING'">
-                    <button class="btn primary sm" @click="settleCommission(c)">✅ 結算</button>
-                    <button class="btn danger-ghost sm" @click="cancelCommission(c)">取消</button>
-                  </div>
-                  <span v-else class="muted-sm">—</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>🔍 查詢抽成記錄</h2>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="filter-grid">
+              <label class="field-wrap">
+                <span class="label">狀態</span>
+                <select v-model="commissionFilter.status" class="field">
+                  <option value="">全部狀態</option>
+                  <option value="PENDING">待結算 PENDING</option>
+                  <option value="SETTLED">已結算 SETTLED</option>
+                  <option value="CANCELLED">已取消 CANCELLED</option>
+                </select>
+              </label>
+              <label class="field-wrap">
+                <span class="label">推廣碼</span>
+                <input v-model="commissionFilter.referralCode" class="field" placeholder="留空查全部" />
+              </label>
+              <div class="filter-action">
+                <button class="btn btn-primary btn-block" @click="loadCommissions">查詢</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 統計 -->
+        <div class="card card-stat">
+          <div class="card-body">
+            <div class="stat-row">
+              <div class="stat-item">
+                <div class="stat-label">筆數</div>
+                <div class="stat-value">{{ commissions.length }}</div>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <div class="stat-label">總金額</div>
+                <div class="stat-value stat-value-money">{{ fmtMoney(commissionTotal) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 列表 -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>📋 抽成清單</h2>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div v-if="commissionsLoading" class="state state-loading">載入中...</div>
+            <div v-else-if="!commissions.length" class="state state-empty">
+              <div class="state-emoji">📭</div>
+              <div>沒有資料</div>
+            </div>
+            <div v-else class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>推廣碼 / 推廣人</th>
+                    <th>血盟 ID</th>
+                    <th>基準金額</th>
+                    <th>抽成%</th>
+                    <th>抽成金額</th>
+                    <th>狀態</th>
+                    <th>建立時間</th>
+                    <th>結算時間</th>
+                    <th class="th-actions">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="c in commissions" :key="c.id">
+                    <td><strong>#{{ c.id }}</strong></td>
+                    <td>
+                      <code class="code-tag">{{ c.referralCode }}</code>
+                      <div class="muted-sm">{{ c.ownerName }}</div>
+                    </td>
+                    <td><code class="code-tag" @click="copy(c.clanId)">{{ c.clanId }}</code></td>
+                    <td>{{ fmtMoney(c.baseAmount) }}</td>
+                    <td>{{ c.commissionRate }}%</td>
+                    <td class="money">{{ fmtMoney(c.commissionAmount) }}</td>
+                    <td>
+                      <span :class="['pill', `pill-${c.status.toLowerCase()}`]">{{ c.status }}</span>
+                    </td>
+                    <td class="muted small">{{ fmtDate(c.createdAt) }}</td>
+                    <td class="muted small">{{ fmtDate(c.settledAt) }}</td>
+                    <td class="td-actions">
+                      <div v-if="c.status === 'PENDING'" class="row-actions">
+                        <button class="btn btn-row btn-primary" @click="settleCommission(c)">結算</button>
+                        <button class="btn btn-row btn-danger-ghost" @click="cancelCommission(c)">取消</button>
+                      </div>
+                      <span v-else class="muted-sm">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -626,12 +751,15 @@ onMounted(() => {
 * {
   box-sizing: border-box;
 }
+
 .admin-root {
   min-height: 100vh;
   background: #0a0b10;
   color: #e2e8f0;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 /* ===== Token gate ===== */
@@ -642,50 +770,40 @@ onMounted(() => {
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(ellipse at top, rgba(245, 196, 81, 0.1), transparent 60%),
+    radial-gradient(ellipse at top, rgba(245, 196, 81, 0.12), transparent 60%),
     #0a0b10;
 }
 .gate-card {
   width: 100%;
-  max-width: 380px;
-  padding: 36px 28px;
+  max-width: 400px;
+  padding: 40px 32px;
   background: rgba(22, 24, 34, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 .gate-emoji {
   font-size: 3rem;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 .gate-card h1 {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   font-size: 1.5rem;
   color: #f1f5f9;
+  font-weight: 800;
 }
 .gate-sub {
   color: #94a3b8;
-  margin: 0 0 22px;
+  margin: 0 0 24px;
   font-size: 0.9rem;
 }
-.gate-input {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  color: #f1f5f9;
+.gate-card .field {
+  margin-bottom: 14px;
   font-family: monospace;
-  font-size: 0.9rem;
-}
-.gate-input:focus {
-  outline: none;
-  border-color: #ffd166;
 }
 .gate-hint {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
   color: #64748b;
   font-size: 0.78rem;
 }
@@ -694,51 +812,61 @@ onMounted(() => {
 .main {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 20px 24px 60px;
+  padding: 24px 28px 80px;
 }
+
+/* ===== Topbar ===== */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 20px;
+  height: 56px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 24px;
+  gap: 16px;
   flex-wrap: wrap;
-  gap: 12px;
 }
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.15rem;
+  gap: 12px;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #ffd166;
 }
 .brand-emoji {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 .topbar-right {
   display: inline-flex;
-  gap: 8px;
+  gap: 10px;
+  height: 40px;
 }
 
 /* ===== Tabs ===== */
 .tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 28px;
+  height: 76px;
 }
 @media (max-width: 760px) {
   .tabs {
     grid-template-columns: repeat(2, 1fr);
+    height: auto;
   }
 }
 .tab {
-  padding: 14px;
-  background: rgba(22, 24, 34, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  height: 76px;
+  background: rgba(22, 24, 34, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  border-radius: 14px;
   color: #cbd5e1;
   cursor: pointer;
   text-align: left;
@@ -746,258 +874,407 @@ onMounted(() => {
   font-family: inherit;
 }
 .tab:hover {
-  border-color: rgba(245, 196, 81, 0.3);
+  border-color: rgba(245, 196, 81, 0.35);
   transform: translateY(-1px);
 }
 .tab.active {
   border-color: #ffd166;
-  background: linear-gradient(180deg, rgba(245, 196, 81, 0.12), rgba(22, 24, 34, 0.6));
+  background: linear-gradient(180deg, rgba(245, 196, 81, 0.14), rgba(22, 24, 34, 0.7));
   color: #ffd166;
+  box-shadow: 0 6px 18px rgba(245, 196, 81, 0.15);
+}
+.tab-emoji {
+  font-size: 1.7rem;
+  flex-shrink: 0;
+}
+.tab-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .tab-label {
   font-weight: 800;
-  font-size: 0.95rem;
-  margin-bottom: 2px;
+  font-size: 1rem;
+  white-space: nowrap;
 }
 .tab-desc {
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tab.active .tab-desc {
   color: #94a3b8;
 }
 
-/* ===== Panel / Card ===== */
+/* ===== Panel ===== */
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
-.panel-head {
+
+/* ===== Card ===== */
+.card {
+  background: rgba(22, 24, 34, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.card-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  min-height: 64px;
 }
-.panel-head h2 {
+.card-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.card-head h2 {
   margin: 0;
-  font-size: 1.2rem;
-  color: #f1f5f9;
-}
-.head-hint {
-  color: #64748b;
-  font-size: 0.82rem;
-}
-.card {
-  background: rgba(22, 24, 34, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 14px;
-  padding: 20px;
-}
-.card-title {
+  font-size: 1.05rem;
   font-weight: 800;
-  font-size: 1rem;
-  margin-bottom: 14px;
   color: #f1f5f9;
+}
+.card-head p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+.card-body {
+  padding: 22px;
+}
+.card-body.p-0 {
+  padding: 0;
+}
+.card-success {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.06), rgba(22, 24, 34, 0.55));
+}
+.card-success .card-head h2 {
+  color: #4ade80;
+}
+.card-stat {
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(22, 24, 34, 0.55));
+  border-color: rgba(245, 196, 81, 0.25);
 }
 
 /* ===== Form ===== */
-.grid-form {
+.form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 14px;
+  gap: 16px;
 }
 @media (max-width: 600px) {
-  .grid-form {
+  .form-grid {
     grid-template-columns: 1fr;
   }
 }
-.grid-form label {
+.field-wrap {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  min-width: 0;
 }
-.grid-form label.span-2 {
+.field-wrap.span-2 {
   grid-column: span 2;
 }
 @media (max-width: 600px) {
-  .grid-form label.span-2 {
+  .field-wrap.span-2 {
     grid-column: span 1;
   }
 }
-.grid-form span {
-  font-size: 0.78rem;
+.label {
+  font-size: 0.8rem;
   color: #94a3b8;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
-.grid-form input,
-.filter-row input,
-.filter-row select {
+.field {
   width: 100%;
-  padding: 9px 12px;
-  background: rgba(0, 0, 0, 0.35);
+  height: 42px;
+  padding: 0 14px;
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 10px;
   color: #f1f5f9;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  transition: border-color 0.15s;
 }
-.grid-form input:focus,
-.filter-row input:focus,
-.filter-row select:focus {
+.field:focus {
   outline: none;
   border-color: #ffd166;
 }
+.field::placeholder {
+  color: #475569;
+}
+select.field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
 
-.preset-row {
+.card-actions {
+  margin-top: 22px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
+  justify-content: flex-end;
+  gap: 12px;
 }
-.preset-btn {
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.04);
+
+/* ===== Filter row ===== */
+.filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px;
+  gap: 14px;
+  align-items: end;
+}
+@media (max-width: 600px) {
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.filter-action {
+  display: flex;
+  align-items: stretch;
+}
+.filter-action .btn {
+  height: 42px;
+}
+
+/* ===== Preset ===== */
+.preset-section {
+  margin-bottom: 4px;
+}
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  .preset-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 16px;
+  height: 64px;
+  background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  color: #cbd5e1;
-  font-size: 0.78rem;
+  border-radius: 12px;
   cursor: pointer;
+  transition: all 0.15s;
   font-family: inherit;
+  text-align: left;
+  color: #cbd5e1;
 }
-.preset-btn:hover {
+.preset-card:hover {
   border-color: rgba(245, 196, 81, 0.4);
-  color: #ffd166;
+  transform: translateY(-1px);
 }
-.preset-btn.active {
-  background: rgba(245, 196, 81, 0.15);
+.preset-card.active {
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.18), rgba(245, 158, 11, 0.08));
   border-color: #ffd166;
   color: #ffd166;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.18);
+}
+.preset-label {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.preset-sub {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+.preset-card.active .preset-sub {
+  color: rgba(255, 209, 102, 0.7);
 }
 
-/* ===== Filter ===== */
-.filter-card {
-  padding: 14px 18px;
-}
-.filter-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.filter-row > * {
-  flex: 1;
-  min-width: 160px;
-}
-.filter-row > button {
-  flex: 0 0 auto;
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 22px 0;
 }
 
-/* ===== Result ===== */
-.result-card {
-  border-color: rgba(34, 197, 94, 0.4);
-  background: linear-gradient(180deg, rgba(34, 197, 94, 0.07), rgba(22, 24, 34, 0.55));
-}
+/* ===== Result grid ===== */
 .result-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
-.result-grid > div {
+@media (max-width: 600px) {
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.result-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
 }
-.result-grid strong {
+.result-item.result-item-money {
+  border-color: rgba(245, 196, 81, 0.35);
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(0, 0, 0, 0.3));
+}
+.result-item.result-item-muted {
+  opacity: 0.7;
+}
+.result-label {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+.result-item strong {
   color: #f1f5f9;
-  font-size: 0.95rem;
-}
-
-/* ===== Sum card ===== */
-.sum-card {
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(22, 24, 34, 0.6));
-  border-color: rgba(245, 196, 81, 0.25);
-}
-.sum-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.95rem;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.sum-row strong {
-  color: #ffd166;
+  font-size: 1rem;
+  word-break: break-all;
 }
 .money-big {
-  font-size: 1.4rem !important;
+  color: #ffd166 !important;
+  font-size: 1.3rem !important;
+}
+
+/* ===== Stat card ===== */
+.stat-row {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+}
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+  padding: 6px 0;
+}
+.stat-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+}
+.stat-value-money {
+  color: #ffd166;
+}
+.stat-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* ===== Table ===== */
+.table-scroll {
+  overflow-x: auto;
+}
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
 }
 .data-table thead {
   background: rgba(0, 0, 0, 0.3);
 }
 .data-table th {
-  padding: 10px 12px;
+  padding: 14px 16px;
   text-align: left;
   font-weight: 700;
   color: #94a3b8;
-  font-size: 0.78rem;
-  letter-spacing: 0.5px;
+  font-size: 0.74rem;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+.data-table th.th-actions {
+  text-align: right;
 }
 .data-table td {
-  padding: 10px 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   vertical-align: middle;
+}
+.data-table td.td-actions {
+  text-align: right;
 }
 .data-table tbody tr:hover {
   background: rgba(255, 255, 255, 0.02);
 }
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
 .muted {
   color: #64748b;
 }
 .muted-sm {
   color: #64748b;
-  font-size: 0.75rem;
-  margin-top: 2px;
+  font-size: 0.78rem;
+  margin-top: 3px;
+}
+.small {
+  font-size: 0.82rem;
 }
 .money {
   color: #ffd166;
-  font-weight: 700;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
+.rate {
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+}
+
 .code-tag {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 4px 10px;
   background: rgba(245, 196, 81, 0.1);
   border: 1px solid rgba(245, 196, 81, 0.25);
   border-radius: 6px;
   color: #ffd166;
   font-family: monospace;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   cursor: pointer;
+  transition: all 0.15s;
 }
 .code-tag:hover {
-  background: rgba(245, 196, 81, 0.18);
+  background: rgba(245, 196, 81, 0.2);
 }
 
+/* ===== Pill ===== */
 .pill {
-  display: inline-block;
-  padding: 2px 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 12px;
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 .pill-on,
 .pill-pending {
@@ -1007,17 +1284,23 @@ onMounted(() => {
 }
 .pill-off,
 .pill-cancelled {
-  background: rgba(100, 116, 139, 0.18);
+  background: rgba(100, 116, 139, 0.15);
   color: #94a3b8;
-  border: 1px solid rgba(100, 116, 139, 0.4);
+  border: 1px solid rgba(100, 116, 139, 0.35);
 }
 .pill-settled {
   background: rgba(34, 197, 94, 0.18);
   color: #4ade80;
   border: 1px solid rgba(34, 197, 94, 0.4);
 }
+.pill-info {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+}
 
-.btn-group {
+/* ===== Action button row in table ===== */
+.row-actions {
   display: inline-flex;
   gap: 6px;
 }
@@ -1028,9 +1311,11 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 16px;
+  height: 40px;
+  padding: 0 18px;
+  min-width: 88px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font-family: inherit;
   font-weight: 700;
@@ -1038,71 +1323,89 @@ onMounted(() => {
   transition: all 0.15s;
   background: rgba(255, 255, 255, 0.05);
   color: #e2e8f0;
+  white-space: nowrap;
 }
 .btn:hover {
   transform: translateY(-1px);
 }
-.btn.sm {
-  padding: 6px 10px;
-  font-size: 0.78rem;
+.btn:active {
+  transform: translateY(0);
 }
-.btn.lg {
-  padding: 12px 20px;
+.btn-row {
+  height: 32px;
+  padding: 0 14px;
+  min-width: 64px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+.btn-lg {
+  height: 48px;
+  padding: 0 24px;
   font-size: 0.95rem;
+  border-radius: 12px;
+}
+.btn-block {
   width: 100%;
 }
-.btn.block {
-  width: 100%;
-}
-.btn.primary {
+.btn-primary {
   background: linear-gradient(135deg, #ffd166, #f59e0b);
   color: #0a0b10;
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
 }
-.btn.ghost {
+.btn-primary:hover {
+  box-shadow: 0 8px 22px rgba(245, 158, 11, 0.45);
+}
+.btn-ghost {
   background: transparent;
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #cbd5e1;
 }
-.btn.ghost:hover {
+.btn-ghost:hover {
   border-color: #ffd166;
   color: #ffd166;
 }
-.btn.danger-ghost {
+.btn-danger-ghost {
   background: transparent;
   border-color: rgba(239, 68, 68, 0.3);
   color: #fca5a5;
 }
-.btn.danger-ghost:hover {
+.btn-danger-ghost:hover {
   background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
 }
 
-/* ===== Loading / Empty ===== */
-.loading,
-.empty {
+/* ===== State (loading / empty) ===== */
+.state {
   text-align: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
   color: #64748b;
+}
+.state-emoji {
+  font-size: 3rem;
+  margin-bottom: 8px;
+  opacity: 0.6;
 }
 
 /* ===== Toast ===== */
 .toast-stack {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 999;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  pointer-events: none;
 }
 .toast {
-  padding: 12px 18px;
-  border-radius: 10px;
+  padding: 14px 20px;
+  border-radius: 12px;
   font-weight: 700;
-  font-size: 0.9rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  font-size: 0.92rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
   animation: slideIn 0.25s ease-out;
-  max-width: 380px;
+  max-width: 400px;
+  pointer-events: auto;
 }
 @keyframes slideIn {
   from {
@@ -1115,15 +1418,15 @@ onMounted(() => {
   }
 }
 .toast-success {
-  background: rgba(34, 197, 94, 0.95);
+  background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #fff;
 }
 .toast-error {
-  background: rgba(239, 68, 68, 0.95);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;
 }
 .toast-info {
-  background: rgba(99, 102, 241, 0.95);
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #fff;
 }
 </style>
