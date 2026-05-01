@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /clan/
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /create-guild
+
+Sitemap: https://gameshare-system.com/sitemap.xml
