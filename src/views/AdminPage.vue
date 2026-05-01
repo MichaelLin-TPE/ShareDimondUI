@@ -45,10 +45,10 @@ async function callApi<T>(method: string, path: string, body?: unknown): Promise
 // ===== Tabs =====
 const activeTab = ref<'codes' | 'extend' | 'payments' | 'commissions'>('codes')
 const tabs = [
-  { key: 'codes', label: '推廣碼', emoji: '🎟️', desc: '管理推廣者' },
-  { key: 'extend', label: '血盟延期', emoji: '⏰', desc: '收款 + 自動算抽成' },
-  { key: 'payments', label: '付款記錄', emoji: '💵', desc: '查所有收款' },
-  { key: 'commissions', label: '抽成結算', emoji: '💰', desc: '撥款給推廣者' },
+  { key: 'codes', label: '推廣碼', emoji: '🎟️' },
+  { key: 'extend', label: '血盟延期', emoji: '⏰' },
+  { key: 'payments', label: '付款記錄', emoji: '💵' },
+  { key: 'commissions', label: '抽成結算', emoji: '💰' },
 ] as const
 
 // ===== Toast =====
@@ -355,10 +355,7 @@ onMounted(() => {
           @click="activeTab = t.key"
         >
           <span class="tab-emoji">{{ t.emoji }}</span>
-          <span class="tab-text">
-            <span class="tab-label">{{ t.label }}</span>
-            <span class="tab-desc">{{ t.desc }}</span>
-          </span>
+          <span class="tab-label">{{ t.label }}</span>
         </button>
       </nav>
 
@@ -848,32 +845,34 @@ onMounted(() => {
 .tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 28px;
-  height: 76px;
+  height: 56px;
 }
-@media (max-width: 760px) {
+@media (max-width: 540px) {
   .tabs {
     grid-template-columns: repeat(2, 1fr);
     height: auto;
+    grid-auto-rows: 56px;
   }
 }
 .tab {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 14px;
-  height: 76px;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 56px;
+  width: 100%;
   min-width: 0;
   background: rgba(22, 24, 34, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  border-radius: 12px;
   color: #cbd5e1;
   cursor: pointer;
-  text-align: left;
   transition: all 0.18s;
   font-family: inherit;
-  overflow: hidden;
+  white-space: nowrap;
 }
 .tab:hover {
   border-color: rgba(245, 196, 81, 0.35);
@@ -886,45 +885,13 @@ onMounted(() => {
   box-shadow: 0 6px 18px rgba(245, 196, 81, 0.15);
 }
 .tab-emoji {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   flex-shrink: 0;
   line-height: 1;
-}
-.tab-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
 }
 .tab-label {
   font-weight: 800;
   font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tab-desc {
-  font-size: 0.74rem;
-  color: #64748b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tab.active .tab-desc {
-  color: #94a3b8;
-}
-@media (max-width: 1024px) {
-  .tab-emoji {
-    font-size: 1.3rem;
-  }
-  .tab-label {
-    font-size: 0.9rem;
-  }
-  .tab-desc {
-    display: none;
-  }
 }
 
 /* ===== Panel ===== */
