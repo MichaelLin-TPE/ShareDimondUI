@@ -183,6 +183,49 @@ async function submitExtend() {
   }
 }
 
+// ===== 血盟列表 (在延期頁顯示) =====
+type ClanSummary = {
+  clanId: string
+  name: string
+  clanLeaderName: string
+  referralCode: string | null
+  enableClan: boolean
+  expiresAtMs: number | null
+}
+const clans = ref<ClanSummary[]>([])
+const clansLoading = ref(false)
+const clanSearch = ref<string>('')
+const filteredClans = computed<ClanSummary[]>(() => {
+  const q = clanSearch.value.trim().toLowerCase()
+  if (!q) return clans.value
+  return clans.value.filter(
+    (c) =>
+      c.clanId.toLowerCase().includes(q) ||
+      (c.name || '').toLowerCase().includes(q) ||
+      (c.clanLeaderName || '').toLowerCase().includes(q) ||
+      (c.referralCode || '').toLowerCase().includes(q),
+  )
+})
+async function loadClans() {
+  clansLoading.value = true
+  try {
+    clans.value = await callApi<ClanSummary[]>('GET', '/admin/clan')
+  } catch (e) {
+    showToast('error', (e as Error).message)
+  } finally {
+    clansLoading.value = false
+  }
+}
+function pickClan(c: ClanSummary) {
+  extendForm.value.clanId = c.clanId
+  showToast('info', `已填入: ${c.name}`)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+function daysFromNow(ms: number | null) {
+  if (!ms) return null
+  return Math.ceil((ms - Date.now()) / (24 * 60 * 60 * 1000))
+}
+
 // ===== 付款記錄 =====
 type PaymentRecord = {
   id: number
@@ -302,6 +345,7 @@ function copy(text: string) {
 function refreshAll() {
   if (!authed.value) return
   loadCodes()
+  loadClans()
   loadPayments()
   loadCommissions()
 }
@@ -513,6 +557,84 @@ onMounted(() => {
               <button class="btn btn-primary btn-block btn-lg" @click="submitExtend">
                 🚀 送出延期 + 紀錄收款
               </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 血盟列表 -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>📚 所有血盟</h2>
+              <p>共 {{ clans.length }} 個血盟,點「使用」會自動填入上方 ID 欄位</p>
+            </div>
+            <button class="btn btn-ghost" @click="loadClans">🔄 重新整理</button>
+          </div>
+          <div class="card-body">
+            <input
+              v-model="clanSearch"
+              class="field"
+              placeholder="🔍 搜尋血盟名稱 / ID / 盟主 / 推廣碼"
+              style="margin-bottom: 14px"
+            />
+          </div>
+          <div class="card-body p-0">
+            <div v-if="clansLoading" class="state state-loading">載入中...</div>
+            <div v-else-if="!filteredClans.length" class="state state-empty">
+              <div class="state-emoji">📭</div>
+              <div>{{ clans.length ? '沒有符合的血盟' : '還沒有任何血盟' }}</div>
+            </div>
+            <div v-else class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>血盟名稱</th>
+                    <th>盟主</th>
+                    <th>血盟 ID</th>
+                    <th>推廣碼</th>
+                    <th>到期</th>
+                    <th>剩餘</th>
+                    <th>狀態</th>
+                    <th class="th-actions">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="c in filteredClans" :key="c.clanId">
+                    <td><strong>{{ c.name }}</strong></td>
+                    <td class="muted">{{ c.clanLeaderName || '-' }}</td>
+                    <td>
+                      <code class="code-tag" @click="copy(c.clanId)" title="點擊複製">{{ c.clanId }}</code>
+                    </td>
+                    <td>
+                      <code v-if="c.referralCode" class="code-tag">{{ c.referralCode }}</code>
+                      <span v-else class="muted">-</span>
+                    </td>
+                    <td class="muted small">{{ fmtDateMs(c.expiresAtMs) }}</td>
+                    <td>
+                      <span
+                        :class="[
+                          'pill',
+                          (daysFromNow(c.expiresAtMs) ?? 0) <= 0
+                            ? 'pill-cancelled'
+                            : (daysFromNow(c.expiresAtMs) ?? 0) <= 3
+                              ? 'pill-pending'
+                              : 'pill-settled',
+                        ]"
+                      >
+                        {{ daysFromNow(c.expiresAtMs) === null ? '-' : daysFromNow(c.expiresAtMs) + ' 天' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span :class="['pill', c.enableClan ? 'pill-on' : 'pill-off']">
+                        {{ c.enableClan ? '啟用' : '停用' }}
+                      </span>
+                    </td>
+                    <td class="td-actions">
+                      <button class="btn btn-row btn-primary" @click="pickClan(c)">使用</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
