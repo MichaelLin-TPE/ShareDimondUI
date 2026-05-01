@@ -247,7 +247,6 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 24px;
   gap: 12px;
-  margin-left: 48px;
 }
 .g-title-row {
   display: flex;

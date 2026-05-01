@@ -302,7 +302,6 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 /* Header */
 .cs-header {
   margin-bottom: 28px;
-  margin-left: 48px;
 }
 .cs-title {
   margin: 0 0 4px;

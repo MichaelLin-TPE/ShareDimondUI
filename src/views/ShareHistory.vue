@@ -117,6 +117,7 @@ const {
 /* ===== 新增搜尋與狀態列樣式 ===== */
 .filter-section {
   margin-bottom: 20px;
+  padding-left: 48px;
   display: flex;
   flex-direction: column;
   gap: 12px;

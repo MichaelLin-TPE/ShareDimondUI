@@ -477,7 +477,6 @@ nav a:first-of-type {
 h1 {
   margin-top: 5px;
   margin-bottom: 15px;
-  margin-left: 65px;
 }
 
 .dashboard {
@@ -590,8 +589,6 @@ h1 {
   }
   h1 {
     font-size: 1.35rem;
-    margin-left: 50px;
-    margin-bottom: 16px;
   }
   .stats {
     gap: 20px;
