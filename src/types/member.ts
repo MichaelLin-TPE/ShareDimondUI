@@ -7,4 +7,6 @@ export interface Member {
   authToken:string
   clanName: string
   role:string
+  /** 血盟試用到期時間 (epoch millis) */
+  clanExpiresAt?: number | null
 }
