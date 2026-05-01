@@ -861,9 +861,10 @@ onMounted(() => {
 .tab {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 18px;
+  gap: 10px;
+  padding: 0 14px;
   height: 76px;
+  min-width: 0;
   background: rgba(22, 24, 34, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
@@ -872,6 +873,7 @@ onMounted(() => {
   text-align: left;
   transition: all 0.18s;
   font-family: inherit;
+  overflow: hidden;
 }
 .tab:hover {
   border-color: rgba(245, 196, 81, 0.35);
@@ -884,22 +886,27 @@ onMounted(() => {
   box-shadow: 0 6px 18px rgba(245, 196, 81, 0.15);
 }
 .tab-emoji {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   flex-shrink: 0;
+  line-height: 1;
 }
 .tab-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 .tab-label {
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.95rem;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tab-desc {
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   color: #64748b;
   white-space: nowrap;
   overflow: hidden;
@@ -907,6 +914,17 @@ onMounted(() => {
 }
 .tab.active .tab-desc {
   color: #94a3b8;
+}
+@media (max-width: 1024px) {
+  .tab-emoji {
+    font-size: 1.3rem;
+  }
+  .tab-label {
+    font-size: 0.9rem;
+  }
+  .tab-desc {
+    display: none;
+  }
 }
 
 /* ===== Panel ===== */
@@ -1070,9 +1088,11 @@ select.field {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 4px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   height: 64px;
+  min-width: 0;
   background: rgba(0, 0, 0, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -1081,6 +1101,7 @@ select.field {
   font-family: inherit;
   text-align: left;
   color: #cbd5e1;
+  overflow: hidden;
 }
 .preset-card:hover {
   border-color: rgba(245, 196, 81, 0.4);
@@ -1095,10 +1116,18 @@ select.field {
 .preset-label {
   font-weight: 800;
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .preset-sub {
   font-size: 0.74rem;
   color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .preset-card.active .preset-sub {
   color: rgba(255, 209, 102, 0.7);
