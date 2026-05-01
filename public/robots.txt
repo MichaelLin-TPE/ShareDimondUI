@@ -6,5 +6,6 @@ Disallow: /login
 Disallow: /forgot-password
 Disallow: /reset-password
 Disallow: /create-guild
+Disallow: /admin
 
 Sitemap: https://gameshare-system.com/sitemap.xml

@@ -24,6 +24,7 @@ import Game1A2BPage from '@/views/Game1A2BPage.vue'
 import ItemPriceManagePage from '@/views/ItemPriceManagePage.vue'
 import LootTrackerPage from '@/views/LootTrackerPage.vue'
 import SettingsPage from '@/views/SettingsPage.vue'
+import AdminPage from '@/views/AdminPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -62,6 +63,14 @@ const router = createRouter({
       component: LoginView,
       meta: {
         fullscreen: false,
+      },
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminPage,
+      meta: {
+        fullscreen: true,
       },
     },
     // 🔥 重點：血盟主區
