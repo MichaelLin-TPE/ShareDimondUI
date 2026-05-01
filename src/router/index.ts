@@ -16,7 +16,7 @@ import ApprovalPage from '@/views/ApprovalPage.vue'
 import ClanSettingsPage from '@/views/ClanSettingsPage.vue'
 import AllMemberBalance from '@/components/AllMemberBalance.vue'
 import KickMemberPage from '@/components/KickMemberPage.vue'
-import MarketPlace from '@/components/MarketPlace.vue'
+import PersonalMarketPage from '@/views/PersonalMarketPage.vue'
 import PersonalLog from '@/components/PersonalLog.vue'
 import TicketManagement from '@/components/TicketManagement.vue'
 import BossTimerPage from '@/views/BossTimerPage.vue'
@@ -126,7 +126,7 @@ const router = createRouter({
         },
         {
           path: 'marketPlace',
-          component: MarketPlace,
+          component: PersonalMarketPage,
         },
         {
           path: 'personalLog',
