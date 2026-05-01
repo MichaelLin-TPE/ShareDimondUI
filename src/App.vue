@@ -128,6 +128,14 @@ const isLoginPage = computed(() => {
         <p>透明定價，專業支援</p>
       </div>
 
+      <div class="trial-banner">
+        <span class="trial-icon">🎁</span>
+        <div class="trial-text">
+          <div class="trial-title">創血盟即享 <strong>7 天免費試用</strong></div>
+          <div class="trial-sub">完整功能不限制,試用結束再選方案</div>
+        </div>
+      </div>
+
       <div class="pricing-cards">
         <div class="plan-card">
           <div class="plan-title">月繳方案</div>
@@ -144,6 +152,25 @@ const isLoginPage = computed(() => {
             <span class="currency text-gold">NT$</span>20,000<span class="period"> / 年</span>
           </div>
           <div class="plan-desc">單一工會授權</div>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-title">100 人以上</div>
+          <div class="plan-prices-stack">
+            <div class="plan-price-row">
+              <span class="plan-price-label">月繳</span>
+              <span class="plan-price-stack-amount">
+                <span class="currency">NT$</span>3,500
+              </span>
+            </div>
+            <div class="plan-price-row">
+              <span class="plan-price-label">年繳</span>
+              <span class="plan-price-stack-amount">
+                <span class="currency">NT$</span>35,000
+              </span>
+            </div>
+          </div>
+          <div class="plan-desc">大型工會專案</div>
         </div>
       </div>
 
@@ -235,7 +262,7 @@ const isLoginPage = computed(() => {
 .pricing-modal-container {
   position: relative;
   width: 90vw;
-  max-width: 600px;
+  max-width: 760px;
   background: #1a1f2e;
   border: 1px solid #334155;
   border-radius: 24px;
@@ -260,6 +287,43 @@ const isLoginPage = computed(() => {
   color: #94a3b8;
   font-size: 0.9rem;
   margin: 0;
+}
+
+.trial-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(245, 196, 81, 0.18), rgba(245, 158, 11, 0.10));
+  border: 1px solid rgba(245, 196, 81, 0.4);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+}
+.trial-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.5));
+}
+.trial-text {
+  flex: 1;
+  min-width: 0;
+}
+.trial-title {
+  color: #f1f5f9;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.trial-title strong {
+  color: #ffd166;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+.trial-sub {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  margin-top: 3px;
 }
 
 .pricing-cards {
@@ -322,6 +386,38 @@ const isLoginPage = computed(() => {
 .plan-desc {
   color: #64748b;
   font-size: 0.85rem;
+}
+
+/* 100 人以上方案: 雙價格垂直排列 */
+.plan-prices-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
+.plan-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+}
+.plan-price-label {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.plan-price-stack-amount {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+.plan-price-stack-amount .currency {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-right: 3px;
 }
 
 /* 年繳高亮樣式 */
