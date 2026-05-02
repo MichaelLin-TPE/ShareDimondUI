@@ -72,14 +72,14 @@ const dismiss = () => {
 .eo-icon {
   font-size: 3rem;
   margin-bottom: 12px;
-  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
+  filter: drop-shadow(0 0 12px rgba(245, 196, 81, 0.4));
 }
 
 .eo-title {
   margin: 0 0 8px;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #818cf8;
+  color: #ffd166;
   letter-spacing: 0.5px;
 }
 

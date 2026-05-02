@@ -284,7 +284,7 @@ onMounted(() => {
 }
 .g-status strong {
   font-size: 1.3rem;
-  color: #818cf8;
+  color: #ffd166;
   padding: 0 4px;
 }
 .g-status.win {
@@ -403,7 +403,7 @@ onMounted(() => {
   width: 36px;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #818cf8;
+  color: #ffd166;
 }
 
 /* Buttons */
@@ -417,10 +417,10 @@ onMounted(() => {
   width: 100%;
   padding: 13px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
+  background: linear-gradient(135deg, #f5c451, #a855f7);
   color: #fff;
   font-size: 1rem;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 15px rgba(245, 196, 81, 0.35);
 }
 .g-btn--primary:hover {
   filter: brightness(1.1);
@@ -502,9 +502,9 @@ onMounted(() => {
 .g-b {
   padding: 2px 8px;
   border-radius: 5px;
-  background: rgba(79, 70, 229, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(79, 70, 229, 0.3);
+  background: rgba(245, 158, 11, 0.15);
+  color: #ffd166;
+  border: 1px solid rgba(245, 158, 11, 0.3);
   font-size: 0.75rem;
   font-weight: 700;
 }

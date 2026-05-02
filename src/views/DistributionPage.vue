@@ -166,7 +166,7 @@ const roleIcon = (role: string) => {
   font-size: 1.5rem;
   font-weight: 800;
   margin: 0 0 4px;
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -194,7 +194,7 @@ const roleIcon = (role: string) => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
+  background: linear-gradient(135deg, #f5c451, #a855f7);
   color: #fff;
   font-size: 0.78rem;
   font-weight: 800;
@@ -232,11 +232,11 @@ const roleIcon = (role: string) => {
   transition: all 0.15s;
 }
 .chip:hover {
-  border-color: #6366f1;
+  border-color: #f5c451;
   color: #e2e8f0;
 }
 .chip.active {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(245, 196, 81, 0.15);
   border-color: #a855f7;
   color: #fff;
   box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
@@ -247,7 +247,7 @@ const roleIcon = (role: string) => {
   font-weight: 500;
 }
 .chip.active .chip-bal {
-  color: #818cf8;
+  color: #ffd166;
 }
 
 /* Stats Card */
@@ -276,7 +276,7 @@ const roleIcon = (role: string) => {
   font-weight: 800;
   color: #e2e8f0;
 }
-.stat-value.gold { color: #818cf8; }
+.stat-value.gold { color: #ffd166; }
 .stat-value.warn { color: #f87171; }
 .stat-value.danger { color: #f87171; }
 
@@ -289,7 +289,7 @@ const roleIcon = (role: string) => {
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #6366f1, #a855f7);
+  background: linear-gradient(90deg, #f5c451, #a855f7);
   border-radius: 100px;
   transition: width 0.3s ease;
 }
@@ -320,7 +320,7 @@ const roleIcon = (role: string) => {
   margin-bottom: 12px;
 }
 .search-input:focus {
-  border-color: #6366f1;
+  border-color: #f5c451;
 }
 
 /* Members */
@@ -376,7 +376,7 @@ const roleIcon = (role: string) => {
   width: 110px;
   background: #0a0e1a;
   border: 1px solid #334155;
-  color: #818cf8;
+  color: #ffd166;
   padding: 7px 10px;
   border-radius: 8px;
   font-size: 0.95rem;
