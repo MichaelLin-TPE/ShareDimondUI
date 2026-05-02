@@ -889,7 +889,7 @@ onMounted(() => {
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(ellipse at top, rgba(245, 196, 81, 0.12), transparent 60%),
+    radial-gradient(ellipse at top, rgba(var(--c-light-rgb), 0.12), transparent 60%),
     #0a0b10;
 }
 .gate-card {
@@ -952,7 +952,7 @@ onMounted(() => {
   gap: 12px;
   font-size: 1.2rem;
   font-weight: 800;
-  color: #ffd166;
+  color: var(--c-light);
 }
 .brand-emoji {
   font-size: 1.6rem;
@@ -997,14 +997,14 @@ onMounted(() => {
   white-space: nowrap;
 }
 .tab:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(var(--c-light-rgb), 0.35);
   transform: translateY(-1px);
 }
 .tab.active {
-  border-color: #ffd166;
-  background: linear-gradient(180deg, rgba(245, 196, 81, 0.14), rgba(22, 24, 34, 0.7));
-  color: #ffd166;
-  box-shadow: 0 6px 18px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  background: linear-gradient(180deg, rgba(var(--c-light-rgb), 0.14), rgba(22, 24, 34, 0.7));
+  color: var(--c-light);
+  box-shadow: 0 6px 18px rgba(var(--c-light-rgb), 0.15);
 }
 .tab-emoji {
   font-size: 1.25rem;
@@ -1070,8 +1070,8 @@ onMounted(() => {
   color: #4ade80;
 }
 .card-stat {
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(22, 24, 34, 0.55));
-  border-color: rgba(245, 196, 81, 0.25);
+  background: linear-gradient(135deg, rgba(var(--c-light-rgb), 0.08), rgba(22, 24, 34, 0.55));
+  border-color: rgba(var(--c-light-rgb), 0.25);
 }
 
 /* ===== Form ===== */
@@ -1119,7 +1119,7 @@ onMounted(() => {
 }
 .field:focus {
   outline: none;
-  border-color: #ffd166;
+  border-color: var(--c-light);
 }
 .field::placeholder {
   color: #475569;
@@ -1192,14 +1192,14 @@ select.field {
   white-space: nowrap;
 }
 .preset-card:hover {
-  border-color: rgba(245, 196, 81, 0.4);
+  border-color: rgba(var(--c-light-rgb), 0.4);
   transform: translateY(-1px);
 }
 .preset-card.active {
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.18), rgba(245, 158, 11, 0.08));
-  border-color: #ffd166;
-  color: #ffd166;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.18);
+  background: linear-gradient(135deg, rgba(var(--c-light-rgb), 0.18), rgba(var(--c-deep-rgb), 0.08));
+  border-color: var(--c-light);
+  color: var(--c-light);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.18);
 }
 .preset-label {
   font-weight: 800;
@@ -1211,7 +1211,7 @@ select.field {
   font-variant-numeric: tabular-nums;
 }
 .preset-card.active .preset-sub {
-  color: rgba(245, 196, 81, 0.75);
+  color: rgba(var(--c-light-rgb), 0.75);
 }
 
 .divider {
@@ -1241,8 +1241,8 @@ select.field {
   border-radius: 10px;
 }
 .result-item.result-item-money {
-  border-color: rgba(245, 196, 81, 0.35);
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(0, 0, 0, 0.3));
+  border-color: rgba(var(--c-light-rgb), 0.35);
+  background: linear-gradient(135deg, rgba(var(--c-light-rgb), 0.08), rgba(0, 0, 0, 0.3));
 }
 .result-item.result-item-muted {
   opacity: 0.7;
@@ -1258,7 +1258,7 @@ select.field {
   word-break: break-all;
 }
 .money-big {
-  color: #ffd166 !important;
+  color: var(--c-light) !important;
   font-size: 1.3rem !important;
 }
 
@@ -1289,7 +1289,7 @@ select.field {
   font-variant-numeric: tabular-nums;
 }
 .stat-value-money {
-  color: #ffd166;
+  color: var(--c-light);
 }
 .stat-divider {
   width: 1px;
@@ -1349,29 +1349,29 @@ select.field {
   font-size: 0.82rem;
 }
 .money {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 .rate {
-  color: #ffd166;
+  color: var(--c-light);
   font-variant-numeric: tabular-nums;
 }
 
 .code-tag {
   display: inline-block;
   padding: 4px 10px;
-  background: rgba(245, 196, 81, 0.1);
-  border: 1px solid rgba(245, 196, 81, 0.25);
+  background: rgba(var(--c-light-rgb), 0.1);
+  border: 1px solid rgba(var(--c-light-rgb), 0.25);
   border-radius: 6px;
-  color: #ffd166;
+  color: var(--c-light);
   font-family: monospace;
   font-size: 0.84rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .code-tag:hover {
-  background: rgba(245, 196, 81, 0.2);
+  background: rgba(var(--c-light-rgb), 0.2);
 }
 
 /* ===== Pill ===== */
@@ -1388,9 +1388,9 @@ select.field {
 }
 .pill-on,
 .pill-pending {
-  background: rgba(245, 158, 11, 0.18);
-  color: #ffd166;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(var(--c-deep-rgb), 0.18);
+  color: var(--c-light);
+  border: 1px solid rgba(var(--c-deep-rgb), 0.4);
 }
 .pill-off,
 .pill-cancelled {
@@ -1404,9 +1404,9 @@ select.field {
   border: 1px solid rgba(34, 197, 94, 0.4);
 }
 .pill-info {
-  background: rgba(245, 196, 81, 0.18);
+  background: rgba(var(--c-light-rgb), 0.18);
   color: #a5b4fc;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  border: 1px solid rgba(var(--c-light-rgb), 0.4);
 }
 
 /* ===== Action button row in table ===== */
@@ -1458,12 +1458,12 @@ select.field {
   width: 100%;
 }
 .btn-primary {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0a0b10;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.3);
 }
 .btn-primary:hover {
-  box-shadow: 0 8px 22px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 8px 22px rgba(var(--c-deep-rgb), 0.45);
 }
 .btn-ghost {
   background: transparent;
@@ -1471,8 +1471,8 @@ select.field {
   color: #cbd5e1;
 }
 .btn-ghost:hover {
-  border-color: #ffd166;
-  color: #ffd166;
+  border-color: var(--c-light);
+  color: var(--c-light);
 }
 .btn-danger-ghost {
   background: transparent;
@@ -1536,7 +1536,7 @@ select.field {
   color: #fff;
 }
 .toast-info {
-  background: linear-gradient(135deg, #f5c451, #f59e0b);
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
   color: #fff;
 }
 </style>

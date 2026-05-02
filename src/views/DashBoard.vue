@@ -409,9 +409,9 @@ const closeUpdateModal = () => {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  box-shadow: 0 4px 15px rgba(var(--c-deep-rgb), 0.3);
 }
 
 .btn-confirm:hover {
@@ -516,15 +516,15 @@ h1 {
 }
 
 .balance-row:hover {
-  border-color: rgba(245, 196, 81, 0.2);
+  border-color: rgba(var(--c-light-rgb), 0.2);
   background: rgba(17, 19, 28, 0.95);
-  box-shadow: 0 6px 20px rgba(245, 196, 81, 0.1);
+  box-shadow: 0 6px 20px rgba(var(--c-light-rgb), 0.1);
   transform: translateY(-1px);
 }
 
 .balance-row.clan:hover {
-  border-color: rgba(245, 196, 81, 0.2);
-  box-shadow: 0 6px 20px rgba(245, 196, 81, 0.08);
+  border-color: rgba(var(--c-light-rgb), 0.2);
+  box-shadow: 0 6px 20px rgba(var(--c-light-rgb), 0.08);
 }
 
 .row-header {
@@ -537,11 +537,11 @@ h1 {
 
 .icon-wrapper {
   font-size: 1.2rem;
-  color: #f5c451;
+  color: var(--c-mid);
 }
 
 .icon-wrapper.gold {
-  color: #ffd166;
+  color: var(--c-light);
 }
 
 .row-title {
@@ -580,7 +580,7 @@ h1 {
 }
 
 .amount-value.gold {
-  color: #ffd166;
+  color: var(--c-light);
 }
 
 @media (max-width: 768px) {
@@ -643,7 +643,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #ffd166, #f59e0b);
+  background: linear-gradient(90deg, var(--c-light), var(--c-deep));
 }
 
 .modal-icon.update-icon {
@@ -665,7 +665,7 @@ h1 {
 }
 
 .update-modal .modal-title {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 1.4rem;
   font-weight: 900;
   margin-bottom: 20px;
@@ -673,8 +673,8 @@ h1 {
   letter-spacing: 0.5px;
   text-align: center;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 
 .modal-desc.update-desc {
@@ -745,7 +745,7 @@ h1 {
 .footer-msg {
   text-align: center;
   font-size: 0.85rem;
-  color: #ffd166;
+  color: var(--c-light);
   font-style: italic;
   margin-top: 18px;
   opacity: 0.85;
@@ -772,17 +772,17 @@ h1 {
 }
 
 .update-modal .btn-confirm {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
   letter-spacing: 0.5px;
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 25px rgba(var(--c-deep-rgb), 0.4);
 }
 
 .update-modal .btn-confirm:hover {
   filter: brightness(1.08);
   transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.5);
+  box-shadow: 0 12px 32px rgba(var(--c-deep-rgb), 0.5);
 }
 /* 👇 自訂彈窗的樣式 👇 */
 .custom-modal-overlay {
@@ -868,9 +868,9 @@ h1 {
 }
 
 .btn-confirm {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  box-shadow: 0 4px 15px rgba(var(--c-deep-rgb), 0.3);
 }
 
 .btn-confirm:hover {

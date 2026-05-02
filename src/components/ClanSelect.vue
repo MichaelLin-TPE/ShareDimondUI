@@ -137,8 +137,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
   border-color: #3a3f5c;
 }
 .clan-select.is-open .cs-trigger {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 
 .cs-text {
@@ -149,7 +149,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 }
 
 .cs-chevron {
-  color: #ffd166;
+  color: var(--c-light);
   flex-shrink: 0;
   transition: transform 0.22s ease;
 }
@@ -211,16 +211,16 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
     color 0.12s;
 }
 .cs-option:hover {
-  background: rgba(245, 196, 81, 0.08);
+  background: rgba(var(--c-light-rgb), 0.08);
   color: #fff;
 }
 .cs-option.is-selected {
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.14);
+  color: var(--c-light);
   font-weight: 700;
 }
 .cs-check {
-  color: #ffd166;
+  color: var(--c-light);
   flex-shrink: 0;
 }
 

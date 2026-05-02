@@ -322,7 +322,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
 }
 .tooltip-content strong {
-  color: #ffda6a; /* 給標題一個顯眼的顏色，例如金色 */
+  color: var(--c-light); /* 給標題一個顯眼的顏色，例如金色 */
   font-size: 17px; /* 標題再大一點 */
   display: block;
   margin-bottom: 8px;
@@ -350,10 +350,10 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   gap: 10px 16px;
   margin-bottom: 8px;
   padding-bottom: 10px;
-  border-bottom: 2px solid rgba(245, 196, 81, 0.35);
+  border-bottom: 2px solid rgba(var(--c-light-rgb), 0.35);
 }
 .group-title {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -385,13 +385,13 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   align-items: center;
   gap: 8px;
   padding: 6px 16px;
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.22), rgba(245, 158, 11, 0.12));
-  border: 1px solid rgba(245, 196, 81, 0.55);
-  color: #ffd166;
+  background: linear-gradient(135deg, rgba(var(--c-light-rgb), 0.22), rgba(var(--c-deep-rgb), 0.12));
+  border: 1px solid rgba(var(--c-light-rgb), 0.55);
+  color: var(--c-light);
   border-radius: 999px;
   font-size: 1rem;
   font-weight: 700;
-  box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.15);
+  box-shadow: 0 0 0 1px rgba(var(--c-light-rgb), 0.15);
 }
 .sum-amount-num {
   font-family: 'Consolas', 'Monaco', monospace;
@@ -412,12 +412,12 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(245, 196, 81, 0.1);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(var(--c-light-rgb), 0.1);
+  border: 1px solid rgba(var(--c-light-rgb), 0.35);
   border-radius: 999px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffd166;
+  color: var(--c-light);
   white-space: nowrap;
   max-width: 240px;
   overflow: hidden;
@@ -429,13 +429,13 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   min-width: 26px;
   padding: 0 8px;
   height: 22px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 800;
   font-family: 'Consolas', 'Monaco', monospace;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2px 6px rgba(var(--c-deep-rgb), 0.35);
 }
 
 /* -------------------------------------- */
@@ -457,7 +457,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   margin: 0;
 
   /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 */
-  accent-color: #ffd166;
+  accent-color: var(--c-light);
 
   /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
   transition: transform 0.1s ease;
@@ -489,7 +489,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   transform: translateY(-50%);
   width: 4px;
   height: 18px;
-  background: #f5c451;
+  background: var(--c-mid);
   border-radius: 2px;
 }
 .dash-card-head h3 {
@@ -520,7 +520,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 }
 
 .auction-card:hover {
-  border-color: #f5c451;
+  border-color: var(--c-mid);
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
@@ -569,7 +569,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   color: #f1f5f9;
 }
 .gold {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: bold;
 }
 
@@ -636,8 +636,8 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   width: 100%;
   height: 44px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
-  color: #000000;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
+  color: var(--c-on);
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -674,7 +674,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 }
 
 .card-footer:hover {
-  color: #f5c451;
+  color: var(--c-mid);
 }
 
 /* Modal 樣式保持原本邏輯但微調 */
@@ -755,8 +755,8 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 }
 
 .person-item.is-selected {
-  border: 1px solid #f5c451;
-  background: rgba(245, 196, 81, 0.1);
+  border: 1px solid var(--c-mid);
+  background: rgba(var(--c-light-rgb), 0.1);
 }
 
 /* --- 彈窗底部按鈕區域升級 --- */
@@ -786,15 +786,15 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 
 /* 確認得標按鈕：遊戲風格漸層與發光 */
 .confirm-btn {
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important; /* 藍紫漸層 */
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important; /* 藍紫漸層 */
   color: #ffffff;
   border: none;
-  box-shadow: 0 4px 15px rgba(245, 196, 81, 0.3); /* 深藍色發光 */
+  box-shadow: 0 4px 15px rgba(var(--c-light-rgb), 0.3); /* 深藍色發光 */
 }
 
 .confirm-btn:hover {
   filter: brightness(1.1); /* 懸停時變亮 */
-  box-shadow: 0 6px 20px rgba(245, 196, 81, 0.5); /* 加強發光 */
+  box-shadow: 0 6px 20px rgba(var(--c-light-rgb), 0.5); /* 加強發光 */
   transform: translateY(-1px); /* 微微上浮 */
 }
 

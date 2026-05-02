@@ -214,10 +214,10 @@ const {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle {
   margin: 0;
@@ -244,7 +244,7 @@ const {
   gap: 4px;
 }
 .stat-card.gold-top {
-  border-top-color: #ffd166;
+  border-top-color: var(--c-light);
 }
 .stat-card.warn-top {
   border-top-color: #ef4444;
@@ -263,7 +263,7 @@ const {
   font-family: 'Consolas', 'Monaco', monospace;
 }
 .stat-value.gold {
-  color: #ffd166;
+  color: var(--c-light);
 }
 .stat-value.warn {
   color: #fca5a5;
@@ -287,19 +287,19 @@ const {
   margin-bottom: 14px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.5px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.3);
   transition: all 0.2s;
 }
 .add-btn:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 28px rgba(var(--c-deep-rgb), 0.4);
 }
 
 /* Segmented tabs */
@@ -337,8 +337,8 @@ const {
   background: rgba(255, 255, 255, 0.04);
 }
 .seg-btn.active {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
 }
 
@@ -374,7 +374,7 @@ const {
   transition: border-color 0.18s, box-shadow 0.2s;
 }
 .item-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(var(--c-light-rgb), 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .item-card.imminent {
@@ -404,8 +404,8 @@ const {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(245, 196, 81, 0.12);
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.12);
+  color: var(--c-light);
 }
 
 .info-row {
@@ -443,7 +443,7 @@ const {
 }
 .next-value {
   font-weight: 700;
-  color: #ffd166;
+  color: var(--c-light);
 }
 .abs-time {
   color: #64748b;
@@ -493,7 +493,7 @@ const {
 .hist-item {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffd166;
+  color: var(--c-light);
 }
 .hist-arrow {
   color: #64748b;
@@ -575,7 +575,7 @@ const {
   margin: 0 0 16px;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #ffd166;
+  color: var(--c-light);
   letter-spacing: 0.5px;
 }
 .field {
@@ -612,8 +612,8 @@ const {
   font-family: inherit;
 }
 .field-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 .field-input[type='datetime-local']::-webkit-calendar-picker-indicator {
   filter: invert(1);
@@ -647,10 +647,10 @@ const {
 }
 .btn-confirm {
   flex: 1.4;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.3);
 }
 .btn-confirm:hover:not(:disabled) {
   filter: brightness(1.08);

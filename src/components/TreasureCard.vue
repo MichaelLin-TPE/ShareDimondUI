@@ -460,7 +460,7 @@ const closeManageDialog = () => {
   border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
 }
 .tooltip-content strong {
-  color: #ffda6a; /* 給標題一個顯眼的顏色，例如金色 */
+  color: var(--c-light); /* 給標題一個顯眼的顏色，例如金色 */
   font-size: 17px; /* 標題再大一點 */
   display: block;
   margin-bottom: 8px;
@@ -493,7 +493,7 @@ const closeManageDialog = () => {
   transform: translateY(-50%);
   width: 4px;
   height: 18px;
-  background: #f5c451;
+  background: var(--c-mid);
   border-radius: 2px;
 }
 .dash-card-head h3,
@@ -567,15 +567,15 @@ const closeManageDialog = () => {
   color: #64748b;
 }
 .gold {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: bold;
 }
 .join-btn {
   width: 100%;
   height: 44px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
-  color: #000000;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
+  color: var(--c-on);
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -584,7 +584,7 @@ const closeManageDialog = () => {
 }
 .joined {
   background: #334155;
-  color: #000000;
+  color: var(--c-on);
 }
 .card-footer {
   display: flex;
@@ -662,7 +662,7 @@ const closeManageDialog = () => {
   position: absolute;
   right: 12px;
   top: 12px;
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: bold;
 }
 
@@ -705,7 +705,7 @@ const closeManageDialog = () => {
 }
 .btn-submit {
   flex: 2;
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
   border: none;
   padding: 12px;
   border-radius: 10px;
@@ -856,8 +856,8 @@ const closeManageDialog = () => {
 }
 
 .person-item.is-selected {
-  border: 1px solid #f5c451;
-  background: rgba(245, 196, 81, 0.1);
+  border: 1px solid var(--c-mid);
+  background: rgba(var(--c-light-rgb), 0.1);
 }
 
 /* 4. 針對底部按鈕固定位置 */
@@ -980,7 +980,7 @@ const closeManageDialog = () => {
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: bold;
   font-size: 0.9rem;
   pointer-events: none;
@@ -1048,8 +1048,8 @@ const closeManageDialog = () => {
 }
 .ot-btn--submit {
   flex: 2;
-  background: linear-gradient(135deg, #f5c451, #f59e0b);
-  color: #000;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+  color: var(--c-on);
 }
 .ot-btn--submit:hover:not(:disabled) {
   filter: brightness(1.08);
@@ -1141,8 +1141,8 @@ const closeManageDialog = () => {
   font-family: inherit;
 }
 .mgmt-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 .mgmt-input--inline {
   height: 36px;
@@ -1156,15 +1156,15 @@ const closeManageDialog = () => {
   padding: 0;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.5px;
   cursor: pointer;
   transition: all 0.15s;
   font-family: inherit;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.3);
 }
 .mgmt-add-btn:hover:not(:disabled) {
   filter: brightness(1.08);
@@ -1256,8 +1256,8 @@ const closeManageDialog = () => {
   box-sizing: border-box;
 }
 .mgmt-icon-btn.mgmt-edit:hover {
-  background: rgba(245, 196, 81, 0.12);
-  border-color: rgba(245, 196, 81, 0.4);
+  background: rgba(var(--c-light-rgb), 0.12);
+  border-color: rgba(var(--c-light-rgb), 0.4);
 }
 .mgmt-icon-btn.mgmt-del:hover {
   background: rgba(239, 68, 68, 0.12);

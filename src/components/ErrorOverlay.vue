@@ -72,14 +72,14 @@ const dismiss = () => {
 .eo-icon {
   font-size: 3rem;
   margin-bottom: 12px;
-  filter: drop-shadow(0 0 12px rgba(245, 196, 81, 0.4));
+  filter: drop-shadow(0 0 12px rgba(var(--c-light-rgb), 0.4));
 }
 
 .eo-title {
   margin: 0 0 8px;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #ffd166;
+  color: var(--c-light);
   letter-spacing: 0.5px;
 }
 
@@ -117,15 +117,15 @@ const dismiss = () => {
   border-color: #555a78;
 }
 .eo-btn-primary {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.3);
 }
 .eo-btn-primary:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 28px rgba(var(--c-deep-rgb), 0.4);
 }
 
 /* Transition */

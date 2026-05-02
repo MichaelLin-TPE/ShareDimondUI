@@ -65,7 +65,7 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
 
 <style scoped>
 /* === 統一規範(同 LoginView / CreateGuild / TransferPage / WithdrawPage)===
-   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   主色: var(--c-light) / linear-gradient(135deg, var(--c-light), var(--c-deep))
    字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
    文字: #fff / #e2e8f0 / #94a3b8 / #64748b
 */
@@ -86,10 +86,10 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle {
   margin: 0;
@@ -127,10 +127,10 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
   line-height: 1.1;
 }
 .stat-card.pending {
-  border-top: 3px solid #ffd166;
+  border-top: 3px solid var(--c-light);
 }
 .stat-card.pending .stat-value {
-  color: #ffd166;
+  color: var(--c-light);
 }
 .stat-card.amount {
   border-top: 3px solid rgba(255, 255, 255, 0.18);
@@ -171,7 +171,7 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
     box-shadow 0.2s;
 }
 .request-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(var(--c-light-rgb), 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -186,13 +186,13 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
   flex: 0 0 auto;
   width: 38px;
   height: 38px;
-  background: rgba(245, 196, 81, 0.12);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(var(--c-light-rgb), 0.12);
+  border: 1px solid rgba(var(--c-light-rgb), 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 800;
   font-size: 0.95rem;
 }
@@ -224,14 +224,14 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
 .amount-currency {
   display: inline-block;
   padding: 1px 8px;
-  background: rgba(245, 196, 81, 0.12);
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.12);
+  color: var(--c-light);
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
 }
 .amount-value {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -287,15 +287,15 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
 }
 .btn-approve {
   flex: 2;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.3);
 }
 .btn-approve:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.45);
 }
 
 /* === Mobile === */

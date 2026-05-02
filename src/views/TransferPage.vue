@@ -90,7 +90,7 @@ const memberIdStr = computed({
 
 <style scoped>
 /* === 統一規範(同 CreateGuild / LoginView)===
-   主色: #ffd166 (金) / linear-gradient(135deg, #ffd166, #f59e0b)
+   主色: var(--c-light) (金) / linear-gradient(135deg, var(--c-light), var(--c-deep))
    字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
    文字: #fff / #e2e8f0 / #94a3b8 / #64748b
 */
@@ -121,10 +121,10 @@ const memberIdStr = computed({
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle {
   margin: 0;
@@ -179,9 +179,9 @@ const memberIdStr = computed({
   color: #e2e8f0;
 }
 .currency-chip.active span {
-  background: rgba(245, 196, 81, 0.12);
-  border-color: #ffd166;
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.12);
+  border-color: var(--c-light);
+  color: var(--c-light);
 }
 
 /* 金額輸入 */
@@ -195,11 +195,11 @@ const memberIdStr = computed({
   transition: all 0.15s;
 }
 .amount-wrapper:focus-within {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 .currency-prefix {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 1rem;
   font-weight: 800;
   margin-right: 6px;
@@ -246,19 +246,19 @@ const memberIdStr = computed({
   margin-top: 8px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 1px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.3);
   transition: all 0.2s;
 }
 .submit-btn:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 28px rgba(var(--c-deep-rgb), 0.4);
 }
 .submit-btn:disabled {
   cursor: not-allowed;

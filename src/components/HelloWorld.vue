@@ -19,10 +19,10 @@ defineProps<{
   font-size: 2.6rem;
   font-weight: 800;
   letter-spacing: 2px;
-  color: #818cf8;
+  color: var(--c-light);
   text-shadow:
-    0 0 12px rgba(99, 102, 241, 0.55),
-    0 2px 16px rgba(79, 70, 229, 0.35);
+    0 0 12px rgba(var(--c-light-rgb), 0.55),
+    0 2px 16px rgba(var(--c-deep-rgb), 0.35);
 }
 
 .greetings h3 {

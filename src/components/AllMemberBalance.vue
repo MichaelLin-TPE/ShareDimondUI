@@ -82,7 +82,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
 
 <style scoped>
 /* === 統一規範 ===
-   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   主色: var(--c-light) / linear-gradient(135deg, var(--c-light), var(--c-deep))
    字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
    文字: #fff / #e2e8f0 / #94a3b8 / #64748b
 */
@@ -103,10 +103,10 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle-row {
   display: inline-flex;
@@ -160,7 +160,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   min-width: 180px;
   background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-top: 3px solid #ffd166;
+  border-top: 3px solid var(--c-light);
   border-radius: 14px;
   padding: 20px 22px;
   display: flex;
@@ -191,7 +191,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   word-break: break-all;
 }
 .stat-value.gold {
-  color: #ffd166;
+  color: var(--c-light);
 }
 .unit {
   font-size: 1rem;
@@ -253,7 +253,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   font-size: 1rem;
 }
 .balance-table tbody tr:hover {
-  background: rgba(245, 196, 81, 0.04);
+  background: rgba(var(--c-light-rgb), 0.04);
 }
 .balance-table tbody tr:last-child td {
   border-bottom: none;
@@ -275,7 +275,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   font-size: 1rem;
 }
 .cell-balance .has-value {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 700;
 }
 
