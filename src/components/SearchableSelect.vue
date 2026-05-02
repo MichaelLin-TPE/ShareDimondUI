@@ -164,8 +164,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
   border-color: #3a3f5c;
 }
 .ss-select.is-open .ss-trigger {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 
 .ss-search-icon {
@@ -231,7 +231,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 
 .ss-chevron {
   flex-shrink: 0;
-  color: #818cf8;
+  color: #ffd166;
   transition: transform 0.22s ease;
 }
 .ss-select.is-open .ss-chevron {
@@ -290,16 +290,16 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
   transition: background 0.12s, color 0.12s;
 }
 .ss-option:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: rgba(245, 196, 81, 0.08);
   color: #fff;
 }
 .ss-option.is-selected {
-  background: rgba(99, 102, 241, 0.14);
-  color: #818cf8;
+  background: rgba(245, 196, 81, 0.14);
+  color: #ffd166;
   font-weight: 700;
 }
 .ss-check {
-  color: #818cf8;
+  color: #ffd166;
   flex-shrink: 0;
 }
 .ss-option-label {

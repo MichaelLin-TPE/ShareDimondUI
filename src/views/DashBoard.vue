@@ -516,15 +516,15 @@ h1 {
 }
 
 .balance-row:hover {
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: rgba(245, 196, 81, 0.2);
   background: rgba(17, 19, 28, 0.95);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 6px 20px rgba(245, 196, 81, 0.1);
   transform: translateY(-1px);
 }
 
 .balance-row.clan:hover {
-  border-color: rgba(99, 102, 241, 0.2);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
+  border-color: rgba(245, 196, 81, 0.2);
+  box-shadow: 0 6px 20px rgba(245, 196, 81, 0.08);
 }
 
 .row-header {
@@ -537,11 +537,11 @@ h1 {
 
 .icon-wrapper {
   font-size: 1.2rem;
-  color: #6366f1;
+  color: #f5c451;
 }
 
 .icon-wrapper.gold {
-  color: #818cf8;
+  color: #ffd166;
 }
 
 .row-title {
@@ -580,7 +580,7 @@ h1 {
 }
 
 .amount-value.gold {
-  color: #818cf8;
+  color: #ffd166;
 }
 
 @media (max-width: 768px) {
@@ -643,7 +643,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #818cf8, #4f46e5);
+  background: linear-gradient(90deg, #ffd166, #f59e0b);
 }
 
 .modal-icon.update-icon {
@@ -665,7 +665,7 @@ h1 {
 }
 
 .update-modal .modal-title {
-  color: #818cf8;
+  color: #ffd166;
   font-size: 1.4rem;
   font-weight: 900;
   margin-bottom: 20px;
@@ -673,8 +673,8 @@ h1 {
   letter-spacing: 0.5px;
   text-align: center;
   text-shadow:
-    0 0 8px rgba(99, 102, 241, 0.45),
-    0 2px 12px rgba(79, 70, 229, 0.2);
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 
 .modal-desc.update-desc {
@@ -745,7 +745,7 @@ h1 {
 .footer-msg {
   text-align: center;
   font-size: 0.85rem;
-  color: #818cf8;
+  color: #ffd166;
   font-style: italic;
   margin-top: 18px;
   opacity: 0.85;

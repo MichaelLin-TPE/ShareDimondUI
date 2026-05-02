@@ -33,7 +33,7 @@ const featureCategories: FeatureCategory[] = [
   },
   {
     title: '💸 金流管理',
-    color: '#6366f1',
+    color: '#f5c451',
     items: [
       { icon: '🔁', name: '會員轉帳', desc: '公會內成員互轉多幣別貨幣' },
       { icon: '📤', name: '申請提款', desc: '送出提款單，幹部審核後撥款' },
@@ -602,7 +602,7 @@ const isLoginPage = computed(() => {
   margin: 0 0 6px;
   font-size: 1.55rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
+  background: linear-gradient(135deg, #f5c451, #a855f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

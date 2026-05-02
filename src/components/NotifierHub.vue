@@ -234,12 +234,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  background: linear-gradient(135deg, #f5c451, #f59e0b);
   border: none;
   border-radius: 50%;
   cursor: pointer;
   box-shadow:
-    0 6px 18px rgba(99, 102, 241, 0.45),
+    0 6px 18px rgba(245, 196, 81, 0.45),
     0 2px 6px rgba(0, 0, 0, 0.4);
   transition:
     transform 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.28),
@@ -253,7 +253,7 @@ onUnmounted(() => {
 .hub-main:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow:
-    0 10px 26px rgba(99, 102, 241, 0.55),
+    0 10px 26px rgba(245, 196, 81, 0.55),
     0 3px 8px rgba(0, 0, 0, 0.5);
 }
 .hub-main:active {
@@ -301,19 +301,19 @@ onUnmounted(() => {
 @keyframes hub-pulse {
   0% {
     box-shadow:
-      0 6px 18px rgba(99, 102, 241, 0.45),
+      0 6px 18px rgba(245, 196, 81, 0.45),
       0 2px 6px rgba(0, 0, 0, 0.4),
-      0 0 0 0 rgba(99, 102, 241, 0.6);
+      0 0 0 0 rgba(245, 196, 81, 0.6);
   }
   60% {
     box-shadow:
-      0 6px 18px rgba(99, 102, 241, 0.45),
+      0 6px 18px rgba(245, 196, 81, 0.45),
       0 2px 6px rgba(0, 0, 0, 0.4),
-      0 0 0 16px rgba(99, 102, 241, 0);
+      0 0 0 16px rgba(245, 196, 81, 0);
   }
   100% {
     box-shadow:
-      0 6px 18px rgba(99, 102, 241, 0.45),
+      0 6px 18px rgba(245, 196, 81, 0.45),
       0 2px 6px rgba(0, 0, 0, 0.4);
   }
 }

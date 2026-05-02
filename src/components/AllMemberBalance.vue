@@ -103,10 +103,10 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #818cf8;
+  color: #ffd166;
   text-shadow:
-    0 0 8px rgba(99, 102, 241, 0.45),
-    0 2px 12px rgba(79, 70, 229, 0.2);
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 .subtitle-row {
   display: inline-flex;
@@ -160,7 +160,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   min-width: 180px;
   background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-top: 3px solid #818cf8;
+  border-top: 3px solid #ffd166;
   border-radius: 14px;
   padding: 20px 22px;
   display: flex;
@@ -191,7 +191,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   word-break: break-all;
 }
 .stat-value.gold {
-  color: #818cf8;
+  color: #ffd166;
 }
 .unit {
   font-size: 1rem;
@@ -253,7 +253,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   font-size: 1rem;
 }
 .balance-table tbody tr:hover {
-  background: rgba(99, 102, 241, 0.04);
+  background: rgba(245, 196, 81, 0.04);
 }
 .balance-table tbody tr:last-child td {
   border-bottom: none;
@@ -275,7 +275,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   font-size: 1rem;
 }
 .cell-balance .has-value {
-  color: #818cf8;
+  color: #ffd166;
   font-weight: 700;
 }
 

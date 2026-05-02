@@ -1158,16 +1158,16 @@ const onEdit = (l: PersonalListing) => {
 }
 .header-icon {
   font-size: 2.2rem;
-  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.6));
+  filter: drop-shadow(0 0 8px rgba(245, 196, 81, 0.6));
 }
 .page-title {
   font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
-  color: #818cf8;
+  color: #ffd166;
   text-shadow:
-    0 0 8px rgba(99, 102, 241, 0.45),
-    0 2px 12px rgba(79, 70, 229, 0.2);
+    0 0 8px rgba(245, 196, 81, 0.45),
+    0 2px 12px rgba(245, 158, 11, 0.2);
 }
 .page-sub {
   font-size: 0.78rem;
@@ -1223,7 +1223,7 @@ const onEdit = (l: PersonalListing) => {
   inset: 0;
   background: radial-gradient(
     circle at top right,
-    rgba(79, 70, 229, 0.18),
+    rgba(245, 158, 11, 0.18),
     transparent 70%
   );
   pointer-events: none;
@@ -1239,7 +1239,7 @@ const onEdit = (l: PersonalListing) => {
   color: #f1f5f9;
 }
 .stat-value.gold {
-  color: #818cf8;
+  color: #ffd166;
 }
 .stat-value.warn {
   color: #f87171;
@@ -1291,10 +1291,10 @@ const onEdit = (l: PersonalListing) => {
   color: #fff;
 }
 .seg-btn.active {
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   color: #0f111a;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
 }
 
 /* ===== Sub Tabs (我的交易內部分頁) ===== */
@@ -1341,13 +1341,13 @@ const onEdit = (l: PersonalListing) => {
   background: rgba(255, 255, 255, 0.04);
 }
 .sub-tab-btn.active {
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   color: #0f111a;
   font-weight: 800;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
 }
 .sub-tab-btn.active:hover {
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
 }
 .sub-tab-badge {
   display: inline-flex;
@@ -1356,9 +1356,9 @@ const onEdit = (l: PersonalListing) => {
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  background: rgba(79, 70, 229, 0.18);
-  color: #818cf8;
-  border: 1px solid rgba(79, 70, 229, 0.4);
+  background: rgba(245, 158, 11, 0.18);
+  color: #ffd166;
+  border: 1px solid rgba(245, 158, 11, 0.4);
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 800;
@@ -1392,8 +1392,8 @@ const onEdit = (l: PersonalListing) => {
   box-sizing: border-box;
 }
 .search-input:focus {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 .type-chips {
   display: flex;
@@ -1422,9 +1422,9 @@ const onEdit = (l: PersonalListing) => {
   color: #e2e8f0;
 }
 .chip.active {
-  background: rgba(99, 102, 241, 0.14);
-  border-color: #818cf8;
-  color: #818cf8;
+  background: rgba(245, 196, 81, 0.14);
+  border-color: #ffd166;
+  color: #ffd166;
 }
 
 /* ===== Empty Card ===== */
@@ -1465,7 +1465,7 @@ const onEdit = (l: PersonalListing) => {
   gap: 8px;
 }
 .listing-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: rgba(245, 196, 81, 0.4);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
@@ -1473,8 +1473,8 @@ const onEdit = (l: PersonalListing) => {
   border-top: 3px solid #a855f7;
 }
 .listing-card.mine {
-  border-color: rgba(99, 102, 241, 0.4);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(22, 24, 34, 0.95) 100%);
+  border-color: rgba(245, 196, 81, 0.4);
+  background: linear-gradient(180deg, rgba(245, 196, 81, 0.08) 0%, rgba(22, 24, 34, 0.95) 100%);
 }
 .card-top {
   display: flex;
@@ -1499,9 +1499,9 @@ const onEdit = (l: PersonalListing) => {
   white-space: nowrap;
 }
 .badge-fixed {
-  background: rgba(99, 102, 241, 0.16);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  background: rgba(245, 196, 81, 0.16);
+  color: #ffd166;
+  border: 1px solid rgba(245, 196, 81, 0.3);
 }
 .badge-bid {
   background: rgba(168, 85, 247, 0.18);
@@ -1516,12 +1516,12 @@ const onEdit = (l: PersonalListing) => {
 .price-num {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #818cf8;
-  text-shadow: 0 0 8px rgba(99, 102, 241, 0.35);
+  color: #ffd166;
+  text-shadow: 0 0 8px rgba(245, 196, 81, 0.35);
 }
 .price-curr {
   font-size: 0.85rem;
-  color: #4f46e5;
+  color: #f59e0b;
   font-weight: 700;
 }
 .price-caption {
@@ -1556,7 +1556,7 @@ const onEdit = (l: PersonalListing) => {
   position: absolute;
   top: -8px;
   right: 12px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  background: linear-gradient(135deg, #f5c451, #f59e0b);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 800;
@@ -1628,9 +1628,9 @@ const onEdit = (l: PersonalListing) => {
   animation: pulse-warn 2s infinite;
 }
 .status-completed {
-  background: rgba(99, 102, 241, 0.16);
+  background: rgba(245, 196, 81, 0.16);
   color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(245, 196, 81, 0.3);
 }
 .status-canceled {
   background: rgba(148, 163, 184, 0.16);
@@ -1666,7 +1666,7 @@ const onEdit = (l: PersonalListing) => {
   font-weight: 600;
 }
 .info-val.gold {
-  color: #818cf8;
+  color: #ffd166;
 }
 .warn-text {
   font-size: 0.78rem;
@@ -1702,12 +1702,12 @@ const onEdit = (l: PersonalListing) => {
   background: #3a3f5c;
 }
 .btn-edit-sm {
-  background: rgba(99, 102, 241, 0.18);
+  background: rgba(245, 196, 81, 0.18);
   color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.4) !important;
+  border: 1px solid rgba(245, 196, 81, 0.4) !important;
 }
 .btn-edit-sm:hover {
-  background: rgba(99, 102, 241, 0.3);
+  background: rgba(245, 196, 81, 0.3);
 }
 .btn-danger-sm {
   background: rgba(239, 68, 68, 0.16);
@@ -1767,8 +1767,8 @@ const onEdit = (l: PersonalListing) => {
   gap: 6px;
   min-height: 36px;
   padding: 0 16px;
-  background: rgba(99, 102, 241, 0.16);
-  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: rgba(245, 196, 81, 0.16);
+  border: 1px solid rgba(245, 196, 81, 0.4);
   color: #a5b4fc;
   border-radius: 8px;
   font-size: 0.85rem;
@@ -1779,7 +1779,7 @@ const onEdit = (l: PersonalListing) => {
   box-sizing: border-box;
 }
 .btn-add-secondary:hover {
-  background: rgba(99, 102, 241, 0.28);
+  background: rgba(245, 196, 81, 0.28);
 }
 .item-grid {
   display: grid;
@@ -1798,7 +1798,7 @@ const onEdit = (l: PersonalListing) => {
 .item-icon-wrap {
   font-size: 1.6rem;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4));
+  filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.4));
 }
 .item-content {
   flex: 1;
@@ -1861,7 +1861,7 @@ const onEdit = (l: PersonalListing) => {
 .modal-title {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #818cf8;
+  color: #ffd166;
 }
 .modal-sub-text {
   font-size: 0.78rem;
@@ -1949,9 +1949,9 @@ const onEdit = (l: PersonalListing) => {
   cursor: not-allowed;
 }
 .btn-edit-mod {
-  background: rgba(99, 102, 241, 0.2);
+  background: rgba(245, 196, 81, 0.2);
   color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.4) !important;
+  border: 1px solid rgba(245, 196, 81, 0.4) !important;
 }
 .btn-buy {
   background: linear-gradient(135deg, #ffd166, #f59e0b);
@@ -1981,18 +1981,18 @@ const onEdit = (l: PersonalListing) => {
 }
 .info-card.price-info {
   grid-column: 1 / -1;
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(245, 196, 81, 0.3);
   background: linear-gradient(180deg, #0f111a 0%, #1a1d2e 100%);
 }
 .big-price {
   font-size: 1.6rem;
   font-weight: 800;
-  color: #818cf8;
-  text-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+  color: #ffd166;
+  text-shadow: 0 0 10px rgba(245, 196, 81, 0.4);
 }
 .big-price-curr {
   font-size: 0.92rem;
-  color: #4f46e5;
+  color: #f59e0b;
   margin-left: 4px;
 }
 .remark-text {
@@ -2054,7 +2054,7 @@ const onEdit = (l: PersonalListing) => {
   font-size: 0.9rem;
 }
 .bid-price {
-  color: #818cf8;
+  color: #ffd166;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -2132,8 +2132,8 @@ const onEdit = (l: PersonalListing) => {
   box-sizing: border-box;
 }
 .text-input:focus {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 textarea.text-input {
   resize: vertical;
@@ -2176,7 +2176,7 @@ textarea.text-input {
   -webkit-appearance: none;
 }
 .seg-toggle button.active {
-  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  background: linear-gradient(135deg, #ffd166, #f59e0b);
   color: #0f111a;
   font-weight: 800;
 }
@@ -2185,15 +2185,15 @@ textarea.text-input {
 .bid-current,
 .buy-summary {
   padding: 12px 14px;
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(245, 196, 81, 0.08);
+  border: 1px solid rgba(245, 196, 81, 0.25);
   border-radius: 9px;
   font-size: 0.88rem;
   color: #e2e8f0;
 }
 .buy-summary strong,
 .bid-current strong {
-  color: #818cf8;
+  color: #ffd166;
   font-weight: 800;
 }
 
@@ -2225,8 +2225,8 @@ textarea.text-input {
   border-color: #3a3f5c;
 }
 .bid-pick-item.active {
-  border-color: #818cf8;
-  background: rgba(99, 102, 241, 0.1);
+  border-color: #ffd166;
+  background: rgba(245, 196, 81, 0.1);
 }
 .bid-pick-name {
   color: #e2e8f0;
@@ -2234,7 +2234,7 @@ textarea.text-input {
   font-size: 0.9rem;
 }
 .bid-pick-price {
-  color: #818cf8;
+  color: #ffd166;
   font-weight: 700;
   font-size: 0.88rem;
 }
