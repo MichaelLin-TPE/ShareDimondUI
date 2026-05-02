@@ -225,33 +225,35 @@ const isLoginPage = computed(() => {
     <div class="features-modal-container" @click.stop>
       <button class="features-close-btn" @click="showFeaturesModal = false">✕</button>
 
-      <div class="features-header">
-        <h2>🚀 Diamond Core 功能總覽</h2>
-        <p>一站式血盟管理解決方案</p>
-      </div>
+      <div class="features-scroll">
+        <div class="features-header">
+          <h2>🚀 Diamond Core 功能總覽</h2>
+          <p>一站式血盟管理解決方案</p>
+        </div>
 
-      <div class="features-grid">
-        <div
-          v-for="(cat, idx) in featureCategories"
-          :key="idx"
-          class="features-category"
-          :style="{ '--cat-color': cat.color }"
-        >
-          <div class="features-category-title">{{ cat.title }}</div>
-          <div class="features-category-list">
-            <div v-for="(item, i) in cat.items" :key="i" class="features-item">
-              <span class="features-item-icon">{{ item.icon }}</span>
-              <div class="features-item-body">
-                <div class="features-item-name">{{ item.name }}</div>
-                <div class="features-item-desc">{{ item.desc }}</div>
+        <div class="features-grid">
+          <div
+            v-for="(cat, idx) in featureCategories"
+            :key="idx"
+            class="features-category"
+            :style="{ '--cat-color': cat.color }"
+          >
+            <div class="features-category-title">{{ cat.title }}</div>
+            <div class="features-category-list">
+              <div v-for="(item, i) in cat.items" :key="i" class="features-item">
+                <span class="features-item-icon">{{ item.icon }}</span>
+                <div class="features-item-body">
+                  <div class="features-item-name">{{ item.name }}</div>
+                  <div class="features-item-desc">{{ item.desc }}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="features-footer">
-        <span>🛡️ 完全零抽成 &nbsp;·&nbsp; 🔄 WebSocket 即時同步 &nbsp;·&nbsp; 🔔 FCM 推播通知</span>
+        <div class="features-footer">
+          <span>🛡️ 完全零抽成 &nbsp;·&nbsp; 🔄 WebSocket 即時同步 &nbsp;·&nbsp; 🔔 FCM 推播通知</span>
+        </div>
       </div>
     </div>
   </div>
@@ -551,43 +553,58 @@ const isLoginPage = computed(() => {
 /* --- 功能說明彈窗樣式 --- */
 .features-modal-container {
   position: relative;
-  width: 90vw;
+  display: flex;
+  flex-direction: column;
+  width: 92vw;
   max-width: 780px;
   max-height: 88vh;
-  overflow-y: auto;
+  /* dvh 處理手機 URL bar 動態高度 */
+  max-height: 88dvh;
   background: #1a1f2e;
   border: 1px solid #334155;
   border-radius: 20px;
-  padding: 32px 28px 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
   color: #e2e8f0;
+  overflow: hidden; /* close 按鈕在邊緣,內層才滾 */
+}
+
+/* 內層真正捲的容器 */
+.features-scroll {
+  flex: 1;
+  min-height: 0; /* flex item 可縮 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 32px 28px 24px;
   scrollbar-width: thin;
   scrollbar-color: #334155 transparent;
 }
-.features-modal-container::-webkit-scrollbar {
+.features-scroll::-webkit-scrollbar {
   width: 6px;
 }
-.features-modal-container::-webkit-scrollbar-thumb {
+.features-scroll::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 10px;
 }
 
 .features-close-btn {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: #64748b;
-  font-size: 1.3rem;
+  top: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(15, 17, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.15s;
-  z-index: 2;
+  z-index: 10;
+  -webkit-tap-highlight-color: transparent;
 }
 .features-close-btn:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -682,7 +699,12 @@ const isLoginPage = computed(() => {
 
 @media (max-width: 640px) {
   .features-modal-container {
-    padding: 28px 16px 18px;
+    width: 96vw;
+    max-height: 92dvh;
+    border-radius: 16px;
+  }
+  .features-scroll {
+    padding: 48px 16px 18px; /* 上方留空給 close 按鈕,避免重疊 */
   }
   .features-grid {
     grid-template-columns: 1fr;
