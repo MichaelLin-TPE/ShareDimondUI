@@ -493,7 +493,7 @@ const closeManageDialog = () => {
   transform: translateY(-50%);
   width: 4px;
   height: 18px;
-  background: #6366f1;
+  background: #f5c451;
   border-radius: 2px;
 }
 .dash-card-head h3,
@@ -567,7 +567,7 @@ const closeManageDialog = () => {
   color: #64748b;
 }
 .gold {
-  color: #818cf8;
+  color: #ffd166;
   font-weight: bold;
 }
 .join-btn {
@@ -662,7 +662,7 @@ const closeManageDialog = () => {
   position: absolute;
   right: 12px;
   top: 12px;
-  color: #818cf8;
+  color: #ffd166;
   font-weight: bold;
 }
 
@@ -856,8 +856,8 @@ const closeManageDialog = () => {
 }
 
 .person-item.is-selected {
-  border: 1px solid #6366f1;
-  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid #f5c451;
+  background: rgba(245, 196, 81, 0.1);
 }
 
 /* 4. 針對底部按鈕固定位置 */
@@ -980,7 +980,7 @@ const closeManageDialog = () => {
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #818cf8;
+  color: #ffd166;
   font-weight: bold;
   font-size: 0.9rem;
   pointer-events: none;
@@ -1141,8 +1141,8 @@ const closeManageDialog = () => {
   font-family: inherit;
 }
 .mgmt-input:focus {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  border-color: #ffd166;
+  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
 }
 .mgmt-input--inline {
   height: 36px;

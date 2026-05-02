@@ -368,7 +368,7 @@ const {
   transform: translateY(-50%);
   width: 4px;
   height: 18px;
-  background: #6366f1;
+  background: #f5c451;
   border-radius: 2px;
 }
 .dash-card-head h3 {
@@ -393,7 +393,7 @@ const {
   margin: 0;
 
   /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 */
-  accent-color: #818cf8;
+  accent-color: #ffd166;
 
   /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
   transition: transform 0.1s ease;
@@ -424,7 +424,7 @@ const {
 }
 
 .auction-card:hover {
-  border-color: #6366f1;
+  border-color: #f5c451;
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
@@ -471,7 +471,7 @@ const {
 }
 
 .gold {
-  color: #818cf8;
+  color: #ffd166;
 }
 
 .boss-name {
@@ -604,7 +604,7 @@ const {
 }
 
 .card-footer:hover {
-  color: #6366f1;
+  color: #f5c451;
 }
 
 /* Modal 共用樣式 */
@@ -749,12 +749,12 @@ const {
   cursor: pointer;
 }
 .gold {
-  color: #818cf8;
+  color: #ffd166;
   font-weight: bold;
 }
 .person-item.is-selected {
-  border: 1px solid #6366f1;
-  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid #f5c451;
+  background: rgba(245, 196, 81, 0.1);
 }
 </style>
 
@@ -766,6 +766,6 @@ const {
   gap: 10px;
 }
 .custom-swal-confirm {
-  background: #6366f1 !important;
+  background: #f5c451 !important;
 }
 </style>
