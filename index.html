@@ -90,8 +90,21 @@
         var global = window;
       }
     </script>
-    <script type="module" crossorigin src="/assets/index-DgyLq2yr.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DMVXnriP.css">
+
+    <!-- 主題初始化：在任何 CSS / Vue 渲染前設好 data-theme,避免閃色 -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('app_theme_v1');
+          if (t !== 'gold' && t !== 'indigo' && t !== 'razer') t = 'indigo';
+          document.documentElement.setAttribute('data-theme', t);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'indigo');
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-FixcWteX.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DFH3yrIF.css">
   </head>
   <body>
     <div id="app"></div>
