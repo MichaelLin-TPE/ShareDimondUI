@@ -889,7 +889,7 @@ onMounted(() => {
   justify-content: center;
   padding: 24px;
   background:
-    radial-gradient(ellipse at top, rgba(245, 196, 81, 0.12), transparent 60%),
+    radial-gradient(ellipse at top, rgba(99, 102, 241, 0.12), transparent 60%),
     #0a0b10;
 }
 .gate-card {
@@ -952,7 +952,7 @@ onMounted(() => {
   gap: 12px;
   font-size: 1.2rem;
   font-weight: 800;
-  color: #ffd166;
+  color: #818cf8;
 }
 .brand-emoji {
   font-size: 1.6rem;
@@ -997,14 +997,14 @@ onMounted(() => {
   white-space: nowrap;
 }
 .tab:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
   transform: translateY(-1px);
 }
 .tab.active {
-  border-color: #ffd166;
-  background: linear-gradient(180deg, rgba(245, 196, 81, 0.14), rgba(22, 24, 34, 0.7));
-  color: #ffd166;
-  box-shadow: 0 6px 18px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.14), rgba(22, 24, 34, 0.7));
+  color: #818cf8;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.15);
 }
 .tab-emoji {
   font-size: 1.25rem;
@@ -1070,8 +1070,8 @@ onMounted(() => {
   color: #4ade80;
 }
 .card-stat {
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(22, 24, 34, 0.55));
-  border-color: rgba(245, 196, 81, 0.25);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(22, 24, 34, 0.55));
+  border-color: rgba(99, 102, 241, 0.25);
 }
 
 /* ===== Form ===== */
@@ -1119,7 +1119,7 @@ onMounted(() => {
 }
 .field:focus {
   outline: none;
-  border-color: #ffd166;
+  border-color: #818cf8;
 }
 .field::placeholder {
   color: #475569;
@@ -1192,14 +1192,14 @@ select.field {
   white-space: nowrap;
 }
 .preset-card:hover {
-  border-color: rgba(245, 196, 81, 0.4);
+  border-color: rgba(99, 102, 241, 0.4);
   transform: translateY(-1px);
 }
 .preset-card.active {
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.18), rgba(245, 158, 11, 0.08));
-  border-color: #ffd166;
-  color: #ffd166;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.18);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(79, 70, 229, 0.08));
+  border-color: #818cf8;
+  color: #818cf8;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.18);
 }
 .preset-label {
   font-weight: 800;
@@ -1211,7 +1211,7 @@ select.field {
   font-variant-numeric: tabular-nums;
 }
 .preset-card.active .preset-sub {
-  color: rgba(255, 209, 102, 0.75);
+  color: rgba(99, 102, 241, 0.75);
 }
 
 .divider {
@@ -1241,8 +1241,8 @@ select.field {
   border-radius: 10px;
 }
 .result-item.result-item-money {
-  border-color: rgba(245, 196, 81, 0.35);
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.08), rgba(0, 0, 0, 0.3));
+  border-color: rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(0, 0, 0, 0.3));
 }
 .result-item.result-item-muted {
   opacity: 0.7;
@@ -1258,7 +1258,7 @@ select.field {
   word-break: break-all;
 }
 .money-big {
-  color: #ffd166 !important;
+  color: #818cf8 !important;
   font-size: 1.3rem !important;
 }
 
@@ -1289,7 +1289,7 @@ select.field {
   font-variant-numeric: tabular-nums;
 }
 .stat-value-money {
-  color: #ffd166;
+  color: #818cf8;
 }
 .stat-divider {
   width: 1px;
@@ -1349,29 +1349,29 @@ select.field {
   font-size: 0.82rem;
 }
 .money {
-  color: #ffd166;
+  color: #818cf8;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 .rate {
-  color: #ffd166;
+  color: #818cf8;
   font-variant-numeric: tabular-nums;
 }
 
 .code-tag {
   display: inline-block;
   padding: 4px 10px;
-  background: rgba(245, 196, 81, 0.1);
-  border: 1px solid rgba(245, 196, 81, 0.25);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
   border-radius: 6px;
-  color: #ffd166;
+  color: #818cf8;
   font-family: monospace;
   font-size: 0.84rem;
   cursor: pointer;
   transition: all 0.15s;
 }
 .code-tag:hover {
-  background: rgba(245, 196, 81, 0.2);
+  background: rgba(99, 102, 241, 0.2);
 }
 
 /* ===== Pill ===== */
@@ -1388,9 +1388,9 @@ select.field {
 }
 .pill-on,
 .pill-pending {
-  background: rgba(245, 158, 11, 0.18);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(79, 70, 229, 0.18);
+  color: #818cf8;
+  border: 1px solid rgba(79, 70, 229, 0.4);
 }
 .pill-off,
 .pill-cancelled {

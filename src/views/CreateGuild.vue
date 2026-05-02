@@ -262,14 +262,14 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 .cg-icon {
   font-size: 2.4rem;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 10px rgba(245, 196, 81, 0.5));
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.5));
 }
 .cg-title {
   margin: 0 0 6px;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -299,7 +299,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
   font-size: 0.78rem;
   font-weight: 800;
@@ -351,8 +351,8 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   box-sizing: border-box;
 }
 .cg-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .cg-input::placeholder {
   color: #475569;
@@ -374,7 +374,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   color: #f87171;
 }
 .cg-hint strong {
-  color: #ffd166;
+  color: #818cf8;
 }
 
 /* Currency input + add button */
@@ -434,14 +434,14 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   font-weight: 600;
 }
 .cg-tag.base {
-  background: rgba(245, 196, 81, 0.1);
-  border-color: rgba(245, 196, 81, 0.4);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #818cf8;
 }
 .cg-tag-badge {
   font-size: 0.78rem;
   padding: 1px 6px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
   border-radius: 10px;
   font-weight: 800;
@@ -481,9 +481,9 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   transition: all 0.15s;
 }
 .cg-base-chip input:checked + span {
-  background: rgba(245, 196, 81, 0.12);
-  border-color: #ffd166;
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #818cf8;
+  color: #818cf8;
 }
 
 /* Exchange rate */
@@ -502,7 +502,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   flex: 1;
   text-align: center;
   font-weight: 700;
-  color: #ffd166;
+  color: #818cf8;
   min-width: 0;
 }
 

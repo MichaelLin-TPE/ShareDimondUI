@@ -523,8 +523,8 @@ h1 {
 }
 
 .balance-row.clan:hover {
-  border-color: rgba(245, 196, 81, 0.2);
-  box-shadow: 0 6px 20px rgba(245, 196, 81, 0.08);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.08);
 }
 
 .row-header {
@@ -541,7 +541,7 @@ h1 {
 }
 
 .icon-wrapper.gold {
-  color: #f5c451;
+  color: #818cf8;
 }
 
 .row-title {
@@ -580,7 +580,7 @@ h1 {
 }
 
 .amount-value.gold {
-  color: #f5c451;
+  color: #818cf8;
 }
 
 @media (max-width: 768px) {
@@ -643,7 +643,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #ffd166, #f59e0b);
+  background: linear-gradient(90deg, #818cf8, #4f46e5);
 }
 
 .modal-icon.update-icon {
@@ -665,7 +665,7 @@ h1 {
 }
 
 .update-modal .modal-title {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 1.4rem;
   font-weight: 900;
   margin-bottom: 20px;
@@ -673,8 +673,8 @@ h1 {
   letter-spacing: 0.5px;
   text-align: center;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 
 .modal-desc.update-desc {
@@ -745,7 +745,7 @@ h1 {
 .footer-msg {
   text-align: center;
   font-size: 0.85rem;
-  color: #ffd166;
+  color: #818cf8;
   font-style: italic;
   margin-top: 18px;
   opacity: 0.85;
@@ -903,9 +903,9 @@ h1 {
   cursor: help;
 }
 .trial-chip.trial-warning {
-  background: rgba(245, 158, 11, 0.14);
-  color: #ffd166;
-  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(79, 70, 229, 0.14);
+  color: #818cf8;
+  border-color: rgba(79, 70, 229, 0.4);
 }
 .trial-chip.trial-expired {
   background: rgba(239, 68, 68, 0.18);

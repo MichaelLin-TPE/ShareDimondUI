@@ -78,10 +78,10 @@ const { pendingRequests, handleApproval } = useAuction()
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .subtitle {
   margin: 0;
@@ -97,7 +97,7 @@ const { pendingRequests, handleApproval } = useAuction()
 .stat-card {
   background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-top: 3px solid #ffd166;
+  border-top: 3px solid #818cf8;
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -110,7 +110,7 @@ const { pendingRequests, handleApproval } = useAuction()
   font-weight: 600;
 }
 .stat-value {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -152,7 +152,7 @@ const { pendingRequests, handleApproval } = useAuction()
     box-shadow 0.2s;
 }
 .member-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -166,13 +166,13 @@ const { pendingRequests, handleApproval } = useAuction()
   flex: 0 0 auto;
   width: 42px;
   height: 42px;
-  background: rgba(245, 196, 81, 0.12);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffd166;
+  color: #818cf8;
   font-weight: 800;
   font-size: 1rem;
 }
@@ -245,8 +245,8 @@ const { pendingRequests, handleApproval } = useAuction()
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: rgba(245, 196, 81, 0.06);
-  border: 1px solid rgba(245, 196, 81, 0.22);
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.22);
   border-radius: 12px;
 }
 .info-icon {

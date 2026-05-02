@@ -121,10 +121,10 @@ const memberIdStr = computed({
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .subtitle {
   margin: 0;
@@ -179,9 +179,9 @@ const memberIdStr = computed({
   color: #e2e8f0;
 }
 .currency-chip.active span {
-  background: rgba(245, 196, 81, 0.12);
-  border-color: #ffd166;
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.12);
+  border-color: #818cf8;
+  color: #818cf8;
 }
 
 /* 金額輸入 */
@@ -195,11 +195,11 @@ const memberIdStr = computed({
   transition: all 0.15s;
 }
 .amount-wrapper:focus-within {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .currency-prefix {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 1rem;
   font-weight: 800;
   margin-right: 6px;

@@ -135,7 +135,7 @@ const {
 }
 
 .search-input:focus {
-  border-color: #ffd166;
+  border-color: #818cf8;
 }
 
 .status-tags {
@@ -241,7 +241,7 @@ const {
 .event-role {
   font-size: 13px;
   font-weight: 600;
-  color: #ffd166;
+  color: #818cf8;
   margin-bottom: 6px;
 }
 

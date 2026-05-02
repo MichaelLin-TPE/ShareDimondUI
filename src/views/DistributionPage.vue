@@ -166,7 +166,7 @@ const roleIcon = (role: string) => {
   font-size: 1.5rem;
   font-weight: 800;
   margin: 0 0 4px;
-  background: linear-gradient(135deg, #ffd166, #f5c451);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -247,7 +247,7 @@ const roleIcon = (role: string) => {
   font-weight: 500;
 }
 .chip.active .chip-bal {
-  color: #ffd166;
+  color: #818cf8;
 }
 
 /* Stats Card */
@@ -276,8 +276,8 @@ const roleIcon = (role: string) => {
   font-weight: 800;
   color: #e2e8f0;
 }
-.stat-value.gold { color: #ffd166; }
-.stat-value.warn { color: #fbbf24; }
+.stat-value.gold { color: #818cf8; }
+.stat-value.warn { color: #818cf8; }
 .stat-value.danger { color: #f87171; }
 
 .progress-track {
@@ -376,7 +376,7 @@ const roleIcon = (role: string) => {
   width: 110px;
   background: #0a0e1a;
   border: 1px solid #334155;
-  color: #ffd166;
+  color: #818cf8;
   padding: 7px 10px;
   border-radius: 8px;
   font-size: 0.95rem;

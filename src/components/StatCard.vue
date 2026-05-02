@@ -392,8 +392,8 @@ const {
   cursor: pointer;
   margin: 0;
 
-  /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 (金黃色) */
-  accent-color: #ffd166;
+  /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 */
+  accent-color: #818cf8;
 
   /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
   transition: transform 0.1s ease;
@@ -471,7 +471,7 @@ const {
 }
 
 .gold {
-  color: #f5c451;
+  color: #818cf8;
 }
 
 .boss-name {
@@ -749,7 +749,7 @@ const {
   cursor: pointer;
 }
 .gold {
-  color: #f5c451;
+  color: #818cf8;
   font-weight: bold;
 }
 .person-item.is-selected {

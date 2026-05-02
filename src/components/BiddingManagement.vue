@@ -350,10 +350,10 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   gap: 10px 16px;
   margin-bottom: 8px;
   padding-bottom: 10px;
-  border-bottom: 2px solid rgba(245, 196, 81, 0.35);
+  border-bottom: 2px solid rgba(99, 102, 241, 0.35);
 }
 .group-title {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -385,13 +385,13 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   align-items: center;
   gap: 8px;
   padding: 6px 16px;
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.22), rgba(245, 158, 11, 0.12));
-  border: 1px solid rgba(245, 196, 81, 0.55);
-  color: #ffd166;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(79, 70, 229, 0.12));
+  border: 1px solid rgba(99, 102, 241, 0.55);
+  color: #818cf8;
   border-radius: 999px;
   font-size: 1rem;
   font-weight: 700;
-  box-shadow: 0 0 0 1px rgba(245, 196, 81, 0.15);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.15);
 }
 .sum-amount-num {
   font-family: 'Consolas', 'Monaco', monospace;
@@ -412,12 +412,12 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(245, 196, 81, 0.1);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 999px;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffd166;
+  color: #818cf8;
   white-space: nowrap;
   max-width: 240px;
   overflow: hidden;
@@ -429,13 +429,13 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   min-width: 26px;
   padding: 0 8px;
   height: 22px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 800;
   font-family: 'Consolas', 'Monaco', monospace;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
 }
 
 /* -------------------------------------- */
@@ -456,8 +456,8 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   cursor: pointer;
   margin: 0;
 
-  /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 (金黃色) */
-  accent-color: #ffd166;
+  /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 */
+  accent-color: #818cf8;
 
   /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
   transition: transform 0.1s ease;
@@ -569,7 +569,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   color: #f1f5f9;
 }
 .gold {
-  color: #f5c451;
+  color: #818cf8;
   font-weight: bold;
 }
 

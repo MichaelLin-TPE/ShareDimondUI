@@ -284,7 +284,7 @@ onMounted(() => {
 }
 .g-status strong {
   font-size: 1.3rem;
-  color: #fbbf24;
+  color: #818cf8;
   padding: 0 4px;
 }
 .g-status.win {
@@ -403,7 +403,7 @@ onMounted(() => {
   width: 36px;
   font-size: 1.5rem;
   font-weight: 800;
-  color: #fbbf24;
+  color: #818cf8;
 }
 
 /* Buttons */
@@ -502,9 +502,9 @@ onMounted(() => {
 .g-b {
   padding: 2px 8px;
   border-radius: 5px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: rgba(79, 70, 229, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(79, 70, 229, 0.3);
   font-size: 0.75rem;
   font-weight: 700;
 }
