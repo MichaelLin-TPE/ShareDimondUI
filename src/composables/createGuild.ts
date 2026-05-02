@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { trackSignupConversion } from '@/utils/gads'
 
 export function useAuction() {
   const authStore = useAuthStore()
@@ -119,6 +120,11 @@ export function useAuction() {
       }
       authStore.setToken(data.authToken)
       authStore.setMember(data)
+
+      // 🎯 Google Ads 轉換追蹤 — 建立血盟成功 = 註冊試用
+      // 用 clanId 當 transaction_id 防止重複計算
+      trackSignupConversion(2000, 'TWD', data.clanId)
+
       await new Promise((resolve) => setTimeout(resolve, 1000))
       useAlert.success(`血盟「${form.value.guildName}」建立成功！`)
       router.replace('/clan')
