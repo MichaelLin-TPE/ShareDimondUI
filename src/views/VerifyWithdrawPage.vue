@@ -86,10 +86,10 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .subtitle {
   margin: 0;
@@ -127,10 +127,10 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
   line-height: 1.1;
 }
 .stat-card.pending {
-  border-top: 3px solid #ffd166;
+  border-top: 3px solid #818cf8;
 }
 .stat-card.pending .stat-value {
-  color: #ffd166;
+  color: #818cf8;
 }
 .stat-card.amount {
   border-top: 3px solid rgba(255, 255, 255, 0.18);
@@ -171,7 +171,7 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
     box-shadow 0.2s;
 }
 .request-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -186,13 +186,13 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
   flex: 0 0 auto;
   width: 38px;
   height: 38px;
-  background: rgba(245, 196, 81, 0.12);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffd166;
+  color: #818cf8;
   font-weight: 800;
   font-size: 0.95rem;
 }
@@ -224,14 +224,14 @@ const { totalAmount, withdrawHistoryList, handleAction } = useAuction()
 .amount-currency {
   display: inline-block;
   padding: 1px 8px;
-  background: rgba(245, 196, 81, 0.12);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 700;
 }
 .amount-value {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.3px;

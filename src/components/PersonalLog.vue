@@ -298,9 +298,9 @@ const formatAmount = (value: number, currencyCode: string) => {
 
 /* 該幣別被選中時的高亮樣式 */
 .currency-tab.is-active {
-  background: rgba(255, 209, 102, 0.15);
-  border-color: rgba(255, 209, 102, 0.5);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: #818cf8;
   font-weight: bold;
 }
 
@@ -334,7 +334,7 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .border-gold {
-  border-top: 3px solid #ffd166;
+  border-top: 3px solid #818cf8;
 }
 .border-blue {
   border-top: 3px solid rgba(255, 255, 255, 0.18);
@@ -353,7 +353,7 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .text-gold {
-  color: #ffd166;
+  color: #818cf8;
 }
 .text-blue {
   color: #e2e8f0;
@@ -383,8 +383,8 @@ const formatAmount = (value: number, currencyCode: string) => {
 }
 
 .search-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .status-tags {
@@ -481,7 +481,7 @@ const formatAmount = (value: number, currencyCode: string) => {
 .event-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
 }
 
 .event-role {

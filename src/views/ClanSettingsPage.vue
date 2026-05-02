@@ -308,10 +308,10 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .cs-sub {
   margin: 0;
@@ -346,7 +346,7 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 }
 .cs-card-icon {
   font-size: 1.6rem;
-  filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.45));
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.45));
 }
 .cs-card-head h3 {
   margin: 0 0 2px;
@@ -411,8 +411,8 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 }
 .cs-input:focus,
 .cs-textarea:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .cs-textarea {
   resize: none;
@@ -475,8 +475,8 @@ select.cs-input {
   flex-shrink: 0;
 }
 .cs-toggle.active .cs-toggle-track {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  box-shadow: 0 0 8px rgba(245, 196, 81, 0.35);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.35);
 }
 .cs-toggle-handle {
   width: 16px;
@@ -515,8 +515,8 @@ select.cs-input {
   transition: all 0.15s;
 }
 .cs-currency-item.base {
-  border-color: rgba(245, 196, 81, 0.4);
-  background: rgba(245, 196, 81, 0.05);
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.05);
 }
 .cs-currency-item.disabled {
   opacity: 0.55;
@@ -545,13 +545,13 @@ select.cs-input {
   letter-spacing: 0.3px;
 }
 .cs-currency-badge.base {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
 }
 .cs-currency-badge.on {
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.4);
 }
 .cs-currency-badge.off {
   background: rgba(100, 116, 139, 0.15);
@@ -571,8 +571,8 @@ select.cs-input {
   padding: 0;
 }
 .cs-toggle-btn.on {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  box-shadow: 0 0 8px rgba(245, 196, 81, 0.35);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.35);
 }
 .cs-toggle-btn.off {
   background: #3a3f5c;
@@ -625,7 +625,7 @@ select.cs-input {
   flex: 1;
   text-align: center;
   font-weight: 700;
-  color: #ffd166;
+  color: #818cf8;
   min-width: 0;
 }
 

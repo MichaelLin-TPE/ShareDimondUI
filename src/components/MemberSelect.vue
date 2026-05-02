@@ -128,8 +128,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
   border-color: #3a3f5c;
 }
 .ms-select.is-open .ms-trigger {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 .ms-text {
@@ -147,15 +147,15 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
 .ms-role {
   display: inline-block;
   padding: 1px 8px;
-  background: rgba(245, 196, 81, 0.12);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .ms-chevron {
-  color: #ffd166;
+  color: #818cf8;
   flex-shrink: 0;
   transition: transform 0.22s ease;
 }
@@ -216,12 +216,12 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
     color 0.12s;
 }
 .ms-option:hover {
-  background: rgba(245, 196, 81, 0.08);
+  background: rgba(99, 102, 241, 0.08);
   color: #fff;
 }
 .ms-option.is-selected {
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
   font-weight: 700;
 }
 .ms-option-name {
@@ -240,8 +240,8 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
   border-radius: 999px;
 }
 .ms-option.is-selected .ms-option-role {
-  background: rgba(245, 196, 81, 0.2);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
 }
 
 .ms-pop-enter-active,

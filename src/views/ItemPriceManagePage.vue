@@ -175,7 +175,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   box-sizing: border-box;
 }
 .search-input:focus {
-  border-color: #ffd166;
+  border-color: #818cf8;
 }
 .result-count {
   display: block;
@@ -262,7 +262,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   transition: background 0.15s;
 }
 .cur-row:hover {
-  background: rgba(255, 209, 102, 0.06);
+  background: rgba(99, 102, 241, 0.06);
 }
 .cur-row.row-active {
   background: rgba(244, 96, 96, 0.05);
@@ -289,7 +289,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   min-width: 0;
 }
 .cur-price {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 17px;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -381,7 +381,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   color: rgba(255, 255, 255, 0.4);
 }
 .row-value {
-  color: #ffd166;
+  color: #818cf8;
   font-weight: 600;
 }
 
@@ -405,10 +405,10 @@ const totalOngoing = (group: ItemPriceGroup) =>
   transition: border-color 0.2s;
 }
 .amount-wrapper:focus-within {
-  border-color: #ffd166;
+  border-color: #818cf8;
 }
 .currency-prefix {
-  color: #ffd166;
+  color: #818cf8;
   font-size: 18px;
   font-weight: 700;
   margin-right: 6px;

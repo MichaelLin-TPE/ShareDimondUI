@@ -165,10 +165,10 @@ const handleSave = async () => {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .subtitle {
   margin: 0;
@@ -203,15 +203,15 @@ const handleSave = async () => {
   color: #475569;
 }
 .search-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .changed-pill {
   flex-shrink: 0;
   padding: 6px 12px;
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.4);
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -254,12 +254,12 @@ const handleSave = async () => {
   gap: 12px;
 }
 .member-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .member-card.changed {
-  border-color: rgba(245, 196, 81, 0.45);
-  background: rgba(245, 196, 81, 0.04);
+  border-color: rgba(99, 102, 241, 0.45);
+  background: rgba(99, 102, 241, 0.04);
 }
 
 .member-head {
@@ -271,13 +271,13 @@ const handleSave = async () => {
   flex: 0 0 auto;
   width: 42px;
   height: 42px;
-  background: rgba(245, 196, 81, 0.12);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffd166;
+  color: #818cf8;
   font-weight: 800;
   font-size: 1rem;
 }
@@ -306,8 +306,8 @@ const handleSave = async () => {
   color: #94a3b8;
 }
 .current-role.officer {
-  background: rgba(245, 196, 81, 0.15);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
 }
 .current-role.leader {
   background: rgba(239, 68, 68, 0.15);
@@ -319,8 +319,8 @@ const handleSave = async () => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ffd166;
-  box-shadow: 0 0 8px rgba(245, 196, 81, 0.7);
+  background: #818cf8;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.7);
 }
 
 /* 角色分段控制 (segmented control) — 三段填滿整列 */
@@ -364,9 +364,9 @@ const handleSave = async () => {
   color: #fff;
 }
 .seg-officer.active {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
 }
 .seg-leader.active {
   background: linear-gradient(135deg, #ef4444, #b91c1c);

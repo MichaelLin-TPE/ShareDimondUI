@@ -214,10 +214,10 @@ const {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .subtitle {
   margin: 0;
@@ -244,7 +244,7 @@ const {
   gap: 4px;
 }
 .stat-card.gold-top {
-  border-top-color: #ffd166;
+  border-top-color: #818cf8;
 }
 .stat-card.warn-top {
   border-top-color: #ef4444;
@@ -263,7 +263,7 @@ const {
   font-family: 'Consolas', 'Monaco', monospace;
 }
 .stat-value.gold {
-  color: #ffd166;
+  color: #818cf8;
 }
 .stat-value.warn {
   color: #fca5a5;
@@ -337,7 +337,7 @@ const {
   background: rgba(255, 255, 255, 0.04);
 }
 .seg-btn.active {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
   font-weight: 800;
 }
@@ -374,7 +374,7 @@ const {
   transition: border-color 0.18s, box-shadow 0.2s;
 }
 .item-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .item-card.imminent {
@@ -404,8 +404,8 @@ const {
   font-weight: 700;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(245, 196, 81, 0.12);
-  color: #ffd166;
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
 }
 
 .info-row {
@@ -443,7 +443,7 @@ const {
 }
 .next-value {
   font-weight: 700;
-  color: #ffd166;
+  color: #818cf8;
 }
 .abs-time {
   color: #64748b;
@@ -493,7 +493,7 @@ const {
 .hist-item {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #ffd166;
+  color: #818cf8;
 }
 .hist-arrow {
   color: #64748b;
@@ -575,7 +575,7 @@ const {
   margin: 0 0 16px;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #ffd166;
+  color: #818cf8;
   letter-spacing: 0.5px;
 }
 .field {
@@ -612,8 +612,8 @@ const {
   font-family: inherit;
 }
 .field-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .field-input[type='datetime-local']::-webkit-calendar-picker-indicator {
   filter: invert(1);

@@ -180,17 +180,17 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 }
 .km-icon {
   font-size: 2rem;
-  filter: drop-shadow(0 0 8px rgba(245, 196, 81, 0.45));
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.45));
 }
 .km-title {
   margin: 0 0 4px;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .km-sub {
   margin: 0;
@@ -229,8 +229,8 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 }
 .km-stat.leader { border-color: rgba(239, 68, 68, 0.3); }
 .km-stat.leader .km-stat-num { color: #f87171; }
-.km-stat.officer { border-color: rgba(245, 196, 81, 0.4); }
-.km-stat.officer .km-stat-num { color: #ffd166; }
+.km-stat.officer { border-color: rgba(99, 102, 241, 0.4); }
+.km-stat.officer .km-stat-num { color: #818cf8; }
 .km-stat.member { border-color: rgba(255, 255, 255, 0.12); }
 .km-stat.member .km-stat-num { color: #e2e8f0; }
 
@@ -271,9 +271,9 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   color: #64748b;
 }
 .km-search-input:focus {
-  border-color: #ffd166;
+  border-color: #818cf8;
   background: rgba(22, 24, 34, 1);
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .km-search-icon {
   font-size: 1.05rem;
@@ -335,7 +335,7 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   background: rgba(255, 255, 255, 0.04);
 }
 .km-filter-chip.active {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   color: #0f111a;
   font-weight: 800;
 }
@@ -368,11 +368,11 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   background: rgba(255, 255, 255, 0.05);
 }
 .km-card.leader::before { background: linear-gradient(90deg, #ef4444, #b91c1c); }
-.km-card.officer::before { background: linear-gradient(90deg, #ffd166, #f59e0b); }
+.km-card.officer::before { background: linear-gradient(90deg, #818cf8, #4f46e5); }
 .km-card.member::before { background: linear-gradient(90deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1)); }
 .km-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(99, 102, 241, 0.35);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
@@ -395,7 +395,7 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 .km-avatar.leader { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-.km-avatar.officer { background: linear-gradient(135deg, #ffd166, #f59e0b); color: #0f111a; }
+.km-avatar.officer { background: linear-gradient(135deg, #818cf8, #4f46e5); color: #0f111a; }
 .km-avatar.member { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; }
 
 .km-card-info {
@@ -429,9 +429,9 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 .km-role-badge.officer {
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.4);
 }
 .km-role-badge.member {
   background: rgba(255, 255, 255, 0.06);
@@ -487,8 +487,8 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
 .km-spinner {
   width: 38px;
   height: 38px;
-  border: 3px solid rgba(245, 196, 81, 0.2);
-  border-top-color: #ffd166;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: #818cf8;
   border-radius: 50%;
   margin: 0 auto 14px;
   animation: km-spin 0.8s linear infinite;
@@ -569,7 +569,7 @@ const filters: { key: RoleFilter; label: string; emoji: string }[] = [
   color: #fff;
 }
 .km-modal__avatar.leader { background: linear-gradient(135deg, #ef4444, #b91c1c); }
-.km-modal__avatar.officer { background: linear-gradient(135deg, #ffd166, #f59e0b); color: #0f111a; }
+.km-modal__avatar.officer { background: linear-gradient(135deg, #818cf8, #4f46e5); color: #0f111a; }
 .km-modal__avatar.member { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; }
 .km-modal__name {
   font-size: 1.1rem;

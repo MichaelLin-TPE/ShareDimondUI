@@ -133,10 +133,10 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(99, 102, 241, 0.45),
+    0 2px 12px rgba(79, 70, 229, 0.2);
 }
 .subtitle {
   margin: 0;
@@ -201,7 +201,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   border-bottom: none;
 }
 .setting-row:not(.readonly):not(.danger-row):not(:disabled):hover {
-  background: rgba(245, 196, 81, 0.04);
+  background: rgba(99, 102, 241, 0.04);
 }
 .setting-row:disabled {
   cursor: not-allowed;
@@ -243,7 +243,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #ffd166;
+  color: #818cf8;
   font-size: 0.95rem;
   font-weight: 700;
 }
@@ -279,9 +279,9 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
 .role-officer {
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.4);
 }
 .role-member {
   background: rgba(255, 255, 255, 0.06);
@@ -315,7 +315,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   margin: 0 0 4px;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #ffd166;
+  color: #818cf8;
 }
 .modal-sub {
   text-align: center;
@@ -344,8 +344,8 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   color: #475569;
 }
 .field-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 .modal-actions {
   display: flex;
