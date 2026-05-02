@@ -894,13 +894,29 @@
   </div>
 </footer>
 
-<!-- Google Analytics (跟主站共用同一個 GA) -->
+<!-- Google Analytics + Google Ads -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-HS4P85GCB5"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+
+  // GA4
   gtag('config', 'G-HS4P85GCB5');
+
+  // Google Ads
+  gtag('config', 'AW-698499203');
+
+  // 點擊任何「免費試用」按鈕時觸發 micro-conversion
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('a[href*="gameshare-system.com"]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        if (typeof gtag === 'function') {
+          gtag('event', 'trial_click', { source: 'landing' });
+        }
+      });
+    });
+  });
 </script>
 
 </body>
