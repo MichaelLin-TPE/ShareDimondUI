@@ -44,9 +44,10 @@ export function installFetchInterceptor() {
     try {
       const res = await originalFetch(input, { ...init, signal: controller.signal })
       clearTimeout(timer)
-      // 只對自己 API 的 502 顯示維修彈窗,且 tab 必須在前景(避免背景錯誤誤觸發)
+      // 我們自己 API 收到 5xx (502/503/504 等),tab 在前景時顯示維修彈窗
       if (
-        res.status === 502 &&
+        res.status >= 500 &&
+        res.status < 600 &&
         OUR_API.test(url) &&
         document.visibilityState === 'visible'
       ) {
@@ -68,8 +69,23 @@ export function installFetchInterceptor() {
         } catch {
           /* ignore */
         }
+        throw err
       }
-      // 網路 TypeError 不顯示維護中彈窗,讓各頁自行用 useAlert 處理
+      // CDN/LB 在後端死掉時通常回 502 但沒附 CORS header,
+      // fetch 會直接拋 TypeError(而非 res.status === 502)。
+      // 對自己 API 的網路錯誤 → 視為服務暫停,顯示維修彈窗
+      if (
+        !isAbort &&
+        err instanceof TypeError &&
+        OUR_API.test(url) &&
+        document.visibilityState === 'visible'
+      ) {
+        try {
+          useErrorOverlayStore().triggerMaintenance()
+        } catch {
+          /* ignore */
+        }
+      }
       throw err
     }
   } as typeof fetch
