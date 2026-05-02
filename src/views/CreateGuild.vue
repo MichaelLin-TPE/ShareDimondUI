@@ -251,7 +251,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 /*
   字體階層: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
   顏色階層: #fff / #e2e8f0 / #94a3b8 / #64748b
-  主色: #ffd166 (金) + linear-gradient(135deg, #ffd166, #f59e0b)
+  主色: var(--c-light) (金) + linear-gradient(135deg, var(--c-light), var(--c-deep))
 */
 
 /* Header */
@@ -262,14 +262,14 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 .cg-icon {
   font-size: 2.4rem;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 10px rgba(245, 196, 81, 0.5));
+  filter: drop-shadow(0 0 10px rgba(var(--c-light-rgb), 0.5));
 }
 .cg-title {
   margin: 0 0 6px;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -299,8 +299,8 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-size: 0.78rem;
   font-weight: 800;
   display: flex;
@@ -351,8 +351,8 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   box-sizing: border-box;
 }
 .cg-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 .cg-input::placeholder {
   color: #475569;
@@ -374,7 +374,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   color: #f87171;
 }
 .cg-hint strong {
-  color: #ffd166;
+  color: var(--c-light);
 }
 
 /* Currency input + add button */
@@ -394,8 +394,8 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   margin: 0;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
   font-size: 0.85rem;
   line-height: 1;
@@ -407,7 +407,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+  box-shadow: 0 4px 12px rgba(var(--c-deep-rgb), 0.25);
 }
 .cg-btn-add:hover {
   filter: brightness(1.08);
@@ -434,15 +434,15 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   font-weight: 600;
 }
 .cg-tag.base {
-  background: rgba(245, 196, 81, 0.1);
-  border-color: rgba(245, 196, 81, 0.4);
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.1);
+  border-color: rgba(var(--c-light-rgb), 0.4);
+  color: var(--c-light);
 }
 .cg-tag-badge {
   font-size: 0.78rem;
   padding: 1px 6px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   border-radius: 10px;
   font-weight: 800;
 }
@@ -481,9 +481,9 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   transition: all 0.15s;
 }
 .cg-base-chip input:checked + span {
-  background: rgba(245, 196, 81, 0.12);
-  border-color: #ffd166;
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.12);
+  border-color: var(--c-light);
+  color: var(--c-light);
 }
 
 /* Exchange rate */
@@ -502,7 +502,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   flex: 1;
   text-align: center;
   font-weight: 700;
-  color: #ffd166;
+  color: var(--c-light);
   min-width: 0;
 }
 
@@ -538,16 +538,16 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
 }
 .cg-btn-submit {
   flex: 2;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   border: none;
-  color: #0f111a;
+  color: var(--c-on);
   font-weight: 800;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.3);
 }
 .cg-btn-submit:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 28px rgba(var(--c-deep-rgb), 0.4);
 }
 .cg-btn-submit:disabled {
   opacity: 0.5;

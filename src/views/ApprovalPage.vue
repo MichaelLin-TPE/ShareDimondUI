@@ -57,7 +57,7 @@ const { pendingRequests, handleApproval } = useAuction()
 
 <style scoped>
 /* === 統一規範 ===
-   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   主色: var(--c-light) / linear-gradient(135deg, var(--c-light), var(--c-deep))
    字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
    文字: #fff / #e2e8f0 / #94a3b8 / #64748b
 */
@@ -78,10 +78,10 @@ const { pendingRequests, handleApproval } = useAuction()
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle {
   margin: 0;
@@ -97,7 +97,7 @@ const { pendingRequests, handleApproval } = useAuction()
 .stat-card {
   background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
-  border-top: 3px solid #ffd166;
+  border-top: 3px solid var(--c-light);
   border-radius: 14px;
   padding: 16px 18px;
   display: flex;
@@ -110,7 +110,7 @@ const { pendingRequests, handleApproval } = useAuction()
   font-weight: 600;
 }
 .stat-value {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -152,7 +152,7 @@ const { pendingRequests, handleApproval } = useAuction()
     box-shadow 0.2s;
 }
 .member-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(var(--c-light-rgb), 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 
@@ -166,13 +166,13 @@ const { pendingRequests, handleApproval } = useAuction()
   flex: 0 0 auto;
   width: 42px;
   height: 42px;
-  background: rgba(245, 196, 81, 0.12);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(var(--c-light-rgb), 0.12);
+  border: 1px solid rgba(var(--c-light-rgb), 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 800;
   font-size: 1rem;
 }
@@ -227,15 +227,15 @@ const { pendingRequests, handleApproval } = useAuction()
 }
 .btn-approve {
   flex: 2;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.3);
 }
 .btn-approve:hover {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.45);
 }
 
 /* Info box */
@@ -245,8 +245,8 @@ const { pendingRequests, handleApproval } = useAuction()
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: rgba(245, 196, 81, 0.06);
-  border: 1px solid rgba(245, 196, 81, 0.22);
+  background: rgba(var(--c-light-rgb), 0.06);
+  border: 1px solid rgba(var(--c-light-rgb), 0.22);
   border-radius: 12px;
 }
 .info-icon {

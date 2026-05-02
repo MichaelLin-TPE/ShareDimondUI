@@ -175,7 +175,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   box-sizing: border-box;
 }
 .search-input:focus {
-  border-color: #ffd166;
+  border-color: var(--c-light);
 }
 .result-count {
   display: block;
@@ -262,7 +262,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   transition: background 0.15s;
 }
 .cur-row:hover {
-  background: rgba(245, 196, 81, 0.06);
+  background: rgba(var(--c-light-rgb), 0.06);
 }
 .cur-row.row-active {
   background: rgba(244, 96, 96, 0.05);
@@ -289,7 +289,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   min-width: 0;
 }
 .cur-price {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 17px;
   font-weight: 800;
   letter-spacing: 0.3px;
@@ -381,7 +381,7 @@ const totalOngoing = (group: ItemPriceGroup) =>
   color: rgba(255, 255, 255, 0.4);
 }
 .row-value {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 600;
 }
 
@@ -405,10 +405,10 @@ const totalOngoing = (group: ItemPriceGroup) =>
   transition: border-color 0.2s;
 }
 .amount-wrapper:focus-within {
-  border-color: #ffd166;
+  border-color: var(--c-light);
 }
 .currency-prefix {
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 18px;
   font-weight: 700;
   margin-right: 6px;
@@ -483,8 +483,8 @@ const totalOngoing = (group: ItemPriceGroup) =>
   color: rgba(255, 255, 255, 0.7);
 }
 .btn-confirm {
-  background: linear-gradient(90deg, #ffd166, #e6b800);
-  color: #0f111a;
+  background: linear-gradient(90deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
 }
 .btn-cancel:disabled,
 .btn-confirm:disabled {

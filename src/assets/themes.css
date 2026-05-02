@@ -1,0 +1,41 @@
+/* ===== Theme System =====
+ * 用法: 在 <html> 上設 data-theme="gold" | "indigo" | "razer"
+ * 各 component 用 var(--c-light) / var(--c-deep) / rgba(var(--c-light-rgb), .X)
+ *
+ * --c-light: 主要文字 / icon / 邊框色
+ * --c-mid:   中間漸層色
+ * --c-deep:  按鈕漸層尾色 / 陰影色
+ * --c-light-rgb: 給 rgba() 用的 RGB tuple
+ * --c-deep-rgb:  給 rgba() 用的 RGB tuple (深色版)
+ */
+
+/* 預設 = indigo (深藍紫) */
+:root,
+[data-theme='indigo'] {
+  --c-light: #818cf8;
+  --c-mid: #6366f1;
+  --c-deep: #4f46e5;
+  --c-light-rgb: 99, 102, 241;
+  --c-deep-rgb: 79, 70, 229;
+  --c-on: #ffffff; /* 文字色 on 主題背景 (深藍紫底要白字) */
+}
+
+/* 金色色調 — 跟最初版本一致 */
+[data-theme='gold'] {
+  --c-light: #ffd166;
+  --c-mid: #f5c451;
+  --c-deep: #f59e0b;
+  --c-light-rgb: 245, 196, 81;
+  --c-deep-rgb: 245, 158, 11;
+  --c-on: #0a0b10; /* 文字色 on 主題背景 (亮金底要黑字) */
+}
+
+/* 雷蛇綠 */
+[data-theme='razer'] {
+  --c-light: #44d62c;
+  --c-mid: #34d399;
+  --c-deep: #16a34a;
+  --c-light-rgb: 68, 214, 44;
+  --c-deep-rgb: 22, 163, 74;
+  --c-on: #ffffff; /* 按鈕/tab 要白字 */
+}

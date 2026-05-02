@@ -23,7 +23,7 @@ interface FeatureCategory {
 const featureCategories: FeatureCategory[] = [
   {
     title: '💰 寶物分紅',
-    color: '#f5c451',
+    color: 'var(--c-mid)',
     items: [
       { icon: '🎯', name: '競標開單', desc: '設定底價、時間，成員競價出價搶標' },
       { icon: '💵', name: '固定金額單', desc: '快速固定價格結標，多位得標者隨機抽選' },
@@ -33,7 +33,7 @@ const featureCategories: FeatureCategory[] = [
   },
   {
     title: '💸 金流管理',
-    color: '#f5c451',
+    color: 'var(--c-mid)',
     items: [
       { icon: '🔁', name: '會員轉帳', desc: '公會內成員互轉多幣別貨幣' },
       { icon: '📤', name: '申請提款', desc: '送出提款單，幹部審核後撥款' },
@@ -295,15 +295,15 @@ const isLoginPage = computed(() => {
   gap: 14px;
   padding: 14px 18px;
   margin-bottom: 18px;
-  background: linear-gradient(135deg, rgba(245, 196, 81, 0.18), rgba(245, 158, 11, 0.10));
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: linear-gradient(135deg, rgba(var(--c-light-rgb), 0.18), rgba(var(--c-deep-rgb), 0.10));
+  border: 1px solid rgba(var(--c-light-rgb), 0.4);
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.12);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.12);
 }
 .trial-icon {
   font-size: 1.8rem;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 6px rgba(245, 196, 81, 0.5));
+  filter: drop-shadow(0 0 6px rgba(var(--c-light-rgb), 0.5));
 }
 .trial-text {
   flex: 1;
@@ -316,7 +316,7 @@ const isLoginPage = computed(() => {
   line-height: 1.3;
 }
 .trial-title strong {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 900;
   letter-spacing: 0.5px;
 }
@@ -423,12 +423,12 @@ const isLoginPage = computed(() => {
 /* 年繳高亮樣式 */
 .plan-card.highlight {
   background: linear-gradient(145deg, #1e1e2f, #181825);
-  border: 1px solid #f5c451;
-  box-shadow: 0 0 20px rgba(245, 196, 81, 0.15);
+  border: 1px solid var(--c-mid);
+  box-shadow: 0 0 20px rgba(var(--c-light-rgb), 0.15);
 }
 
 .text-gold {
-  color: #f5c451 !important;
+  color: var(--c-mid) !important;
 }
 
 .save-badge {
@@ -436,8 +436,8 @@ const isLoginPage = computed(() => {
   top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #f5c451, #f59e0b);
-  color: #000;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+  color: var(--c-on);
   font-size: 0.8rem;
   font-weight: bold;
   padding: 4px 12px;
@@ -602,7 +602,7 @@ const isLoginPage = computed(() => {
   margin: 0 0 6px;
   font-size: 1.55rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #f5c451, #a855f7);
+  background: linear-gradient(135deg, var(--c-mid), #a855f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -728,8 +728,8 @@ const isLoginPage = computed(() => {
 }
 
 .nav-link:hover {
-  color: #ffd166;
-  text-shadow: 0 0 8px rgba(245, 196, 81, 0.4);
+  color: var(--c-light);
+  text-shadow: 0 0 8px rgba(var(--c-light-rgb), 0.4);
 }
 
 .divider {

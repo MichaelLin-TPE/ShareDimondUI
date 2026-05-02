@@ -2,8 +2,13 @@
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useSettings } from '@/composables/settings.ts'
+import { useThemeStore, THEMES, type ThemeName } from '@/stores/theme'
 
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
+function pickTheme(t: ThemeName) {
+  themeStore.setTheme(t)
+}
 const {
   showEditNameModal,
   editNameValue,
@@ -61,6 +66,35 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
           <span class="row-label">所屬血盟</span>
           <span class="row-value">{{ currentClan }}</span>
         </div>
+      </div>
+    </section>
+
+    <!-- 主題色系 -->
+    <section class="settings-section">
+      <div class="section-head">
+        <span class="section-title">🎨 主題色系</span>
+        <span class="section-hint">挑一個喜歡的色調,設定會記住下次自動套用</span>
+      </div>
+      <div class="theme-list">
+        <button
+          v-for="t in THEMES"
+          :key="t.key"
+          class="theme-item"
+          :class="{ active: themeStore.current === t.key }"
+          :style="{
+            '--p1': t.preview.light,
+            '--p2': t.preview.deep,
+          }"
+          @click="pickTheme(t.key)"
+        >
+          <span class="theme-swatch"></span>
+          <span class="theme-emoji">{{ t.emoji }}</span>
+          <span class="theme-text">
+            <span class="theme-name">{{ t.label }}</span>
+            <span class="theme-desc">{{ t.desc }}</span>
+          </span>
+          <span class="theme-check" :class="{ on: themeStore.current === t.key }">✓</span>
+        </button>
       </div>
     </section>
 
@@ -133,10 +167,10 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle {
   margin: 0;
@@ -170,6 +204,90 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   color: #64748b;
 }
 
+/* === 主題選擇 (垂直清單,每張全寬) === */
+.theme-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.theme-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px 16px;
+  background: rgba(22, 24, 34, 0.95);
+  border: 2px solid #24263a;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  color: #e2e8f0;
+}
+.theme-item:hover {
+  border-color: var(--p1);
+}
+.theme-item.active {
+  border-color: var(--p1);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--p1) 12%, transparent) 0%,
+    rgba(22, 24, 34, 0.95) 60%);
+}
+.theme-swatch {
+  width: 6px;
+  align-self: stretch;
+  flex-shrink: 0;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--p1), var(--p2));
+}
+.theme-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.theme-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.theme-name {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: 0.5px;
+}
+.theme-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+.theme-item.active .theme-name {
+  color: var(--p1);
+}
+.theme-check {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: transparent;
+  font-size: 0.85rem;
+  font-weight: 900;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+.theme-check.on {
+  background: linear-gradient(135deg, var(--p1), var(--p2));
+  border-color: transparent;
+  color: var(--c-on);
+}
+
 .settings-card {
   background: rgba(22, 24, 34, 0.95);
   border: 1px solid #24263a;
@@ -201,7 +319,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   border-bottom: none;
 }
 .setting-row:not(.readonly):not(.danger-row):not(:disabled):hover {
-  background: rgba(245, 196, 81, 0.04);
+  background: rgba(var(--c-light-rgb), 0.04);
 }
 .setting-row:disabled {
   cursor: not-allowed;
@@ -243,7 +361,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #ffd166;
+  color: var(--c-light);
   font-size: 0.95rem;
   font-weight: 700;
 }
@@ -279,9 +397,9 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
 .role-officer {
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: rgba(var(--c-light-rgb), 0.14);
+  color: var(--c-light);
+  border: 1px solid rgba(var(--c-light-rgb), 0.4);
 }
 .role-member {
   background: rgba(255, 255, 255, 0.06);
@@ -315,7 +433,7 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   margin: 0 0 4px;
   font-size: 1.15rem;
   font-weight: 800;
-  color: #ffd166;
+  color: var(--c-light);
 }
 .modal-sub {
   text-align: center;
@@ -344,8 +462,8 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
   color: #475569;
 }
 .field-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 .modal-actions {
   display: flex;
@@ -375,10 +493,10 @@ const isLeader = computed(() => authStore.member?.role === 'LEADER')
 }
 .btn-confirm {
   flex: 1.4;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 14px rgba(var(--c-deep-rgb), 0.3);
 }
 .btn-confirm:hover:not(:disabled) {
   filter: brightness(1.08);

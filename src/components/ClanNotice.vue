@@ -31,24 +31,28 @@ const { announcement, noticeItemList } = useAuction()
 <style scoped>
 .notice-container {
   margin-bottom: 24px;
-  background: rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(135deg,
+      rgba(var(--c-light-rgb), 0.10) 0%,
+      rgba(var(--c-deep-rgb), 0.04) 100%),
+    rgba(22, 24, 34, 0.7);
   border-radius: 12px;
-  border: 1px solid rgba(255, 215, 0, 0.2); /* 金色邊框點綴 */
+  border: 1px solid rgba(var(--c-light-rgb), 0.25);
   overflow: hidden;
 }
 
 /* 跑馬燈樣式 */
 .marquee-box {
   display: flex;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.25);
   padding: 8px 16px;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(var(--c-light-rgb), 0.12);
 }
 
 .marquee-title {
-  background: #d4af37;
-  color: #1a1a1a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 0.8rem;
@@ -66,7 +70,7 @@ const { announcement, noticeItemList } = useAuction()
 .marquee-track {
   display: inline-block;
   animation: marquee 100s linear infinite;
-  color: #ffd700;
+  color: var(--c-light);
   font-size: 0.95rem;
 }
 

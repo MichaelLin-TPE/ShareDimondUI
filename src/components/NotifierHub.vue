@@ -53,7 +53,7 @@ const alerts = computed<AlertItem[]>(() => {
       icon: '🏪',
       count: marketCount.value,
       title: `${marketCount.value} 件市場掛單,點擊查看`,
-      bg: 'linear-gradient(135deg, #ffd166, #f59e0b)',
+      bg: 'linear-gradient(135deg, var(--c-light), var(--c-deep))',
       onClick: () => {
         router.replace('/clan/marketPlace')
         isOpen.value = false
@@ -234,12 +234,12 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  background: linear-gradient(135deg, #f5c451, #f59e0b);
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
   border: none;
   border-radius: 50%;
   cursor: pointer;
   box-shadow:
-    0 6px 18px rgba(245, 196, 81, 0.45),
+    0 6px 18px rgba(var(--c-light-rgb), 0.45),
     0 2px 6px rgba(0, 0, 0, 0.4);
   transition:
     transform 0.22s cubic-bezier(0.18, 0.89, 0.32, 1.28),
@@ -253,7 +253,7 @@ onUnmounted(() => {
 .hub-main:hover {
   transform: translateY(-2px) scale(1.05);
   box-shadow:
-    0 10px 26px rgba(245, 196, 81, 0.55),
+    0 10px 26px rgba(var(--c-light-rgb), 0.55),
     0 3px 8px rgba(0, 0, 0, 0.5);
 }
 .hub-main:active {
@@ -301,19 +301,19 @@ onUnmounted(() => {
 @keyframes hub-pulse {
   0% {
     box-shadow:
-      0 6px 18px rgba(245, 196, 81, 0.45),
+      0 6px 18px rgba(var(--c-light-rgb), 0.45),
       0 2px 6px rgba(0, 0, 0, 0.4),
-      0 0 0 0 rgba(245, 196, 81, 0.6);
+      0 0 0 0 rgba(var(--c-light-rgb), 0.6);
   }
   60% {
     box-shadow:
-      0 6px 18px rgba(245, 196, 81, 0.45),
+      0 6px 18px rgba(var(--c-light-rgb), 0.45),
       0 2px 6px rgba(0, 0, 0, 0.4),
-      0 0 0 16px rgba(245, 196, 81, 0);
+      0 0 0 16px rgba(var(--c-light-rgb), 0);
   }
   100% {
     box-shadow:
-      0 6px 18px rgba(245, 196, 81, 0.45),
+      0 6px 18px rgba(var(--c-light-rgb), 0.45),
       0 2px 6px rgba(0, 0, 0, 0.4);
   }
 }
@@ -378,7 +378,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: #fff;
-  color: #0f111a;
+  color: var(--c-on);
   border: 2px solid #14171f;
   border-radius: 999px;
   font-size: 0.65rem;

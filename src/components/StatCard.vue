@@ -332,7 +332,7 @@ const {
   border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
 }
 .tooltip-content strong {
-  color: #ffda6a; /* 給標題一個顯眼的顏色，例如金色 */
+  color: var(--c-light); /* 給標題一個顯眼的顏色，例如金色 */
   font-size: 17px; /* 標題再大一點 */
   display: block;
   margin-bottom: 8px;
@@ -368,7 +368,7 @@ const {
   transform: translateY(-50%);
   width: 4px;
   height: 18px;
-  background: #f5c451;
+  background: var(--c-mid);
   border-radius: 2px;
 }
 .dash-card-head h3 {
@@ -393,7 +393,7 @@ const {
   margin: 0;
 
   /* UX 小細節：讓打勾時的顏色符合你暗黑 UI 的主色調 */
-  accent-color: #ffd166;
+  accent-color: var(--c-light);
 
   /* 如果是在手機上，稍微加一點過渡效果會更滑順 */
   transition: transform 0.1s ease;
@@ -424,7 +424,7 @@ const {
 }
 
 .auction-card:hover {
-  border-color: #f5c451;
+  border-color: var(--c-mid);
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
@@ -471,7 +471,7 @@ const {
 }
 
 .gold {
-  color: #ffd166;
+  color: var(--c-light);
 }
 
 .boss-name {
@@ -542,9 +542,9 @@ const {
   width: 100%;
   height: 44px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
   /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
-  color: #000000;
+  color: var(--c-on);
   border: none;
   border-radius: 8px;
   font-weight: bold;
@@ -559,9 +559,9 @@ const {
 }
 
 .submit-btn.btn-assign-gem {
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
   /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
-  color: #1e1e24 !important;
+  color: var(--c-on) !important;
   font-weight: bold;
   border: none;
   border-radius: 8px;
@@ -570,9 +570,9 @@ const {
 }
 
 .submit-btn.btn-verify-gem {
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
   /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
-  color: #1e1e24 !important;
+  color: var(--c-on) !important;
   font-weight: bold;
   border: none;
   border-radius: 8px;
@@ -581,9 +581,9 @@ const {
 }
 
 .btn-verify-get-item {
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
   /* 注意：使用這個顏色時，按鈕文字如果原本是白色，建議改成深色 (例如 #1e1e24) 會更清晰 */
-  color: #1e1e24 !important;
+  color: var(--c-on) !important;
   font-weight: bold;
   border: none;
   border-radius: 8px;
@@ -604,7 +604,7 @@ const {
 }
 
 .card-footer:hover {
-  color: #f5c451;
+  color: var(--c-mid);
 }
 
 /* Modal 共用樣式 */
@@ -677,8 +677,8 @@ const {
 }
 .btn-submit {
   flex: 2;
-  background: linear-gradient(135deg, #f5c451, #f59e0b) !important;
-  color: #000000;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)) !important;
+  color: var(--c-on);
   border: none;
   padding: 12px;
   border-radius: 10px;
@@ -749,12 +749,12 @@ const {
   cursor: pointer;
 }
 .gold {
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: bold;
 }
 .person-item.is-selected {
-  border: 1px solid #f5c451;
-  background: rgba(245, 196, 81, 0.1);
+  border: 1px solid var(--c-mid);
+  background: rgba(var(--c-light-rgb), 0.1);
 }
 </style>
 
@@ -766,6 +766,6 @@ const {
   gap: 10px;
 }
 .custom-swal-confirm {
-  background: #f5c451 !important;
+  background: var(--c-mid) !important;
 }
 </style>

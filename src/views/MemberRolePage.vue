@@ -144,7 +144,7 @@ const handleSave = async () => {
 
 <style scoped>
 /* === 統一規範 ===
-   主色: #ffd166 / linear-gradient(135deg, #ffd166, #f59e0b)
+   主色: var(--c-light) / linear-gradient(135deg, var(--c-light), var(--c-deep))
    字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
    文字: #fff / #e2e8f0 / #94a3b8 / #64748b
 */
@@ -165,10 +165,10 @@ const handleSave = async () => {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
-  color: #ffd166;
+  color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(245, 196, 81, 0.45),
-    0 2px 12px rgba(245, 158, 11, 0.2);
+    0 0 8px rgba(var(--c-light-rgb), 0.45),
+    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
 }
 .subtitle {
   margin: 0;
@@ -203,15 +203,15 @@ const handleSave = async () => {
   color: #475569;
 }
 .search-input:focus {
-  border-color: #ffd166;
-  box-shadow: 0 0 0 3px rgba(245, 196, 81, 0.15);
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
 }
 .changed-pill {
   flex-shrink: 0;
   padding: 6px 12px;
-  background: rgba(245, 196, 81, 0.14);
-  color: #ffd166;
-  border: 1px solid rgba(245, 196, 81, 0.4);
+  background: rgba(var(--c-light-rgb), 0.14);
+  color: var(--c-light);
+  border: 1px solid rgba(var(--c-light-rgb), 0.4);
   border-radius: 999px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -254,12 +254,12 @@ const handleSave = async () => {
   gap: 12px;
 }
 .member-card:hover {
-  border-color: rgba(245, 196, 81, 0.35);
+  border-color: rgba(var(--c-light-rgb), 0.35);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .member-card.changed {
-  border-color: rgba(245, 196, 81, 0.45);
-  background: rgba(245, 196, 81, 0.04);
+  border-color: rgba(var(--c-light-rgb), 0.45);
+  background: rgba(var(--c-light-rgb), 0.04);
 }
 
 .member-head {
@@ -271,13 +271,13 @@ const handleSave = async () => {
   flex: 0 0 auto;
   width: 42px;
   height: 42px;
-  background: rgba(245, 196, 81, 0.12);
-  border: 1px solid rgba(245, 196, 81, 0.35);
+  background: rgba(var(--c-light-rgb), 0.12);
+  border: 1px solid rgba(var(--c-light-rgb), 0.35);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffd166;
+  color: var(--c-light);
   font-weight: 800;
   font-size: 1rem;
 }
@@ -306,8 +306,8 @@ const handleSave = async () => {
   color: #94a3b8;
 }
 .current-role.officer {
-  background: rgba(245, 196, 81, 0.15);
-  color: #ffd166;
+  background: rgba(var(--c-light-rgb), 0.15);
+  color: var(--c-light);
 }
 .current-role.leader {
   background: rgba(239, 68, 68, 0.15);
@@ -319,8 +319,8 @@ const handleSave = async () => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #ffd166;
-  box-shadow: 0 0 8px rgba(245, 196, 81, 0.7);
+  background: var(--c-light);
+  box-shadow: 0 0 8px rgba(var(--c-light-rgb), 0.7);
 }
 
 /* 角色分段控制 (segmented control) — 三段填滿整列 */
@@ -364,9 +364,9 @@ const handleSave = async () => {
   color: #fff;
 }
 .seg-officer.active {
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
 }
 .seg-leader.active {
   background: linear-gradient(135deg, #ef4444, #b91c1c);
@@ -383,19 +383,19 @@ const handleSave = async () => {
   height: 48px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #ffd166, #f59e0b);
-  color: #0f111a;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
   font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 1px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.3);
   transition: all 0.2s;
 }
 .save-btn:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 28px rgba(var(--c-deep-rgb), 0.4);
 }
 .save-btn:disabled {
   cursor: not-allowed;
