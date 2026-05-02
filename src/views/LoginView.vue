@@ -333,7 +333,7 @@ const onForgotPassword = () => {
 
 <style scoped>
 /* === 統一設計變數 ===
-   主色 (LOGO/連結/光暈): #a5b4fc (indigo-300) / linear-gradient(135deg, #a5b4fc, #6366f1)
+   主色 (LOGO/連結/光暈): #818cf8 (indigo-300) / linear-gradient(135deg, #818cf8, #4f46e5)
    按鈕主色: #ffd166 (金) / linear-gradient(135deg, #ffd166, #f59e0b)
    字級: 1.5 / 1 / 0.95 / 0.85 / 0.78 rem
    文字: #fff / #e2e8f0 / #94a3b8 / #64748b
@@ -368,21 +368,21 @@ const onForgotPassword = () => {
 }
 .logo-glow {
   font-size: 42px;
-  color: #a5b4fc;
+  color: #818cf8;
   margin-bottom: 8px;
   text-shadow:
-    0 0 12px rgba(129, 140, 248, 0.85),
-    0 0 32px rgba(99, 102, 241, 0.6);
+    0 0 12px rgba(99, 102, 241, 0.85),
+    0 0 32px rgba(79, 70, 229, 0.6);
 }
 .logo-area h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1.5px;
-  color: #a5b4fc;
+  color: #818cf8;
   text-shadow:
-    0 0 8px rgba(129, 140, 248, 0.5),
-    0 2px 12px rgba(99, 102, 241, 0.25);
+    0 0 8px rgba(99, 102, 241, 0.5),
+    0 2px 12px rgba(79, 70, 229, 0.25);
 }
 .subtitle {
   margin-top: 4px;
@@ -416,8 +416,8 @@ input::placeholder {
   color: #475569;
 }
 input:focus {
-  border-color: #a5b4fc;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 /* ===== 按鈕 (主動作 — 金色漸層) ===== */
@@ -480,8 +480,8 @@ button:disabled {
     text-shadow 0.18s;
 }
 .link:hover {
-  color: #a5b4fc;
-  text-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
+  color: #818cf8;
+  text-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
 /* ===== Modal 遮罩 ===== */
@@ -516,7 +516,7 @@ button:disabled {
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.5px;
-  background: linear-gradient(135deg, #a5b4fc, #6366f1);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -611,10 +611,10 @@ button:disabled {
 .al-logo {
   font-size: 46px;
   font-weight: 700;
-  color: #a5b4fc;
+  color: #818cf8;
   text-shadow:
-    0 0 16px rgba(129, 140, 248, 0.9),
-    0 0 36px rgba(99, 102, 241, 0.6);
+    0 0 16px rgba(99, 102, 241, 0.9),
+    0 0 36px rgba(79, 70, 229, 0.6);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   animation: al-pulse 2s ease-in-out infinite;
 }
@@ -639,10 +639,10 @@ button:disabled {
   inset: 0;
   border-radius: 50%;
   border: 2px solid transparent;
-  border-top-color: #a5b4fc;
-  border-right-color: rgba(99, 102, 241, 0.6);
+  border-top-color: #818cf8;
+  border-right-color: rgba(79, 70, 229, 0.6);
   animation: al-spin 1.2s linear infinite;
-  box-shadow: 0 0 20px rgba(129, 140, 248, 0.35);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
 }
 
 .al-title {
@@ -650,7 +650,7 @@ button:disabled {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 2px;
-  background: linear-gradient(135deg, #a5b4fc, #6366f1);
+  background: linear-gradient(135deg, #818cf8, #4f46e5);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -690,7 +690,7 @@ button:disabled {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #a5b4fc;
+  background: #818cf8;
   opacity: 0.3;
   animation: al-dot 1.2s ease-in-out infinite;
 }
@@ -738,7 +738,7 @@ button:disabled {
   40% {
     opacity: 1;
     transform: scale(1.2);
-    box-shadow: 0 0 8px rgba(129, 140, 248, 0.7);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.7);
   }
 }
 
