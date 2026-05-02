@@ -1242,7 +1242,7 @@ const onEdit = (l: PersonalListing) => {
   color: #818cf8;
 }
 .stat-value.warn {
-  color: #4f46e5;
+  color: #f87171;
 }
 .stat-value.buy {
   color: #a5b4fc;
@@ -1591,8 +1591,8 @@ const onEdit = (l: PersonalListing) => {
   gap: 10px;
 }
 .my-card.waitpay {
-  border-color: rgba(79, 70, 229, 0.5);
-  background: linear-gradient(180deg, rgba(79, 70, 229, 0.08) 0%, rgba(22, 24, 34, 0.95) 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.08) 0%, rgba(22, 24, 34, 0.95) 100%);
 }
 .my-card.history {
   opacity: 0.78;
@@ -1622,9 +1622,9 @@ const onEdit = (l: PersonalListing) => {
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 .status-waitpay {
-  background: rgba(79, 70, 229, 0.18);
-  color: #818cf8;
-  border: 1px solid rgba(79, 70, 229, 0.4);
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
   animation: pulse-warn 2s infinite;
 }
 .status-completed {
@@ -1643,8 +1643,8 @@ const onEdit = (l: PersonalListing) => {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 @keyframes pulse-warn {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 .my-info {
   display: flex;
@@ -1670,7 +1670,7 @@ const onEdit = (l: PersonalListing) => {
 }
 .warn-text {
   font-size: 0.78rem;
-  color: #818cf8;
+  color: #f87171;
 }
 .my-actions {
   display: flex;
@@ -2116,7 +2116,7 @@ const onEdit = (l: PersonalListing) => {
   line-height: 1.4;
 }
 .field-hint.warn {
-  color: #818cf8;
+  color: #f87171;
 }
 .text-input {
   width: 100%;

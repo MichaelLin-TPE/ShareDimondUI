@@ -903,9 +903,9 @@ h1 {
   cursor: help;
 }
 .trial-chip.trial-warning {
-  background: rgba(79, 70, 229, 0.14);
-  color: #818cf8;
-  border-color: rgba(79, 70, 229, 0.4);
+  background: rgba(239, 68, 68, 0.14);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 .trial-chip.trial-expired {
   background: rgba(239, 68, 68, 0.18);
