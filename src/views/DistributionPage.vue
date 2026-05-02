@@ -277,7 +277,7 @@ const roleIcon = (role: string) => {
   color: #e2e8f0;
 }
 .stat-value.gold { color: #818cf8; }
-.stat-value.warn { color: #818cf8; }
+.stat-value.warn { color: #f87171; }
 .stat-value.danger { color: #f87171; }
 
 .progress-track {
