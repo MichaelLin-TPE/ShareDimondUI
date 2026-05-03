@@ -534,15 +534,51 @@ const closeManageDialog = () => {
 .auction-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px; /* 稍微調小網格間距，從 20px 改成 16px */
+  gap: 16px;
   width: 100%;
 }
+/* 手機強制 2 欄 */
+@media (max-width: 640px) {
+  .auction-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 360px) {
+  .auction-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .auction-card {
   background: #161822;
   border: 1px solid #2d3047;
   border-radius: 16px;
   padding: 20px;
   position: relative;
+}
+@media (max-width: 640px) {
+  .auction-card {
+    padding: 12px 12px 14px;
+    border-radius: 12px;
+  }
+  .item-name {
+    font-size: 0.98rem !important;
+  }
+  .boss-tag {
+    font-size: 0.72rem !important;
+  }
+  .divider {
+    margin: 8px 0 !important;
+  }
+  .info-row {
+    font-size: 0.78rem !important;
+    margin-bottom: 5px !important;
+  }
+  .join-btn {
+    height: 38px !important;
+    font-size: 0.85rem !important;
+  }
 }
 .item-name {
   font-size: 1.25rem;

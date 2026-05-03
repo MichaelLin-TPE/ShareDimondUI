@@ -507,6 +507,19 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   width: 100%;
 }
 
+/* 手機強制 2 欄 */
+@media (max-width: 640px) {
+  .auction-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 360px) {
+  .auction-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 卡片美化 */
 .auction-card {
   position: relative;
@@ -523,6 +536,32 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   border-color: var(--c-mid);
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 640px) {
+  .auction-card {
+    padding: 12px 12px 14px;
+    border-radius: 12px;
+  }
+  .auction-card:hover {
+    transform: none;
+  }
+  .item-name {
+    font-size: 0.98rem !important;
+  }
+  .boss-name,
+  .boss-tag {
+    font-size: 0.72rem !important;
+  }
+  .info-row {
+    font-size: 0.78rem !important;
+    margin-bottom: 5px !important;
+  }
+  .submit-btn,
+  .confirm-btn {
+    height: 38px !important;
+    font-size: 0.85rem !important;
+  }
 }
 
 /* 工具按鈕區 */

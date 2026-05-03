@@ -411,6 +411,20 @@ const {
   width: 100%;
 }
 
+/* 手機強制 2 欄 (內容自動精簡) */
+@media (max-width: 640px) {
+  .auction-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+/* 超窄螢幕退回 1 欄 (避免擠到看不清) */
+@media (max-width: 360px) {
+  .auction-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 卡片美化 */
 .auction-card {
   position: relative;
@@ -421,6 +435,56 @@ const {
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+}
+
+/* 手機卡片精簡: padding 縮小 + 字體縮一級 */
+@media (max-width: 640px) {
+  .auction-card {
+    padding: 12px 12px 14px;
+    border-radius: 12px;
+  }
+  .auction-card:hover {
+    transform: none; /* 手機不要 hover 偏移 */
+  }
+  .item-main {
+    margin-bottom: 10px;
+  }
+  .item-main.has-tools {
+    padding-right: 0; /* 工具按鈕另位 */
+    padding-top: 22px;
+  }
+  .item-name {
+    font-size: 0.98rem;
+    line-height: 1.3;
+  }
+  .boss-name {
+    font-size: 0.72rem;
+  }
+  .divider {
+    margin-bottom: 10px;
+  }
+  .info-row {
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+  }
+  .info-row .label {
+    font-size: 0.72rem;
+  }
+  /* 工具按鈕在手機改右上小型 */
+  .card-tools {
+    top: 6px;
+    right: 6px;
+    gap: 4px;
+  }
+  .tool-btn {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  /* 主按鈕 (我要標) 手機留全寬 */
+  .submit-btn {
+    height: 38px;
+    font-size: 0.85rem;
+  }
 }
 
 .auction-card:hover {
