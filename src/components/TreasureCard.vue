@@ -144,15 +144,19 @@ const closeManageDialog = () => {
               class="tool-btn"
               v-show="item.showDeleteTicket"
               @click="handleUpdateRemark(item)"
+              title="備註"
+              aria-label="備註"
             >
-              備註
+              ✎
             </button>
             <button
               class="tool-btn del"
               v-show="item.showDeleteTicket"
               @click="handleDeleteItem(item)"
+              title="撤單"
+              aria-label="撤單"
             >
-              撤單
+              ✕
             </button>
           </div>
           <div class="item-main">
@@ -834,13 +838,18 @@ const closeManageDialog = () => {
 
 /* 基礎按鈕：採用深色玻璃質感 */
 .tool-btn {
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 500;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
   color: #94a3b8;
-  background: rgba(30, 41, 59, 0.6); /* 半透明背景 */
+  background: rgba(30, 41, 59, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: 7px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -866,9 +875,9 @@ const closeManageDialog = () => {
   transform: scale(0.95);
 }
 
-/* 修正 item-main 避免標題太長撞到右側按鈕 */
+/* icon 化後 2 顆按鈕約 60px 寬,留小餘裕 */
 .item-main {
-  padding-right: 110px;
+  padding-right: 64px;
 }
 
 /* Modal 樣式保持原本邏輯但微調 */
