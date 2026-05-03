@@ -167,7 +167,7 @@ const {
 .range-group {
   display: inline-flex;
   align-items: center;
-  height: 44px;
+  height: 46px;
   padding: 4px;
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.3);
@@ -180,7 +180,7 @@ const {
   align-items: center;
   justify-content: center;
   min-width: 76px;
-  height: 36px; /* 44 - padding*2 = 36, 完全填滿父容器內側 */
+  height: 36px; /* 46 - 2(border) - 4*2(padding) = 36,精確填滿內側 */
   padding: 0 16px;
   background: transparent;
   border: none;
@@ -207,8 +207,8 @@ const {
   cursor: not-allowed;
 }
 .refresh-btn {
-  width: 44px;
-  height: 44px; /* 跟 .range-group 同高度,水平對齊一致 */
+  width: 46px;
+  height: 46px; /* 跟 .range-group 同高度,水平對齊 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
