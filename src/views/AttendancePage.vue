@@ -154,7 +154,8 @@ const {
   line-height: 1.5;
 }
 
-/* Range tabs — segmented control 群組 + 獨立 refresh */
+/* Range tabs — segmented control + 獨立 refresh
+   pattern: 父固定 height (44px) + 子固定 height (36px) 完全填滿 */
 .range-tabs {
   display: flex;
   align-items: center;
@@ -166,15 +167,20 @@ const {
 .range-group {
   display: inline-flex;
   align-items: center;
+  height: 44px;
+  padding: 4px;
+  box-sizing: border-box;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 999px;
-  padding: 4px;
   gap: 0;
 }
 .range-btn {
-  min-width: 72px;
-  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  height: 36px; /* 44 - padding*2 = 36, 完全填滿父容器內側 */
   padding: 0 16px;
   background: transparent;
   border: none;
@@ -186,6 +192,7 @@ const {
   font-family: inherit;
   transition: all 0.15s;
   white-space: nowrap;
+  line-height: 1;
 }
 .range-btn:hover:not(:disabled):not(.active) {
   color: var(--c-light);
@@ -193,26 +200,27 @@ const {
 .range-btn.active {
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
-  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
+  box-shadow: 0 2px 6px rgba(var(--c-deep-rgb), 0.3);
 }
 .range-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .refresh-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px; /* 跟 .range-group 同高度,水平對齊一致 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: rgba(22, 24, 34, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 999px;
   color: #cbd5e1;
   font-size: 1rem;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
+  box-sizing: border-box;
 }
 .refresh-btn:hover:not(:disabled) {
   border-color: rgba(var(--c-light-rgb), 0.4);
