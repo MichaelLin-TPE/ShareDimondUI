@@ -25,6 +25,7 @@ import ItemPriceManagePage from '@/views/ItemPriceManagePage.vue'
 import LootTrackerPage from '@/views/LootTrackerPage.vue'
 import SettingsPage from '@/views/SettingsPage.vue'
 import AdminPage from '@/views/AdminPage.vue'
+import AttendancePage from '@/views/AttendancePage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -160,6 +161,10 @@ const router = createRouter({
         {
           path: 'lootTracker',
           component: LootTrackerPage,
+        },
+        {
+          path: 'attendance',
+          component: AttendancePage,
         },
         {
           path: 'settings',
