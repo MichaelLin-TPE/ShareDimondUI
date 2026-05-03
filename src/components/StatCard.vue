@@ -75,16 +75,18 @@ function isExpanded(code: string): boolean {
               v-show="item.showDeleteTicket"
               @click="handleUpdateRemark(item)"
               title="備註"
+              aria-label="備註"
             >
-              備註
+              ✎
             </button>
             <button
               class="tool-btn delete"
               v-show="item.showDeleteTicket"
               @click="handleDeleteItem(item)"
               title="撤單"
+              aria-label="撤單"
             >
-              撤單
+              ✕
             </button>
           </div>
 
@@ -496,7 +498,7 @@ function isExpanded(code: string): boolean {
     min-width: 0;
   }
   .item-main.has-tools {
-    padding-right: 110px; /* 還原 PC 樣式給工具留位 */
+    padding-right: 64px; /* icon 化後 2 顆按鈕 + gap 約 60px,留 4 餘裕 */
   }
   .item-name {
     font-size: 1.05rem;
@@ -573,18 +575,32 @@ function isExpanded(code: string): boolean {
 }
 
 .tool-btn {
-  background: #1f2235;
-  border: 1px solid #3f425b;
-  color: #888;
-  padding: 5px 10px;
-  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  border-radius: 7px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
 }
-
 .tool-btn:hover {
-  background: #2d314d;
-  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+}
+.tool-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
 /* 物品與來源 */
@@ -592,9 +608,9 @@ function isExpanded(code: string): boolean {
   margin-bottom: 15px;
 }
 
-/* 有備註/撤單按鈕時,留右側空間避免長名字被蓋住 */
+/* 有備註/撤單按鈕時,留右側空間避免長名字被蓋住 (icon 化後縮小) */
 .item-main.has-tools {
-  padding-right: 110px;
+  padding-right: 70px;
 }
 
 .item-name {
