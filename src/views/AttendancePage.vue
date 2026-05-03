@@ -218,10 +218,15 @@ const {
 /* refresh 包進跟 range-group 同樣的容器,內部按鈕也是 .range-btn,跟左邊 4 顆完全等高同框 */
 .refresh-wrap {
   flex: 0 0 auto;
-  width: 56px; /* 容器寬度,內側 button 自動佔滿 (= 56 - 8 padding - 2 border) */
+  width: 56px;
 }
 .refresh-btn {
   font-size: 1rem;
+}
+/* hover 跟主題色走 (預設 .range-btn:hover 只給白,改成主題色) */
+.refresh-btn:hover:not(:disabled) {
+  color: var(--c-light);
+  background: rgba(var(--c-light-rgb), 0.1);
 }
 
 /* Stats */
