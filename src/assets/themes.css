@@ -9,15 +9,15 @@
  * --c-deep-rgb:  給 rgba() 用的 RGB tuple (深色版)
  */
 
-/* 預設 = indigo (深藍紫) */
+/* 預設 = indigo (鑽石青 + 紫光,跟 LOGO 同色系) */
 :root,
 [data-theme='indigo'] {
-  --c-light: #818cf8;
-  --c-mid: #6366f1;
-  --c-deep: #4f46e5;
-  --c-light-rgb: 99, 102, 241;
-  --c-deep-rgb: 79, 70, 229;
-  --c-on: #ffffff; /* 文字色 on 主題背景 (深藍紫底要白字) */
+  --c-light: #6cf2ff;          /* 鑽石青 (跟 LOGO 同色) */
+  --c-mid: #9bb4ff;            /* 過渡色 */
+  --c-deep: #b46eff;           /* 紫光 */
+  --c-light-rgb: 108, 242, 255;
+  --c-deep-rgb: 180, 110, 255;
+  --c-on: #0a1428; /* 深海軍藍 — 對比鑽石青 / 紫光 都清楚 */
 }
 
 /* 金色色調 — 跟最初版本一致 */

@@ -105,8 +105,8 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   letter-spacing: 1px;
   color: var(--c-light);
   text-shadow:
-    0 0 8px rgba(var(--c-light-rgb), 0.45),
-    0 2px 12px rgba(var(--c-deep-rgb), 0.2);
+    0 0 6px rgba(var(--c-light-rgb), 0.45),
+    0 0 16px rgba(var(--c-deep-rgb), 0.35);
 }
 .subtitle-row {
   display: inline-flex;

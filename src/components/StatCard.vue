@@ -414,7 +414,7 @@ const {
 /* 手機強制 2 欄 (內容自動精簡) */
 @media (max-width: 640px) {
   .auction-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 10px;
   }
 }
@@ -440,37 +440,56 @@ const {
 /* 手機卡片精簡: padding 縮小 + 字體縮一級 */
 @media (max-width: 640px) {
   .auction-card {
-    padding: 12px 12px 14px;
+    padding: 12px 10px 14px;
     border-radius: 12px;
+    min-width: 0; /* 防 grid 被內容撐爆,確保左右等寬 */
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .auction-card:hover {
-    transform: none; /* 手機不要 hover 偏移 */
+    transform: none;
   }
   .item-main {
     margin-bottom: 10px;
+    min-width: 0;
   }
+  /* 工具按鈕另位後文字才不會被蓋 */
   .item-main.has-tools {
-    padding-right: 0; /* 工具按鈕另位 */
+    padding-right: 0;
     padding-top: 22px;
   }
   .item-name {
-    font-size: 0.98rem;
+    font-size: 0.95rem;
     line-height: 1.3;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
   .boss-name {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    word-break: break-word;
   }
   .divider {
     margin-bottom: 10px;
   }
   .info-row {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     margin-bottom: 6px;
+    gap: 6px;
+    min-width: 0;
   }
   .info-row .label {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
+    flex-shrink: 0;
   }
-  /* 工具按鈕在手機改右上小型 */
+  .info-row .value,
+  .info-row .value-text,
+  .info-row .value-remark,
+  .info-row .value-price {
+    min-width: 0;
+    word-break: break-word;
+    text-align: right;
+  }
+  /* 工具按鈕右上小型 */
   .card-tools {
     top: 6px;
     right: 6px;
@@ -480,7 +499,7 @@ const {
     padding: 3px 6px;
     font-size: 10px;
   }
-  /* 主按鈕 (我要標) 手機留全寬 */
+  /* 主按鈕 (我要標) 手機壓低 */
   .submit-btn {
     height: 38px;
     font-size: 0.85rem;
