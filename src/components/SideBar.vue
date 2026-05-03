@@ -46,6 +46,7 @@ const labelToRoute: Record<string, string> = {
   '🍄 小遊戲': '/clan/game1a2b',
   '💎 物品定價': '/clan/itemPriceManage',
   '📦 掉寶追蹤': '/clan/lootTracker',
+  '📊 出席率': '/clan/attendance',
   '⚙️ 設置': '/clan/settings',
 }
 
