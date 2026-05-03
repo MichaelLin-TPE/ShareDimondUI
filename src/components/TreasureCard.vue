@@ -43,6 +43,18 @@ const {
   deleteBoss,
 } = useAuction()
 
+// 手機卡片展開狀態
+const expandedCards = ref<Set<string>>(new Set())
+function toggleExpand(code: string) {
+  const next = new Set(expandedCards.value)
+  if (next.has(code)) next.delete(code)
+  else next.add(code)
+  expandedCards.value = next
+}
+function isExpanded(code: string): boolean {
+  return expandedCards.value.has(code)
+}
+
 interface ItemOpt { itemId: string; itemName: string }
 interface BossOpt { bossId: string; bossName: string }
 const itemSelectOptions = computed(() =>
@@ -121,7 +133,12 @@ const closeManageDialog = () => {
 
     <div class="auction-container">
       <div class="auction-grid">
-        <div v-for="item in auctions" :key="item.treasureCode" class="auction-card">
+        <div
+          v-for="item in auctions"
+          :key="item.treasureCode"
+          class="auction-card"
+          :class="{ 'is-expanded': isExpanded(item.treasureCode) }"
+        >
           <div class="card-tools">
             <button
               class="tool-btn"
@@ -144,17 +161,17 @@ const closeManageDialog = () => {
           </div>
           <div class="divider"></div>
           <div class="info-body">
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">開單者</span><span class="value">{{ item.ticketOwerName }}</span>
             </div>
             <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
               <span class="label">{{ c.currency }}價格</span
               ><span class="value gold">{{ Number(c.amount).toLocaleString() }}</span>
             </div>
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">種類</span><span class="value">{{ item.treasureType }}</span>
             </div>
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">備註</span
               ><span class="value-remark">{{ item.remark || '無' }}</span>
             </div>
@@ -165,6 +182,10 @@ const closeManageDialog = () => {
             @click="handleJoinItem(item)"
           >
             {{ item.joinButtonDisable ? '已參與 (撤銷)' : '我有參與 +1' }}
+          </button>
+          <button class="expand-toggle" @click="toggleExpand(item.treasureCode)">
+            <span v-if="isExpanded(item.treasureCode)">收起細節 ⌃</span>
+            <span v-else>展開細節 ⌄</span>
           </button>
           <div class="card-footer" @click="handlePeopleCount(item)">
             <span>⏳ {{ formatTime(item.remainSeconds) }}</span>
@@ -537,16 +558,41 @@ const closeManageDialog = () => {
   gap: 16px;
   width: 100%;
 }
-/* 手機強制 2 欄 */
+/* 手機: 單欄精華模式 */
 @media (max-width: 640px) {
   .auction-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
-@media (max-width: 360px) {
-  .auction-grid {
-    grid-template-columns: 1fr;
+
+/* 展開按鈕 — 預設手機才顯示 */
+.expand-toggle {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.expand-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--c-light);
+}
+@media (max-width: 640px) {
+  .expand-toggle {
+    display: block;
+  }
+  /* 預設隱藏 secondary 行,展開後才顯示 */
+  .auction-card:not(.is-expanded) .row-secondary {
+    display: none;
   }
 }
 
@@ -559,28 +605,24 @@ const closeManageDialog = () => {
 }
 @media (max-width: 640px) {
   .auction-card {
-    padding: 12px 10px 14px;
-    border-radius: 12px;
+    padding: 14px 14px 16px;
+    border-radius: 14px;
     min-width: 0;
     overflow: hidden;
     box-sizing: border-box;
   }
   .item-name {
-    font-size: 0.95rem !important;
+    font-size: 1.05rem !important;
     word-break: break-word;
     overflow-wrap: anywhere;
   }
   .boss-tag {
-    font-size: 0.7rem !important;
-    word-break: break-word;
-  }
-  .divider {
-    margin: 8px 0 !important;
+    font-size: 0.78rem !important;
   }
   .info-row {
-    font-size: 0.74rem !important;
-    margin-bottom: 5px !important;
-    gap: 6px;
+    font-size: 0.85rem !important;
+    margin-bottom: 7px !important;
+    gap: 8px;
     min-width: 0;
   }
   .info-row .label {
@@ -593,8 +635,8 @@ const closeManageDialog = () => {
     text-align: right;
   }
   .join-btn {
-    height: 38px !important;
-    font-size: 0.85rem !important;
+    height: 42px !important;
+    font-size: 0.92rem !important;
   }
 }
 .item-name {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useAuction } from '@/composables/statCard.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 
@@ -28,6 +29,18 @@ const {
   openCurrencyModal,
   currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
 } = useAuction()
+
+// 手機卡片展開狀態 (PC 永遠展開)
+const expandedCards = ref<Set<string>>(new Set())
+function toggleExpand(code: string) {
+  const next = new Set(expandedCards.value)
+  if (next.has(code)) next.delete(code)
+  else next.add(code)
+  expandedCards.value = next
+}
+function isExpanded(code: string): boolean {
+  return expandedCards.value.has(code)
+}
 </script>
 
 <template>
@@ -50,7 +63,12 @@ const {
 
     <div class="auction-container">
       <div class="auction-grid">
-        <div v-for="item in auctions" :key="item.treasureCode" class="auction-card">
+        <div
+          v-for="item in auctions"
+          :key="item.treasureCode"
+          class="auction-card"
+          :class="{ 'is-expanded': isExpanded(item.treasureCode) }"
+        >
           <div class="card-tools">
             <button
               class="tool-btn remark"
@@ -78,15 +96,19 @@ const {
           <div class="divider"></div>
 
           <div class="info-section">
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">開單時間</span>
               <span class="value">{{ formatEventTime(item.createDate) }}</span>
             </div>
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">開單者</span>
               <span class="value">{{ item.ticketOwerName }}</span>
             </div>
-            <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
+            <div
+              class="info-row row-secondary"
+              v-for="c in item.treasureCurrencyList"
+              :key="c.currency"
+            >
               <span class="label">{{ c.currency }}價格</span>
               <span class="value gold">{{ Number(c.amount).toLocaleString() }}</span>
             </div>
@@ -111,11 +133,11 @@ const {
                 <span class="value">{{ item.biddingName || '尚未有人出價' }}</span>
               </div>
             </template>
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">備註</span>
               <span class="value-remark">{{ item.remark || '無備註' }}</span>
             </div>
-            <div class="info-row">
+            <div class="info-row row-secondary">
               <span class="label">確認存倉</span>
               <div
                 v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
@@ -133,6 +155,11 @@ const {
               }}</span>
             </div>
           </div>
+
+          <button class="expand-toggle" @click="toggleExpand(item.treasureCode)">
+            <span v-if="isExpanded(item.treasureCode)">收起細節 ⌃</span>
+            <span v-else>展開細節 ⌄</span>
+          </button>
 
           <div v-if="item.treasureType !== 'RANDOM_BUYER'" class="bid-input-box">
             <input
@@ -411,17 +438,11 @@ const {
   width: 100%;
 }
 
-/* 手機強制 2 欄 (內容自動精簡) */
+/* 手機: 單欄 + 卡片精華模式 (展開細節用按鈕切) */
 @media (max-width: 640px) {
   .auction-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 10px;
-  }
-}
-/* 超窄螢幕退回 1 欄 (避免擠到看不清) */
-@media (max-width: 360px) {
-  .auction-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
@@ -437,12 +458,33 @@ const {
   transition: all 0.3s ease;
 }
 
-/* 手機卡片精簡: padding 縮小 + 字體縮一級 */
+/* 展開按鈕 — 預設手機才顯示,PC 自動隱藏 */
+.expand-toggle {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.expand-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--c-light);
+}
+
+/* 手機卡片精華模式: padding 縮小 + 隱藏 secondary 行 + 展開按鈕顯示 */
 @media (max-width: 640px) {
   .auction-card {
-    padding: 12px 10px 14px;
-    border-radius: 12px;
-    min-width: 0; /* 防 grid 被內容撐爆,確保左右等寬 */
+    padding: 14px 14px 16px;
+    border-radius: 14px;
+    min-width: 0;
     overflow: hidden;
     box-sizing: border-box;
   }
@@ -453,32 +495,28 @@ const {
     margin-bottom: 10px;
     min-width: 0;
   }
-  /* 工具按鈕另位後文字才不會被蓋 */
   .item-main.has-tools {
-    padding-right: 0;
-    padding-top: 22px;
+    padding-right: 110px; /* 還原 PC 樣式給工具留位 */
   }
   .item-name {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     line-height: 1.3;
     word-break: break-word;
     overflow-wrap: anywhere;
   }
   .boss-name {
-    font-size: 0.7rem;
-    word-break: break-word;
+    font-size: 0.78rem;
   }
   .divider {
     margin-bottom: 10px;
   }
   .info-row {
-    font-size: 0.74rem;
-    margin-bottom: 6px;
-    gap: 6px;
+    font-size: 0.85rem;
+    margin-bottom: 7px;
+    gap: 8px;
     min-width: 0;
   }
   .info-row .label {
-    font-size: 0.7rem;
     flex-shrink: 0;
   }
   .info-row .value,
@@ -489,20 +527,33 @@ const {
     word-break: break-word;
     text-align: right;
   }
-  /* 工具按鈕右上小型 */
-  .card-tools {
-    top: 6px;
-    right: 6px;
-    gap: 4px;
+  /* 目前最高價區塊放大顯示 (mobile highlight) */
+  .info-row.highlight {
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: rgba(var(--c-light-rgb), 0.08);
+    border-radius: 8px;
   }
-  .tool-btn {
-    padding: 3px 6px;
-    font-size: 10px;
+  .info-row.highlight .label {
+    font-weight: 700;
   }
-  /* 主按鈕 (我要標) 手機壓低 */
+  .info-row.highlight .value-price {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--c-light);
+  }
+  /* 主按鈕 (我要標) */
   .submit-btn {
-    height: 38px;
-    font-size: 0.85rem;
+    height: 42px;
+    font-size: 0.92rem;
+  }
+  /* 展開按鈕顯示 */
+  .expand-toggle {
+    display: block;
+  }
+  /* 預設隱藏 secondary 行,展開後才顯示 */
+  .auction-card:not(.is-expanded) .row-secondary {
+    display: none;
   }
 }
 
