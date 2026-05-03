@@ -510,7 +510,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 /* 手機強制 2 欄 */
 @media (max-width: 640px) {
   .auction-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 10px;
   }
 }
@@ -540,22 +540,40 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 
 @media (max-width: 640px) {
   .auction-card {
-    padding: 12px 12px 14px;
+    padding: 12px 10px 14px;
     border-radius: 12px;
+    min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
   }
   .auction-card:hover {
     transform: none;
   }
   .item-name {
-    font-size: 0.98rem !important;
+    font-size: 0.95rem !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
   }
   .boss-name,
   .boss-tag {
-    font-size: 0.72rem !important;
+    font-size: 0.7rem !important;
+    word-break: break-word;
   }
   .info-row {
-    font-size: 0.78rem !important;
+    font-size: 0.74rem !important;
     margin-bottom: 5px !important;
+    gap: 6px;
+    min-width: 0;
+  }
+  .info-row .label {
+    flex-shrink: 0;
+  }
+  .info-row .gold,
+  .info-row .value,
+  .info-row span:last-child {
+    min-width: 0;
+    word-break: break-word;
+    text-align: right;
   }
   .submit-btn,
   .confirm-btn {

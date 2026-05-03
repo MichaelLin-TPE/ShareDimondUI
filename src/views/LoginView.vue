@@ -371,19 +371,53 @@ const onForgotPassword = () => {
   color: var(--c-light);
   margin-bottom: 8px;
   text-shadow:
-    0 0 12px rgba(var(--c-light-rgb), 0.85),
-    0 0 32px rgba(var(--c-deep-rgb), 0.6);
+    0 0 6px rgba(var(--c-light-rgb), 0.45),
+    0 0 16px rgba(var(--c-deep-rgb), 0.35);
 }
 .logo-area h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1.5px;
-  color: var(--c-light);
+  /* 所有主題: Diamond Core 一律白字,暈光跟主題色 */
+  color: #ffffff;
   text-shadow:
-    0 0 8px rgba(var(--c-light-rgb), 0.5),
-    0 2px 12px rgba(var(--c-deep-rgb), 0.25);
+    0 0 6px rgba(var(--c-light-rgb), 0.45),
+    0 0 16px rgba(var(--c-deep-rgb), 0.35);
 }
+
+/* 紫藍主題: 還原一個月前的菱形配色 + Diamond Core 改白字 */
+:root[data-theme='indigo'] .logo-glow {
+  color: #6cf2ff;
+  text-shadow:
+    0 0 12px rgba(108, 242, 255, 0.9),
+    0 0 32px rgba(180, 110, 255, 0.8);
+}
+:root[data-theme='indigo'] .logo-area h2 {
+  color: #ffffff;
+  text-shadow:
+    0 0 8px rgba(108, 242, 255, 0.45),
+    0 2px 12px rgba(180, 110, 255, 0.3);
+}
+
+/* 自動登入大菱形 + 標題 — 同樣套青紫雙色 (loading 狀態) */
+:root[data-theme='indigo'] .al-logo {
+  color: #6cf2ff;
+  text-shadow:
+    0 0 16px rgba(108, 242, 255, 0.85),
+    0 0 36px rgba(180, 110, 255, 0.7);
+}
+:root[data-theme='indigo'] .al-title {
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  background-clip: initial;
+  color: #ffffff;
+  text-shadow:
+    0 0 8px rgba(108, 242, 255, 0.45),
+    0 2px 12px rgba(180, 110, 255, 0.3);
+}
+
 .subtitle {
   margin-top: 4px;
   font-size: 0.78rem;
@@ -613,8 +647,8 @@ button:disabled {
   font-weight: 700;
   color: var(--c-light);
   text-shadow:
-    0 0 16px rgba(var(--c-light-rgb), 0.9),
-    0 0 36px rgba(var(--c-deep-rgb), 0.6);
+    0 0 6px rgba(var(--c-light-rgb), 0.45),
+    0 0 16px rgba(var(--c-deep-rgb), 0.35);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   animation: al-pulse 2s ease-in-out infinite;
 }
