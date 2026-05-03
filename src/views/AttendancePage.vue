@@ -37,9 +37,16 @@ const {
           {{ opt.label }}
         </button>
       </div>
-      <button class="refresh-btn" @click="load" :disabled="loading" title="重新整理">
-        🔄
-      </button>
+      <div class="range-group refresh-wrap">
+        <button
+          class="range-btn refresh-btn"
+          @click="load"
+          :disabled="loading"
+          title="重新整理"
+        >
+          🔄
+        </button>
+      </div>
     </div>
 
     <!-- 摘要卡 -->
@@ -208,30 +215,13 @@ const {
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* refresh 包進跟 range-group 同樣的容器,內部按鈕也是 .range-btn,跟左邊 4 顆完全等高同框 */
+.refresh-wrap {
+  flex: 0 0 auto;
+  width: 56px; /* 容器寬度,內側 button 自動佔滿 (= 56 - 8 padding - 2 border) */
+}
 .refresh-btn {
-  flex-shrink: 0;
-  width: 48px;
-  height: 48px; /* 跟 .range-group 完全同高 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #14161f;
-  border: 1px solid #24263a;
-  border-radius: 10px;
-  color: #cbd5e1;
-  font-size: 1.1rem;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-  box-sizing: border-box;
-}
-.refresh-btn:hover:not(:disabled) {
-  border-color: rgba(var(--c-light-rgb), 0.4);
-  color: var(--c-light);
-}
-.refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  font-size: 1rem;
 }
 
 /* Stats */
