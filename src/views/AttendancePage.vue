@@ -154,70 +154,72 @@ const {
   line-height: 1.5;
 }
 
-/* Range tabs — segmented control + 獨立 refresh
-   pattern: 父固定 height (44px) + 子固定 height (36px) 完全填滿 */
+/* Range tabs — 抄 PersonalMarket .seg-tabs 成功 pattern */
 .range-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.range-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 4px;
+  background-color: #14161f;
+  border: 1px solid #24263a;
+  border-radius: 10px;
+  gap: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.range-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 38px; /* 48 - 4*2 padding - 1*2 border = 38, 完全填滿 */
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
-}
-.range-group {
-  display: inline-flex;
-  align-items: stretch;
-  height: 44px;
-  padding: 0;
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 999px;
-  overflow: hidden; /* 讓內側 button 被父容器圓角裁切,active 背景才能緊貼邊緣 */
-  gap: 0;
-}
-.range-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 76px;
-  height: 100%; /* 完全填滿父容器內側 (height 自動 = 42px,扣 2 邊框) */
-  padding: 0 18px;
+  padding: 0 12px;
   background: transparent;
   border: none;
-  border-radius: 0; /* 圓角交給父容器 + overflow hidden */
+  border-radius: 7px;
   color: #94a3b8;
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.18s ease;
   white-space: nowrap;
   line-height: 1;
 }
 .range-btn:hover:not(:disabled):not(.active) {
-  color: var(--c-light);
-  background: rgba(var(--c-light-rgb), 0.05);
+  color: #fff;
 }
 .range-btn.active {
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
 }
 .range-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .refresh-btn {
-  width: 44px;
-  height: 44px; /* 跟 .range-group 同高度,水平對齊 */
-  display: inline-flex;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px; /* 跟 .range-group 完全同高 */
+  display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(22, 24, 34, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 999px;
+  background-color: #14161f;
+  border: 1px solid #24263a;
+  border-radius: 10px;
   color: #cbd5e1;
-  font-size: 1rem;
+  font-size: 1.1rem;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
