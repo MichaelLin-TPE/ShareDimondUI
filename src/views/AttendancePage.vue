@@ -166,13 +166,14 @@ const {
 }
 .range-group {
   display: inline-flex;
-  align-items: center;
-  height: 46px;
-  padding: 4px;
+  align-items: stretch;
+  height: 44px;
+  padding: 0;
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 999px;
+  overflow: hidden; /* 讓內側 button 被父容器圓角裁切,active 背景才能緊貼邊緣 */
   gap: 0;
 }
 .range-btn {
@@ -180,35 +181,35 @@ const {
   align-items: center;
   justify-content: center;
   min-width: 76px;
-  height: 36px; /* 46 - 2(border) - 4*2(padding) = 36,精確填滿內側 */
-  padding: 0 16px;
+  height: 100%; /* 完全填滿父容器內側 (height 自動 = 42px,扣 2 邊框) */
+  padding: 0 18px;
   background: transparent;
   border: none;
-  border-radius: 999px;
+  border-radius: 0; /* 圓角交給父容器 + overflow hidden */
   color: #94a3b8;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
   line-height: 1;
 }
 .range-btn:hover:not(:disabled):not(.active) {
   color: var(--c-light);
+  background: rgba(var(--c-light-rgb), 0.05);
 }
 .range-btn.active {
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
-  box-shadow: 0 2px 6px rgba(var(--c-deep-rgb), 0.3);
 }
 .range-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 .refresh-btn {
-  width: 46px;
-  height: 46px; /* 跟 .range-group 同高度,水平對齊 */
+  width: 44px;
+  height: 44px; /* 跟 .range-group 同高度,水平對齊 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
