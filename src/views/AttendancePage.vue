@@ -25,17 +25,19 @@ const {
 
     <!-- 時段切換 -->
     <div class="range-tabs">
-      <button
-        v-for="opt in RANGE_OPTIONS"
-        :key="opt.value"
-        class="range-btn"
-        :class="{ active: range === opt.value }"
-        :disabled="loading"
-        @click="setRange(opt.value)"
-      >
-        {{ opt.label }}
-      </button>
-      <button class="range-btn refresh" @click="load" :disabled="loading" title="重新整理">
+      <div class="range-group">
+        <button
+          v-for="opt in RANGE_OPTIONS"
+          :key="opt.value"
+          class="range-btn"
+          :class="{ active: range === opt.value }"
+          :disabled="loading"
+          @click="setRange(opt.value)"
+        >
+          {{ opt.label }}
+        </button>
+      </div>
+      <button class="refresh-btn" @click="load" :disabled="loading" title="重新整理">
         🔄
       </button>
     </div>
@@ -152,43 +154,73 @@ const {
   line-height: 1.5;
 }
 
-/* Range tabs */
+/* Range tabs — segmented control 群組 + 獨立 refresh */
 .range-tabs {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.range-group {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 4px;
+  gap: 0;
 }
 .range-btn {
-  height: 36px;
+  min-width: 72px;
+  height: 32px;
   padding: 0 16px;
-  background: rgba(22, 24, 34, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  border: none;
   border-radius: 999px;
-  color: #cbd5e1;
+  color: #94a3b8;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s;
+  white-space: nowrap;
 }
-.range-btn:hover:not(:disabled) {
-  border-color: rgba(var(--c-light-rgb), 0.4);
+.range-btn:hover:not(:disabled):not(.active) {
   color: var(--c-light);
 }
 .range-btn.active {
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
-  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
 }
 .range-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.range-btn.refresh {
-  width: 36px;
-  padding: 0;
+.refresh-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 24, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: #cbd5e1;
+  font-size: 1rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.refresh-btn:hover:not(:disabled) {
+  border-color: rgba(var(--c-light-rgb), 0.4);
+  color: var(--c-light);
+}
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Stats */
@@ -367,14 +399,17 @@ const {
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+/* 全部跟主題色,只用透明度區分熱度 (寬度本身已表達 % 大小) */
 .rate-fill.rate-high {
-  background: linear-gradient(90deg, #4ade80, #22c55e);
+  background: linear-gradient(90deg, var(--c-light), var(--c-mid));
+  box-shadow: 0 0 8px rgba(var(--c-light-rgb), 0.35);
 }
 .rate-fill.rate-mid {
-  background: linear-gradient(90deg, var(--c-light), var(--c-deep));
+  background: linear-gradient(90deg, var(--c-mid), var(--c-deep));
 }
 .rate-fill.rate-low {
-  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  background: linear-gradient(90deg, var(--c-deep), var(--c-deep));
+  opacity: 0.7;
 }
 .rate-fill.rate-zero {
   background: rgba(100, 116, 139, 0.4);
@@ -386,13 +421,14 @@ const {
   font-variant-numeric: tabular-nums;
 }
 .rate-num.rate-high {
-  color: #4ade80;
+  color: var(--c-light);
 }
 .rate-num.rate-mid {
   color: var(--c-light);
 }
 .rate-num.rate-low {
-  color: #fbbf24;
+  color: var(--c-light);
+  opacity: 0.7;
 }
 .rate-num.rate-zero {
   color: #64748b;
