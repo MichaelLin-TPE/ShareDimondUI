@@ -1,5 +1,18 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useAuction } from '@/composables/BiddingManageMent.ts'
+
+// 手機卡片展開狀態
+const expandedCards = ref<Set<string>>(new Set())
+function toggleExpand(code: string) {
+  const next = new Set(expandedCards.value)
+  if (next.has(code)) next.delete(code)
+  else next.add(code)
+  expandedCards.value = next
+}
+function isExpanded(code: string): boolean {
+  return expandedCards.value.has(code)
+}
 
 const {
   auctions,
@@ -97,7 +110,12 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
         </div>
 
         <div class="auction-grid">
-          <div v-for="item in group.items" :key="item.treasureCode" class="auction-card">
+          <div
+            v-for="item in group.items"
+            :key="item.treasureCode"
+            class="auction-card"
+            :class="{ 'is-expanded': isExpanded(item.treasureCode) }"
+          >
             <div class="card-tools">
               <button
                 class="tool-btn remark"
@@ -123,11 +141,15 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
             <div class="divider"></div>
 
             <div class="info-section">
-              <div class="info-row">
+              <div class="info-row row-secondary">
                 <span class="label">開單者</span>
                 <span class="value">{{ item.ticketOwerName }}</span>
               </div>
-              <div class="info-row" v-for="c in item.treasureCurrencyList" :key="c.currency">
+              <div
+                class="info-row row-secondary"
+                v-for="c in item.treasureCurrencyList"
+                :key="c.currency"
+              >
                 <span class="label">{{ c.currency }}價格</span
                 ><span class="value">{{ Number(c.amount).toLocaleString() }}</span>
               </div>
@@ -148,11 +170,11 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
                 <span class="label">得標者</span>
                 <span class="value gold">{{ item.biddingName }}</span>
               </div>
-              <div class="info-row">
+              <div class="info-row row-secondary">
                 <span class="label">備註</span>
                 <span class="value-remark">{{ item.remark }}</span>
               </div>
-              <div class="info-row">
+              <div class="info-row row-secondary">
                 <span class="label">確認存倉</span>
                 <div
                   v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
@@ -170,6 +192,11 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
                 }}</span>
               </div>
             </div>
+
+            <button class="expand-toggle" @click="toggleExpand(item.treasureCode)">
+              <span v-if="isExpanded(item.treasureCode)">收起細節 ⌃</span>
+              <span v-else>展開細節 ⌄</span>
+            </button>
 
             <div class="action-wrapper">
               <button
@@ -507,16 +534,40 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   width: 100%;
 }
 
-/* 手機強制 2 欄 */
+/* 手機: 單欄精華模式 */
 @media (max-width: 640px) {
   .auction-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
-@media (max-width: 360px) {
-  .auction-grid {
-    grid-template-columns: 1fr;
+
+/* 展開按鈕 — 預設手機才顯示 */
+.expand-toggle {
+  display: none;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.expand-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--c-light);
+}
+@media (max-width: 640px) {
+  .expand-toggle {
+    display: block;
+  }
+  .auction-card:not(.is-expanded) .row-secondary {
+    display: none;
   }
 }
 
@@ -540,8 +591,8 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 
 @media (max-width: 640px) {
   .auction-card {
-    padding: 12px 10px 14px;
-    border-radius: 12px;
+    padding: 14px 14px 16px;
+    border-radius: 14px;
     min-width: 0;
     overflow: hidden;
     box-sizing: border-box;
@@ -550,19 +601,18 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
     transform: none;
   }
   .item-name {
-    font-size: 0.95rem !important;
+    font-size: 1.05rem !important;
     word-break: break-word;
     overflow-wrap: anywhere;
   }
   .boss-name,
   .boss-tag {
-    font-size: 0.7rem !important;
-    word-break: break-word;
+    font-size: 0.78rem !important;
   }
   .info-row {
-    font-size: 0.74rem !important;
-    margin-bottom: 5px !important;
-    gap: 6px;
+    font-size: 0.85rem !important;
+    margin-bottom: 7px !important;
+    gap: 8px;
     min-width: 0;
   }
   .info-row .label {
@@ -575,10 +625,20 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
     word-break: break-word;
     text-align: right;
   }
+  .info-row.highlight {
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: rgba(var(--c-light-rgb), 0.08);
+    border-radius: 8px;
+  }
+  .info-row.highlight .gold {
+    font-size: 1rem;
+    font-weight: 800;
+  }
   .submit-btn,
   .confirm-btn {
-    height: 38px !important;
-    font-size: 0.85rem !important;
+    height: 42px !important;
+    font-size: 0.92rem !important;
   }
 }
 
