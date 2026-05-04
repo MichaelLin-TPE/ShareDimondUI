@@ -432,14 +432,23 @@ function clearFilter() {
 /* === 搜尋欄 === */
 .bm-search-row {
   display: flex;
+  align-items: center; /* 兩元件都明確 42px,用 center 確保 y 中心對齊 */
   gap: 10px;
   margin-bottom: 16px;
-  align-items: stretch; /* 子元素拉到同高 (42px,跟 .ss-trigger 一致) */
 }
 .bm-search-wrap {
   flex: 1;
   min-width: 0;
   max-width: 360px;
+  display: flex; /* 讓內側 .ss-select 填滿 */
+  align-items: stretch;
+}
+/* 強制 SearchableSelect 內部元素填滿 .bm-search-wrap (預設 .ss-select 沒 height,易產生視覺偏移) */
+.bm-search-wrap :deep(.ss-select) {
+  width: 100%;
+}
+.bm-search-wrap :deep(.ss-trigger) {
+  height: 42px; /* 跟 .bm-clear-btn 完全同 height,絕對對齊 */
 }
 /* 跟 SearchableSelect .ss-trigger 完全同樣的視覺風格 (高度/底色/邊框/圓角/padding/字體) */
 .bm-clear-btn {
