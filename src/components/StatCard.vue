@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAuction } from '@/composables/statCard.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
@@ -55,6 +55,50 @@ function clearItemFilter() {
   filterItem.value = ''
 }
 
+// === WS 推送即時動畫 ===
+// 1) recentlyUpdated: 哪些卡片剛收到 WS 更新 (price/bidder/status 變化),用來打發光 ring
+// 2) liveTick: WS 任何更新就 +1,標題旁的綠點靠它 pulse
+const recentlyUpdated = ref<Set<string>>(new Set())
+const liveTick = ref(0)
+const lastSnapshot = new Map<string, string>()
+
+interface AuctionRow {
+  treasureCode: string
+  currentPrice?: number
+  biddingName?: string
+  biddingMemberContent?: string
+  status?: string
+}
+const snapshotOf = (a: AuctionRow): string =>
+  `${a.currentPrice ?? ''}|${a.biddingName ?? ''}|${a.biddingMemberContent ?? ''}|${a.status ?? ''}`
+
+watch(
+  () => (auctions.value as AuctionRow[]).map((a) => snapshotOf(a)).join('§'),
+  () => {
+    let anyChanged = false
+    for (const a of auctions.value as AuctionRow[]) {
+      const code = a.treasureCode
+      const curr = snapshotOf(a)
+      const prev = lastSnapshot.get(code)
+      if (prev !== undefined && prev !== curr) {
+        anyChanged = true
+        // 加進 set 觸發 ring 動畫,1.4 秒後移除
+        const next = new Set(recentlyUpdated.value)
+        next.add(code)
+        recentlyUpdated.value = next
+        setTimeout(() => {
+          const after = new Set(recentlyUpdated.value)
+          after.delete(code)
+          recentlyUpdated.value = after
+        }, 1400)
+      }
+      lastSnapshot.set(code, curr)
+    }
+    if (anyChanged) liveTick.value++
+  },
+  { immediate: true },
+)
+
 // 手機卡片展開狀態 (PC 永遠展開)
 const expandedCards = ref<Set<string>>(new Set())
 function toggleExpand(code: string) {
@@ -72,6 +116,7 @@ function isExpanded(code: string): boolean {
   <div class="whole_page">
     <div class="dash-card-head">
       <h3>正在競拍 共 {{ filteredAuctions.length }} 件競拍中道具</h3>
+      <span class="live-dot" :class="{ 'is-pulsing': liveTick > 0 }" :key="liveTick" title="即時連線中" aria-hidden="true"></span>
       <div class="tooltip-wrapper">
         <font-awesome-icon :icon="['far', 'circle-question']" class="info-icon" />
         <div class="tooltip-content">
@@ -109,12 +154,15 @@ function isExpanded(code: string): boolean {
       <div v-if="filteredAuctions.length === 0" class="sc-empty">
         沒有符合「{{ filterItem }}」的道具
       </div>
-      <div class="auction-grid">
+      <TransitionGroup tag="div" name="card-flip" class="auction-grid">
         <div
           v-for="item in filteredAuctions"
           :key="item.treasureCode"
           class="auction-card"
-          :class="{ 'is-expanded': isExpanded(item.treasureCode) }"
+          :class="{
+            'is-expanded': isExpanded(item.treasureCode),
+            'just-updated': recentlyUpdated.has(item.treasureCode),
+          }"
         >
           <div class="card-tools">
             <button
@@ -252,7 +300,7 @@ function isExpanded(code: string): boolean {
             <span class="status-tag">{{ handleStatus(item.status) }}</span>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
 
     <div v-if="showCurrencyModal" class="modal-overlay" @click.self="showCurrencyModal = false">
@@ -452,6 +500,104 @@ function isExpanded(code: string): boolean {
   font-weight: normal;
   letter-spacing: 0.5px;
   margin: 0;
+}
+
+/* === LIVE 即時連線小綠點 (WS push 時 pulse,key 變動觸發 re-mount 重播動畫) === */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  position: relative;
+  flex-shrink: 0;
+  align-self: center;
+}
+.live-dot.is-pulsing {
+  animation: live-pulse 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    transform: scale(1);
+  }
+  60% {
+    box-shadow: 0 0 0 14px rgba(34, 197, 94, 0);
+    transform: scale(1.4);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    transform: scale(1);
+  }
+}
+
+/* === TransitionGroup: 卡片進場 / 離場 === */
+.card-flip-enter-from {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.96);
+}
+.card-flip-enter-active {
+  transition:
+    opacity 0.36s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-flip-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+.card-flip-leave-to {
+  opacity: 0;
+  transform: scale(0.92);
+}
+.card-flip-leave-active {
+  position: absolute;
+  transition:
+    opacity 0.24s ease-out,
+    transform 0.28s ease-out;
+}
+/* 卡片重排時的位移動畫 (誰被刪掉旁邊的會滑過去) */
+.card-flip-move {
+  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === WS 推送時,有變動的卡片邊緣亮一下 (主題色 ring) === */
+.auction-card.just-updated {
+  animation: card-update-pulse 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes card-update-pulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(var(--c-light-rgb), 0),
+      0 0 0 0 rgba(var(--c-light-rgb), 0);
+    border-color: var(--c-mid);
+  }
+  20% {
+    box-shadow:
+      0 0 0 2px rgba(var(--c-light-rgb), 0.55),
+      0 0 18px 4px rgba(var(--c-light-rgb), 0.32);
+    border-color: var(--c-light);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(var(--c-light-rgb), 0),
+      0 0 0 0 rgba(var(--c-light-rgb), 0);
+    border-color: #2d3047;
+  }
+}
+
+/* 系統設「減少動畫」的人就讓動畫消失 */
+@media (prefers-reduced-motion: reduce) {
+  .live-dot.is-pulsing,
+  .auction-card.just-updated {
+    animation: none;
+  }
+  .card-flip-enter-active,
+  .card-flip-leave-active,
+  .card-flip-move {
+    transition: none;
+  }
 }
 
 /* === 道具搜尋欄 — 抄 BiddingManagement 暴力對齊範本 (44px + flex-start + !important) === */
