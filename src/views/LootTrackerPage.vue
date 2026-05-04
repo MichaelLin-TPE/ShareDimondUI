@@ -378,8 +378,43 @@ const {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
 }
 .item-card.imminent {
-  border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.7);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04));
+  box-shadow:
+    0 0 0 1px rgba(239, 68, 68, 0.35),
+    0 8px 24px rgba(239, 68, 68, 0.25);
+  position: relative;
+  animation: imminent-pulse 2s ease-in-out infinite;
+}
+.item-card.imminent::before {
+  content: '🔥 即將掉落';
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.5);
+  z-index: 2;
+  white-space: nowrap;
+}
+@keyframes imminent-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(239, 68, 68, 0.35),
+      0 8px 24px rgba(239, 68, 68, 0.25),
+      0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(239, 68, 68, 0.55),
+      0 10px 28px rgba(239, 68, 68, 0.4),
+      0 0 0 6px rgba(239, 68, 68, 0);
+  }
 }
 .item-card.overdue {
   border-color: rgba(255, 255, 255, 0.12);
@@ -451,13 +486,19 @@ const {
   font-weight: 500;
 }
 .badge-imminent {
-  background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  padding: 2px 10px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  padding: 3px 12px;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+  animation: imminent-badge-blink 1.4s ease-in-out infinite;
+}
+@keyframes imminent-badge-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
 }
 .badge-overdue {
   background: rgba(255, 255, 255, 0.06);
