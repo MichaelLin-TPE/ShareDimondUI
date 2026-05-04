@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuction } from '@/composables/statCard.ts'
 import { useAuthStore } from '@/stores/auth.ts'
+import SearchableSelect from '@/components/SearchableSelect.vue'
 
 const {
   auctions,
@@ -30,6 +31,30 @@ const {
   currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
 } = useAuction()
 
+// 道具名稱搜尋
+const filterItem = ref('')
+const itemOptions = computed(() => {
+  const seen = new Set<string>()
+  const list: { value: string; label: string }[] = []
+  for (const a of auctions.value as Array<{ itemName: string }>) {
+    const name = a.itemName
+    if (name && !seen.has(name)) {
+      seen.add(name)
+      list.push({ value: name, label: name })
+    }
+  }
+  return list.sort((a, b) => a.label.localeCompare(b.label, 'zh-Hant'))
+})
+const filteredAuctions = computed(() => {
+  if (!filterItem.value) return auctions.value
+  return (auctions.value as Array<{ itemName: string }>).filter(
+    (a) => a.itemName === filterItem.value,
+  )
+})
+function clearItemFilter() {
+  filterItem.value = ''
+}
+
 // 手機卡片展開狀態 (PC 永遠展開)
 const expandedCards = ref<Set<string>>(new Set())
 function toggleExpand(code: string) {
@@ -46,7 +71,7 @@ function isExpanded(code: string): boolean {
 <template>
   <div class="whole_page">
     <div class="dash-card-head">
-      <h3>正在競拍 共 {{ auctions.length }} 件競拍中道具</h3>
+      <h3>正在競拍 共 {{ filteredAuctions.length }} 件競拍中道具</h3>
       <div class="tooltip-wrapper">
         <font-awesome-icon :icon="['far', 'circle-question']" class="info-icon" />
         <div class="tooltip-content">
@@ -61,10 +86,26 @@ function isExpanded(code: string): boolean {
       </div>
     </div>
 
+    <div v-if="itemOptions.length > 0" class="sc-search-row">
+      <SearchableSelect
+        class="sc-search-input"
+        v-model="filterItem"
+        :options="itemOptions"
+        placeholder="搜尋道具名稱"
+      />
+      <button v-if="filterItem" type="button" class="sc-clear-btn" @click="clearItemFilter">
+        <span class="sc-clear-x">✕</span>
+        <span class="sc-clear-text">清除</span>
+      </button>
+    </div>
+
     <div class="auction-container">
+      <div v-if="filteredAuctions.length === 0" class="sc-empty">
+        沒有符合「{{ filterItem }}」的道具
+      </div>
       <div class="auction-grid">
         <div
-          v-for="item in auctions"
+          v-for="item in filteredAuctions"
           :key="item.treasureCode"
           class="auction-card"
           :class="{ 'is-expanded': isExpanded(item.treasureCode) }"
@@ -405,6 +446,98 @@ function isExpanded(code: string): boolean {
   font-weight: normal;
   letter-spacing: 0.5px;
   margin: 0;
+}
+
+/* === 道具搜尋欄 — 抄 BiddingManagement 暴力對齊範本 (44px + flex-start + !important) === */
+.sc-search-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+.sc-search-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 360px;
+  height: 44px;
+  display: block;
+  vertical-align: top;
+}
+.sc-search-input :deep(.ss-trigger) {
+  height: 44px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+.sc-clear-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 44px;
+  margin: 0;
+  padding: 0 14px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-sizing: border-box;
+  vertical-align: top;
+}
+.sc-clear-btn:hover {
+  border-color: #3a3f5c;
+  color: #fff;
+  background: #14171f;
+}
+.sc-clear-x {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.sc-clear-text {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+.sc-empty {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed #2e3147;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+/* 手機: 整列縮 38px,清除鈕變 38x38 icon-only,搜尋欄滿版 */
+@media (max-width: 640px) {
+  .sc-search-row {
+    gap: 8px;
+  }
+  .sc-search-input {
+    max-width: none;
+    height: 38px;
+  }
+  .sc-search-input :deep(.ss-trigger) {
+    height: 38px !important;
+  }
+  .sc-clear-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 9px;
+  }
+  .sc-clear-text {
+    display: none;
+  }
+  .sc-clear-x {
+    font-size: 0.9rem;
+  }
 }
 
 /* Checkbox 外層容器，確保垂直置中 */
