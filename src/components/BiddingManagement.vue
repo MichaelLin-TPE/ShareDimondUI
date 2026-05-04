@@ -134,11 +134,11 @@ function clearFilter() {
         v-for="group in filteredGroups"
         :key="group.title"
         class="group-wrapper"
-        :class="{ 'is-collapsed': !isGroupExpanded(group.title) }"
+        :class="{ 'is-expanded': isGroupExpanded(group.title) }"
       >
         <div class="group-head" @click="toggleGroup(group.title)" role="button" tabindex="0">
           <h4 class="group-title">
-            <span class="group-chevron">{{ isGroupExpanded(group.title) ? '▾' : '▸' }}</span>
+            <span class="group-chevron">▾</span>
             {{ group.title }}
           </h4>
           <div v-if="isAssigned(group.title)" class="group-summary">
@@ -153,21 +153,21 @@ function clearFilter() {
           </div>
         </div>
 
-        <div
-          v-if="isAssigned(group.title) && isGroupExpanded(group.title)"
-          class="group-items-preview"
-        >
-          <span
-            v-for="entry in itemNameCounts((group.items ?? []) as GroupItem[])"
-            :key="entry.name"
-            class="item-chip"
-            :title="entry.name"
-          >
-            {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
-          </span>
-        </div>
+        <!-- 折疊容器 - 用 CSS grid-template-rows 0fr↔1fr trick 做絲滑 height 動畫 -->
+        <div class="collapse-wrap">
+          <div class="collapse-inner">
+            <div v-if="isAssigned(group.title)" class="group-items-preview">
+              <span
+                v-for="entry in itemNameCounts((group.items ?? []) as GroupItem[])"
+                :key="entry.name"
+                class="item-chip"
+                :title="entry.name"
+              >
+                {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
+              </span>
+            </div>
 
-        <div v-show="isGroupExpanded(group.title)" class="auction-grid">
+            <div class="auction-grid">
           <div
             v-for="item in group.items"
             :key="item.treasureCode"
@@ -292,8 +292,10 @@ function clearFilter() {
               <span class="status-tag">{{ handleStatus(item.status) }}</span>
             </div>
           </div>
-        </div>
-      </div>
+            </div><!-- /.auction-grid -->
+          </div><!-- /.collapse-inner -->
+        </div><!-- /.collapse-wrap -->
+      </div><!-- /.group-wrapper -->
     </div>
 
     <div v-if="showPeopleList" class="show-people-list" @click.self="showPeopleList = false">
@@ -459,10 +461,36 @@ function clearFilter() {
 }
 
 .group-wrapper {
-  margin-bottom: 40px;
+  margin-bottom: 12px; /* 預設摺疊間距小 */
+  transition: margin-bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.group-wrapper.is-collapsed {
-  margin-bottom: 12px; /* 摺疊時間距變小 */
+.group-wrapper.is-expanded {
+  margin-bottom: 40px; /* 展開時間距變大 */
+}
+
+/* === 絲滑折疊動畫: CSS grid 0fr ↔ 1fr trick === */
+.collapse-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group-wrapper.is-expanded .collapse-wrap {
+  grid-template-rows: 1fr;
+}
+.collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+  /* 內容淡入 + 微微下滑進場 */
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group-wrapper.is-expanded .collapse-inner {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.06s; /* 等高度開始撐開後再淡入,更有層次 */
 }
 
 .group-head {
@@ -471,28 +499,41 @@ function clearFilter() {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px 16px;
-  margin-bottom: 8px;
   padding: 10px 12px;
   border-radius: 10px;
-  border-bottom: 2px solid rgba(var(--c-light-rgb), 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   cursor: pointer;
-  transition: background 0.15s;
+  transition:
+    background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-bottom-color 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    border-bottom-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  margin-bottom: 0;
 }
 .group-head:hover {
   background: rgba(var(--c-light-rgb), 0.06);
 }
-.group-wrapper.is-collapsed .group-head {
-  margin-bottom: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+.group-head:active {
+  background: rgba(var(--c-light-rgb), 0.1);
 }
+.group-wrapper.is-expanded .group-head {
+  margin-bottom: 8px;
+  border-bottom: 2px solid rgba(var(--c-light-rgb), 0.35);
+}
+/* 箭頭旋轉動畫 (用單一 ▾ 字元 + transform) */
 .group-chevron {
   display: inline-block;
   width: 14px;
   margin-right: 6px;
   color: var(--c-light);
   font-size: 0.95rem;
-  transition: transform 0.18s;
+  transform: rotate(-90deg); /* 預設摺疊指右 */
+  transform-origin: center;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.group-wrapper.is-expanded .group-chevron {
+  transform: rotate(0deg); /* 展開指下 */
 }
 .group-title {
   color: var(--c-light);
