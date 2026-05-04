@@ -417,8 +417,53 @@ const {
   }
 }
 .item-card.overdue {
-  border-color: rgba(255, 255, 255, 0.12);
-  opacity: 0.85;
+  border-color: rgba(245, 158, 11, 0.65);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.10), rgba(245, 158, 11, 0.03));
+  box-shadow:
+    0 0 0 1px rgba(245, 158, 11, 0.3),
+    0 8px 24px rgba(245, 158, 11, 0.18);
+  position: relative;
+  animation: overdue-pulse 2.4s ease-in-out infinite;
+}
+.item-card.overdue::before {
+  content: '⏰ 已過期';
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1a1a1a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.5);
+  z-index: 2;
+  white-space: nowrap;
+}
+@keyframes overdue-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(245, 158, 11, 0.3),
+      0 8px 24px rgba(245, 158, 11, 0.18),
+      0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(245, 158, 11, 0.5),
+      0 10px 28px rgba(245, 158, 11, 0.3),
+      0 0 0 6px rgba(245, 158, 11, 0);
+  }
+}
+/* 過期 + 即將同時觸發時 (理論上只有 imminent 有效),imminent 優先 */
+.item-card.imminent.overdue {
+  animation: imminent-pulse 2s ease-in-out infinite;
+  border-color: rgba(239, 68, 68, 0.7);
+}
+.item-card.imminent.overdue::before {
+  content: '🔥 即將掉落';
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
 }
 
 .item-head {
@@ -501,13 +546,14 @@ const {
   50% { opacity: 0.65; }
 }
 .badge-overdue {
-  background: rgba(255, 255, 255, 0.06);
-  color: #94a3b8;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 2px 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1a1a1a;
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  padding: 3px 12px;
   border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
 }
 
 /* History list */
