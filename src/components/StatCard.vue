@@ -459,12 +459,12 @@ function isExpanded(code: string): boolean {
   flex: 1;
   min-width: 0;
   max-width: 360px;
-  height: 44px;
+  height: 38px;
   display: block;
   vertical-align: top;
 }
 .sc-search-input :deep(.ss-trigger) {
-  height: 44px !important;
+  height: 38px !important;
   margin: 0 !important;
   box-sizing: border-box !important;
 }
@@ -474,9 +474,9 @@ function isExpanded(code: string): boolean {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 44px;
+  height: 38px;
   margin: 0;
-  padding: 0 14px;
+  padding: 0 12px;
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 10px;
