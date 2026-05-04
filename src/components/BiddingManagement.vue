@@ -115,15 +115,15 @@ function clearFilter() {
       </div>
     </div>
 
-    <!-- 搜尋: 用 SearchableSelect 選人 -->
+    <!-- 搜尋: SearchableSelect 直接當 flex child,避免中間 wrapper 造成對齊偏差
+         抄 .balance-row 的「兩個結構對等的 children」pattern -->
     <div v-if="userOptions.length > 0" class="bm-search-row">
-      <div class="bm-search-wrap">
-        <SearchableSelect
-          v-model="filterUser"
-          :options="userOptions"
-          placeholder="🔍 搜尋得標人..."
-        />
-      </div>
+      <SearchableSelect
+        v-model="filterUser"
+        :options="userOptions"
+        placeholder="🔍 搜尋得標人..."
+        class="bm-search-input"
+      />
       <button v-if="filterUser" type="button" class="bm-clear-btn" @click="clearFilter">
         ✕ 清除
       </button>
@@ -429,26 +429,19 @@ function clearFilter() {
 /* -------------------------------------- */
 /* 新增：群組標題相關樣式 (加在原本 CSS 的最上方) */
 /* -------------------------------------- */
-/* === 搜尋欄 === */
+/* === 搜尋欄 ===
+   抄 .balance-row 模式: 兩個結構對等的 flex children,各自 height 42px,align-items: stretch */
 .bm-search-row {
   display: flex;
-  align-items: center; /* 兩元件都明確 42px,用 center 確保 y 中心對齊 */
+  align-items: stretch; /* 兩個 child 都填滿 row 高度,自然對齊頂部+底部 */
   gap: 10px;
   margin-bottom: 16px;
 }
-.bm-search-wrap {
+/* SearchableSelect 直接當 flex child (透過 class 合併到 .ss-select root) */
+.bm-search-input {
   flex: 1;
   min-width: 0;
   max-width: 360px;
-  display: flex; /* 讓內側 .ss-select 填滿 */
-  align-items: stretch;
-}
-/* 強制 SearchableSelect 內部元素填滿 .bm-search-wrap (預設 .ss-select 沒 height,易產生視覺偏移) */
-.bm-search-wrap :deep(.ss-select) {
-  width: 100%;
-}
-.bm-search-wrap :deep(.ss-trigger) {
-  height: 42px; /* 跟 .bm-clear-btn 完全同 height,絕對對齊 */
 }
 /* 跟 SearchableSelect .ss-trigger 完全同樣的視覺風格 (高度/底色/邊框/圓角/padding/字體) */
 .bm-clear-btn {
