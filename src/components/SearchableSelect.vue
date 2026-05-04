@@ -216,13 +216,19 @@ onUnmounted(() => document.removeEventListener('mousedown', onClickOutside))
   border: none;
   background: rgba(255, 255, 255, 0.08);
   color: #94a3b8;
-  font-size: 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1; /* 確保 X 字元上下置中 */
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  margin: 0;
+  font-family: inherit;
   transition: all 0.15s;
+  box-sizing: border-box;
+  /* 自動垂直對齊到 .ss-trigger (42px 父容器) 的中心,因為父用 align-items: center */
 }
 .ss-clear:hover {
   background: rgba(255, 255, 255, 0.18);

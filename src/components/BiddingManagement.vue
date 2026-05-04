@@ -434,7 +434,7 @@ function clearFilter() {
   display: flex;
   gap: 10px;
   margin-bottom: 16px;
-  align-items: center;
+  align-items: stretch; /* 子元素拉到同高 (42px,跟 .ss-trigger 一致) */
 }
 .bm-search-wrap {
   flex: 1;
@@ -443,17 +443,22 @@ function clearFilter() {
 }
 .bm-clear-btn {
   flex-shrink: 0;
-  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px; /* 跟 SearchableSelect .ss-trigger 完全同高,對齊一致 */
   padding: 0 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 10px; /* 跟 .ss-trigger border-radius 一致 */
   color: #cbd5e1;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
+  line-height: 1;
   transition: all 0.15s;
+  box-sizing: border-box;
 }
 .bm-clear-btn:hover {
   background: rgba(255, 255, 255, 0.08);
