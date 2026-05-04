@@ -125,7 +125,8 @@ function clearFilter() {
         class="bm-search-input"
       />
       <button v-if="filterUser" type="button" class="bm-clear-btn" @click="clearFilter">
-        ✕ 清除
+        <span class="bm-clear-x">✕</span>
+        <span class="bm-clear-text">清除</span>
       </button>
     </div>
 
@@ -478,6 +479,40 @@ function clearFilter() {
   border-color: #3a3f5c;               /* = .ss-trigger:hover 邊框 */
   color: #fff;
   background: #14171f;
+}
+.bm-clear-x {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.bm-clear-text {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+/* 手機: 整列縮成 38px,清除鈕變 38x38 icon-only,搜尋欄滿版 */
+@media (max-width: 640px) {
+  .bm-search-row {
+    gap: 8px;
+  }
+  .bm-search-input {
+    max-width: none;        /* 滿版,不再受 360px 限制 */
+    height: 38px;
+  }
+  .bm-search-input :deep(.ss-trigger) {
+    height: 38px !important; /* 跟外層同步,維持對齊 */
+  }
+  .bm-clear-btn {
+    width: 38px;
+    height: 38px;            /* = .bm-search-input,絕對對齊 */
+    padding: 0;
+    border-radius: 9px;
+  }
+  .bm-clear-text {
+    display: none;
+  }
+  .bm-clear-x {
+    font-size: 0.9rem;
+  }
 }
 
 .group-wrapper {
