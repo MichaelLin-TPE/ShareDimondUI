@@ -36,8 +36,8 @@ const filterItem = ref('')
 const itemOptions = computed(() => {
   const seen = new Set<string>()
   const list: { value: string; label: string }[] = []
-  for (const a of auctions.value as Array<{ itemName: string }>) {
-    const name = a.itemName
+  for (const a of auctions.value) {
+    const name = (a as { itemName: string }).itemName
     if (name && !seen.has(name)) {
       seen.add(name)
       list.push({ value: name, label: name })
@@ -47,8 +47,8 @@ const itemOptions = computed(() => {
 })
 const filteredAuctions = computed(() => {
   if (!filterItem.value) return auctions.value
-  return (auctions.value as Array<{ itemName: string }>).filter(
-    (a) => a.itemName === filterItem.value,
+  return auctions.value.filter(
+    (a) => (a as { itemName: string }).itemName === filterItem.value,
   )
 })
 function clearItemFilter() {
