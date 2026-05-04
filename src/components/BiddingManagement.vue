@@ -441,28 +441,31 @@ function clearFilter() {
   min-width: 0;
   max-width: 360px;
 }
+/* 跟 SearchableSelect .ss-trigger 完全同樣的視覺風格 (高度/底色/邊框/圓角/padding/字體) */
 .bm-clear-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 42px; /* 跟 SearchableSelect .ss-trigger 完全同高,對齊一致 */
-  padding: 0 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px; /* 跟 .ss-trigger border-radius 一致 */
+  gap: 6px;
+  height: 42px;                       /* = .ss-trigger height */
+  padding: 0 14px;                    /* = .ss-trigger padding (左右一致) */
+  background: #0f111a;                /* = .ss-trigger 深底 */
+  border: 1px solid #2e3147;          /* = .ss-trigger 邊框色 */
+  border-radius: 10px;                /* = .ss-trigger 圓角 */
   color: #cbd5e1;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: 0.95rem;                 /* = .ss-input 字體 */
+  font-weight: 500;                   /* = .ss-input 字重 */
   font-family: inherit;
   line-height: 1;
+  cursor: pointer;
   transition: all 0.15s;
   box-sizing: border-box;
 }
 .bm-clear-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  border-color: #3a3f5c;               /* = .ss-trigger:hover 邊框 */
   color: #fff;
+  background: #14171f;
 }
 
 .group-wrapper {
