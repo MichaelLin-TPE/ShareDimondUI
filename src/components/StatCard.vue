@@ -93,9 +93,15 @@ function isExpanded(code: string): boolean {
         :options="itemOptions"
         placeholder="搜尋道具名稱"
       />
-      <button v-if="filterItem" type="button" class="sc-clear-btn" @click="clearItemFilter">
-        <span class="sc-clear-x">✕</span>
-        <span class="sc-clear-text">清除</span>
+      <button
+        v-if="filterItem"
+        type="button"
+        class="sc-clear-btn"
+        title="清除"
+        aria-label="清除"
+        @click="clearItemFilter"
+      >
+        ✕
       </button>
     </div>
 
@@ -468,21 +474,22 @@ function isExpanded(code: string): boolean {
   margin: 0 !important;
   box-sizing: border-box !important;
 }
+/* 清除鈕 — icon-only 38x38 方塊,PC / 手機共用 */
 .sc-clear-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  width: 38px;
   height: 38px;
   margin: 0;
-  padding: 0 12px;
+  padding: 0;
   background: #0f111a;
   border: 1px solid #2e3147;
-  border-radius: 10px;
+  border-radius: 9px;
   color: #cbd5e1;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
   line-height: 1;
   cursor: pointer;
@@ -495,15 +502,6 @@ function isExpanded(code: string): boolean {
   color: #fff;
   background: #14171f;
 }
-.sc-clear-x {
-  font-size: 0.85rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.sc-clear-text {
-  font-size: 0.95rem;
-  line-height: 1;
-}
 .sc-empty {
   padding: 24px;
   text-align: center;
@@ -514,29 +512,13 @@ function isExpanded(code: string): boolean {
   border-radius: 12px;
   margin-bottom: 16px;
 }
-/* 手機: 整列縮 38px,清除鈕變 38x38 icon-only,搜尋欄滿版 */
+/* 手機: 搜尋欄滿版 (按鈕 PC/手機同尺寸,不需重設) */
 @media (max-width: 640px) {
   .sc-search-row {
     gap: 8px;
   }
   .sc-search-input {
     max-width: none;
-    height: 38px;
-  }
-  .sc-search-input :deep(.ss-trigger) {
-    height: 38px !important;
-  }
-  .sc-clear-btn {
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    border-radius: 9px;
-  }
-  .sc-clear-text {
-    display: none;
-  }
-  .sc-clear-x {
-    font-size: 0.9rem;
   }
 }
 
