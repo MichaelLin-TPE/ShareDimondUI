@@ -534,23 +534,22 @@ function isExpanded(code: string): boolean {
 }
 
 /* === TransitionGroup: 兩階段插入動畫 === */
-/* Phase 1 (0~280ms): siblings 用 .card-flip-move 滑去新位置;
-   新卡片占住 grid cell 但 invisible (opacity 0 + scale 0.4),所以「空格」可見 */
-/* Phase 2 (280ms~880ms): 新卡片 elastic scale + fade in,同時打主題色 glow ring,
-   感覺像「從空格中實體化」 */
-.card-flip-enter-from {
+/* 注意: 必須用 .auction-card.card-flip-* 雙 class 把 specificity 拉到 0,2,0,
+   不然會被下面 `.auction-card { transition: all 0.3s ease }` 的 cascade 蓋掉。
+   Phase 1 (0~280ms): siblings 滑去新位置,空格可見 (新卡片 opacity 0 + scale 0.4)
+   Phase 2 (280ms~880ms): 新卡片 elastic scale + fade in + glow ring 同時實體化 */
+.auction-card.card-flip-enter-from {
   opacity: 0;
   transform: scale(0.4);
 }
-.card-flip-enter-to {
+.auction-card.card-flip-enter-to {
   opacity: 1;
   transform: scale(1);
 }
-.card-flip-enter-active {
+.auction-card.card-flip-enter-active {
   transition:
     opacity 0.5s ease-out 0.28s,
     transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.28s;
-  /* 實體化 glow ring,主題色,跟著 elastic scale 一起爆開 */
   animation: card-materialize-glow 1.2s ease-out 0.28s;
 }
 @keyframes card-materialize-glow {
@@ -568,22 +567,21 @@ function isExpanded(code: string): boolean {
   }
 }
 
-.card-flip-leave-from {
+.auction-card.card-flip-leave-from {
   opacity: 1;
   transform: scale(1);
 }
-.card-flip-leave-to {
+.auction-card.card-flip-leave-to {
   opacity: 0;
   transform: scale(0.85);
 }
-.card-flip-leave-active {
+.auction-card.card-flip-leave-active {
   position: absolute;
   transition:
     opacity 0.24s ease-out,
     transform 0.28s ease-out;
 }
-/* siblings 滑去新位置 — 較快 (0.3s),讓「空格」在新卡 fade-in 之前就成形 */
-.card-flip-move {
+.auction-card.card-flip-move {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -616,12 +614,12 @@ function isExpanded(code: string): boolean {
 @media (prefers-reduced-motion: reduce) {
   .live-dot.is-pulsing,
   .auction-card.just-updated,
-  .card-flip-enter-active {
+  .auction-card.card-flip-enter-active {
     animation: none;
   }
-  .card-flip-enter-active,
-  .card-flip-leave-active,
-  .card-flip-move {
+  .auction-card.card-flip-enter-active,
+  .auction-card.card-flip-leave-active,
+  .auction-card.card-flip-move {
     transition: none;
   }
 }
