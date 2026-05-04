@@ -494,7 +494,6 @@ function clearFilter() {
   font-size: 0.95rem;
   transition: transform 0.18s;
 }
-}
 .group-title {
   color: var(--c-light);
   font-size: 1.15rem;
