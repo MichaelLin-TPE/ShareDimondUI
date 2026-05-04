@@ -533,23 +533,48 @@ function isExpanded(code: string): boolean {
   }
 }
 
-/* === TransitionGroup: 卡片進場 / 離場 === */
+/* === TransitionGroup: 兩階段插入動畫 === */
+/* Phase 1 (0~280ms): siblings 用 .card-flip-move 滑去新位置;
+   新卡片占住 grid cell 但 invisible (opacity 0 + scale 0.4),所以「空格」可見 */
+/* Phase 2 (280ms~880ms): 新卡片 elastic scale + fade in,同時打主題色 glow ring,
+   感覺像「從空格中實體化」 */
 .card-flip-enter-from {
   opacity: 0;
-  transform: translateY(-12px) scale(0.96);
+  transform: scale(0.4);
+}
+.card-flip-enter-to {
+  opacity: 1;
+  transform: scale(1);
 }
 .card-flip-enter-active {
   transition:
-    opacity 0.36s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.5s ease-out 0.28s,
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.28s;
+  /* 實體化 glow ring,主題色,跟著 elastic scale 一起爆開 */
+  animation: card-materialize-glow 1.2s ease-out 0.28s;
 }
+@keyframes card-materialize-glow {
+  0%,
+  30% {
+    box-shadow: 0 0 0 0 rgba(var(--c-light-rgb), 0);
+  }
+  60% {
+    box-shadow:
+      0 0 0 2px rgba(var(--c-light-rgb), 0.6),
+      0 0 28px 6px rgba(var(--c-light-rgb), 0.42);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--c-light-rgb), 0);
+  }
+}
+
 .card-flip-leave-from {
   opacity: 1;
   transform: scale(1);
 }
 .card-flip-leave-to {
   opacity: 0;
-  transform: scale(0.92);
+  transform: scale(0.85);
 }
 .card-flip-leave-active {
   position: absolute;
@@ -557,9 +582,9 @@ function isExpanded(code: string): boolean {
     opacity 0.24s ease-out,
     transform 0.28s ease-out;
 }
-/* 卡片重排時的位移動畫 (誰被刪掉旁邊的會滑過去) */
+/* siblings 滑去新位置 — 較快 (0.3s),讓「空格」在新卡 fade-in 之前就成形 */
 .card-flip-move {
-  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* === WS 推送時,有變動的卡片邊緣亮一下 (主題色 ring) === */
@@ -590,7 +615,8 @@ function isExpanded(code: string): boolean {
 /* 系統設「減少動畫」的人就讓動畫消失 */
 @media (prefers-reduced-motion: reduce) {
   .live-dot.is-pulsing,
-  .auction-card.just-updated {
+  .auction-card.just-updated,
+  .card-flip-enter-active {
     animation: none;
   }
   .card-flip-enter-active,
