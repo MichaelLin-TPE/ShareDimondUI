@@ -124,9 +124,15 @@ function clearFilter() {
         placeholder="🔍 搜尋得標人..."
         class="bm-search-input"
       />
-      <button v-if="filterUser" type="button" class="bm-clear-btn" @click="clearFilter">
-        <span class="bm-clear-x">✕</span>
-        <span class="bm-clear-text">清除</span>
+      <button
+        v-if="filterUser"
+        type="button"
+        class="bm-clear-btn"
+        title="清除"
+        aria-label="清除"
+        @click="clearFilter"
+      >
+        ✕
       </button>
     </div>
 
@@ -452,22 +458,22 @@ function clearFilter() {
   margin: 0 !important;
   box-sizing: border-box !important;
 }
-/* 跟 SearchableSelect 同視覺風格 + 同高度 (38px) */
+/* 清除鈕 — icon-only 38x38 方塊,PC / 手機共用 (使用者覺得有「清除」文字版太大) */
 .bm-clear-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  width: 38px;
   height: 38px;                       /* = .bm-search-input height,絕對對齊 */
   margin: 0;
-  padding: 0 12px;
+  padding: 0;
   background: #0f111a;
   border: 1px solid #2e3147;
-  border-radius: 10px;
+  border-radius: 9px;
   color: #cbd5e1;
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 700;
   font-family: inherit;
   line-height: 1;
   cursor: pointer;
@@ -480,38 +486,13 @@ function clearFilter() {
   color: #fff;
   background: #14171f;
 }
-.bm-clear-x {
-  font-size: 0.85rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.bm-clear-text {
-  font-size: 0.95rem;
-  line-height: 1;
-}
-/* 手機: 整列縮成 38px,清除鈕變 38x38 icon-only,搜尋欄滿版 */
+/* 手機: 搜尋欄滿版 (按鈕本身 PC/手機同尺寸,不需重設) */
 @media (max-width: 640px) {
   .bm-search-row {
     gap: 8px;
   }
   .bm-search-input {
-    max-width: none;        /* 滿版,不再受 360px 限制 */
-    height: 38px;
-  }
-  .bm-search-input :deep(.ss-trigger) {
-    height: 38px !important; /* 跟外層同步,維持對齊 */
-  }
-  .bm-clear-btn {
-    width: 38px;
-    height: 38px;            /* = .bm-search-input,絕對對齊 */
-    padding: 0;
-    border-radius: 9px;
-  }
-  .bm-clear-text {
-    display: none;
-  }
-  .bm-clear-x {
-    font-size: 0.9rem;
+    max-width: none;
   }
 }
 
