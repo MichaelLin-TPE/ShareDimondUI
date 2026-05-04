@@ -37,7 +37,7 @@ export function useAuction() {
         confirmOut(id)
       }
     } catch (error) {
-      useAlert.success('處理失敗：' + error)
+      useAlert.error('處理失敗：' + error)
     }
   }
 

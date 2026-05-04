@@ -358,24 +358,33 @@ TimeStamp:currentTimeStamp
     showCurrencyModal.value = false // 關閉彈窗
   }
 
-  const confirmGetItem = async () =>{
+  // 回傳 true=成功 / false=失敗 (handleStorageChange 用來決定是否 rollback checkbox UI)
+  const confirmGetItem = async (): Promise<boolean> => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-      const res= await fetch('https://api.gameshare-system.com/confirm-get-item', {
+      const res = await fetch('https://api.gameshare-system.com/confirm-get-item', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: submitTreasureCod.value,
           checked: checkStatusFromRepository.value,
         }),
       })
-    }catch (e){
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        useAlert.error(data?.message ?? '存倉狀態更新失敗')
+        return false
+      }
+      return true
+    } catch (e) {
       console.log(e)
+      useAlert.error('存倉狀態更新失敗,請稍後再試')
+      return false
     }
   }
 
@@ -677,6 +686,10 @@ TimeStamp:currentTimeStamp
   onUnmounted(() => {
     unsubscribeWS?.()
     unsubscribeWS = null
+    if (timer !== null) {
+      clearInterval(timer)
+      timer = null
+    }
   })
 
   let timer: number | null = null // 用來存放計時器
@@ -784,10 +797,14 @@ TimeStamp:currentTimeStamp
   }
 
   const checkStatusFromRepository = ref(false)
-  const handleStorageChange = (item:Treasure)=>{
+  const handleStorageChange = async (item: Treasure) => {
     submitTreasureCod.value = item.treasureCode
     checkStatusFromRepository.value = item.checkFromRepository
-    confirmGetItem()
+    const ok = await confirmGetItem()
+    if (!ok) {
+      // API 失敗 → 翻回原本狀態,避免 UI 跟後端不一致
+      item.checkFromRepository = !item.checkFromRepository
+    }
   }
 
 

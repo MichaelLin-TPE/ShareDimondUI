@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth.ts'
 import { useRoute, useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { resetSession } from '@/utils/session.ts'
 
 const router = useRouter()
 const route = useRoute()
@@ -123,7 +124,8 @@ const logout = async () => {
       useAlert.error(data.message)
       return
     }
-    authStore.authToken = ''
+    // 清掉所有 session-bound store (auth + balance + biddingTreasure + sharedLists)
+    resetSession()
     useAlert.success('登出成功')
     router.replace('/login')
   } catch (e) {

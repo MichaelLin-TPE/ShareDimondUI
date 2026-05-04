@@ -1,5 +1,6 @@
 import { onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -30,17 +31,16 @@ export function useAuction() {
     }
   }
 
+  const sharedLists = useSharedListsStore()
   const getAllMember = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-    const res = await fetch('https://api.gameshare-system.com/members', {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign: generateSignature(currentTimeStamp),
-        TimeStamp: currentTimeStamp,
-      },
-    })
-    if (!res.ok) return
-    memberList.value = await res.json()
+    // mutation 後 (updateRolesApi) 需強制重抓,平時 mount 用 cache
+    await sharedLists.loadMembers()
+    // clone (避免 setRole 在這裡 in-place 改動時汙染共享 store)
+    memberList.value = sharedLists.members.map((item) => ({
+      memberId: item.memberId,
+      memberName: item.memberName,
+      memberRole: item.memberRole as 'MEMBER' | 'OFFICER' | 'LEADER',
+    }))
     // 重新取得資料後清空追蹤清單
     changedMemberIds.value.clear()
   }
@@ -67,7 +67,9 @@ export function useAuction() {
       return
     }
     useAlert.success(data.message)
-    getAllMember()
+    // role 改完後強制重抓 (其他頁面下次進入也拿到新 role)
+    await sharedLists.refreshMembers()
+    await getAllMember()
   }
 
   onMounted(getAllMember)

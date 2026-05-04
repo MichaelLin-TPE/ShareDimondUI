@@ -1,6 +1,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -83,32 +84,17 @@ TimeStamp:currentTimeStamp
     memberRole:string
   }
 
+  const sharedLists = useSharedListsStore()
   const getAllMember = async () => {
-
     try {
-      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/members', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-          Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-        },
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        return
-      }
-      memberList.value = data
-
-      memberList.value = memberList.value
+      await sharedLists.loadMembers()
+      // 從共享 store clone + filter + 變形 (不汙染 raw data)
+      memberList.value = sharedLists.members
         .filter((item) => item.memberRole === 'LEADER' || item.memberRole === 'OFFICER')
         .map((item) => ({
           ...item,
           memberRole: item.memberRole === 'LEADER' ? '會長' : '幹部',
         }))
-
     } catch (e) {
       console.log(e)
     }

@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -59,16 +60,17 @@ export function useAuction() {
     showModal.value = true
   }
 
+  const sharedLists = useSharedListsStore()
   const fetchMembers = async () => {
     loading.value = true
     try {
-      const ts = Math.floor(Date.now() / 1000).toString()
-      const res = await fetch(`${API}/members`, {
-        method: 'GET',
-        headers: headers(ts),
-      })
-      if (!res.ok) return
-      memberList.value = await res.json()
+      await sharedLists.loadMembers()
+      // clone (避免日後操作汙染共享 store)
+      memberList.value = sharedLists.members.map((item) => ({
+        memberId: item.memberId,
+        memberName: item.memberName,
+        memberRole: item.memberRole,
+      }))
     } catch (e) {
       console.log(e)
     } finally {
@@ -91,7 +93,9 @@ export function useAuction() {
       showModal.value = false
       if (res.ok) {
         useAlert.success(data.message)
-        fetchMembers()
+        // 踢人成功後強制重抓 (其他頁面下次進入也拿到最新名單)
+        await sharedLists.refreshMembers()
+        await fetchMembers()
       } else {
         useAlert.error(data.message)
       }

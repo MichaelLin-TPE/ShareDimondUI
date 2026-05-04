@@ -1,6 +1,7 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
@@ -46,45 +47,30 @@ export function useAuction() {
     showModal.value = true
   }
 
-  const getBossList = async () => {
+  const sharedLists = useSharedListsStore()
+  // forceRefresh = true 用於 mutation 後 (新增/刪除 boss 或 treasure)
+  const getBossList = async (forceRefresh = false) => {
     try {
-      const currentTimestamp = Math.floor(Date.now() / 1000).toString()
-      const res = await fetch('https://api.gameshare-system.com/getBossList', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          Accept: 'application/json',
-          Sign: generateSignature(currentTimestamp),
-          TimeStamp: currentTimestamp,
-        },
-      })
-      if (!res.ok) {
-        return
+      if (forceRefresh) {
+        await sharedLists.refreshBossList()
+      } else {
+        await sharedLists.loadBossList()
       }
-      const data: Boss[] = await res.json()
-      bossOptions.value = data
+      // clone 後存入 local options
+      bossOptions.value = sharedLists.bossList.map((b) => ({ ...b })) as Boss[]
     } catch (e) {
       console.log(e)
     }
   }
 
-  const getTreasureItemList = async () => {
+  const getTreasureItemList = async (forceRefresh = false) => {
     try {
-      const currentTimestamp = Math.floor(Date.now() / 1000).toString()
-      const res = await fetch('https://api.gameshare-system.com/getTreasureList', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          Accept: 'application/json',
-          Sign: generateSignature(currentTimestamp),
-          TimeStamp: currentTimestamp,
-        },
-      })
-      if (!res.ok) {
-        return
+      if (forceRefresh) {
+        await sharedLists.refreshTreasureList()
+      } else {
+        await sharedLists.loadTreasureList()
       }
-      const data: TreasureItem[] = await res.json()
-      itemOptions.value = data
+      itemOptions.value = sharedLists.treasureList.map((i) => ({ ...i })) as TreasureItem[]
     } catch (e) {
       console.log(e)
     }
@@ -295,7 +281,7 @@ export function useAuction() {
       useAlert.success('新增成功!')
       loading.value = false
       // 新增後刷新清單
-      await getBossList()
+      await getBossList(true)
       addBossName.value = ''
     } catch (e) {
       console.log(e)
@@ -336,7 +322,7 @@ export function useAuction() {
       useAlert.success('新增成功!')
       loading.value = false
       // 新增後刷新清單
-      await getTreasureItemList()
+      await getTreasureItemList(true)
       addItemName.value = ''
     } catch (e) {
       console.log(e)
@@ -366,7 +352,7 @@ export function useAuction() {
         return false
       }
       useAlert.success(data.message ?? '已更新')
-      await getTreasureItemList()
+      await getTreasureItemList(true)
       return true
     } catch (e) {
       console.log(e)
@@ -394,7 +380,7 @@ export function useAuction() {
         return false
       }
       useAlert.success(data.message ?? '已刪除')
-      await getTreasureItemList()
+      await getTreasureItemList(true)
       return true
     } catch (e) {
       console.log(e)
@@ -422,7 +408,7 @@ export function useAuction() {
         return false
       }
       useAlert.success(data.message ?? '已更新')
-      await getBossList()
+      await getBossList(true)
       return true
     } catch (e) {
       console.log(e)
@@ -450,7 +436,7 @@ export function useAuction() {
         return false
       }
       useAlert.success(data.message ?? '已刪除')
-      await getBossList()
+      await getBossList(true)
       return true
     } catch (e) {
       console.log(e)
@@ -593,6 +579,10 @@ export function useAuction() {
   onUnmounted(() => {
     wsHandle?.disconnect()
     wsHandle = null
+    if (timer !== null) {
+      clearInterval(timer)
+      timer = null
+    }
   })
 
   let timer: number | null = null // 用來存放計時器

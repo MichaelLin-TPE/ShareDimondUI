@@ -2,6 +2,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import type { Balance } from '@/types/balance.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -173,24 +174,21 @@ export function useAuction() {
     }
   }
 
+  const sharedLists = useSharedListsStore()
   const getAllMember = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-    const res = await fetch('https://api.gameshare-system.com/members', {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign: generateSignature(currentTimeStamp),
-        TimeStamp: currentTimeStamp,
-      },
-    })
-    if (!res.ok) return
-    memberList.value = await res.json()
-
-    memberList.value.forEach((item) => {
-      if (item.memberRole == 'LEADER') item.memberRole = '會長'
-      else if (item.memberRole == 'OFFICER') item.memberRole = '幹部'
-      else item.memberRole = '成員'
-      if (!item.memberAmount) item.memberAmount = 0
-    })
+    await sharedLists.loadMembers()
+    // clone + 變形 (不汙染共享 store 的 raw data)
+    memberList.value = sharedLists.members.map((item) => ({
+      memberId: item.memberId,
+      memberName: item.memberName,
+      memberRole:
+        item.memberRole === 'LEADER'
+          ? '會長'
+          : item.memberRole === 'OFFICER'
+            ? '幹部'
+            : '成員',
+      memberAmount: item.memberAmount ?? 0,
+    }))
     clanBalanceResponseList.value = balance.clanBalanceList
   }
 
