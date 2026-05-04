@@ -429,40 +429,50 @@ function clearFilter() {
 /* -------------------------------------- */
 /* 新增：群組標題相關樣式 (加在原本 CSS 的最上方) */
 /* -------------------------------------- */
-/* === 搜尋欄 ===
-   抄 .balance-row 模式: 兩個結構對等的 flex children,各自 height 42px,align-items: stretch */
+/* === 搜尋欄 — 暴力對齊版 ===
+   兩個 flex children 都明確 height 44px,vertical-align top + 強制 :deep 內側 trigger */
 .bm-search-row {
   display: flex;
-  align-items: stretch; /* 兩個 child 都填滿 row 高度,自然對齊頂部+底部 */
+  align-items: flex-start; /* 兩 child 都從頂部 y=0 開始,不依賴 stretch 計算 */
   gap: 10px;
   margin-bottom: 16px;
 }
-/* SearchableSelect 直接當 flex child (透過 class 合併到 .ss-select root) */
 .bm-search-input {
   flex: 1;
   min-width: 0;
   max-width: 360px;
+  height: 44px; /* 強制 .ss-select 根高度 */
+  display: block;
+  vertical-align: top;
 }
-/* 跟 SearchableSelect .ss-trigger 完全同樣的視覺風格 (高度/底色/邊框/圓角/padding/字體) */
+/* :deep 強制 SearchableSelect 內部 .ss-trigger 也 44px 滿版 */
+.bm-search-input :deep(.ss-trigger) {
+  height: 44px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+/* 跟 SearchableSelect 同視覺風格 + 同高度 (44px) */
 .bm-clear-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 42px;                       /* = .ss-trigger height */
-  padding: 0 14px;                    /* = .ss-trigger padding (左右一致) */
-  background: #0f111a;                /* = .ss-trigger 深底 */
-  border: 1px solid #2e3147;          /* = .ss-trigger 邊框色 */
-  border-radius: 10px;                /* = .ss-trigger 圓角 */
+  height: 44px;                       /* = .bm-search-input height,絕對對齊 */
+  margin: 0;
+  padding: 0 14px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
   color: #cbd5e1;
-  font-size: 0.95rem;                 /* = .ss-input 字體 */
-  font-weight: 500;                   /* = .ss-input 字重 */
+  font-size: 0.95rem;
+  font-weight: 500;
   font-family: inherit;
   line-height: 1;
   cursor: pointer;
   transition: all 0.15s;
   box-sizing: border-box;
+  vertical-align: top;
 }
 .bm-clear-btn:hover {
   border-color: #3a3f5c;               /* = .ss-trigger:hover 邊框 */
