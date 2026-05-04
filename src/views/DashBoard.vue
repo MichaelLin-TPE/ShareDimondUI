@@ -20,6 +20,10 @@ const authStore = useAuthStore()
 const balance = useBalanceStore()
 const showPushModal = ref<boolean>(false)
 
+// 競拍 / 結算 切換 tab
+type AuctionTab = 'active' | 'settle'
+const activeAuctionTab = ref<AuctionTab>('active')
+
 // 血盟試用倒數 — 後端在 /getBasicInfo 回傳 clanExpiresAt (epoch millis)
 const trialDaysRemaining = computed<number | null>(() => {
   const expiresAt = authStore.member?.clanExpiresAt
@@ -344,8 +348,32 @@ const closeUpdateModal = () => {
 
     <div class="stats">
       <TreasureCard class="treasureCard" />
-      <StatCard />
-      <BiddingManagement class="biddingManagement" />
+
+      <!-- 競拍 / 結算 切換 (使用 .seg-tabs pattern) -->
+      <div class="auction-tabs">
+        <button
+          type="button"
+          class="auction-tab-btn"
+          :class="{ active: activeAuctionTab === 'active' }"
+          @click="activeAuctionTab = 'active'"
+        >
+          🎯 競拍中
+        </button>
+        <button
+          type="button"
+          class="auction-tab-btn"
+          :class="{ active: activeAuctionTab === 'settle' }"
+          @click="activeAuctionTab = 'settle'"
+        >
+          🏆 待結算
+        </button>
+      </div>
+
+      <StatCard v-show="activeAuctionTab === 'active'" />
+      <BiddingManagement
+        v-show="activeAuctionTab === 'settle'"
+        class="biddingManagement"
+      />
     </div>
   </div>
 </template>
@@ -490,6 +518,51 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 32px;
+}
+
+/* 競拍/結算 tab — 套 PersonalMarket .seg-tabs pattern (父 48 / 子 38 / flex 1 1 0) */
+.auction-tabs {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 4px;
+  background-color: #14161f;
+  border: 1px solid #24263a;
+  border-radius: 10px;
+  gap: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+  margin-top: -16px; /* 收緊跟上方 TreasureCard 的距離 (.stats gap 32 太大) */
+}
+.auction-tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 38px; /* 48 - 4*2 padding - 1*2 border = 38 */
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: #94a3b8;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+  line-height: 1;
+}
+.auction-tab-btn:hover:not(.active) {
+  color: #fff;
+}
+.auction-tab-btn.active {
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
 }
 
 :deep(ClanNotice) {
