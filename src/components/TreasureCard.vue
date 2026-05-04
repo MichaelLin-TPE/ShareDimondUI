@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAuction } from '@/composables/treasureCare.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 
@@ -54,6 +54,47 @@ function toggleExpand(code: string) {
 function isExpanded(code: string): boolean {
   return expandedCards.value.has(code)
 }
+
+// === WS 推送即時動畫 (跟 StatCard 同 pattern,必須在 useAuction() 之後避免 TDZ) ===
+const recentlyUpdated = ref<Set<string>>(new Set())
+const liveTick = ref(0)
+const lastSnapshot = new Map<string, string>()
+
+interface AuctionRow {
+  treasureCode: string
+  currentPrice?: number
+  biddingName?: string
+  biddingMemberContent?: string
+  status?: string
+}
+const snapshotOf = (a: AuctionRow): string =>
+  `${a.currentPrice ?? ''}|${a.biddingName ?? ''}|${a.biddingMemberContent ?? ''}|${a.status ?? ''}`
+
+watch(
+  () => (auctions.value as AuctionRow[]).map((a) => snapshotOf(a)).join('§'),
+  () => {
+    let anyChanged = false
+    for (const a of auctions.value as AuctionRow[]) {
+      const code = a.treasureCode
+      const curr = snapshotOf(a)
+      const prev = lastSnapshot.get(code)
+      if (prev !== undefined && prev !== curr) {
+        anyChanged = true
+        const next = new Set(recentlyUpdated.value)
+        next.add(code)
+        recentlyUpdated.value = next
+        setTimeout(() => {
+          const after = new Set(recentlyUpdated.value)
+          after.delete(code)
+          recentlyUpdated.value = after
+        }, 1400)
+      }
+      lastSnapshot.set(code, curr)
+    }
+    if (anyChanged) liveTick.value++
+  },
+  { immediate: true },
+)
 
 interface ItemOpt { itemId: string; itemName: string }
 interface BossOpt { bossId: string; bossName: string }
@@ -123,6 +164,7 @@ const closeManageDialog = () => {
         </div>
 
         <span>(共 {{ auctions.length }} 件)</span>
+        <span class="live-dot" :class="{ 'is-pulsing': liveTick > 0 }" :key="liveTick" title="即時連線中" aria-hidden="true"></span>
       </h3>
       <div class="header-btns">
         <button class="btn-top open" @click="openTicket">開單</button>
@@ -132,12 +174,15 @@ const closeManageDialog = () => {
     </div>
 
     <div class="auction-container">
-      <div class="auction-grid">
+      <TransitionGroup tag="div" name="card-flip" class="auction-grid">
         <div
           v-for="item in auctions"
           :key="item.treasureCode"
           class="auction-card"
-          :class="{ 'is-expanded': isExpanded(item.treasureCode) }"
+          :class="{
+            'is-expanded': isExpanded(item.treasureCode),
+            'just-updated': recentlyUpdated.has(item.treasureCode),
+          }"
         >
           <div class="card-tools">
             <button
@@ -196,7 +241,7 @@ const closeManageDialog = () => {
             <span>👥 {{ item.treasureAttendanceList.length }} 人</span>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
     </div>
 
     <Teleport to="body">
@@ -541,6 +586,122 @@ const closeManageDialog = () => {
   font-weight: normal;
   color: #64748b;
   letter-spacing: 0;
+}
+/* page-title 內的 live-dot 不要被上面 .page-title span 套 */
+.page-title .live-dot {
+  font-size: 0;
+}
+
+/* === LIVE 即時連線小綠點 (跟 StatCard 同 spec) === */
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+  flex-shrink: 0;
+  align-self: center;
+  vertical-align: middle;
+}
+.live-dot.is-pulsing {
+  animation: live-pulse 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    transform: scale(1);
+  }
+  60% {
+    box-shadow: 0 0 0 14px rgba(34, 197, 94, 0);
+    transform: scale(1.4);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    transform: scale(1);
+  }
+}
+
+/* === TransitionGroup: 兩階段插入動畫 (跟 StatCard 同 spec) === */
+.card-flip-enter-from {
+  opacity: 0;
+  transform: scale(0.4);
+}
+.card-flip-enter-to {
+  opacity: 1;
+  transform: scale(1);
+}
+.card-flip-enter-active {
+  transition:
+    opacity 0.5s ease-out 0.28s,
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.28s;
+  animation: card-materialize-glow 1.2s ease-out 0.28s;
+}
+@keyframes card-materialize-glow {
+  0%,
+  30% {
+    box-shadow: 0 0 0 0 rgba(var(--c-light-rgb), 0);
+  }
+  60% {
+    box-shadow:
+      0 0 0 2px rgba(var(--c-light-rgb), 0.6),
+      0 0 28px 6px rgba(var(--c-light-rgb), 0.42);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--c-light-rgb), 0);
+  }
+}
+.card-flip-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+.card-flip-leave-to {
+  opacity: 0;
+  transform: scale(0.85);
+}
+.card-flip-leave-active {
+  position: absolute;
+  transition:
+    opacity 0.24s ease-out,
+    transform 0.28s ease-out;
+}
+.card-flip-move {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* === WS 推送時,有變動的卡片邊緣亮一下 === */
+.auction-card.just-updated {
+  animation: card-update-pulse 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes card-update-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--c-light-rgb), 0);
+    border-color: var(--c-mid);
+  }
+  20% {
+    box-shadow:
+      0 0 0 2px rgba(var(--c-light-rgb), 0.55),
+      0 0 18px 4px rgba(var(--c-light-rgb), 0.32);
+    border-color: var(--c-light);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--c-light-rgb), 0);
+    border-color: #2d3047;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot.is-pulsing,
+  .auction-card.just-updated,
+  .card-flip-enter-active {
+    animation: none;
+  }
+  .card-flip-enter-active,
+  .card-flip-leave-active,
+  .card-flip-move {
+    transition: none;
+  }
 }
 .header-btns {
   display: flex;
