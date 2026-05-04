@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuction } from '@/composables/BiddingManageMent.ts'
+import SearchableSelect from '@/components/SearchableSelect.vue'
 
 // 手機卡片展開狀態
 const expandedCards = ref<Set<string>>(new Set())
@@ -63,6 +64,38 @@ const itemNameCounts = (items: GroupItem[]) => {
 }
 
 const isAssigned = (title: string) => !title.includes('尚未分配')
+
+// === 折疊式 group + 搜尋 ===
+// 預設「全部摺疊」(待結算多人時逐個展開查看才不會一次看到滿屏資訊)
+// 紀錄哪些被「展開」(預設空集合 = 全摺起)
+const expandedGroups = ref<Set<string>>(new Set())
+function toggleGroup(title: string) {
+  const next = new Set(expandedGroups.value)
+  if (next.has(title)) next.delete(title)
+  else next.add(title)
+  expandedGroups.value = next
+}
+function isGroupExpanded(title: string): boolean {
+  return expandedGroups.value.has(title)
+}
+
+// 搜尋過濾 (依得標人姓名/group title)
+const filterUser = ref<string>('')
+const userOptions = computed(() => {
+  const list = groupedAuctionsList.value ?? []
+  return list.map((g) => ({
+    value: g.title,
+    label: `${g.title} (${(g.items ?? []).length})`,
+  }))
+})
+const filteredGroups = computed(() => {
+  const list = groupedAuctionsList.value ?? []
+  if (!filterUser.value) return list
+  return list.filter((g) => g.title === filterUser.value)
+})
+function clearFilter() {
+  filterUser.value = ''
+}
 </script>
 
 <template>
@@ -82,10 +115,32 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
       </div>
     </div>
 
+    <!-- 搜尋: 用 SearchableSelect 選人 -->
+    <div v-if="userOptions.length > 0" class="bm-search-row">
+      <div class="bm-search-wrap">
+        <SearchableSelect
+          v-model="filterUser"
+          :options="userOptions"
+          placeholder="🔍 搜尋得標人..."
+        />
+      </div>
+      <button v-if="filterUser" type="button" class="bm-clear-btn" @click="clearFilter">
+        ✕ 清除
+      </button>
+    </div>
+
     <div class="auction-container">
-      <div v-for="group in groupedAuctionsList" :key="group.title" class="group-wrapper">
-        <div class="group-head">
-          <h4 class="group-title">{{ group.title }}</h4>
+      <div
+        v-for="group in filteredGroups"
+        :key="group.title"
+        class="group-wrapper"
+        :class="{ 'is-collapsed': !isGroupExpanded(group.title) }"
+      >
+        <div class="group-head" @click="toggleGroup(group.title)" role="button" tabindex="0">
+          <h4 class="group-title">
+            <span class="group-chevron">{{ isGroupExpanded(group.title) ? '▾' : '▸' }}</span>
+            {{ group.title }}
+          </h4>
           <div v-if="isAssigned(group.title)" class="group-summary">
             <span class="sum-count">共 {{ (group.items ?? []).length }} 件</span>
             <span
@@ -98,7 +153,10 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
           </div>
         </div>
 
-        <div v-if="isAssigned(group.title)" class="group-items-preview">
+        <div
+          v-if="isAssigned(group.title) && isGroupExpanded(group.title)"
+          class="group-items-preview"
+        >
           <span
             v-for="entry in itemNameCounts((group.items ?? []) as GroupItem[])"
             :key="entry.name"
@@ -109,7 +167,7 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
           </span>
         </div>
 
-        <div class="auction-grid">
+        <div v-show="isGroupExpanded(group.title)" class="auction-grid">
           <div
             v-for="item in group.items"
             :key="item.treasureCode"
@@ -369,8 +427,42 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
 /* -------------------------------------- */
 /* 新增：群組標題相關樣式 (加在原本 CSS 的最上方) */
 /* -------------------------------------- */
+/* === 搜尋欄 === */
+.bm-search-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+.bm-search-wrap {
+  flex: 1;
+  min-width: 0;
+  max-width: 360px;
+}
+.bm-clear-btn {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.bm-clear-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
 .group-wrapper {
   margin-bottom: 40px;
+}
+.group-wrapper.is-collapsed {
+  margin-bottom: 12px; /* 摺疊時間距變小 */
 }
 
 .group-head {
@@ -380,8 +472,28 @@ const isAssigned = (title: string) => !title.includes('尚未分配')
   flex-wrap: wrap;
   gap: 10px 16px;
   margin-bottom: 8px;
-  padding-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
   border-bottom: 2px solid rgba(var(--c-light-rgb), 0.35);
+  cursor: pointer;
+  transition: background 0.15s;
+  user-select: none;
+}
+.group-head:hover {
+  background: rgba(var(--c-light-rgb), 0.06);
+}
+.group-wrapper.is-collapsed .group-head {
+  margin-bottom: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.group-chevron {
+  display: inline-block;
+  width: 14px;
+  margin-right: 6px;
+  color: var(--c-light);
+  font-size: 0.95rem;
+  transition: transform 0.18s;
+}
 }
 .group-title {
   color: var(--c-light);
