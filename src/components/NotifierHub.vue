@@ -20,12 +20,21 @@ const authStore = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
+let pollTimer: number | null = null
+
 // ===== state =====
 const isOpen = ref(false)
 const marketCount = ref(0)             // 市場 OPEN 掛單總數 (公會層級)
 const myWaitPaySellingCount = ref(0)   // 我的賣單 WAIT_PAY 數 (個人,要去確認付款)
+const pendingApplyCount = ref(0)       // 申請加入血盟待審核 (僅會長/幹部看)
 const isPulsing = ref(false)
 let wsHandle: StompHandle | null = null
+
+// 角色判斷 — 只有 LEADER/OFFICER 才能看到「待審核」提醒
+const canApprove = computed(() => {
+  const r = authStore.member?.role
+  return r === 'LEADER' || r === 'OFFICER'
+})
 
 // ===== alerts (未來在這裡加新業務,push 進去就行) =====
 const alerts = computed<AlertItem[]>(() => {
@@ -46,7 +55,22 @@ const alerts = computed<AlertItem[]>(() => {
     })
   }
 
-  // 2. 市場掛單 (在市場頁時不顯示,因為使用者已經看到了)
+  // 2. 申請加入血盟待審核 (僅 LEADER / OFFICER)
+  if (canApprove.value && pendingApplyCount.value > 0 && !route.path.startsWith('/clan/approvalPage')) {
+    items.push({
+      id: 'pending-apply',
+      icon: '🙋',
+      count: pendingApplyCount.value,
+      title: `${pendingApplyCount.value} 人申請加入血盟,等你審核`,
+      bg: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+      onClick: () => {
+        router.replace('/clan/approvalPage')
+        isOpen.value = false
+      },
+    })
+  }
+
+  // 3. 市場掛單 (在市場頁時不顯示,因為使用者已經看到了)
   if (marketCount.value > 0 && !route.path.startsWith('/clan/marketPlace')) {
     items.push({
       id: 'market',
@@ -125,9 +149,28 @@ const fetchMyWaitPaySelling = async () => {
   }
 }
 
+const fetchPendingApply = async () => {
+  if (!authStore.authToken) return
+  if (!canApprove.value) {
+    pendingApplyCount.value = 0
+    return
+  }
+  try {
+    const res = await fetch(`${API}/getVerifyList`, { headers: headers() })
+    if (!res.ok) return
+    const data = await res.json()
+    const newCount = Array.isArray(data) ? data.length : 0
+    if (newCount > pendingApplyCount.value) triggerPulse()
+    pendingApplyCount.value = newCount
+  } catch {
+    /* ignore */
+  }
+}
+
 const refreshAll = () => {
   fetchMarketCount()
   fetchMyWaitPaySelling()
+  fetchPendingApply()
 }
 
 // ===== UI actions =====
@@ -161,12 +204,20 @@ onMounted(() => {
       refreshAll()
     })
   }
+  // 申請審核沒有 WebSocket → 每 60 秒輪詢一次
+  pollTimer = window.setInterval(() => {
+    fetchPendingApply()
+  }, 60_000)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', closeOnOutside)
   wsHandle?.disconnect()
   wsHandle = null
+  if (pollTimer !== null) {
+    window.clearInterval(pollTimer)
+    pollTimer = null
+  }
 })
 </script>
 
