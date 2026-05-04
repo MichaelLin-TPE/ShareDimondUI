@@ -18,5 +18,10 @@ export const useBalanceStore = defineStore('balance', {
     setClanBalanceList(balances: Balance[]) {
       this.clanBalanceList = balances
     },
+    // 登出 / 退出血盟時呼叫,避免換帳號後看到舊餘額
+    reset() {
+      this.balanceList = []
+      this.clanBalanceList = []
+    },
   },
 })

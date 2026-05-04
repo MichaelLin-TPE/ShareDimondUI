@@ -122,5 +122,16 @@ export const useBiddingTreasureStore = defineStore('biddingTreasure', () => {
     }
   }
 
-  return { rawTreasures, refresh, subscribe }
+  // 登出 / 退出血盟時呼叫,清空快取 + 強制斷 WS (避免帶舊 token 重連)
+  function reset() {
+    rawTreasures.value = []
+    inFlight = null
+    if (wsHandle) {
+      wsHandle.disconnect()
+      wsHandle = null
+    }
+    subscriberCount = 0
+  }
+
+  return { rawTreasures, refresh, subscribe, reset }
 })

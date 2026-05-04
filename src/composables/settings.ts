@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { resetSession } from '@/utils/session.ts'
 import { useRouter } from 'vue-router'
 
 const API = 'https://api.gameshare-system.com'
@@ -98,8 +99,8 @@ export function useSettings() {
         return
       }
       useAlert.success(data.message ?? '已退出血盟')
-      // 退出血盟後清掉 token + member,送回登入頁
-      authStore.clearToken()
+      // 退出血盟 → 清掉所有 session-bound store,送回登入頁
+      resetSession()
       router.replace('/login')
     } catch (e) {
       console.log(e)

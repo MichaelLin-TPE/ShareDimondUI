@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -103,14 +104,13 @@ export function useLootTracker() {
     }
   }
 
+  const sharedLists = useSharedListsStore()
   const fetchOptions = async () => {
     try {
-      const [itemsRes, bossesRes] = await Promise.all([
-        fetch(`${API}/getTreasureList`, { method: 'GET', headers: headers() }),
-        fetch(`${API}/getBossList`, { method: 'GET', headers: headers() }),
-      ])
-      if (itemsRes.ok) itemOptions.value = await itemsRes.json()
-      if (bossesRes.ok) bossOptions.value = await bossesRes.json()
+      // 走共享 store,跟 treasureCare 共用快取
+      await Promise.all([sharedLists.loadTreasureList(), sharedLists.loadBossList()])
+      itemOptions.value = sharedLists.treasureList.map((i) => ({ ...i }))
+      bossOptions.value = sharedLists.bossList.map((b) => ({ ...b }))
     } catch (e) {
       console.log(e)
     }
