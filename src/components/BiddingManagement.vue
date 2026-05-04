@@ -442,26 +442,26 @@ function clearFilter() {
   flex: 1;
   min-width: 0;
   max-width: 360px;
-  height: 44px; /* 強制 .ss-select 根高度 */
+  height: 38px; /* 強制 .ss-select 根高度 (跟手機同大小,視覺更精簡) */
   display: block;
   vertical-align: top;
 }
-/* :deep 強制 SearchableSelect 內部 .ss-trigger 也 44px 滿版 */
+/* :deep 強制 SearchableSelect 內部 .ss-trigger 也 38px 滿版 */
 .bm-search-input :deep(.ss-trigger) {
-  height: 44px !important;
+  height: 38px !important;
   margin: 0 !important;
   box-sizing: border-box !important;
 }
-/* 跟 SearchableSelect 同視覺風格 + 同高度 (44px) */
+/* 跟 SearchableSelect 同視覺風格 + 同高度 (38px) */
 .bm-clear-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 44px;                       /* = .bm-search-input height,絕對對齊 */
+  height: 38px;                       /* = .bm-search-input height,絕對對齊 */
   margin: 0;
-  padding: 0 14px;
+  padding: 0 12px;
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 10px;
