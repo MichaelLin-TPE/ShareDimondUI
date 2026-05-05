@@ -1,5 +1,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
 
@@ -24,6 +25,7 @@ export function useAuction() {
 
   const memberList = ref<Member[]>([])
   const isLive = ref(true) // 模擬 WebSocket 即時連線狀態
+  const loading = ref(false)
 
   /**
    * 核心邏輯 1：動態提取所有幣種
@@ -67,22 +69,34 @@ export function useAuction() {
   }
 
   // 事件處理 (可對接後端 API 或 WebSocket)
-  const openLog = (id: number) => console.log(`[GameShare] 查詢成員 ${id} 交易紀錄`)
-  const editWallet = (user: Member) => console.log(`[GameShare] 調整管理：${user.userName}`)
+  const openLog = (id: number) => {
+    void id
+  }
+  const editWallet = (user: Member) => {
+    void user
+  }
   const authStore = useAuthStore()
 
   const getBasicInfo = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getAllMemberWallet', {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-      },
-    })
-    if (!res.ok) return
-    const data = await res.json()
-    memberList.value = data
+    loading.value = true
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/getAllMemberWallet', {
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      memberList.value = data
+    } catch (e) {
+      console.error(e)
+      useAlert.error('載入成員餘額失敗,請稍後再試')
+    } finally {
+      loading.value = false
+    }
   }
 
 
@@ -91,6 +105,7 @@ TimeStamp:currentTimeStamp
   return {
     memberList,
     isLive,
+    loading,
     editWallet,
     openLog,
     formatNumber,

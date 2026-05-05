@@ -3,16 +3,38 @@ import { ref, computed, onMounted } from 'vue'
 
 const API_BASE = 'https://api.gameshare-system.com'
 const TOKEN_KEY = 'admin_token_v1'
+const TOKEN_TTL_MS = 24 * 60 * 60 * 1000 // 24 小時 expiry,共用裝置不要殘留
 
-// ===== Token gate =====
-const adminToken = ref<string>(localStorage.getItem(TOKEN_KEY) || '')
+// ===== Token gate (帶 expiry,過期視同無 token) =====
+function loadToken(): string {
+  const raw = localStorage.getItem(TOKEN_KEY)
+  if (!raw) return ''
+  try {
+    const parsed = JSON.parse(raw) as { token?: string; expires?: number }
+    if (parsed?.token && parsed.expires && Date.now() < parsed.expires) {
+      return parsed.token
+    }
+    // 過期或格式錯誤 → 順手清掉
+    localStorage.removeItem(TOKEN_KEY)
+    return ''
+  } catch {
+    // 舊版字串格式 (non-JSON) → 一律當失效,迫使重新登入
+    localStorage.removeItem(TOKEN_KEY)
+    return ''
+  }
+}
+
+const adminToken = ref<string>(loadToken())
 const tokenInput = ref<string>('')
 const authed = computed(() => !!adminToken.value)
 
 function saveToken() {
   if (!tokenInput.value.trim()) return
   adminToken.value = tokenInput.value.trim()
-  localStorage.setItem(TOKEN_KEY, adminToken.value)
+  localStorage.setItem(
+    TOKEN_KEY,
+    JSON.stringify({ token: adminToken.value, expires: Date.now() + TOKEN_TTL_MS }),
+  )
   tokenInput.value = ''
   refreshAll()
 }

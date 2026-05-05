@@ -69,7 +69,7 @@ export function useAuction() {
       }
       useAlert.success(data.message)
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -94,7 +94,7 @@ export function useAuction() {
       // 重新拉幣別清單，更新 baseCurrency 標記
       fetchClanCurrencies()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -111,7 +111,7 @@ export function useAuction() {
       // 後端 isBaseCurrency 在 JSON 中會變成 baseCurrency（Jackson 預設行為）
       clanCurrencies.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -141,7 +141,7 @@ export function useAuction() {
       useAlert.success(data.message)
       item.enabled = willEnable
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -178,7 +178,7 @@ export function useAuction() {
       balanceAmount.value = 0
       balanceRemark.value = ''
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -213,7 +213,7 @@ export function useAuction() {
       balance.setBalanceList(data.memberBalanceResponseList)
       balance.setClanBalanceList(data.clanBalanceResponseList)
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 

@@ -59,7 +59,7 @@ export function useAuction() {
       // clone 後存入 local options
       bossOptions.value = sharedLists.bossList.map((b) => ({ ...b })) as Boss[]
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -72,7 +72,7 @@ export function useAuction() {
       }
       itemOptions.value = sharedLists.treasureList.map((i) => ({ ...i })) as TreasureItem[]
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -97,7 +97,6 @@ export function useAuction() {
     loading.value = true
     try {
       let type: number
-      console.log(selectedType.value)
       if (selectedType.value == 'bid') {
         type = 0
       } else {
@@ -140,7 +139,7 @@ export function useAuction() {
       useAlert.success('開單成功!!!')
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       loading.value = false
     }
@@ -159,7 +158,6 @@ export function useAuction() {
     }
     const result = await useAlert.confirm('確定有參予再按! 確定不?')
     if (result.isConfirmed) {
-      console.log('點了' + item.treasureCode)
       addAttendance()
     }
   }
@@ -193,7 +191,7 @@ export function useAuction() {
       useAlert.success('刪除成功!')
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -220,7 +218,7 @@ export function useAuction() {
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -246,7 +244,7 @@ export function useAuction() {
       useAlert.success('參與成功!')
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -284,7 +282,7 @@ export function useAuction() {
       await getBossList(true)
       addBossName.value = ''
     } catch (e) {
-      console.log(e)
+      console.error(e)
       loading.value = false
     } finally {
       loading.value = false
@@ -325,7 +323,7 @@ export function useAuction() {
       await getTreasureItemList(true)
       addItemName.value = ''
     } catch (e) {
-      console.log(e)
+      console.error(e)
       loading.value = false
     } finally {
       loading.value = false
@@ -355,7 +353,7 @@ export function useAuction() {
       await getTreasureItemList(true)
       return true
     } catch (e) {
-      console.log(e)
+      console.error(e)
       return false
     }
   }
@@ -383,7 +381,7 @@ export function useAuction() {
       await getTreasureItemList(true)
       return true
     } catch (e) {
-      console.log(e)
+      console.error(e)
       return false
     }
   }
@@ -411,7 +409,7 @@ export function useAuction() {
       await getBossList(true)
       return true
     } catch (e) {
-      console.log(e)
+      console.error(e)
       return false
     }
   }
@@ -439,7 +437,7 @@ export function useAuction() {
       await getBossList(true)
       return true
     } catch (e) {
-      console.log(e)
+      console.error(e)
       return false
     }
   }
@@ -549,8 +547,6 @@ export function useAuction() {
         },
       })
       if (!res.ok) {
-        const data = await res.json()
-        console.log(data)
         return
       }
       const data = await res.json()
@@ -560,7 +556,7 @@ export function useAuction() {
       })
       startCountdown()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -659,7 +655,7 @@ export function useAuction() {
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -732,16 +728,12 @@ export function useAuction() {
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
   const handleItemChange = async () => {
     if (!itemName.value) return
-
-    console.log('選中的寶物 ID 是:', itemName.value)
-
-    // 在這裡打你的 API
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
       const res = await fetch('https://api.gameshare-system.com/getItemRecentPrice', {

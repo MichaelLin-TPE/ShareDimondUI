@@ -7,6 +7,7 @@ const store = useErrorOverlayStore()
 const visible = computed(() => store.mode !== 'none')
 const isTimeout = computed(() => store.mode === 'timeout')
 const isMaintenance = computed(() => store.mode === 'maintenance')
+const isCrash = computed(() => store.mode === 'crash')
 
 const reload = () => {
   window.location.reload()
@@ -37,6 +38,17 @@ const dismiss = () => {
           </p>
           <div class="eo-actions">
             <button class="eo-btn eo-btn-secondary" @click="dismiss">知道了</button>
+            <button class="eo-btn eo-btn-primary" @click="reload">🔄 重新整理</button>
+          </div>
+        </template>
+
+        <template v-else-if="isCrash">
+          <div class="eo-icon">⚠️</div>
+          <div class="eo-title">畫面發生錯誤</div>
+          <p class="eo-msg">
+            {{ store.message || '畫面發生未預期的錯誤,重新整理通常可以解決。' }}
+          </p>
+          <div class="eo-actions">
             <button class="eo-btn eo-btn-primary" @click="reload">🔄 重新整理</button>
           </div>
         </template>

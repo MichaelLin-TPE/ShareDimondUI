@@ -129,7 +129,7 @@ const logout = async () => {
     useAlert.success('登出成功')
     router.replace('/login')
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }
 
@@ -154,7 +154,7 @@ onMounted(async () => {
     const data = await res.json()
     menuList.value = data
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 })
 </script>

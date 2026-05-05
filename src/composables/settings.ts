@@ -70,7 +70,7 @@ export function useSettings() {
       // 重整頁面確保所有頁面的快取資料(待分配單、歷史紀錄等)都用新名字
       window.location.reload()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submittingName.value = false
     }
@@ -103,7 +103,7 @@ export function useSettings() {
       resetSession()
       router.replace('/login')
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submittingLeave.value = false
     }

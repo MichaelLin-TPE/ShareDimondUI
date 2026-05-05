@@ -12,13 +12,13 @@ export function useAuction() {
     { id: 3, name: '流川楓', amount: 800000, memo: '分紅提取', time: '1 小時前' },
   ]
   const totalAmount = ref(0)
+  const loading = ref(false)
   const handleAction = (code: string, type: 'approve' | 'reject') => {
     const actionText = type === 'approve' ? '核准' : '駁回'
-    console.log(actionText)
-    if (actionText == '核准'){
-        confirmWithdraw(code)
-    }else {
-        rejectWithdraw(code)
+    if (actionText == '核准') {
+      confirmWithdraw(code)
+    } else {
+      rejectWithdraw(code)
     }
   }
   const rejectWithdraw = async (code: string) => {
@@ -45,6 +45,7 @@ TimeStamp:currentTimeStamp
       getWithdrawHistory()
     } catch (e) {
       console.error(e)
+      useAlert.error('操作失敗,請稍後再試')
     }
   }
   const confirmWithdraw = async (code: string) => {
@@ -71,6 +72,7 @@ TimeStamp:currentTimeStamp
       getWithdrawHistory()
     } catch (e) {
       console.error(e)
+      useAlert.error('操作失敗,請稍後再試')
     }
   }
 
@@ -85,26 +87,33 @@ TimeStamp:currentTimeStamp
   }
 
   const getWithdrawHistory = async () => {
+    loading.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/get-withdraw-history-verify-list', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${authStore.authToken}`,
-          'Content-Type': 'application/json',
-          Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+      const res = await fetch(
+        'https://api.gameshare-system.com/get-withdraw-history-verify-list',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${authStore.authToken}`,
+            'Content-Type': 'application/json',
+            Sign: generateSignature(currentTimeStamp),
+            TimeStamp: currentTimeStamp,
+          },
         },
-      })
+      )
       const data = await res.json()
-      data.forEach((item:WithdrawHistory) => {
-          item.remark = '申請提款'
-          item.createTime = formatDateTime(item.createTime)
-        })
+      data.forEach((item: WithdrawHistory) => {
+        item.remark = '申請提款'
+        item.createTime = formatDateTime(item.createTime)
+      })
       withdrawHistoryList.value = data
       getTotalAmount()
     } catch (e) {
-      console.log(e)
+      console.error(e)
+      useAlert.error('載入提款列表失敗,請稍後再試')
+    } finally {
+      loading.value = false
     }
   }
 
@@ -157,5 +166,6 @@ TimeStamp:currentTimeStamp
     selectedMemberId,
     withdrawHistoryList,
     handleWithdraw,
+    loading,
   }
 }

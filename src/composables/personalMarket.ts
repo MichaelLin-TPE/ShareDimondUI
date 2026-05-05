@@ -158,7 +158,7 @@ export function usePersonalMarket() {
       }
       marketList.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -172,7 +172,7 @@ export function usePersonalMarket() {
       }
       myListings.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -186,7 +186,7 @@ export function usePersonalMarket() {
       }
       myPurchases.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -200,7 +200,7 @@ export function usePersonalMarket() {
       }
       myBids.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -214,7 +214,7 @@ export function usePersonalMarket() {
       }
       myItems.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -253,7 +253,7 @@ export function usePersonalMarket() {
       }
       detail.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
       showDetailModal.value = false
     }
   }
@@ -291,7 +291,7 @@ export function usePersonalMarket() {
       showCreateItemModal.value = false
       await fetchItems()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -356,7 +356,7 @@ export function usePersonalMarket() {
       showOpenModal.value = false
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -411,7 +411,7 @@ export function usePersonalMarket() {
       showEditModal.value = false
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -436,7 +436,7 @@ export function usePersonalMarket() {
       closeDetail()
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -468,7 +468,7 @@ export function usePersonalMarket() {
       closeDetail()
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -516,7 +516,7 @@ export function usePersonalMarket() {
       }
       await Promise.all([fetchMarket(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -555,7 +555,7 @@ export function usePersonalMarket() {
       }
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -580,7 +580,7 @@ export function usePersonalMarket() {
       closeDetail()
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -602,7 +602,7 @@ export function usePersonalMarket() {
       closeDetail()
       await Promise.all([fetchMarket(), fetchMine(), fetchMyPurchases(), fetchMyBids()])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 

@@ -72,7 +72,7 @@ export function useAuction() {
         memberRole: item.memberRole,
       }))
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       loading.value = false
     }

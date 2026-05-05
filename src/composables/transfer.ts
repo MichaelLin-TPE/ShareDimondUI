@@ -40,7 +40,7 @@ export function useAuction() {
       }
       useAlert.success(data.message)
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -70,7 +70,7 @@ export function useAuction() {
       balance.setBalanceList(data.memberBalanceResponseList ?? [])
       balance.setClanBalanceList(data.clanBalanceResponseList ?? [])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
   const memberList = ref<MemberResponse[]>([])
@@ -98,7 +98,7 @@ export function useAuction() {
                 : item.memberRole,
       }))
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 

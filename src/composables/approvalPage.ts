@@ -7,19 +7,27 @@ import { generateSignature } from '@/utils/SignTools.ts'
 export function useAuction() {
 
   const authStore = useAuthStore()
-
+  const loading = ref(false)
 
   const getVerifyList = async () => {
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-    const res= await fetch('https://api.gameshare-system.com/getVerifyList', {
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Sign:generateSignature(currentTimeStamp),
-        TimeStamp:currentTimeStamp
-      },
-    })
-    if (!res.ok) return
-    pendingRequests.value = await res.json()
+    loading.value = true
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/getVerifyList', {
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+      })
+      if (!res.ok) return
+      pendingRequests.value = await res.json()
+    } catch (e) {
+      console.error(e)
+      useAlert.error('載入申請名單失敗,請稍後再試')
+    } finally {
+      loading.value = false
+    }
   }
 
   interface MemberVerifyResponse {
@@ -64,7 +72,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       getVerifyList()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -91,7 +99,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       getVerifyList()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -102,5 +110,6 @@ TimeStamp:currentTimeStamp
     authStore,
     pendingRequests,
     handleApproval,
+    loading,
   }
 }

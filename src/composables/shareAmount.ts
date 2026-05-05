@@ -141,7 +141,7 @@ export function useAuction() {
       getAllMember()
       getAllBalance()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -170,7 +170,7 @@ export function useAuction() {
       balance.setBalanceList(data.memberBalanceResponseList)
       balance.setClanBalanceList(data.clanBalanceResponseList)
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 

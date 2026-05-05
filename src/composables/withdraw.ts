@@ -44,7 +44,7 @@ TimeStamp:currentTimeStamp
       }
       useAlert.success(data.message)
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -74,7 +74,7 @@ TimeStamp:currentTimeStamp
       balanceTool.setBalanceList(data.memberBalanceResponseList ?? [])
       balanceTool.setClanBalanceList(data.clanBalanceResponseList ?? [])
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
   const memberList = ref<MemberResponse[]>([])
@@ -96,7 +96,7 @@ TimeStamp:currentTimeStamp
           memberRole: item.memberRole === 'LEADER' ? '會長' : '幹部',
         }))
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 

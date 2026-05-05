@@ -83,7 +83,6 @@ const autoLoginByToken = async () => {
     }
     authStore.setToken(data.authToken)
     authStore.setMember(data)
-    console.log('登入成功 : ', data)
     showApplyClanModal.value = false
     autoLoginStage.value = 'success'
     // 最少顯示 800ms 避免閃一下，且保留原本的 1500ms 體驗
@@ -93,7 +92,7 @@ const autoLoginByToken = async () => {
     isAutoLoggingIn.value = false
     router.replace('/clan')
   } catch (e) {
-    console.log(e)
+    console.error(e)
     autoLoginStage.value = 'failed'
     await new Promise((resolve) => setTimeout(resolve, 900))
     isAutoLoggingIn.value = false
@@ -146,7 +145,6 @@ const addMember = async () => {
     const data = await res.json()
     authStore.setToken(data.authToken)
     authStore.setMember(data)
-    console.log('申請成功 : ', data)
 
     await new Promise((resolve) => setTimeout(resolve, 1500))
     useAlert.success(`登入成功\n血盟：${selectedClanNameForApply.value}`)
@@ -206,7 +204,6 @@ const login = async () => {
     const data = await res.json()
     authStore.setToken(data.authToken)
     authStore.setMember(data)
-    console.log('登入成功 : ', data)
     showApplyClanModal.value = false
     await new Promise((resolve) => setTimeout(resolve, 1500))
     useAlert.success(`登入成功\n血盟：${selectedClanName.value}`)

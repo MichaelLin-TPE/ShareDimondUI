@@ -119,7 +119,7 @@ TimeStamp:currentTimeStamp
       showModal.value = false
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       loading.value = false
     }
@@ -129,7 +129,6 @@ TimeStamp:currentTimeStamp
   const submitDeleteTicketCode = ref('')
   const handleJoinItem = (item: Treasure) => {
     submitAttendanceTicketCode.value = item.treasureCode
-    console.log('點了' + item.treasureCode)
     addAttendance()
   }
   const handleDeleteItem = async (item: Treasure) => {
@@ -172,7 +171,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -198,7 +197,7 @@ TimeStamp:currentTimeStamp
       useAlert.success('刪除成功!')
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -224,7 +223,7 @@ TimeStamp:currentTimeStamp
       useAlert.success('參與成功!')
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -260,7 +259,7 @@ TimeStamp:currentTimeStamp
       loading.value = false
       showAddBossDialog.value = false
     } catch (e) {
-      console.log(e)
+      console.error(e)
       loading.value = false
     } finally {
       loading.value = false
@@ -304,7 +303,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       showAssignModal.value = false
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -346,9 +345,7 @@ TimeStamp:currentTimeStamp
     showCurrencyModal.value = false
   }
 
-  const confirmBuy = (item: Treasure, currency:string) => {
-    console.log('準備購買道具:', item.itemName)
-    console.log('使用的幣別:', currency)
+  const confirmBuy = (item: Treasure, currency: string) => {
     submitTreasureCod.value = item.treasureCode
     submitBiddingPrice.value = item.biddingPrice
     submitBidding(currency)
@@ -382,7 +379,7 @@ TimeStamp:currentTimeStamp
       }
       return true
     } catch (e) {
-      console.log(e)
+      console.error(e)
       useAlert.error('存倉狀態更新失敗,請稍後再試')
       return false
     }
@@ -414,7 +411,7 @@ TimeStamp:currentTimeStamp
         return
       }
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -445,7 +442,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -481,7 +478,7 @@ TimeStamp:currentTimeStamp
       loading.value = false
       showAddTreasureDialog.value = false
     } catch (e) {
-      console.log(e)
+      console.error(e)
       loading.value = false
     } finally {
       loading.value = false
@@ -638,7 +635,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -735,7 +732,6 @@ TimeStamp:currentTimeStamp
   const canSubmit = computed(() => {
 
     return (item: Treasure) => {
-      console.log('check : ' + item.checkFromRepository +' , role : '+ authStore.member?.role)
       // if (!item.checkFromRepository && authStore.member?.role == 'MEMBER'){
       //   return true
       // }
