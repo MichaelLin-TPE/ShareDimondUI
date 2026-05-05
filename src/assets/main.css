@@ -7,6 +7,8 @@ html, body {
   width: 100%;
   height: 100%;
   background: black;
+  /* 全域防止橫向 scroll — 任何頁面內元素超寬都被裁掉而不會撐出橫向 scrollbar */
+  overflow-x: hidden;
 }
 
 /* ===== App 容器（預設：一般頁） ===== */

@@ -2,6 +2,7 @@ import { useAuthStore } from '@/stores/auth.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
 import { useBiddingTreasureStore } from '@/stores/biddingTreasure.ts'
 import { useSharedListsStore } from '@/stores/sharedLists.ts'
+import { resetNotifications } from '@/composables/notifications.ts'
 
 /**
  * 登出 / 退出血盟時呼叫 — 清掉所有跟使用者 session 綁定的 store。
@@ -14,4 +15,5 @@ export function resetSession(): void {
   useBalanceStore().reset()
   useBiddingTreasureStore().reset()
   useSharedListsStore().reset()
+  resetNotifications()
 }

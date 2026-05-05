@@ -303,6 +303,38 @@ const closeUpdateModal = () => {
 
     <div v-if="authStore.member" class="page-title-row">
       <h1>{{ authStore.member.clanName }} 血盟大廳</h1>
+
+      <!-- 餘額 pill (主題色,內嵌標題列省空間) -->
+      <div class="title-balances">
+        <div
+          v-if="memberBalance.length > 0"
+          class="balance-pill personal"
+          title="我的帳戶"
+        >
+          <span class="pill-icon">👤</span>
+          <div class="pill-currencies">
+            <span v-for="b in memberBalance" :key="b.currency" class="pill-row">
+              <span class="pill-cur">{{ b.currency }}</span>
+              <span class="pill-amt">{{ b.balance.toLocaleString() }}</span>
+            </span>
+          </div>
+        </div>
+
+        <div
+          v-if="clanBalance.length > 0"
+          class="balance-pill clan"
+          title="血盟金庫"
+        >
+          <span class="pill-icon">🏰</span>
+          <div class="pill-currencies">
+            <span v-for="b in clanBalance" :key="b.currency" class="pill-row">
+              <span class="pill-cur">{{ b.currency }}</span>
+              <span class="pill-amt">{{ b.balance.toLocaleString() }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <span
         v-if="trialDaysRemaining !== null"
         class="trial-chip"
@@ -314,34 +346,6 @@ const closeUpdateModal = () => {
     </div>
 
     <ClanNotice />
-
-    <div class="balance-dashboard-compact">
-      <div class="balance-row personal">
-        <div class="row-header">
-          <div class="icon-wrapper">👤</div>
-          <h3 class="row-title">我的帳戶</h3>
-        </div>
-        <div class="balance-items-wrapper">
-          <div v-for="item in memberBalance" :key="item.currency" class="balance-item-compact">
-            <span class="currency-label">{{ item.currency }}</span>
-            <span class="amount-value gold">{{ item.balance.toLocaleString() }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="balance-row clan">
-        <div class="row-header">
-          <div class="icon-wrapper gold">🏰</div>
-          <h3 class="row-title">血盟金庫</h3>
-        </div>
-        <div class="balance-items-wrapper">
-          <div v-for="item in clanBalance" :key="item.currency" class="balance-item-compact">
-            <span class="currency-label">{{ item.currency }}</span>
-            <span class="amount-value gold">{{ item.balance.toLocaleString() }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="stats">
       <TreasureCard class="treasureCard" />
@@ -508,6 +512,9 @@ h1 {
   padding: 24px 24px 24px 24px;
   color: #fff;
   transition: padding-left 0.4s ease;
+  /* 防止內部某子元素超寬撐出橫向 scrollbar */
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 .stats {
@@ -566,91 +573,117 @@ h1 {
   margin-bottom: 24px;
 }
 
-.balance-dashboard-compact {
+/* === 標題列內嵌餘額 pill (取代之前的 balance-dashboard-compact) === */
+.title-balances {
   display: flex;
-  gap: 16px;
-  width: 100%;
-}
-
-.balance-row {
-  flex: 1;
-  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  /* 桌機把餘額推到標題右邊,試用 chip 在更右 */
+  margin-left: auto;
+  /* 手機 wrap 後跟標題對齊 */
   align-items: center;
-  background: rgba(17, 19, 28, 0.8);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  padding: 12px 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.balance-row:hover {
-  border-color: rgba(var(--c-light-rgb), 0.2);
-  background: rgba(17, 19, 28, 0.95);
-  box-shadow: 0 6px 20px rgba(var(--c-light-rgb), 0.1);
-  transform: translateY(-1px);
-}
-
-.balance-row.clan:hover {
-  border-color: rgba(var(--c-light-rgb), 0.2);
-  box-shadow: 0 6px 20px rgba(var(--c-light-rgb), 0.08);
-}
-
-.row-header {
-  display: flex;
+.balance-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  width: 130px;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(var(--c-light-rgb), 0.06);
+  border: 1px solid rgba(var(--c-light-rgb), 0.22);
+  transition: all 0.18s ease;
+  max-width: 100%;
+  min-width: 0;
+}
+.balance-pill:hover {
+  background: rgba(var(--c-light-rgb), 0.1);
+  border-color: rgba(var(--c-light-rgb), 0.4);
+}
+/* clan pill 用 deep 色當主軸,跟 personal 區隔開 (兩種主題色都會跟著變) */
+.balance-pill.clan {
+  background: rgba(var(--c-deep-rgb), 0.08);
+  border-color: rgba(var(--c-deep-rgb), 0.28);
+}
+.balance-pill.clan:hover {
+  background: rgba(var(--c-deep-rgb), 0.13);
+  border-color: rgba(var(--c-deep-rgb), 0.45);
+}
+
+.pill-icon {
+  font-size: 1.05rem;
   flex-shrink: 0;
+  filter: drop-shadow(0 0 6px rgba(var(--c-light-rgb), 0.4));
+}
+.balance-pill.clan .pill-icon {
+  filter: drop-shadow(0 0 6px rgba(var(--c-deep-rgb), 0.4));
 }
 
-.icon-wrapper {
-  font-size: 1.2rem;
+/* 多幣別橫排,寬度不夠就橫向 scroll (隱藏 scrollbar) */
+.pill-currencies {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  min-width: 0;
+}
+.pill-currencies::-webkit-scrollbar {
+  display: none;
+}
+.pill-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+/* 幣別之間用 · 分隔 */
+.pill-row + .pill-row::before {
+  content: '·';
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0 6px 0 2px;
+  font-weight: 700;
+}
+.pill-cur {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.pill-amt {
+  color: var(--c-light);
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.balance-pill.clan .pill-amt {
   color: var(--c-mid);
 }
 
-.icon-wrapper.gold {
-  color: var(--c-light);
-}
-
-.row-title {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #f1f5f9;
-  margin: 0;
-  letter-spacing: 0.5px;
-}
-
-.balance-items-wrapper {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  gap: 24px;
-}
-
-.balance-item-compact {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.currency-label {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  font-weight: 500;
-}
-
-.amount-value {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #f1f5f9;
-  letter-spacing: -0.5px;
-}
-
-.amount-value.gold {
-  color: var(--c-light);
+@media (max-width: 768px) {
+  /* 手機 wrap 到下一行,兩個 pill 各佔整行,並有清楚的 row 間距 */
+  .page-title-row {
+    /* 標題 -> 餘額 -> 試用 chip 三層,間距大一點才不擠 */
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  /* 取消 ClanLayout :deep(.page-title-row) padding-left: 48px (那是給 H1 讓出 hamburger 空間用的)
+     讓 pill 真正占滿 dashboard 內容寬度 */
+  .title-balances {
+    margin-left: -48px;
+    width: calc(100% + 48px);
+    flex-direction: column;
+    gap: 8px;
+  }
+  .balance-pill {
+    width: 100%;
+    flex: none;
+    min-width: 0;
+    padding: 8px 12px;
+  }
+  .pill-amt {
+    font-size: 0.82rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -663,22 +696,6 @@ h1 {
   .stats {
     gap: 20px;
     margin-bottom: 20px;
-  }
-  .balance-dashboard-compact {
-    flex-direction: column;
-    gap: 12px;
-  }
-  .balance-row {
-    padding: 12px 16px;
-  }
-  .row-header {
-    width: 100px;
-  }
-  .balance-items-wrapper {
-    gap: 16px;
-  }
-  .amount-value {
-    font-size: 1.05rem;
   }
 }
 .update-modal {
@@ -948,12 +965,14 @@ h1 {
   transform: translateY(-2px);
 }
 
-/* 血盟大廳標題 + 試用倒數 chip */
+/* 血盟大廳標題 + 餘額 pill + 試用倒數 chip */
 .page-title-row {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  /* 跟下方 ClanNotice 隔開,不然視覺上黏在一起 */
+  margin-bottom: 20px;
 }
 .page-title-row h1 {
   margin: 0;
