@@ -650,14 +650,13 @@ h1 {
   font-weight: 500;
 }
 .pill-amt {
+  /* 個人 + 金庫共用主題主色,確保 indigo / razer 兩個金額顏色一致
+     兩個 pill 的視覺區隔已經由 background / border / icon 處理 */
   color: var(--c-light);
   font-weight: 700;
   font-size: 0.88rem;
   letter-spacing: -0.3px;
   font-variant-numeric: tabular-nums;
-}
-.balance-pill.clan .pill-amt {
-  color: var(--c-mid);
 }
 
 @media (max-width: 768px) {
