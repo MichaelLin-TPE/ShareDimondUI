@@ -238,7 +238,8 @@ onMounted(async () => {
 .toggle-btn {
   position: fixed;
   left: 15px;
-  top: 15px;
+  /* 對齊 H1 文字視覺中心 (使用者實測偏好) */
+  top: 10px;
   z-index: 1030;
   width: 40px;
   height: 40px;
@@ -257,6 +258,13 @@ onMounted(async () => {
 .toggle-btn:hover {
   background: #1a1f2a;
   border-color: rgba(255, 255, 255, 0.18);
+}
+/* 手機: icon 也再往上一點 */
+@media (max-width: 768px) {
+  .toggle-btn {
+    top: 0;
+    left: 12px;
+  }
 }
 
 .sidebar-overlay {

@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 import ErrorOverlay from './components/ErrorOverlay.vue'
+import NotificationDrawer from './components/NotificationDrawer.vue'
+import { useNotifications } from './composables/notifications.ts'
 
 const route = useRoute()
 // 新增：控制收費方式彈窗顯示狀態的變數
@@ -83,10 +85,15 @@ const featureCategories: FeatureCategory[] = [
 const isLoginPage = computed(() => {
   return route.name === 'login' // 對應你 router 裡的 name: 'login'
 })
+
+// 通知抽屜 (全域,Dashboard 鈴鐺 / FAB / 任何地方都能控制 — 走同一個 singleton)
+const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifications()
 </script>
 
 <template>
   <ErrorOverlay />
+  <!-- 通知抽屜 (全域,任何 component openDrawer() 都能滑出) -->
+  <NotificationDrawer :open="notifDrawerOpen" @close="notifCloseDrawer" />
 
   <div v-if="route.meta.fullscreen" id="app" :class="{ fullscreen: route.meta.fullscreen }">
     <RouterView />
