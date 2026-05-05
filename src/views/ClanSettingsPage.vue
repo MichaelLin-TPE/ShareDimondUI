@@ -14,6 +14,12 @@ const {
   balanceAction,
   balanceAmount,
   balanceRemark,
+  // Discord
+  discordWebhookUrl,
+  discordSaving,
+  discordTesting,
+  saveDiscordWebhook,
+  testDiscordWebhook,
 } = useAuction()
 
 // 給 dropdown 用的可選幣別清單：
@@ -285,6 +291,48 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 
         <div class="cs-actions">
           <button class="cs-btn-primary" @click="handleUpdateBalance">💸 確認調整</button>
+        </div>
+      </section>
+
+      <!-- ─── Discord 整合 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">💬</span>
+          <div>
+            <h3>Discord 推送</h3>
+            <p>開單 / 結算 / 掛單 / 成交事件自動推到血盟 Discord 頻道</p>
+          </div>
+        </div>
+
+        <div class="cs-field">
+          <label>Webhook URL</label>
+          <input
+            v-model="discordWebhookUrl"
+            type="text"
+            class="cs-input"
+            placeholder="https://discord.com/api/webhooks/..."
+            spellcheck="false"
+          />
+          <p class="cs-hint">
+            在 Discord 頻道設定 → 整合 → Webhook → 建立新 Webhook,複製 URL 貼上來
+          </p>
+        </div>
+
+        <div class="cs-actions discord-actions">
+          <button
+            class="cs-btn-secondary"
+            @click="testDiscordWebhook"
+            :disabled="discordTesting || !discordWebhookUrl"
+          >
+            {{ discordTesting ? '測試中...' : '🧪 測試發送' }}
+          </button>
+          <button
+            class="cs-btn-primary"
+            @click="saveDiscordWebhook"
+            :disabled="discordSaving"
+          >
+            {{ discordSaving ? '儲存中...' : '💾 儲存 Discord 設定' }}
+          </button>
         </div>
       </section>
     </div>
@@ -698,6 +746,53 @@ select.cs-input {
   filter: brightness(1.08);
   transform: translateY(-1px);
   box-shadow: 0 10px 28px rgba(var(--c-deep-rgb), 0.4);
+}
+.cs-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+
+/* Discord 設定區的 secondary 按鈕 (測試發送) */
+.cs-btn-secondary {
+  width: 100%;
+  height: 48px;
+  padding: 0 24px;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: inherit;
+}
+.cs-btn-secondary:hover:not(:disabled) {
+  border-color: var(--c-mid);
+  color: #fff;
+  background: rgba(var(--c-light-rgb), 0.08);
+}
+.cs-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Discord actions: 兩顆按鈕並排 */
+.cs-actions.discord-actions {
+  display: flex;
+  gap: 10px;
+}
+.cs-actions.discord-actions .cs-btn-secondary,
+.cs-actions.discord-actions .cs-btn-primary {
+  flex: 1;
+}
+@media (max-width: 600px) {
+  .cs-actions.discord-actions {
+    flex-direction: column;
+  }
 }
 
 /* RWD */
