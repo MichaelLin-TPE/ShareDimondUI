@@ -23,6 +23,7 @@ import BossTimerPage from '@/views/BossTimerPage.vue'
 import Game1A2BPage from '@/views/Game1A2BPage.vue'
 import ItemPriceManagePage from '@/views/ItemPriceManagePage.vue'
 import LootTrackerPage from '@/views/LootTrackerPage.vue'
+import ItemPriceTrendPage from '@/views/ItemPriceTrendPage.vue'
 import SettingsPage from '@/views/SettingsPage.vue'
 import AdminPage from '@/views/AdminPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
@@ -161,6 +162,10 @@ const router = createRouter({
         {
           path: 'lootTracker',
           component: LootTrackerPage,
+        },
+        {
+          path: 'itemPriceTrend',
+          component: ItemPriceTrendPage,
         },
         {
           path: 'attendance',
