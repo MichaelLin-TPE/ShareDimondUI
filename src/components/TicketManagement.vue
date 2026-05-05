@@ -189,7 +189,7 @@ TimeStamp:currentTimeStamp
     useAlert.success(data.message)
     await getPersonalLog()
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }
 const editingTicketCode = ref<string | null>(null)

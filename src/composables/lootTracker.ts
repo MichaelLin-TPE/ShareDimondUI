@@ -83,7 +83,7 @@ export function useLootTracker() {
       }
       stats.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -100,7 +100,7 @@ export function useLootTracker() {
       }
       history.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -112,7 +112,7 @@ export function useLootTracker() {
       itemOptions.value = sharedLists.treasureList.map((i) => ({ ...i }))
       bossOptions.value = sharedLists.bossList.map((b) => ({ ...b }))
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -156,7 +156,7 @@ export function useLootTracker() {
       closeAdd()
       await refreshAll()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }
@@ -178,7 +178,7 @@ export function useLootTracker() {
       useAlert.success('已刪除')
       await refreshAll()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 

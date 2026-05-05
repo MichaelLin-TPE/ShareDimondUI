@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/approvalPage.ts'
 
-const { pendingRequests, handleApproval } = useAuction()
+const { pendingRequests, handleApproval, loading } = useAuction()
 </script>
 
 <template>
@@ -18,7 +18,12 @@ const { pendingRequests, handleApproval } = useAuction()
       </div>
     </div>
 
-    <div v-if="pendingRequests.length === 0" class="empty-card">
+    <div v-if="loading" class="loading-state">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>載入中...</span>
+    </div>
+
+    <div v-else-if="pendingRequests.length === 0" class="empty-card">
       <div class="empty-icon">✨</div>
       <div class="empty-text">目前沒有待處理的加入申請</div>
     </div>
@@ -124,6 +129,30 @@ const { pendingRequests, handleApproval } = useAuction()
   border-radius: 16px;
   padding: 56px 20px;
   text-align: center;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(var(--c-light-rgb), 0.18);
+  border-top-color: var(--c-light);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
 }
 .empty-icon {
   font-size: 2.4rem;

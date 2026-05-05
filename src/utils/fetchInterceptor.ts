@@ -1,11 +1,18 @@
 import { useErrorOverlayStore } from '@/stores/errorOverlay'
+import { useAlert } from '@/utils/alerts'
+import router from '@/router'
+import { resetSession } from '@/utils/session'
 
 /**
  * 全域 fetch 攔截器:
  * - 加上 15 秒 timeout(透過 AbortController)→ 觸發「重新整理」彈窗
- * - 我們自己 API 回 502 → 觸發「服務維修中」彈窗
- * - TypeError / 4xx 一律不處理(避免第三方 SDK 或瀏覽器擋擴充誤觸發)
+ * - 我們自己 API 回 401 → 自動登出並跳轉 /login (token 過期/被撤銷)
+ * - 我們自己 API 回 5xx → 觸發「服務維修中」彈窗
+ * - TypeError / 其他 4xx 一律不處理(避免第三方 SDK 或瀏覽器擋擴充誤觸發)
  */
+
+// 確保 401 處理只觸發一次,避免併發 401 重複跳轉/重複 toast
+let handling401 = false
 
 const TIMEOUT_MS = 15000
 
@@ -44,6 +51,28 @@ export function installFetchInterceptor() {
     try {
       const res = await originalFetch(input, { ...init, signal: controller.signal })
       clearTimeout(timer)
+
+      // 我們自己 API 回 401 → token 過期/失效,清掉 session 跳回 /login
+      if (res.status === 401 && OUR_API.test(url) && !handling401) {
+        // 排除 login 端點本身 (打錯密碼也會 401,不該觸發跳轉)
+        const isLoginEndpoint = /\/(login|loginByToken)\b/.test(url)
+        if (!isLoginEndpoint) {
+          handling401 = true
+          try {
+            useAlert.error('登入逾時,請重新登入')
+            resetSession()
+            router.replace('/login').finally(() => {
+              // 跳轉完成後解鎖,給下次 session
+              setTimeout(() => {
+                handling401 = false
+              }, 1000)
+            })
+          } catch {
+            handling401 = false
+          }
+        }
+      }
+
       // 我們自己 API 收到 5xx (502/503/504 等),tab 在前景時顯示維修彈窗
       if (
         res.status >= 500 &&

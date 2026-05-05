@@ -8,6 +8,7 @@ const {
   toggleStatus,
   filteredAuctions,
   searchQuery,
+  loading,
 } = useAuction()
 </script>
 
@@ -87,7 +88,12 @@ const {
       </div>
     </div>
 
-    <div class="event-grid">
+    <div v-if="loading" class="loading-state">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>載入中...</span>
+    </div>
+
+    <div v-else class="event-grid">
       <div v-for="item in filteredAuctions" :key="item.createTime" class="event-card">
         <div class="event-role">
           {{ roleTextMap[item.role] }}
@@ -112,6 +118,30 @@ const {
   padding: 40px;
   color: rgba(255, 255, 255, 0.3);
   font-size: 14px;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(var(--c-light-rgb), 0.18);
+  border-top-color: var(--c-light);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
 }
 
 /* ===== 新增搜尋與狀態列樣式 ===== */

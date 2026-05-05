@@ -62,7 +62,7 @@ export const useSharedListsStore = defineStore('sharedLists', () => {
       members.value = await res.json()
       membersLoaded = true
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
   const loadMembers = (): Promise<void> => {
@@ -90,7 +90,7 @@ export const useSharedListsStore = defineStore('sharedLists', () => {
       treasureList.value = await res.json()
       treasureLoaded = true
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
   const loadTreasureList = (): Promise<void> => {
@@ -115,7 +115,7 @@ export const useSharedListsStore = defineStore('sharedLists', () => {
       bossList.value = await res.json()
       bossLoaded = true
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
   const loadBossList = (): Promise<void> => {

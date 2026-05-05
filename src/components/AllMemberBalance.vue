@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/allMemberBalance.ts'
 
-const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberList } =
+const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberList, loading } =
   useAuction()
 </script>
 
@@ -18,6 +18,12 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
       </div>
     </div>
 
+    <div v-if="loading && memberList.length === 0" class="loading-state">
+      <div class="spinner" aria-hidden="true"></div>
+      <span>載入中...</span>
+    </div>
+
+    <template v-else>
     <!-- 統計卡 -->
     <section class="stats-grid">
       <div v-for="currency in allCurrencies" :key="currency" class="stat-card">
@@ -77,6 +83,7 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
         <div class="empty-text">目前沒有成員資料</div>
       </div>
     </section>
+    </template>
   </div>
 </template>
 
@@ -291,6 +298,30 @@ const { isLive, formatNumber, getRawBalance, totalStats, allCurrencies, memberLi
   text-align: center;
   padding: 60px 20px;
   color: #64748b;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+.spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(var(--c-light-rgb), 0.18);
+  border-top-color: var(--c-light);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
 }
 .empty-icon {
   font-size: 2.4rem;

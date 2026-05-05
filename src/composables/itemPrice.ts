@@ -71,7 +71,7 @@ export function useItemPrice() {
       }
       itemList.value = data
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       loading.value = false
     }
@@ -127,7 +127,7 @@ export function useItemPrice() {
       closeEdit()
       await fetchList()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     } finally {
       submitting.value = false
     }

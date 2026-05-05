@@ -73,11 +73,17 @@ const WS_TOPIC_PREFIX = '/topic/bidding/'
 export const useBiddingTreasureStore = defineStore('biddingTreasure', () => {
   const rawTreasures = ref<RawTreasure[]>([])
   let inFlight: Promise<void> | null = null
+  // 若 WS push 在 fetch 進行中到達,記下「結束後再 refresh 一次」,避免吃到舊資料
+  let pendingRefetch = false
   let wsHandle: StompHandle | null = null
   let subscriberCount = 0
 
   async function refresh(): Promise<void> {
-    if (inFlight) return inFlight
+    if (inFlight) {
+      // 已有 in-flight,標記「做完再來一次」確保最新一輪 WS push 不會被吞掉
+      pendingRefetch = true
+      return inFlight
+    }
     const authStore = useAuthStore()
     if (!authStore.authToken) return
 
@@ -96,9 +102,14 @@ export const useBiddingTreasureStore = defineStore('biddingTreasure', () => {
         if (!res.ok) return
         rawTreasures.value = await res.json()
       } catch (e) {
-        console.log(e)
+        console.error(e)
       } finally {
         inFlight = null
+        if (pendingRefetch) {
+          pendingRefetch = false
+          // 不 await — 讓當前 refresh() 的 caller 能繼續,新 fetch 在背景進行
+          refresh()
+        }
       }
     })()
     return inFlight
@@ -126,6 +137,7 @@ export const useBiddingTreasureStore = defineStore('biddingTreasure', () => {
   function reset() {
     rawTreasures.value = []
     inFlight = null
+    pendingRefetch = false
     if (wsHandle) {
       wsHandle.disconnect()
       wsHandle = null

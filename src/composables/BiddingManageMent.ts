@@ -103,7 +103,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -129,7 +129,7 @@ TimeStamp:currentTimeStamp
       useAlert.success('刪除成功!')
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -172,7 +172,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       showAssignModal.value = false
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -251,7 +251,7 @@ TimeStamp:currentTimeStamp
         return
       }
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -281,7 +281,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -317,7 +317,7 @@ TimeStamp:currentTimeStamp
       loading.value = false
       showAddTreasureDialog.value = false
     } catch (e) {
-      console.log(e)
+      console.error(e)
       loading.value = false
     } finally {
       loading.value = false
@@ -540,7 +540,7 @@ TimeStamp:currentTimeStamp
       useAlert.success(data.message)
       fetchOngoingTreasures()
     } catch (e) {
-      console.log(e)
+      console.error(e)
     }
   }
 
@@ -642,7 +642,7 @@ TimeStamp:currentTimeStamp
       }
       return true
     } catch (e) {
-      console.log(e)
+      console.error(e)
       useAlert.error('存倉狀態更新失敗,請稍後再試')
       return false
     }

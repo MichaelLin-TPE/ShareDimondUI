@@ -27,6 +27,6 @@ TimeStamp:currentTimeStamp
     const member = await res.json()
     authStore.setMember(member)
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }

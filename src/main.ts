@@ -7,6 +7,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router'
 import { installFetchInterceptor } from './utils/fetchInterceptor'
+import { useErrorOverlayStore } from './stores/errorOverlay'
 
 /* --- 導入 FontAwesome 核心 --- */
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -29,9 +30,22 @@ pinia.use(piniaPluginPersistedstate)
 app.use(pinia)
 app.use(router)
 
-// 全域 fetch 攔截:處理 timeout / 502 等非預期錯誤,顯示重試 / 維護中彈窗
+// 全域 fetch 攔截:處理 timeout / 401 / 502 等非預期錯誤,顯示對應彈窗
 // 必須在 pinia 掛載後才能使用 store
 installFetchInterceptor()
+
+// 全域 Vue 錯誤捕捉:任何 component setup / render / handler throw 都會被吃掉,
+// 顯示「畫面發生錯誤」fallback 而不是黑屏 (例如 TDZ 或 null access bug 救命用)
+app.config.errorHandler = (err, _vm, info) => {
+  console.error('[Vue error]', err, '\ninfo:', info)
+  try {
+    useErrorOverlayStore().triggerCrash()
+  } catch {
+    /* pinia 還沒準備好 — 退回到原生 alert */
+    // eslint-disable-next-line no-alert
+    alert('畫面發生錯誤,請重新整理頁面')
+  }
+}
 
 // 註冊全域組件，這樣你在任何 .vue 檔案都能直接用 <font-awesome-icon>
 app.component('font-awesome-icon', FontAwesomeIcon)

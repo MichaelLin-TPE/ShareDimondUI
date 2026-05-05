@@ -71,8 +71,7 @@ const saveTokenToBackend = async (token: string) => {
         deviceType: getDeviceType(),
       }),
     })
-    const data = await res.json()
-    console.log('FCM Token 儲存結果:', data.message || 'Success')
+    await res.json()
   } catch (e) {
     console.error('儲存 Token 到後端失敗:', e)
   }
@@ -127,10 +126,8 @@ const requestNotificationPermission = async () => {
   try {
     const permission = await Notification.requestPermission()
     if (permission === 'granted') {
-      console.log('使用者點擊允許')
       await getFcmTokenSilently()
     } else {
-      console.log('使用者拒絕通知')
       localStorage.setItem('declined_push', 'true')
     }
   } catch (error) {
@@ -159,7 +156,7 @@ const getBalance = async () => {
     balance.setBalanceList(data.memberBalanceResponseList)
     balance.setClanBalanceList(data.clanBalanceResponseList)
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }
 const version = ref('')
@@ -180,7 +177,7 @@ const getVersion = async () => {
     const data = await res.json()
     version.value = data.version
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }
 
@@ -204,7 +201,7 @@ const checkUpdate = async () => {
       getVersion()
     }
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }
 interface SystemContentResponse {
@@ -230,7 +227,7 @@ const checkUpdateInformation = async () => {
     contentList.value = await res.json()
     isUpdateModalOpen.value = true
   } catch (e) {
-    console.log(e)
+    console.error(e)
   }
 }
 

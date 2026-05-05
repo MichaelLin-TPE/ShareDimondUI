@@ -50,29 +50,35 @@ export function formatEventTime(iso: string): string {
 
 export function useAuction() {
   const auctions = ref<ShareResponse[]>([])
+  const loading = ref(false)
   const authStore = useAuthStore()
 
   const getShareHistory = async () => {
     if (!authStore.authToken) return
-
-    const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/getHistory', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${authStore.authToken}`,
-        Accept: 'application/json',
-        Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
-      },
-    })
-
-    const data = await res.json()
-    if (!res.ok) {
-      useAlert.error(data.message)
-      return
+    loading.value = true
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/getHistory', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Accept: 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      auctions.value = data as ShareResponse[]
+    } catch (e) {
+      console.error(e)
+      useAlert.error('載入歷史紀錄失敗,請稍後再試')
+    } finally {
+      loading.value = false
     }
-
-    auctions.value = data as ShareResponse[]
   }
 
   onMounted(() => {
@@ -120,6 +126,7 @@ TimeStamp:currentTimeStamp
     toggleStatus,
     filteredAuctions,
     auctions,
+    loading,
     roleTextMap,
     formatEventTime,
     sortedAuctions,

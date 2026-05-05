@@ -129,7 +129,7 @@ export function useAuction() {
       useAlert.success(`血盟「${form.value.guildName}」建立成功！`)
       router.replace('/clan')
     } catch (e) {
-      console.log(e)
+      console.error(e)
       useAlert.error('建立失敗，請稍後再試')
     } finally {
       submitting.value = false
