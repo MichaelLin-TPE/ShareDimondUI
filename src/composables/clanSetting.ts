@@ -217,10 +217,70 @@ export function useAuction() {
     }
   }
 
+  // ───── Discord webhook ─────
+  const discordWebhookUrl = ref<string>('')
+  const discordSaving = ref(false)
+  const discordTesting = ref(false)
+
+  const fetchDiscordWebhook = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/discord-webhook`, { method: 'GET', headers: headers(ts) })
+      if (!res.ok) return
+      const data = (await res.json()) as { discordWebhookUrl: string | null }
+      discordWebhookUrl.value = data.discordWebhookUrl ?? ''
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveDiscordWebhook = async () => {
+    discordSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/discord-webhook`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ discordWebhookUrl: discordWebhookUrl.value.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(data.message ?? '已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('儲存失敗,請稍後再試')
+    } finally {
+      discordSaving.value = false
+    }
+  }
+
+  const testDiscordWebhook = async () => {
+    discordTesting.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/discord-webhook/test`, { method: 'POST', headers: headers(ts) })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '測試失敗')
+        return
+      }
+      useAlert.success(data.message ?? '已送出,去 Discord 看看')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('測試失敗,請稍後再試')
+    } finally {
+      discordTesting.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
     fetchClanCurrencies()
+    fetchDiscordWebhook()
   })
 
   return {
@@ -238,5 +298,11 @@ export function useAuction() {
     balanceAction,
     balanceAmount,
     balanceRemark,
+    // Discord
+    discordWebhookUrl,
+    discordSaving,
+    discordTesting,
+    saveDiscordWebhook,
+    testDiscordWebhook,
   }
 }

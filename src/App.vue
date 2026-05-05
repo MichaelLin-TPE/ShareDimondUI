@@ -23,14 +23,69 @@ interface FeatureCategory {
 }
 
 const featureCategories: FeatureCategory[] = [
+  // 🆕 招牌新功能 — 排第一給人留下印象
+  {
+    title: '🚀 即時通知整合 🆕',
+    color: '#f59e0b',
+    items: [
+      {
+        icon: '💬',
+        name: 'Discord 自動推送 🔥',
+        desc: '開單 / 結算 / 掛單 / 成交 即時推到血盟 Discord 頻道,訊息可點擊直接跳回網站,血盟成員再也不會漏看',
+      },
+      {
+        icon: '🔔',
+        name: '站內通知中心',
+        desc: '完整通知歷史抽屜,未讀持續呼吸 pulse 抓注意,有事才出現,沒事 UI 完全乾淨',
+      },
+      {
+        icon: '📱',
+        name: 'FCM 手機推播',
+        desc: '手機鎖屏 / app 關閉也收得到「你得標了」「你的東西被買了」即時通知',
+      },
+      {
+        icon: '🎯',
+        name: '事件全自動 push',
+        desc: '開單 / 競標被超越 / 得標 / 掛單 / 成交 / 提款審核 全部自動推,人在哪都接得到',
+      },
+    ],
+  },
+  // 🆕 數據分析 — 第二招牌
+  {
+    title: '📊 數據與決策 🆕',
+    color: '#10b981',
+    items: [
+      {
+        icon: '📈',
+        name: '道具價格走勢圖 🔥',
+        desc: '歷史成交價 SVG 折線圖,多幣別自動分線,自動算趨勢,告別亂喊天價,買賣有依據',
+      },
+      {
+        icon: '📊',
+        name: '出席率統計',
+        desc: '7 / 30 / 90 天 / 全部 彈性區間,一眼看誰最活躍、誰常缺席',
+      },
+      {
+        icon: '📦',
+        name: '掉寶追蹤',
+        desc: 'BOSS 掉率自動統計 + 即將掉落 / 逾期未掉 紅黃 highlight 即時提醒',
+      },
+      {
+        icon: '📖',
+        name: '完整歷史紀錄',
+        desc: '寶物結標 / 分紅 / 提款 / 個人交易 全可追溯,出爭議有依據',
+      },
+    ],
+  },
+  // 既有核心
   {
     title: '💰 寶物分紅',
     color: 'var(--c-mid)',
     items: [
-      { icon: '🎯', name: '競標開單', desc: '設定底價、時間，成員競價出價搶標' },
-      { icon: '💵', name: '固定金額單', desc: '快速固定價格結標，多位得標者隨機抽選' },
-      { icon: '🙋', name: '參與 +1', desc: '一鍵加入分紅名單，到期自動結算' },
-      { icon: '📝', name: '備註/撤單', desc: '開單人可隨時更新備註或撤銷' },
+      { icon: '🎯', name: '競標開單', desc: '設定底價、時間,成員競價出價搶標,有防壓秒保護' },
+      { icon: '💵', name: '固定金額單', desc: '快速固定價格結標,多位得標者可隨機抽選' },
+      { icon: '🙋', name: '參與 +1', desc: '一鍵加入分紅名單,首輪僅限有參與者搶,到期自動結算' },
+      { icon: '🃏', name: '卡片即時動畫', desc: '新單空格→實體化彈出,有人加碼整張卡邊緣發光,生動如真實競技場' },
     ],
   },
   {
@@ -38,9 +93,19 @@ const featureCategories: FeatureCategory[] = [
     color: 'var(--c-mid)',
     items: [
       { icon: '🔁', name: '會員轉帳', desc: '公會內成員互轉多幣別貨幣' },
-      { icon: '📤', name: '申請提款', desc: '送出提款單，幹部審核後撥款' },
-      { icon: '✅', name: '提款審核', desc: '幹部/會長核准或退回提款單' },
-      { icon: '🎁', name: '基金分配', desc: '會長將公會金庫依比例分給成員' },
+      { icon: '📤', name: '申請提款', desc: '送出提款單,幹部審核後撥款' },
+      { icon: '✅', name: '提款審核', desc: '幹部/會長核准或退回提款單,有完整稽核紀錄' },
+      { icon: '🎁', name: '基金分配', desc: '會長將公會金庫依比例分給成員,有預算進度條防超發' },
+    ],
+  },
+  {
+    title: '🏪 個人交易市場',
+    color: '#a855f7',
+    items: [
+      { icon: '💰', name: '個人掛賣區', desc: '成員間 P2P 交易,直購 / 競標雙模式,血盟內部二級市場' },
+      { icon: '💎', name: '物品統一定價', desc: '會長 / 幹部統一管理參考價,新單自動帶入' },
+      { icon: '🛒', name: '成交雙向通知', desc: '你的東西被買、你得標都會立刻通知到通知中心 + Discord' },
+      { icon: '📋', name: '個人帳戶流水', desc: '個人收支 / 分紅 / 交易記錄全可查' },
     ],
   },
   {
@@ -50,34 +115,27 @@ const featureCategories: FeatureCategory[] = [
       { icon: '🙋‍♂️', name: '人員審核', desc: '新加入的成員由幹部審核放行' },
       { icon: '👑', name: '權限管理', desc: '會長指派幹部、移交會長職權' },
       { icon: '🚪', name: '成員管理', desc: '踢除成員、管理血盟名單' },
-      { icon: '⚙️', name: '血盟設定', desc: '調整匯率、競標時長等公會參數' },
+      { icon: '⚙️', name: '血盟設定', desc: '調整匯率、競標時長、Discord webhook 等公會參數' },
     ],
   },
   {
     title: '⚔️ 戰鬥輔助',
     color: '#ef4444',
     items: [
-      { icon: '⏰', name: '首領重生追蹤', desc: '自訂首領清單、固定重生間隔' },
-      { icon: '☠️', name: '死亡回報', desc: '一鍵回報死亡，自動計算下次重生' },
-      { icon: '🔔', name: 'FCM 推播', desc: '首領重生前 5 分鐘自動推播提醒' },
-      { icon: '🔄', name: '即時同步', desc: 'WebSocket 同步，盟友動作畫面立即更新' },
+      { icon: '⏰', name: '首領重生追蹤', desc: '自訂首領清單、固定重生間隔、定時提醒' },
+      { icon: '☠️', name: '死亡回報', desc: '一鍵回報死亡,自動計算下次重生' },
+      { icon: '🔄', name: 'WebSocket 即時同步', desc: '盟友動作畫面 1 秒內同步,不用 F5' },
+      { icon: '💳', name: '成員資產監控', desc: '會長一覽全體成員多幣別餘額,出帳一目了然' },
     ],
   },
   {
-    title: '🏦 帳戶中心',
-    color: '#10b981',
-    items: [
-      { icon: '💳', name: '成員帳戶', desc: '查看全體成員餘額、凍結金額' },
-      { icon: '💸', name: '個人帳戶', desc: '個人收支流水、分紅紀錄' },
-      { icon: '🏪', name: '個人掛賣區', desc: '成員間物品上架、下標交易' },
-      { icon: '📖', name: '歷史紀錄', desc: '完整的寶物結標、分紅紀錄' },
-    ],
-  },
-  {
-    title: '🎮 娛樂小物',
+    title: '🎨 體驗設計',
     color: '#ec4899',
     items: [
-      { icon: '🎯', name: '1A2B 猜數字', desc: '經典 Bulls & Cows，讓系統用最佳策略猜你想的數字' },
+      { icon: '🎨', name: '三套主題色', desc: 'Gold / Indigo / Razer 一鍵切換,主題色貫穿全站' },
+      { icon: '📱', name: 'Mobile-first', desc: '手機桌機完整響應式,觸控優化,折疊式卡片省空間' },
+      { icon: '🌙', name: '暗色 UI', desc: '夜戰友善,長時間瀏覽不刺眼' },
+      { icon: '🛡️', name: 'Error boundary', desc: '畫面崩潰自動顯示「重新整理」按鈕,不會空白黑屏' },
     ],
   },
 ]
@@ -181,12 +239,40 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
         </div>
       </div>
 
+      <!-- 業界唯一賣點 — 跟一般分紅網站徹底分流 -->
+      <div class="features-section unique-section">
+        <h3>🚀 業界首見 — 為什麼選 Diamond Core?</h3>
+        <ul class="features-list">
+          <li class="feature-item star-feature">
+            <span class="icon">💬</span>
+            <span class="text">
+              <strong>Discord 即時整合</strong>(全網首家)<br />
+              <span class="sub">開單 / 結算 / 成交即時推到血盟頻道,訊息可點擊跳回,血盟成員再也不會漏看</span>
+            </span>
+          </li>
+          <li class="feature-item star-feature">
+            <span class="icon">📈</span>
+            <span class="text">
+              <strong>道具價格走勢圖</strong><br />
+              <span class="sub">歷史成交價多幣別折線圖 + 趨勢分析,告別亂喊天價,出價有依據</span>
+            </span>
+          </li>
+          <li class="feature-item star-feature">
+            <span class="icon">🔔</span>
+            <span class="text">
+              <strong>三層通知防漏單</strong><br />
+              <span class="sub">站內通知中心 + Discord 頻道 + FCM 手機推播,人在哪都接得到</span>
+            </span>
+          </li>
+        </ul>
+      </div>
+
       <div class="features-section">
         <h3>✨ 所有方案皆包含以下核心服務</h3>
         <ul class="features-list">
           <li class="feature-item highlight-feature">
             <span class="icon">❌</span>
-            <span class="text"><strong>完全零抽成</strong> (您的分紅，系統不會有任何的介入)</span>
+            <span class="text"><strong>完全零抽成</strong> (您的分紅,系統不會有任何介入)</span>
           </li>
           <li class="feature-item">
             <span class="icon">✅</span> <span class="text">提供技術諮詢與架構建議</span>
@@ -493,6 +579,52 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
 .feature-item .icon {
   font-size: 1.1rem;
   flex-shrink: 0;
+}
+
+/* 業界首見賣點區 — 視覺更突出 (主題色漸層邊框 + 大 icon) */
+.features-section.unique-section {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--c-light-rgb), 0.1),
+    rgba(var(--c-deep-rgb), 0.05)
+  );
+  border: 1px solid rgba(var(--c-light-rgb), 0.35);
+  margin-bottom: 14px;
+}
+.features-section.unique-section h3 {
+  color: var(--c-light);
+  text-shadow: 0 0 8px rgba(var(--c-light-rgb), 0.4);
+}
+.feature-item.star-feature {
+  align-items: flex-start;
+  gap: 14px;
+  padding: 6px 0;
+  border-bottom: 1px dashed rgba(var(--c-light-rgb), 0.15);
+}
+.feature-item.star-feature:last-child {
+  border-bottom: none;
+}
+.feature-item.star-feature .icon {
+  font-size: 1.6rem;
+  filter: drop-shadow(0 0 8px rgba(var(--c-light-rgb), 0.5));
+  margin-top: 2px;
+}
+.feature-item.star-feature .text {
+  flex: 1;
+  line-height: 1.5;
+}
+.feature-item.star-feature .text strong {
+  color: var(--c-light);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.feature-item.star-feature .sub {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  margin-top: 4px;
+  line-height: 1.55;
 }
 
 /* --- 圖片彈窗樣式 --- */
