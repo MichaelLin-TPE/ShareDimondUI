@@ -703,12 +703,21 @@ h1 {
   background: rgba(22, 24, 34, 0.98);
   border: 1px solid #3a3f5c;
   border-radius: 18px;
-  padding: 40px 30px 30px;
-  width: 90%;
-  max-width: 480px;
+  padding: 44px 48px 32px;
+  width: 92%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow-y: auto;
   text-align: left;
   box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.7);
   animation: popIn 0.3s ease-out;
+}
+/* 手機保持原本緊湊樣 */
+@media (max-width: 640px) {
+  .update-modal {
+    padding: 32px 20px 24px;
+    max-width: 480px;
+  }
 }
 
 @keyframes popIn {
@@ -810,7 +819,7 @@ h1 {
 .feature-list li .text {
   flex: 1;
   min-width: 0;
-  text-align: center;
+  text-align: left;
 }
 
 .feature-list li strong {
