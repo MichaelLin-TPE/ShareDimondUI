@@ -31,12 +31,12 @@ const featureCategories: FeatureCategory[] = [
       {
         icon: '💬',
         name: 'Discord 自動推送 🔥',
-        desc: '開單 / 結算 / 掛單 / 成交 即時推到血盟 Discord 頻道,訊息可點擊直接跳回網站,血盟成員再也不會漏看',
+        desc: '開單 / 結算 / 掛單 / 成交 即時推到血盟 Discord 頻道，訊息可點擊直接跳回網站，血盟成員再也不會漏看',
       },
       {
         icon: '🔔',
         name: '站內通知中心',
-        desc: '完整通知歷史抽屜,未讀持續呼吸 pulse 抓注意,有事才出現,沒事 UI 完全乾淨',
+        desc: '右下角小鈴鐺，有新通知會閃爍提醒，點開可以翻完整紀錄，沒未讀就自動消失，畫面乾淨',
       },
       {
         icon: '📱',
@@ -46,7 +46,7 @@ const featureCategories: FeatureCategory[] = [
       {
         icon: '🎯',
         name: '事件全自動 push',
-        desc: '開單 / 競標被超越 / 得標 / 掛單 / 成交 / 提款審核 全部自動推,人在哪都接得到',
+        desc: '開單 / 競標被超越 / 得標 / 掛單 / 成交 / 提款審核 全部自動推，人在哪都接得到',
       },
     ],
   },
@@ -58,12 +58,12 @@ const featureCategories: FeatureCategory[] = [
       {
         icon: '📈',
         name: '道具價格走勢圖 🔥',
-        desc: '歷史成交價 SVG 折線圖,多幣別自動分線,自動算趨勢,告別亂喊天價,買賣有依據',
+        desc: '歷史成交價 SVG 折線圖，多幣別自動分線，自動算趨勢，告別亂喊天價，買賣有依據',
       },
       {
         icon: '📊',
         name: '出席率統計',
-        desc: '7 / 30 / 90 天 / 全部 彈性區間,一眼看誰最活躍、誰常缺席',
+        desc: '7 / 30 / 90 天 / 全部 彈性區間，一眼看誰最活躍、誰常缺席',
       },
       {
         icon: '📦',
@@ -73,7 +73,7 @@ const featureCategories: FeatureCategory[] = [
       {
         icon: '📖',
         name: '完整歷史紀錄',
-        desc: '寶物結標 / 分紅 / 提款 / 個人交易 全可追溯,出爭議有依據',
+        desc: '寶物結標 / 分紅 / 提款 / 個人交易 全可追溯，出爭議有依據',
       },
     ],
   },
@@ -82,10 +82,10 @@ const featureCategories: FeatureCategory[] = [
     title: '💰 寶物分紅',
     color: 'var(--c-mid)',
     items: [
-      { icon: '🎯', name: '競標開單', desc: '設定底價、時間,成員競價出價搶標,有防壓秒保護' },
-      { icon: '💵', name: '固定金額單', desc: '快速固定價格結標,多位得標者可隨機抽選' },
-      { icon: '🙋', name: '參與 +1', desc: '一鍵加入分紅名單,首輪僅限有參與者搶,到期自動結算' },
-      { icon: '🃏', name: '卡片即時動畫', desc: '新單空格→實體化彈出,有人加碼整張卡邊緣發光,生動如真實競技場' },
+      { icon: '🎯', name: '競標開單', desc: '設定底價、時間，成員競價出價搶標，有防壓秒保護' },
+      { icon: '💵', name: '固定金額單', desc: '快速固定價格結標，多位得標者可隨機抽選' },
+      { icon: '🙋', name: '參與 +1', desc: '一鍵加入分紅名單，首輪僅限有參與者搶，到期自動結算' },
+      { icon: '🃏', name: '卡片即時動畫', desc: '新單空格→實體化彈出，有人加碼整張卡邊緣發光，生動如真實競技場' },
     ],
   },
   {
@@ -93,17 +93,17 @@ const featureCategories: FeatureCategory[] = [
     color: 'var(--c-mid)',
     items: [
       { icon: '🔁', name: '會員轉帳', desc: '公會內成員互轉多幣別貨幣' },
-      { icon: '📤', name: '申請提款', desc: '送出提款單,幹部審核後撥款' },
-      { icon: '✅', name: '提款審核', desc: '幹部/會長核准或退回提款單,有完整稽核紀錄' },
-      { icon: '🎁', name: '基金分配', desc: '會長將公會金庫依比例分給成員,有預算進度條防超發' },
+      { icon: '📤', name: '申請提款', desc: '送出提款單，幹部審核後撥款' },
+      { icon: '✅', name: '提款審核', desc: '幹部/會長核准或退回提款單，有完整稽核紀錄' },
+      { icon: '🎁', name: '基金分配', desc: '會長將公會金庫依比例分給成員，有預算進度條防超發' },
     ],
   },
   {
     title: '🏪 個人交易市場',
     color: '#a855f7',
     items: [
-      { icon: '💰', name: '個人掛賣區', desc: '成員間 P2P 交易,直購 / 競標雙模式,血盟內部二級市場' },
-      { icon: '💎', name: '物品統一定價', desc: '會長 / 幹部統一管理參考價,新單自動帶入' },
+      { icon: '💰', name: '個人掛賣區', desc: '成員間 P2P 交易，直購 / 競標雙模式，血盟內部二級市場' },
+      { icon: '💎', name: '物品統一定價', desc: '會長 / 幹部統一管理參考價，新單自動帶入' },
       { icon: '🛒', name: '成交雙向通知', desc: '你的東西被買、你得標都會立刻通知到通知中心 + Discord' },
       { icon: '📋', name: '個人帳戶流水', desc: '個人收支 / 分紅 / 交易記錄全可查' },
     ],
@@ -123,19 +123,19 @@ const featureCategories: FeatureCategory[] = [
     color: '#ef4444',
     items: [
       { icon: '⏰', name: '首領重生追蹤', desc: '自訂首領清單、固定重生間隔、定時提醒' },
-      { icon: '☠️', name: '死亡回報', desc: '一鍵回報死亡,自動計算下次重生' },
-      { icon: '🔄', name: 'WebSocket 即時同步', desc: '盟友動作畫面 1 秒內同步,不用 F5' },
-      { icon: '💳', name: '成員資產監控', desc: '會長一覽全體成員多幣別餘額,出帳一目了然' },
+      { icon: '☠️', name: '死亡回報', desc: '一鍵回報死亡，自動計算下次重生' },
+      { icon: '🔄', name: 'WebSocket 即時同步', desc: '盟友動作畫面 1 秒內同步，不用 F5' },
+      { icon: '💳', name: '成員資產監控', desc: '會長一覽全體成員多幣別餘額，出帳一目了然' },
     ],
   },
   {
     title: '🎨 體驗設計',
     color: '#ec4899',
     items: [
-      { icon: '🎨', name: '三套主題色', desc: 'Gold / Indigo / Razer 一鍵切換,主題色貫穿全站' },
-      { icon: '📱', name: 'Mobile-first', desc: '手機桌機完整響應式,觸控優化,折疊式卡片省空間' },
-      { icon: '🌙', name: '暗色 UI', desc: '夜戰友善,長時間瀏覽不刺眼' },
-      { icon: '🛡️', name: 'Error boundary', desc: '畫面崩潰自動顯示「重新整理」按鈕,不會空白黑屏' },
+      { icon: '🎨', name: '三套主題色', desc: 'Gold / Indigo / Razer 一鍵切換，主題色貫穿全站' },
+      { icon: '📱', name: 'Mobile-first', desc: '手機桌機完整響應式，觸控優化，折疊式卡片省空間' },
+      { icon: '🌙', name: '暗色 UI', desc: '夜戰友善，長時間瀏覽不刺眼' },
+      { icon: '🛡️', name: 'Error boundary', desc: '畫面崩潰自動顯示「重新整理」按鈕，不會空白黑屏' },
     ],
   },
 ]
@@ -144,13 +144,13 @@ const isLoginPage = computed(() => {
   return route.name === 'login' // 對應你 router 裡的 name: 'login'
 })
 
-// 通知抽屜 (全域,Dashboard 鈴鐺 / FAB / 任何地方都能控制 — 走同一個 singleton)
+// 通知抽屜 (全域，Dashboard 鈴鐺 / FAB / 任何地方都能控制 — 走同一個 singleton)
 const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifications()
 </script>
 
 <template>
   <ErrorOverlay />
-  <!-- 通知抽屜 (全域,任何 component openDrawer() 都能滑出) -->
+  <!-- 通知抽屜 (全域，任何 component openDrawer() 都能滑出) -->
   <NotificationDrawer :open="notifDrawerOpen" @close="notifCloseDrawer" />
 
   <div v-if="route.meta.fullscreen" id="app" :class="{ fullscreen: route.meta.fullscreen }">
@@ -197,7 +197,7 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
         <span class="trial-icon">🎁</span>
         <div class="trial-text">
           <div class="trial-title">創血盟即享 <strong>7 天免費試用</strong></div>
-          <div class="trial-sub">完整功能不限制,試用結束再選方案</div>
+          <div class="trial-sub">完整功能不限制，試用結束再選方案</div>
         </div>
       </div>
 
@@ -207,7 +207,7 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
           <div class="plan-price">
             <span class="currency">NT$</span>2,000<span class="period"> / 月</span>
           </div>
-          <div class="plan-desc">單一工會授權</div>
+          <div class="plan-desc">單一公會授權</div>
         </div>
 
         <div class="plan-card highlight">
@@ -216,7 +216,7 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
           <div class="plan-price">
             <span class="currency text-gold">NT$</span>20,000<span class="period"> / 年</span>
           </div>
-          <div class="plan-desc">單一工會授權</div>
+          <div class="plan-desc">單一公會授權</div>
         </div>
 
         <div class="plan-card">
@@ -235,11 +235,11 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
               </span>
             </div>
           </div>
-          <div class="plan-desc">大型工會專案</div>
+          <div class="plan-desc">大型公會專案</div>
         </div>
       </div>
 
-      <!-- 業界唯一賣點 — 跟一般分紅網站徹底分流 -->
+      <!-- 業界唯一賣點 + 服務承諾 (合併成一塊) -->
       <div class="features-section unique-section">
         <h3>🚀 業界首見 — 為什麼選 Diamond Core?</h3>
         <ul class="features-list">
@@ -247,35 +247,31 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
             <span class="icon">💬</span>
             <span class="text">
               <strong>Discord 即時整合</strong>(全網首家)<br />
-              <span class="sub">開單 / 結算 / 成交即時推到血盟頻道,訊息可點擊跳回,血盟成員再也不會漏看</span>
+              <span class="sub">開單 / 結算 / 成交即時推到血盟頻道，訊息可點擊跳回，血盟成員再也不會漏看</span>
             </span>
           </li>
           <li class="feature-item star-feature">
             <span class="icon">📈</span>
             <span class="text">
               <strong>道具價格走勢圖</strong><br />
-              <span class="sub">歷史成交價多幣別折線圖 + 趨勢分析,告別亂喊天價,出價有依據</span>
+              <span class="sub">歷史成交價多幣別折線圖 + 趨勢分析，告別亂喊天價，出價有依據</span>
             </span>
           </li>
           <li class="feature-item star-feature">
             <span class="icon">🔔</span>
             <span class="text">
               <strong>三層通知防漏單</strong><br />
-              <span class="sub">站內通知中心 + Discord 頻道 + FCM 手機推播,人在哪都接得到</span>
+              <span class="sub">站內通知中心 + Discord 頻道 + FCM 手機推播，人在哪都接得到</span>
             </span>
           </li>
         </ul>
-      </div>
 
-      <div class="features-section">
-        <h3>✨ 所有方案皆包含以下核心服務</h3>
+        <div class="sub-divider">✨ 加上以下保障</div>
+
         <ul class="features-list">
           <li class="feature-item highlight-feature">
             <span class="icon">❌</span>
-            <span class="text"><strong>完全零抽成</strong> (您的分紅,系統不會有任何介入)</span>
-          </li>
-          <li class="feature-item">
-            <span class="icon">✅</span> <span class="text">提供技術諮詢與架構建議</span>
+            <span class="text"><strong>完全零抽成</strong> (您的分紅，系統不會有任何介入)</span>
           </li>
           <li class="feature-item">
             <span class="icon">✅</span> <span class="text">專屬客製化需求諮詢評估</span>
@@ -627,6 +623,30 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
   line-height: 1.55;
 }
 
+/* 業界首見區內部分隔 — 招牌功能 vs 服務承諾 */
+.sub-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+  font-size: 0.82rem;
+  color: var(--c-light);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.sub-divider::before,
+.sub-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(var(--c-light-rgb), 0.3),
+    transparent
+  );
+}
+
 /* --- 圖片彈窗樣式 --- */
 .image-modal-overlay {
   position: fixed;
@@ -706,7 +726,7 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
   color: #e2e8f0;
-  overflow: hidden; /* close 按鈕在邊緣,內層才滾 */
+  overflow: hidden; /* close 按鈕在邊緣，內層才滾 */
 }
 
 /* 內層真正捲的容器 */
@@ -843,7 +863,7 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
     border-radius: 16px;
   }
   .features-scroll {
-    padding: 48px 16px 18px; /* 上方留空給 close 按鈕,避免重疊 */
+    padding: 48px 16px 18px; /* 上方留空給 close 按鈕，避免重疊 */
   }
   .features-grid {
     grid-template-columns: 1fr;
