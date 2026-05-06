@@ -202,15 +202,16 @@ TimeStamp:currentTimeStamp
   }
 
   const addAttendance = async () => {
+    const savedScrollY = window.scrollY
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/add-attendance', {
+      const res = await fetch('https://api.gameshare-system.com/add-attendance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           ticketCode: submitAttendanceTicketCode.value,
@@ -221,7 +222,13 @@ TimeStamp:currentTimeStamp
         return
       }
       useAlert.success('參與成功!')
-      fetchOngoingTreasures()
+      await fetchOngoingTreasures()
+      // 還原 scroll (避免列表 refresh 後跳到頂)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' as ScrollBehavior })
+        })
+      })
     } catch (e) {
       console.error(e)
     }
@@ -416,15 +423,18 @@ TimeStamp:currentTimeStamp
   }
 
   const submitBidding = async (currency: string) => {
+    // 出價會觸發 WS refresh + sweetalert2 開關,兩個都可能讓 scroll 跳到頂
+    // 存目前 scroll Y,等 DOM 更新完還原 (使用者體驗:出完價繼續看原本的位置)
+    const savedScrollY = window.scrollY
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
-const res= await fetch('https://api.gameshare-system.com/add-bidding', {
+      const res = await fetch('https://api.gameshare-system.com/add-bidding', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${authStore.authToken}`,
           'Content-Type': 'application/json',
           Sign: generateSignature(currentTimeStamp),
-TimeStamp:currentTimeStamp
+          TimeStamp: currentTimeStamp,
         },
         body: JSON.stringify({
           treasureCode: submitTreasureCod.value,
@@ -440,7 +450,13 @@ TimeStamp:currentTimeStamp
       }
       const data = await res.json()
       useAlert.success(data.message)
-      fetchOngoingTreasures()
+      await fetchOngoingTreasures()
+      // 等 Vue 渲染完 (data 更新 + DOM 重排) 再還原 scroll
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: savedScrollY, behavior: 'instant' as ScrollBehavior })
+        })
+      })
     } catch (e) {
       console.error(e)
     }
