@@ -27,6 +27,7 @@ import ItemPriceTrendPage from '@/views/ItemPriceTrendPage.vue'
 import SettingsPage from '@/views/SettingsPage.vue'
 import AdminPage from '@/views/AdminPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
+import AuditLogPage from '@/views/AuditLogPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -170,6 +171,10 @@ const router = createRouter({
         {
           path: 'attendance',
           component: AttendancePage,
+        },
+        {
+          path: 'auditLog',
+          component: AuditLogPage,
         },
         {
           path: 'settings',
