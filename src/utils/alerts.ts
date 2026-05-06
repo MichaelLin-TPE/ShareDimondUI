@@ -1,9 +1,21 @@
 import Swal from 'sweetalert2'
 
+/**
+ * 全域 Swal 預設值 — 解掉 SweetAlert2 預設會 lock body scroll 的問題
+ * (開關 alert 時頁面會被強制 scroll 到頂,使用者體驗很差)
+ *
+ * - heightAuto: false → 不會把 html height 改成 auto + body scroll lock
+ * - scrollbarPadding: false → 不會額外加 padding 補捲軸寬度,避免 layout shift
+ */
+const SwalApp = Swal.mixin({
+  heightAuto: false,
+  scrollbarPadding: false,
+})
+
 export const useAlert = {
   // 載入中彈窗 (Loading)
   loading: (message = '載入中...', title = '請稍候') => {
-    return Swal.fire({
+    return SwalApp.fire({
       title,
       html: `<div class="loading-text">${message}</div>`,
       allowOutsideClick: false,
@@ -11,7 +23,7 @@ export const useAlert = {
       background: '#1e1e1e',
       color: '#ffffff',
       didOpen: () => {
-        Swal.showLoading() // 顯示 Swal 內建的漂亮的旋轉動畫
+        SwalApp.showLoading() // 顯示 Swal 內建的漂亮的旋轉動畫
       },
       customClass: {
         popup: 'custom-swal-loading-popup',
@@ -21,7 +33,7 @@ export const useAlert = {
 
   // 關閉目前所有的彈窗
   close: () => {
-    Swal.close()
+    SwalApp.close()
   },
   currencySelect: async (
     currencyList: { currency: string; amount: number | string }[],
@@ -34,7 +46,7 @@ export const useAlert = {
       inputOptions[item.currency] = `${item.currency} (${Number(item.amount).toLocaleString()})`
     })
 
-    const { value: selectedCurrency } = await Swal.fire({
+    const { value: selectedCurrency } = await SwalApp.fire({
       title,
       input: 'radio',
       inputOptions,
@@ -64,7 +76,7 @@ export const useAlert = {
 
   // 成功通知
   success: (message: string, title = '系統通知') => {
-    return Swal.fire({
+    return SwalApp.fire({
       title,
       text: message,
       icon: 'success',
@@ -78,7 +90,7 @@ export const useAlert = {
 
   // 錯誤通知
   error: (message: string, title = '發生錯誤') => {
-    return Swal.fire({
+    return SwalApp.fire({
       title,
       text: message,
       icon: 'error',
@@ -92,7 +104,7 @@ export const useAlert = {
 
   // 確認通知
   confirm: (message: string, title = '請確認') => {
-    return Swal.fire({
+    return SwalApp.fire({
       title,
       text: message,
       icon: 'warning',
@@ -107,7 +119,7 @@ export const useAlert = {
     })
   },
   inputDialog: async (placeholder = '請輸入內容', title = '系統輸入') => {
-    const { value: text } = await Swal.fire({
+    const { value: text } = await SwalApp.fire({
       title,
       input: 'text',
       inputPlaceholder: placeholder,
@@ -125,7 +137,7 @@ export const useAlert = {
       },
       preConfirm: (value) => {
         if (!value) {
-          Swal.showValidationMessage('內容不能為空！')
+          SwalApp.showValidationMessage('內容不能為空！')
         }
         return value
       },
