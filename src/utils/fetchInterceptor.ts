@@ -73,17 +73,31 @@ export function installFetchInterceptor() {
         }
       }
 
-      // 我們自己 API 收到 5xx (502/503/504 等),tab 在前景時顯示維修彈窗
+      // 我們自己 API 收到 5xx → 只在「真的服務崩潰」時顯示維修彈窗:
+      // - body 有 message 欄位 → 後端有正常回應只是業務出錯 (例如 GlobalExceptionHandler 兜底的 500),
+      //   讓 caller 的 useAlert.error(data.message) 處理就好,不顯示維修彈窗
+      // - body 沒 message / 不能 parse → 真正的服務掛掉 (CDN 502/503/504),顯示維修彈窗
       if (
         res.status >= 500 &&
         res.status < 600 &&
         OUR_API.test(url) &&
         document.visibilityState === 'visible'
       ) {
+        let hasFriendlyMessage = false
         try {
-          useErrorOverlayStore().triggerMaintenance()
+          // clone 避免吃掉 body,caller 還要用
+          const cloned = res.clone()
+          const body = await cloned.json().catch(() => null)
+          hasFriendlyMessage = !!(body && typeof body.message === 'string' && body.message.length > 0)
         } catch {
-          /* pinia 還沒準備好,忽略 */
+          /* parse 失敗 → 視為無 message → 顯示維修 */
+        }
+        if (!hasFriendlyMessage) {
+          try {
+            useErrorOverlayStore().triggerMaintenance()
+          } catch {
+            /* pinia 還沒準備好,忽略 */
+          }
         }
       }
       return res
