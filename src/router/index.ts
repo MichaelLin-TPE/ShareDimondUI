@@ -5,7 +5,6 @@ import ResetPassowrd from '@/views/ResetPassowrd.vue'
 import DashBoard from '@/views/DashBoard.vue'
 import ClanLayout from '@/layouts/ClanLayout.vue'
 import ShareHistory from '@/views/ShareHistory.vue'
-import HistoryBoard from '@/views/HistoryBoard.vue'
 import TransferPage from '@/views/TransferPage.vue'
 import WithdrawPage from '@/views/WithdrawPage.vue'
 import MemberRolePage from '@/views/MemberRolePage.vue'
@@ -95,10 +94,6 @@ const router = createRouter({
         {
           path: 'treasures',
           component: ShareHistory,
-        },
-        {
-          path: 'history',
-          component: HistoryBoard,
         },
         {
           path: 'transfer',
