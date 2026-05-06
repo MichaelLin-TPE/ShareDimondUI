@@ -19,6 +19,8 @@ interface Menu {
   label: string
   category?: string | null
   categorySort?: number | null
+  path?: string | null
+  minRole?: string | null
 }
 
 interface MenuGroup {
@@ -29,7 +31,9 @@ interface MenuGroup {
 
 const menuList = ref<Menu[]>([])
 
-const labelToRoute: Record<string, string> = {
+// Legacy fallback: 後端 backfill 完成前的過渡期保護
+// 新增頁面請改 backend MenuSeeder CANONICAL list (path 從那邊來)
+const legacyLabelToRoute: Record<string, string> = {
   '🏛️ 血盟大廳': '/clan/dashboard',
   '📖 歷史紀錄': '/clan/treasures',
   '💸 轉帳': '/clan/transfer',
@@ -49,17 +53,22 @@ const labelToRoute: Record<string, string> = {
   '📦 掉寶追蹤': '/clan/lootTracker',
   '📈 道具走勢': '/clan/itemPriceTrend',
   '📊 出席率': '/clan/attendance',
+  '🛡️ 操作日誌': '/clan/auditLog',
   '⚙️ 設置': '/clan/settings',
+}
+
+const resolvePath = (item: Menu): string | undefined => {
+  return item.path ?? legacyLabelToRoute[item.label]
 }
 
 const handleMenuClick = (item: Menu) => {
   isCollapsed.value = true
-  const target = labelToRoute[item.label]
+  const target = resolvePath(item)
   if (target) router.replace(target)
 }
 
 const isActive = (item: Menu) => {
-  const target = labelToRoute[item.label]
+  const target = resolvePath(item)
   return target ? route.path === target : false
 }
 
