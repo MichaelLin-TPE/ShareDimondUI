@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue'
+import { nextTick, onMounted, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 import { useAlert } from '@/utils/alerts.ts'
@@ -17,6 +17,7 @@ const messages = ref<ChatMessage[]>([])
 const inputText = ref('')
 const loading = ref(false)
 const messageScroll = ref<HTMLDivElement | null>(null)
+const composerInput = ref<HTMLTextAreaElement | null>(null)
 
 const SUGGESTIONS = [
   '地龍多久重生?',
@@ -24,6 +25,20 @@ const SUGGESTIONS = [
   '我們公會分潤怎麼算?',
   '神話武器怎麼合成?',
 ]
+
+// 強制捲到最底 — 用 requestAnimationFrame 確保 DOM 已 paint
+const scrollToBottom = () => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      if (messageScroll.value) {
+        messageScroll.value.scrollTop = messageScroll.value.scrollHeight
+      }
+    })
+  })
+}
+
+// loading 狀態變化 (打字動畫進場/退場) 也要捲到底
+watch(loading, () => scrollToBottom())
 
 let nextId = 1
 const pushMsg = (role: 'user' | 'assistant', content: string) => {
@@ -33,10 +48,12 @@ const pushMsg = (role: 'user' | 'assistant', content: string) => {
     content,
     at: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
   })
+  scrollToBottom()
+}
+
+const focusInput = () => {
   nextTick(() => {
-    if (messageScroll.value) {
-      messageScroll.value.scrollTop = messageScroll.value.scrollHeight
-    }
+    composerInput.value?.focus()
   })
 }
 
@@ -75,6 +92,9 @@ const sendQuestion = async (questionOverride?: string) => {
     pushMsg('assistant', '⚠️ 連線失敗,請稍後再試')
   } finally {
     loading.value = false
+    // AI 回完自動把 focus 拉回輸入框,使用者可以直接接著打
+    focusInput()
+    scrollToBottom()
   }
 }
 
@@ -91,6 +111,7 @@ onMounted(() => {
     'assistant',
     '👋 哈囉! 我是公會 FAQ 助手,可以回答遊戲機制、道具、Boss、本公會規則等問題。\n試試下面的範例,或直接打字問我吧 ✨',
   )
+  focusInput()
 })
 </script>
 
@@ -147,6 +168,7 @@ onMounted(() => {
     <!-- 輸入區 -->
     <div class="composer">
       <textarea
+        ref="composerInput"
         v-model="inputText"
         class="composer-input"
         rows="1"
@@ -333,22 +355,22 @@ onMounted(() => {
 }
 
 /* === Composer (輸入區) === */
-/* 用 grid 確保 input 跟送出按鈕同高度 (align: stretch 在 button 上 Safari 不穩) */
+/* 兩邊都 explicit height + flex, 不用 grid stretch (button 在 stretch 下跨瀏覽器不穩) */
 .composer {
   flex-shrink: 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: stretch;
+  display: flex;
+  align-items: center;
   gap: 8px;
   padding-top: 12px;
   border-top: 1px solid #1f2233;
   margin-top: 8px;
 }
 .composer-input {
-  width: 100%;
-  min-height: 48px;
-  max-height: 120px;
-  padding: 13px 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 48px;       /* 固定 48 跟按鈕一致 */
+  margin: 0;
+  padding: 14px 14px;
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 10px;
@@ -359,7 +381,11 @@ onMounted(() => {
   outline: none;
   font-family: inherit;
   box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
   transition: border-color 0.15s, box-shadow 0.15s;
+  /* 多行時內部 scroll, 不撐高 */
+  overflow-y: auto;
 }
 .composer-input:focus {
   border-color: var(--c-light);
@@ -373,10 +399,10 @@ onMounted(() => {
   cursor: not-allowed;
 }
 .composer-send {
-  /* grid stretch + min-height 確保跟 input 一樣高 */
-  align-self: stretch;
-  min-width: 80px;
-  min-height: 48px;
+  flex: 0 0 auto;
+  min-width: 88px;
+  height: 48px;       /* 跟 input 完全一樣 */
+  margin: 0;
   padding: 0 18px;
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
@@ -391,10 +417,11 @@ onMounted(() => {
   -webkit-appearance: none;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
+  vertical-align: middle;
 }
 .composer-send:hover:not(:disabled) {
   transform: translateY(-1px);

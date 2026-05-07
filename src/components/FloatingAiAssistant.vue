@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -17,6 +17,7 @@ const messages = ref<ChatMessage[]>([])
 const inputText = ref('')
 const loading = ref(false)
 const messageScroll = ref<HTMLDivElement | null>(null)
+const composerInput = ref<HTMLInputElement | null>(null)
 const hasUnreadHint = ref(true) // 第一次小紅點提示
 
 const SUGGESTIONS = ['地龍多久重生?', '怎麼提款?', '我們公會分潤怎麼算?']
@@ -25,6 +26,24 @@ let nextId = 1
 
 const showWelcome = computed(() => messages.value.length === 0)
 
+const scrollToBottom = () => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      if (messageScroll.value) {
+        messageScroll.value.scrollTop = messageScroll.value.scrollHeight
+      }
+    })
+  })
+}
+
+const focusInput = () => {
+  nextTick(() => {
+    composerInput.value?.focus()
+  })
+}
+
+watch(loading, () => scrollToBottom())
+
 const pushMsg = (role: 'user' | 'assistant', content: string) => {
   messages.value.push({
     id: nextId++,
@@ -32,11 +51,7 @@ const pushMsg = (role: 'user' | 'assistant', content: string) => {
     content,
     at: new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }),
   })
-  nextTick(() => {
-    if (messageScroll.value) {
-      messageScroll.value.scrollTop = messageScroll.value.scrollHeight
-    }
-  })
+  scrollToBottom()
 }
 
 const headers = (): Record<string, string> => {
@@ -73,6 +88,8 @@ const send = async (questionOverride?: string) => {
     pushMsg('assistant', '⚠️ 連線失敗,請稍後再試')
   } finally {
     loading.value = false
+    focusInput()
+    scrollToBottom()
   }
 }
 
@@ -87,11 +104,8 @@ const toggle = () => {
   isOpen.value = !isOpen.value
   hasUnreadHint.value = false
   if (isOpen.value) {
-    nextTick(() => {
-      if (messageScroll.value) {
-        messageScroll.value.scrollTop = messageScroll.value.scrollHeight
-      }
-    })
+    scrollToBottom()
+    focusInput()
   }
 }
 </script>
@@ -158,6 +172,7 @@ const toggle = () => {
 
       <div class="float-composer">
         <input
+          ref="composerInput"
           v-model="inputText"
           type="text"
           class="float-input"
