@@ -26,7 +26,11 @@ const messageScroll = ref<HTMLDivElement | null>(null)
 const composerInput = ref<HTMLInputElement | null>(null)
 const hasUnreadHint = ref(true) // 第一次小紅點提示
 
-const SUGGESTIONS = ['地龍多久重生?', '怎麼提款?', '我們公會分潤怎麼算?']
+const SUGGESTIONS = [
+  '大天堂的最新更新歷程',
+  '目前血盟公積金幾%?',
+  '目前競標跟 +1 的時間設定是幾分鐘?',
+]
 
 let nextId = 1
 

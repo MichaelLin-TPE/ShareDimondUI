@@ -20,10 +20,9 @@ const messageScroll = ref<HTMLDivElement | null>(null)
 const composerInput = ref<HTMLTextAreaElement | null>(null)
 
 const SUGGESTIONS = [
-  '地龍多久重生?',
-  '怎麼提款?',
-  '我們公會分潤怎麼算?',
-  '神話武器怎麼合成?',
+  '大天堂的最新更新歷程',
+  '目前血盟公積金幾%?',
+  '目前競標跟 +1 的時間設定是幾分鐘?',
 ]
 
 // 強制捲到最底 — 用 requestAnimationFrame 確保 DOM 已 paint
