@@ -180,9 +180,15 @@ onMounted(() => {
         type="button"
         class="composer-send"
         :disabled="loading || !inputText.trim()"
+        :title="loading ? '傳送中...' : '送出 (Enter)'"
         @click="sendQuestion()"
       >
-        {{ loading ? '...' : '送出 ↑' }}
+        <span v-if="loading" class="send-loading">
+          <span></span><span></span><span></span>
+        </span>
+        <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12l14 0M13 6l6 6-6 6" />
+        </svg>
       </button>
     </div>
   </div>
@@ -400,18 +406,16 @@ onMounted(() => {
 }
 .composer-send {
   flex: 0 0 auto;
-  min-width: 88px;
-  height: 48px;       /* 跟 input 完全一樣 */
+  width: 48px;        /* icon 按鈕,正方形,佔比 ~5% */
+  height: 48px;       /* 跟 input 完全一樣高 */
   margin: 0;
-  padding: 0 18px;
+  padding: 0;
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
   border: none;
   border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 800;
   cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: transform 0.1s, opacity 0.15s;
   font-family: inherit;
   appearance: none;
   -webkit-appearance: none;
@@ -422,6 +426,32 @@ onMounted(() => {
   justify-content: center;
   box-sizing: border-box;
   vertical-align: middle;
+}
+.composer-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.composer-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+/* loading 三個圓點 */
+.send-loading {
+  display: inline-flex;
+  gap: 3px;
+}
+.send-loading span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: send-loading-pulse 1.2s infinite ease-in-out;
+}
+.send-loading span:nth-child(2) { animation-delay: 0.15s; }
+.send-loading span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes send-loading-pulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1.1); opacity: 1; }
 }
 .composer-send:hover:not(:disabled) {
   transform: translateY(-1px);
