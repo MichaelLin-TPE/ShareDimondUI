@@ -19,31 +19,6 @@ const loading = ref(false)
 const messageScroll = ref<HTMLDivElement | null>(null)
 const composerInput = ref<HTMLTextAreaElement | null>(null)
 
-// 預設建議題 (cold start 或 API 失敗的 fallback)
-const DEFAULT_SUGGESTIONS = [
-  '大天堂的最新更新歷程',
-  '目前血盟公積金幾%?',
-  '目前競標跟 +1 的時間設定是幾分鐘?',
-]
-const suggestions = ref<string[]>([...DEFAULT_SUGGESTIONS])
-
-const fetchSuggestions = async () => {
-  try {
-    const res = await fetch(
-      'https://api.gameshare-system.com/ai/faq/suggestions?limit=3',
-      { headers: headers() },
-    )
-    if (!res.ok) return
-    const data = await res.json()
-    if (Array.isArray(data.items) && data.items.length > 0) {
-      suggestions.value = data.items
-    }
-  } catch (e) {
-    console.error('[suggestions] fetch failed', e)
-    // 保留 default
-  }
-}
-
 // 強制捲到最底 — 用 requestAnimationFrame 確保 DOM 已 paint
 const scrollToBottom = () => {
   nextTick(() => {
@@ -127,10 +102,9 @@ const onEnter = (e: KeyboardEvent) => {
 onMounted(() => {
   pushMsg(
     'assistant',
-    '👋 哈囉! 我是公會 FAQ 助手,可以回答遊戲機制、道具、Boss、本公會規則等問題。\n試試下面的範例,或直接打字問我吧 ✨',
+    '👋 哈囉! 我是公會 FAQ 助手,可以回答遊戲機制、道具、Boss、本公會規則等問題。\n直接打字問我吧 ✨',
   )
   focusInput()
-  fetchSuggestions()
 })
 </script>
 
@@ -169,19 +143,6 @@ onMounted(() => {
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 建議問題 chips -->
-    <div v-if="messages.length <= 1" class="suggestions">
-      <button
-        v-for="s in suggestions"
-        :key="s"
-        type="button"
-        class="suggestion-chip"
-        @click="sendQuestion(s)"
-      >
-        {{ s }}
-      </button>
     </div>
 
     <!-- 輸入區 -->
@@ -348,35 +309,6 @@ onMounted(() => {
 @keyframes typing-bounce {
   0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
   40% { transform: translateY(-4px); opacity: 1; }
-}
-
-/* === 建議 chips === */
-.suggestions {
-  flex-shrink: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 4px 0;
-}
-.suggestion-chip {
-  padding: 8px 14px;
-  background: #161822;
-  border: 1px solid #2e3147;
-  border-radius: 20px;
-  color: #cbd5e1;
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: inherit;
-  appearance: none;
-  -webkit-appearance: none;
-  line-height: 1.2;
-}
-.suggestion-chip:hover {
-  background: rgba(var(--c-light-rgb), 0.15);
-  color: var(--c-light);
-  border-color: rgba(var(--c-light-rgb), 0.4);
 }
 
 /* === Composer (輸入區) === */
