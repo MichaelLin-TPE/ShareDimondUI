@@ -26,11 +26,29 @@ const messageScroll = ref<HTMLDivElement | null>(null)
 const composerInput = ref<HTMLInputElement | null>(null)
 const hasUnreadHint = ref(true) // 第一次小紅點提示
 
-const SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   '大天堂的最新更新歷程',
   '目前血盟公積金幾%?',
   '目前競標跟 +1 的時間設定是幾分鐘?',
 ]
+const suggestions = ref<string[]>([...DEFAULT_SUGGESTIONS])
+const suggestionsFetched = ref(false)
+
+const fetchSuggestions = async () => {
+  try {
+    const res = await fetch(
+      'https://api.gameshare-system.com/ai/faq/suggestions?limit=3',
+      { headers: headers() },
+    )
+    if (!res.ok) return
+    const data = await res.json()
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      suggestions.value = data.items
+    }
+  } catch (e) {
+    console.error('[suggestions] fetch failed', e)
+  }
+}
 
 let nextId = 1
 
@@ -116,6 +134,11 @@ const toggle = () => {
   if (isOpen.value) {
     scrollToBottom()
     focusInput()
+    // 第一次打開時撈建議題 (之後不再撈,避免每次點開都打 API)
+    if (!suggestionsFetched.value) {
+      suggestionsFetched.value = true
+      fetchSuggestions()
+    }
   }
 }
 </script>
@@ -155,7 +178,7 @@ const toggle = () => {
           </div>
           <div class="welcome-suggestions">
             <button
-              v-for="s in SUGGESTIONS"
+              v-for="s in suggestions"
               :key="s"
               type="button"
               class="welcome-chip"
