@@ -27,6 +27,8 @@ import SettingsPage from '@/views/SettingsPage.vue'
 import AdminPage from '@/views/AdminPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
+import FaqAssistantPage from '@/views/FaqAssistantPage.vue'
+import FaqManagePage from '@/views/FaqManagePage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -170,6 +172,14 @@ const router = createRouter({
         {
           path: 'auditLog',
           component: AuditLogPage,
+        },
+        {
+          path: 'faqManage',
+          component: FaqManagePage,
+        },
+        {
+          path: 'aiAssistant',
+          component: FaqAssistantPage,
         },
         {
           path: 'settings',
