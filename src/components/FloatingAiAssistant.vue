@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
 const authStore = useAuthStore()
+const route = useRoute()
+
+// 在 AI 助理全頁不顯示 (避免重複)
+const hideOnRoutes = ['/clan/aiAssistant']
+const visible = computed(() => !hideOnRoutes.includes(route.path))
 
 interface ChatMessage {
   id: number
@@ -111,6 +117,8 @@ const toggle = () => {
 </script>
 
 <template>
+  <!-- 在 AI 助理全頁時整個 hide -->
+  <template v-if="visible">
   <!-- 浮動按鈕 (永遠顯示, 無論 isOpen) -->
   <button
     type="button"
@@ -191,6 +199,7 @@ const toggle = () => {
       </div>
     </div>
   </transition>
+  </template>
 </template>
 
 <style scoped>
