@@ -333,9 +333,11 @@ onMounted(() => {
 }
 
 /* === Composer (輸入區) === */
+/* 用 grid 確保 input 跟送出按鈕同高度 (align: stretch 在 button 上 Safari 不穩) */
 .composer {
   flex-shrink: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: stretch;
   gap: 8px;
   padding-top: 12px;
@@ -343,10 +345,10 @@ onMounted(() => {
   margin-top: 8px;
 }
 .composer-input {
-  flex: 1 1 auto;
-  min-height: 44px;
+  width: 100%;
+  min-height: 48px;
   max-height: 120px;
-  padding: 12px 14px;
+  padding: 13px 14px;
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 10px;
@@ -371,8 +373,10 @@ onMounted(() => {
   cursor: not-allowed;
 }
 .composer-send {
-  flex: 0 0 auto;
+  /* grid stretch + min-height 確保跟 input 一樣高 */
+  align-self: stretch;
   min-width: 80px;
+  min-height: 48px;
   padding: 0 18px;
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
@@ -387,6 +391,10 @@ onMounted(() => {
   -webkit-appearance: none;
   line-height: 1;
   box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 .composer-send:hover:not(:disabled) {
   transform: translateY(-1px);
