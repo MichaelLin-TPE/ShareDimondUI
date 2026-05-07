@@ -428,18 +428,21 @@ const toggle = () => {
 }
 
 /* === Composer === */
+/* 兩邊用 explicit height + 一致 box-sizing,不依賴 grid stretch (button 跨瀏覽器不穩) */
 .float-composer {
   flex-shrink: 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border-top: 1px solid #24263a;
   background: #0b0d14;
 }
 .float-input {
-  width: 100%;
-  height: 38px;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  margin: 0;
   padding: 0 12px;
   background: #161822;
   border: 1px solid #2e3147;
@@ -451,6 +454,8 @@ const toggle = () => {
   box-sizing: border-box;
   line-height: 1;
   transition: all 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
 }
 .float-input::placeholder {
   color: #475569;
@@ -464,9 +469,10 @@ const toggle = () => {
   cursor: not-allowed;
 }
 .float-send {
-  align-self: stretch;
-  min-width: 38px;
-  min-height: 38px;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 40px;
+  margin: 0;
   padding: 0;
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
@@ -479,12 +485,13 @@ const toggle = () => {
   appearance: none;
   -webkit-appearance: none;
   line-height: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(var(--c-deep-rgb), 0.35);
   transition: transform 0.1s;
   box-sizing: border-box;
+  vertical-align: middle;
 }
 .float-send:hover:not(:disabled) {
   transform: translateY(-1px);
