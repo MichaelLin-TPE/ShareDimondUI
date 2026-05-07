@@ -23,7 +23,34 @@ interface FeatureCategory {
 }
 
 const featureCategories: FeatureCategory[] = [
-  // 🆕 招牌新功能 — 排第一給人留下印象
+  // 🤖 業界首創 AI 助理 — 排最前面 + 整張卡抖動 (見 .features-category.shake-attn)
+  {
+    title: '🤖 AI 助理 (業界首創)',
+    color: '#a855f7',
+    items: [
+      {
+        icon: '💬',
+        name: '即時 AI 問答 🔥',
+        desc: '玩家在站內任何頁面點右下角機器人,直接問遊戲機制 / 公會規則 / 道具用法',
+      },
+      {
+        icon: '🏰',
+        name: '血盟設定 AI 自動讀',
+        desc: '問「我們公積金幾%?」「+1 時間多久?」AI 即時撈本血盟 DB 回答,不靠人工餵',
+      },
+      {
+        icon: '📚',
+        name: 'FAQ 知識庫 + URL 匯入',
+        desc: '會長可貼網址,系統自動爬內容餵 AI;自訂 FAQ 條目,新人問題秒回',
+      },
+      {
+        icon: '🎯',
+        name: '熱門問題自動排序',
+        desc: 'AI 統計大家在問什麼,熱門題自動推到首頁,新人一進來就看到',
+      },
+    ],
+  },
+  // 🆕 招牌新功能
   {
     title: '🚀 即時通知整合 🆕',
     color: '#f59e0b',
@@ -243,6 +270,13 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
       <div class="features-section unique-section">
         <h3>🚀 業界首見 — 為什麼選 Diamond Core?</h3>
         <ul class="features-list">
+          <li class="feature-item star-feature shake-attn">
+            <span class="icon">🤖</span>
+            <span class="text">
+              <strong>AI 助理</strong>(業界首創)<br />
+              <span class="sub">玩家直接問 AI,自動讀血盟 DB 設定 + FAQ 知識庫回答,新人不用追著會長問</span>
+            </span>
+          </li>
           <li class="feature-item star-feature">
             <span class="icon">💬</span>
             <span class="text">
@@ -325,6 +359,7 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
             v-for="(cat, idx) in featureCategories"
             :key="idx"
             class="features-category"
+            :class="{ 'shake-attn': cat.title.includes('AI') }"
             :style="{ '--cat-color': cat.color }"
           >
             <div class="features-category-title">{{ cat.title }}</div>
@@ -872,6 +907,30 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
   .features-header h2 {
     font-size: 1.25rem;
   }
+}
+
+/* === 抖動動畫 — 給「業界首創 AI 助理」的吸睛標榜 === */
+@keyframes shake-attention {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  8%       { transform: translateX(-3px) rotate(-1.5deg); }
+  16%      { transform: translateX(3px) rotate(1.5deg); }
+  24%      { transform: translateX(-2px) rotate(-1deg); }
+  32%      { transform: translateX(2px) rotate(1deg); }
+  40%      { transform: translateX(-1px) rotate(-0.5deg); }
+  48%      { transform: translateX(1px) rotate(0.5deg); }
+  56%, 100% { transform: translateX(0) rotate(0deg); }
+}
+.shake-attn {
+  animation: shake-attention 2.4s cubic-bezier(.36,.07,.19,.97) infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+.features-category.shake-attn {
+  box-shadow: 0 0 22px rgba(168, 85, 247, 0.35);
+  border-color: rgba(168, 85, 247, 0.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .shake-attn { animation: none; }
 }
 
 /* --- 底部固定導覽樣式 --- */

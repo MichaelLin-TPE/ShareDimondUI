@@ -275,6 +275,32 @@
     font-weight: 600;
   }
 
+  /* ===== 抖動動畫 (吸睛用,給「業界首創 AI 助理」標榜) ===== */
+  @keyframes shake-attention {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    8%       { transform: translateX(-3px) rotate(-1.5deg); }
+    16%      { transform: translateX(3px) rotate(1.5deg); }
+    24%      { transform: translateX(-2px) rotate(-1deg); }
+    32%      { transform: translateX(2px) rotate(1deg); }
+    40%      { transform: translateX(-1px) rotate(-0.5deg); }
+    48%      { transform: translateX(1px) rotate(0.5deg); }
+    56%, 100% { transform: translateX(0) rotate(0deg); }
+  }
+  .shake-attn {
+    animation: shake-attention 2.4s cubic-bezier(.36,.07,.19,.97) infinite;
+    transform-origin: center;
+    will-change: transform;
+  }
+  .pill-ai {
+    background: linear-gradient(135deg, #a855f7, #ec4899) !important;
+    border-color: rgba(236, 72, 153, 0.6) !important;
+    color: #fff !important;
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.45);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shake-attn { animation: none; }
+  }
+
   /* ===== Compatible versions ===== */
   .versions { background: #0a0b10; padding: 60px 0 40px; }
   .versions-head { text-align: center; margin-bottom: 32px; }
@@ -606,13 +632,14 @@
 <!-- ========== Hero ========== -->
 <header id="top" class="hero">
   <div class="container">
-    <div class="hero-eyebrow">🎮 專為天堂玩家打造 · 全網首家 Discord 整合</div>
+    <div class="hero-eyebrow">🎮 專為天堂玩家打造 · 業界首創 AI 助理 + Discord 整合</div>
     <h1>
       <span class="accent">天堂血盟分寶分紅</span>系統<br>
       讓你的公會告別 Excel 算分
     </h1>
     <p class="hero-sub">
       <strong>Diamond Core 鑽石核心</strong> — 給所有天堂玩家的血盟管理工具。<br>
+      <strong style="color:#f0abfc">🤖 業界首創 AI 助理</strong> — 玩家提問,AI 即時讀取血盟設定 + FAQ 知識庫回覆,新人不用再追著會長問。<br>
       <strong style="color:#fbbf24">業界首家 Discord 整合</strong> — 開單、結算、成交即時推到血盟頻道，血盟成員再也不會漏看。<br>
       搭配即時競標、道具走勢分析、多幣別錢包、首領追蹤，把時間留給遊戲本身。
     </p>
@@ -622,6 +649,7 @@
     </div>
 
     <div class="trust-row">
+      <span class="trust-pill pill-ai shake-attn">🤖 業界首創 · AI 助理 · NEW</span>
       <span class="trust-pill" style="background:linear-gradient(135deg,#5865f2,#404eed);color:#fff;border-color:#5865f2">💬 Discord 即時整合 · NEW</span>
       <span class="trust-pill">📈 道具價格走勢 · NEW</span>
       <span class="trust-pill">⚔️ 天堂血盟適用</span>
@@ -672,12 +700,26 @@
   <div class="container">
     <div class="sec-head">
       <div class="sec-eyebrow">完整功能 · 持續進化</div>
-      <h2 class="sec-title">28 項血盟管理功能 — 一站到位</h2>
-      <p class="sec-sub">從業界首見 Discord 整合、道具走勢分析、寶物分紅到首領追蹤，血盟需要的所有日常作業都內建好了</p>
+      <h2 class="sec-title">32 項血盟管理功能 — 一站到位</h2>
+      <p class="sec-sub">從<strong style="color:#f0abfc">業界首創 AI 助理</strong>、Discord 整合、道具走勢分析、寶物分紅到首領追蹤，血盟需要的所有日常作業都內建好了</p>
     </div>
 
     <div class="features-grid">
-      <!-- 🆕 招牌新功能 — 排第一張 -->
+      <!-- 🆕 業界首創 AI 助理 — 排最前面 + 整張卡抖動吸睛 -->
+      <article class="feat-card shake-attn" style="--cat-color:#a855f7;border-color:#a855f7;box-shadow:0 0 28px rgba(168,85,247,0.35)">
+        <div class="feat-card-head">
+          <span class="feat-card-title">🤖 AI 助理 <span style="font-size:.7rem;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff;padding:2px 8px;border-radius:999px;margin-left:4px;font-weight:800">業界首創</span></span>
+          <span class="feat-card-count">4 項功能</span>
+        </div>
+        <ul class="feat-list">
+          <li class="feat-item"><span class="feat-icon">💬</span><div><div class="feat-name">即時 AI 問答 🔥</div><div class="feat-desc">玩家在站內任何頁面點右下角機器人,直接問遊戲機制 / 公會規則 / 道具用法</div></div></li>
+          <li class="feat-item"><span class="feat-icon">🏰</span><div><div class="feat-name">血盟設定 AI 自動讀</div><div class="feat-desc">問「我們公積金幾%?」「+1 時間多久?」AI 即時撈本血盟 DB 回答,不靠人工餵</div></div></li>
+          <li class="feat-item"><span class="feat-icon">📚</span><div><div class="feat-name">FAQ 知識庫 + URL 匯入</div><div class="feat-desc">會長可貼網址,系統自動爬內容餵 AI;自訂 FAQ 條目,新人問題秒回</div></div></li>
+          <li class="feat-item"><span class="feat-icon">🎯</span><div><div class="feat-name">熱門問題自動排序</div><div class="feat-desc">AI 統計大家在問什麼,熱門題自動推到首頁,新人一進來就看到</div></div></li>
+        </ul>
+      </article>
+
+      <!-- 🆕 招牌新功能 -->
       <article class="feat-card" style="--cat-color:#5865f2;border-color:#5865f2;box-shadow:0 0 24px rgba(88,101,242,0.25)">
         <div class="feat-card-head">
           <span class="feat-card-title">🚀 即時通知整合 <span style="font-size:.7rem;background:#ef4444;color:#fff;padding:2px 8px;border-radius:999px;margin-left:4px;font-weight:800">NEW</span></span>
