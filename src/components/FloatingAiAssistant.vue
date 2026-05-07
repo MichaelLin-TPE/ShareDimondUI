@@ -26,30 +26,6 @@ const messageScroll = ref<HTMLDivElement | null>(null)
 const composerInput = ref<HTMLInputElement | null>(null)
 const hasUnreadHint = ref(true) // 第一次小紅點提示
 
-const DEFAULT_SUGGESTIONS = [
-  '大天堂的最新更新歷程',
-  '目前血盟公積金幾%?',
-  '目前競標跟 +1 的時間設定是幾分鐘?',
-]
-const suggestions = ref<string[]>([...DEFAULT_SUGGESTIONS])
-const suggestionsFetched = ref(false)
-
-const fetchSuggestions = async () => {
-  try {
-    const res = await fetch(
-      'https://api.gameshare-system.com/ai/faq/suggestions?limit=3',
-      { headers: headers() },
-    )
-    if (!res.ok) return
-    const data = await res.json()
-    if (Array.isArray(data.items) && data.items.length > 0) {
-      suggestions.value = data.items
-    }
-  } catch (e) {
-    console.error('[suggestions] fetch failed', e)
-  }
-}
-
 let nextId = 1
 
 const showWelcome = computed(() => messages.value.length === 0)
@@ -134,11 +110,6 @@ const toggle = () => {
   if (isOpen.value) {
     scrollToBottom()
     focusInput()
-    // 第一次打開時撈建議題 (之後不再撈,避免每次點開都打 API)
-    if (!suggestionsFetched.value) {
-      suggestionsFetched.value = true
-      fetchSuggestions()
-    }
   }
 }
 </script>
@@ -174,16 +145,7 @@ const toggle = () => {
         <div v-if="showWelcome" class="welcome">
           <div class="welcome-icon">👋</div>
           <div class="welcome-text">
-            哈囉！我可以回答遊戲機制、道具、Boss、本公會規則等問題。
-          </div>
-          <div class="welcome-suggestions">
-            <button
-              v-for="s in suggestions"
-              :key="s"
-              type="button"
-              class="welcome-chip"
-              @click="send(s)"
-            >{{ s }}</button>
+            哈囉！直接打字問我遊戲機制、道具、Boss、本公會規則等問題吧。
           </div>
         </div>
 
@@ -231,10 +193,11 @@ const toggle = () => {
 
 <style scoped>
 /* === 浮動按鈕 === */
+/* 注意: 跟 NotifierHub (bottom: 24px) 疊放, 所以往上挪 (24 + 56 + 16 = 96) */
 .float-btn {
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 24px;
+  bottom: 96px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -288,13 +251,14 @@ const toggle = () => {
 }
 
 /* === 對話視窗 === */
+/* 視窗開在按鈕上方 (按鈕 bottom 96 + 高 56 + 8 gap = 160) */
 .float-window {
   position: fixed;
-  right: 20px;
-  bottom: 88px;
+  right: 24px;
+  bottom: 160px;
   width: 360px;
   height: 520px;
-  max-height: calc(100vh - 110px);
+  max-height: calc(100vh - 180px);
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 14px;
@@ -396,32 +360,7 @@ const toggle = () => {
 .welcome-text {
   font-size: 0.85rem;
   line-height: 1.5;
-  margin-bottom: 14px;
   color: #94a3b8;
-}
-.welcome-suggestions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.welcome-chip {
-  padding: 9px 12px;
-  background: #161822;
-  border: 1px solid #2e3147;
-  border-radius: 18px;
-  color: #cbd5e1;
-  font-size: 0.8rem;
-  cursor: pointer;
-  font-family: inherit;
-  appearance: none;
-  -webkit-appearance: none;
-  line-height: 1.2;
-  transition: all 0.15s;
-}
-.welcome-chip:hover {
-  background: rgba(var(--c-light-rgb), 0.15);
-  color: var(--c-light);
-  border-color: rgba(var(--c-light-rgb), 0.4);
 }
 
 /* === Message bubbles === */
@@ -554,20 +493,21 @@ const toggle = () => {
 }
 
 /* === 手機 RWD === */
+/* 手機 NotifierHub: bottom: 16, 50px → AI 按鈕 bottom: 16 + 50 + 12 = 78 */
 @media (max-width: 480px) {
   .float-btn {
-    right: 14px;
-    bottom: 14px;
+    right: 16px;
+    bottom: 78px;
     width: 52px;
     height: 52px;
   }
   .float-window {
     right: 12px;
     left: 12px;
-    bottom: 76px;
+    bottom: 138px;
     width: auto;
-    height: 70vh;
-    max-height: calc(100vh - 100px);
+    height: 65vh;
+    max-height: calc(100vh - 160px);
   }
 }
 </style>
