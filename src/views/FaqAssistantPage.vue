@@ -19,11 +19,30 @@ const loading = ref(false)
 const messageScroll = ref<HTMLDivElement | null>(null)
 const composerInput = ref<HTMLTextAreaElement | null>(null)
 
-const SUGGESTIONS = [
+// 預設建議題 (cold start 或 API 失敗的 fallback)
+const DEFAULT_SUGGESTIONS = [
   '大天堂的最新更新歷程',
   '目前血盟公積金幾%?',
   '目前競標跟 +1 的時間設定是幾分鐘?',
 ]
+const suggestions = ref<string[]>([...DEFAULT_SUGGESTIONS])
+
+const fetchSuggestions = async () => {
+  try {
+    const res = await fetch(
+      'https://api.gameshare-system.com/ai/faq/suggestions?limit=3',
+      { headers: headers() },
+    )
+    if (!res.ok) return
+    const data = await res.json()
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      suggestions.value = data.items
+    }
+  } catch (e) {
+    console.error('[suggestions] fetch failed', e)
+    // 保留 default
+  }
+}
 
 // 強制捲到最底 — 用 requestAnimationFrame 確保 DOM 已 paint
 const scrollToBottom = () => {
@@ -111,6 +130,7 @@ onMounted(() => {
     '👋 哈囉! 我是公會 FAQ 助手,可以回答遊戲機制、道具、Boss、本公會規則等問題。\n試試下面的範例,或直接打字問我吧 ✨',
   )
   focusInput()
+  fetchSuggestions()
 })
 </script>
 
@@ -154,7 +174,7 @@ onMounted(() => {
     <!-- 建議問題 chips -->
     <div v-if="messages.length <= 1" class="suggestions">
       <button
-        v-for="s in SUGGESTIONS"
+        v-for="s in suggestions"
         :key="s"
         type="button"
         class="suggestion-chip"
