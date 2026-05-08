@@ -585,6 +585,114 @@
     margin-right: auto;
   }
 
+  /* ===== LINE Modal ===== */
+  .btn-line {
+    background: linear-gradient(135deg, #06c755, #00b900);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(6, 199, 85, 0.35);
+  }
+  .btn-line:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(6, 199, 85, 0.5); }
+
+  .line-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .line-modal.open { display: flex; }
+  .line-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+  }
+  .line-modal-card {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: #11131c;
+    border: 1px solid rgba(6, 199, 85, 0.4);
+    border-radius: 18px;
+    padding: 32px 26px 26px;
+    text-align: center;
+    color: #e2e8f0;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    animation: line-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes line-pop {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .line-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .line-modal-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+  }
+  .line-modal-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+  }
+  .line-modal-sub {
+    font-size: 0.88rem;
+    color: #94a3b8;
+    margin-bottom: 18px;
+  }
+  .line-modal-qr {
+    width: 220px;
+    height: 220px;
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px;
+    margin: 0 auto 18px;
+    box-shadow: 0 0 24px rgba(6, 199, 85, 0.25);
+  }
+  .line-modal-qr img { width: 100%; height: 100%; display: block; }
+  .line-modal-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #06c755, #00b900);
+    color: #fff !important;
+    border-radius: 10px;
+    font-size: 0.98rem;
+    font-weight: 800;
+    margin-bottom: 14px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(6, 199, 85, 0.3);
+  }
+  .line-modal-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(6, 199, 85, 0.5);
+  }
+  .line-modal-tip {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .line-modal-tip strong { color: #06c755; }
+
   /* ===== Footer ===== */
   footer {
     background: #06070b;
@@ -624,6 +732,7 @@
       <a href="#why">為什麼選我們</a>
       <a href="#pricing">價格</a>
       <a href="#faq">常見問題</a>
+      <a href="#" data-line-modal>聯絡我們</a>
       <a href="https://gameshare-system.com/" class="nav-cta">立即使用</a>
     </div>
   </div>
@@ -954,7 +1063,10 @@
 <section class="final-cta">
   <h2>準備好告別 Excel 了嗎?</h2>
   <p>3 分鐘建立血盟，7 天免費試用，試完再決定要不要付費。</p>
-  <a href="https://gameshare-system.com/" class="btn btn-primary">🚀 立即免費試用</a>
+  <div class="hero-cta">
+    <a href="https://gameshare-system.com/" class="btn btn-primary">🚀 立即免費試用</a>
+    <a href="#" class="btn btn-line" data-line-modal>📱 加 LINE 諮詢</a>
+  </div>
 </section>
 
 <!-- ========== Footer ========== -->
@@ -968,6 +1080,7 @@
       <a href="#features">功能</a>
       <a href="#pricing">價格</a>
       <a href="#faq">FAQ</a>
+      <a href="#" data-line-modal>聯絡我們</a>
       <a href="https://gameshare-system.com/">登入系統</a>
     </div>
   </div>
@@ -975,6 +1088,30 @@
     © 2026 Diamond Core｜天堂血盟分寶分紅系統｜天堂經典服、Lineage、私服皆適用
   </div>
 </footer>
+
+<!-- ========== LINE 聯絡我們 Modal ========== -->
+<!-- ⚠️ TODO: 確認 LINE OA 的官方加好友連結
+     1. 到 LINE OA 後台 → 推廣 → 行動連結 → 複製短網址 (例: https://lin.ee/xxxxxxxx)
+     2. 把下方 .line-modal-cta 的 href 換成正確網址
+     目前先放 line.me/R/ti/p/ 推測值, 手機點擊不一定 work, 但 QR 一定可以 -->
+<div id="lineModal" class="line-modal" role="dialog" aria-modal="true" aria-labelledby="lineModalTitle">
+  <div class="line-modal-overlay" data-line-close></div>
+  <div class="line-modal-card">
+    <button class="line-modal-close" type="button" aria-label="關閉" data-line-close>✕</button>
+    <h3 id="lineModalTitle" class="line-modal-title">📱 加 LINE 聯絡我們</h3>
+    <p class="line-modal-sub">掃 QR Code,或在手機點下方按鈕直接加好友</p>
+    <div class="line-modal-qr">
+      <img src="https://qr-official.line.me/gs/M_920wuugp_GW.png?oat_content=qr" alt="Diamond Core LINE 官方帳號 QR Code">
+    </div>
+    <a href="https://line.me/R/ti/p/@920wuugp" target="_blank" rel="noopener" class="line-modal-cta">
+      📲 在 LINE App 加入好友
+    </a>
+    <p class="line-modal-tip">
+      加入後可詢問<strong>試用 / 客製 / 付費方案</strong>,小編親自回覆 ✨<br>
+      若按鈕沒反應,請改用手機掃 QR
+    </p>
+  </div>
+</div>
 
 <!-- Google Analytics + Google Ads -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-HS4P85GCB5"></script>
@@ -989,14 +1126,40 @@
   // Google Ads
   gtag('config', 'AW-698499203');
 
-  // 點擊任何「免費試用」按鈕時觸發 micro-conversion
   document.addEventListener('DOMContentLoaded', function() {
+    // 1. 點擊任何「免費試用」按鈕時觸發 micro-conversion
     document.querySelectorAll('a[href*="gameshare-system.com"]').forEach(function(el) {
       el.addEventListener('click', function() {
         if (typeof gtag === 'function') {
           gtag('event', 'trial_click', { source: 'landing' });
         }
       });
+    });
+
+    // 2. LINE 聯絡 modal 開關
+    var lineModal = document.getElementById('lineModal');
+    function openLineModal() {
+      lineModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      if (typeof gtag === 'function') {
+        gtag('event', 'contact_click', { source: 'landing', channel: 'line' });
+      }
+    }
+    function closeLineModal() {
+      lineModal.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    document.querySelectorAll('[data-line-modal]').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        e.preventDefault();
+        openLineModal();
+      });
+    });
+    document.querySelectorAll('[data-line-close]').forEach(function(el) {
+      el.addEventListener('click', closeLineModal);
+    });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && lineModal.classList.contains('open')) closeLineModal();
     });
   });
 </script>
