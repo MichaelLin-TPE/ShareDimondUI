@@ -241,7 +241,7 @@ const onForgotPassword = () => {
         <p class="subtitle">System Access</p>
       </div>
 
-      <div class="form">
+      <form class="form" @submit.prevent="login">
         <ClanSelect v-model="selectedClan" :clans="clans" placeholder="選擇血盟" />
 
         <input v-model="account" placeholder="Account" autocomplete="username" />
@@ -252,7 +252,7 @@ const onForgotPassword = () => {
           autocomplete="current-password"
         />
 
-        <button @click="login" :disabled="loading">
+        <button type="submit" :disabled="loading">
           <span v-if="!loading">登入系統</span>
           <span v-else class="loading">驗證中…</span>
         </button>
@@ -264,7 +264,7 @@ const onForgotPassword = () => {
           <span class="link left" @click="createClan"> 建立血盟 </span>
           <span class="link right" @click="onForgotPassword"> 忘記密碼 </span>
         </div>
-      </div>
+      </form>
     </div>
 
     <!-- 自動登入覆蓋層 -->
