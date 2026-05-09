@@ -105,18 +105,24 @@ const itemNameCounts = (items: GroupItem[]) => {
 }
 
 const isAssigned = (title: string) => !title.includes('尚未分配')
+// 「尚未分配」群組是管理員必看的審核工作,需置頂 + 永遠展開 + 醒目樣式
+const isUrgent = (title: string) => title.includes('尚未分配')
 
 // === 折疊式 group + 搜尋 ===
 // 預設「全部摺疊」(待結算多人時逐個展開查看才不會一次看到滿屏資訊)
 // 紀錄哪些被「展開」(預設空集合 = 全摺起)
 const expandedGroups = ref<Set<string>>(new Set())
 function toggleGroup(title: string) {
+  // 「尚未分配」一律保持展開 (管理員必看),不允許折疊
+  if (isUrgent(title)) return
   const next = new Set(expandedGroups.value)
   if (next.has(title)) next.delete(title)
   else next.add(title)
   expandedGroups.value = next
 }
 function isGroupExpanded(title: string): boolean {
+  // 「尚未分配」永遠視為展開
+  if (isUrgent(title)) return true
   return expandedGroups.value.has(title)
 }
 
@@ -131,8 +137,15 @@ const userOptions = computed(() => {
 })
 const filteredGroups = computed(() => {
   const list = groupedAuctionsList.value ?? []
-  if (!filterUser.value) return list
-  return list.filter((g) => g.title === filterUser.value)
+  const filtered = filterUser.value
+    ? list.filter((g) => g.title === filterUser.value)
+    : list
+  // 「尚未分配」永遠排第一,讓管理員不用滾去找
+  return [...filtered].sort((a, b) => {
+    if (isUrgent(a.title)) return -1
+    if (isUrgent(b.title)) return 1
+    return 0
+  })
 })
 function clearFilter() {
   filterUser.value = ''
@@ -183,12 +196,22 @@ function clearFilter() {
         v-for="group in filteredGroups"
         :key="group.title"
         class="group-wrapper"
-        :class="{ 'is-expanded': isGroupExpanded(group.title) }"
+        :class="{
+          'is-expanded': isGroupExpanded(group.title),
+          'is-urgent': isUrgent(group.title),
+        }"
       >
-        <div class="group-head" @click="toggleGroup(group.title)" role="button" tabindex="0">
+        <div
+          class="group-head"
+          :class="{ 'is-urgent-head': isUrgent(group.title) }"
+          @click="toggleGroup(group.title)"
+          :role="isUrgent(group.title) ? 'heading' : 'button'"
+          :tabindex="isUrgent(group.title) ? -1 : 0"
+        >
           <h4 class="group-title">
-            <span class="group-chevron">▾</span>
-            {{ group.title }}
+            <span v-if="isUrgent(group.title)" class="urgent-icon" aria-hidden="true">🚨</span>
+            <span v-else class="group-chevron">▾</span>
+            {{ isUrgent(group.title) ? '待審核分配 — 請管理員處理' : group.title }}
           </h4>
           <div v-if="isAssigned(group.title)" class="group-summary">
             <span class="sum-count">共 {{ (group.items ?? []).length }} 件</span>
@@ -199,6 +222,9 @@ function clearFilter() {
             >
               {{ ccy }}<span class="sum-amount-num">{{ amt.toLocaleString() }}</span>
             </span>
+          </div>
+          <div v-else class="group-summary urgent-summary">
+            <span class="urgent-badge">⚠️ {{ (group.items ?? []).length }} 件等待審核</span>
           </div>
         </div>
 
@@ -662,6 +688,81 @@ function clearFilter() {
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: 0.3px;
+}
+
+/* === 「尚未分配」緊急樣式 — 永遠置頂 + 強制展開 + 橘色脈動邊框 === */
+.group-wrapper.is-urgent {
+  margin-bottom: 32px;
+  border: 2px solid rgba(245, 158, 11, 0.55);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(245, 158, 11, 0.08), transparent 60%),
+    rgba(22, 24, 34, 0.5);
+  box-shadow:
+    0 0 0 4px rgba(245, 158, 11, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  animation: urgent-pulse 2.4s ease-in-out infinite;
+}
+@keyframes urgent-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 4px rgba(245, 158, 11, 0.12),
+      0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 8px rgba(245, 158, 11, 0.05),
+      0 8px 32px rgba(245, 158, 11, 0.18);
+  }
+}
+.is-urgent .group-head.is-urgent-head {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(239, 68, 68, 0.10));
+  border-bottom: 2px solid rgba(245, 158, 11, 0.45);
+  cursor: default; /* 不允許折疊 */
+  margin-bottom: 8px;
+}
+.is-urgent .group-head.is-urgent-head:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(239, 68, 68, 0.10));
+}
+.is-urgent .group-title {
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+.urgent-icon {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 1.05rem;
+  animation: urgent-shake 1.6s cubic-bezier(.36,.07,.19,.97) infinite;
+  transform-origin: center;
+}
+@keyframes urgent-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  10% { transform: translateX(-2px) rotate(-6deg); }
+  20% { transform: translateX(2px) rotate(6deg); }
+  30% { transform: translateX(-1px) rotate(-3deg); }
+  40% { transform: translateX(1px) rotate(3deg); }
+  50%, 100% { transform: translateX(0) rotate(0); }
+}
+.urgent-summary {
+  display: inline-flex;
+  align-items: center;
+}
+.urgent-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .group-wrapper.is-urgent { animation: none; }
+  .urgent-icon { animation: none; }
 }
 
 /* 道具 chips 預覽列 */
