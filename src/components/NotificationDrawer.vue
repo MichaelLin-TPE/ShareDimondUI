@@ -81,6 +81,8 @@ const onMaskClick = () => emit('close')
 .nd-mask {
   position: fixed;
   inset: 0;
+  height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(2px);
   z-index: 9000;
@@ -90,11 +92,14 @@ const onMaskClick = () => emit('close')
 .nd-panel {
   width: min(100vw, 380px);
   height: 100vh;
+  height: 100dvh;
+  max-height: 100%;
   background: #14161f;
   border-left: 1px solid #2e3147;
   box-shadow: -8px 0 30px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .nd-head {
@@ -104,6 +109,7 @@ const onMaskClick = () => emit('close')
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 .nd-title {
   font-size: 1.05rem;
@@ -112,6 +118,11 @@ const onMaskClick = () => emit('close')
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nd-badge {
   display: inline-flex;
@@ -129,6 +140,7 @@ const onMaskClick = () => emit('close')
 .nd-actions {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 .nd-btn {
   height: 32px;
@@ -159,8 +171,12 @@ const onMaskClick = () => emit('close')
   list-style: none;
   margin: 0;
   padding: 0;
-  flex: 1;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .nd-list::-webkit-scrollbar {
   width: 6px;
@@ -267,6 +283,29 @@ const onMaskClick = () => emit('close')
 .drawer-leave-to .nd-panel {
   transform: translateX(100%);
 }
+/* 手機: 標題與按鈕擠壓時的修正 */
+@media (max-width: 420px) {
+  .nd-head {
+    padding: 14px 12px;
+    gap: 8px;
+  }
+  .nd-title {
+    font-size: 1rem;
+  }
+  .nd-btn {
+    height: 30px;
+    padding: 0 8px;
+    font-size: 0.74rem;
+  }
+  .nd-btn.close-btn {
+    width: 30px;
+    padding: 0;
+  }
+  .nd-item {
+    padding: 12px 14px 12px 20px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .drawer-enter-active,
   .drawer-leave-active,
