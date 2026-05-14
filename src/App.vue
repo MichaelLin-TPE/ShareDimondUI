@@ -389,6 +389,8 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
   position: relative;
   width: 90vw;
   max-width: 760px;
+  max-height: 90vh;
+  max-height: 90dvh;
   background: #1a1f2e;
   border: 1px solid #334155;
   border-radius: 24px;
@@ -396,6 +398,26 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.pricing-modal-container::-webkit-scrollbar {
+  width: 6px;
+}
+.pricing-modal-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+@media (max-width: 600px) {
+  .pricing-modal-container {
+    width: 94vw;
+    max-height: 92vh;
+    max-height: 92dvh;
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
 }
 
 .pricing-header {
@@ -689,11 +711,14 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
   backdrop-filter: blur(5px); /* 背景模糊化，增加質感 */
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 12px;
+  box-sizing: border-box;
   z-index: 10000; /* 確保在最上層，蓋過導覽列 */
 }
 
