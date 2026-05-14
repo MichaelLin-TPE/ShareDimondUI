@@ -217,6 +217,34 @@ export function useAuction() {
     }
   }
 
+  // ───── 血盟清 0 (危險區) ─────
+  const resetting = ref(false)
+
+  const handleResetClan = async (confirmClanName: string): Promise<boolean> => {
+    resetting.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/clan/reset`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ confirmClanName }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '清 0 失敗')
+        return false
+      }
+      useAlert.success(data.message ?? '血盟清 0 完成')
+      return true
+    } catch (e) {
+      console.error(e)
+      useAlert.error('清 0 失敗,請稍後再試')
+      return false
+    } finally {
+      resetting.value = false
+    }
+  }
+
   // ───── Discord webhook ─────
   const discordWebhookUrl = ref<string>('')
   const discordSaving = ref(false)
@@ -304,5 +332,8 @@ export function useAuction() {
     discordTesting,
     saveDiscordWebhook,
     testDiscordWebhook,
+    // 血盟清 0
+    resetting,
+    handleResetClan,
   }
 }

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/clanSetting.ts'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 
 const {
   handleSave,
@@ -20,7 +21,37 @@ const {
   discordTesting,
   saveDiscordWebhook,
   testDiscordWebhook,
+  // 血盟清 0
+  resetting,
+  handleResetClan,
 } = useAuction()
+
+// ───── 血盟清 0 防呆 ─────
+const authStore = useAuthStore()
+const clanName = computed(() => authStore.member?.clanName ?? '')
+const showResetModal = ref(false)
+const resetConfirmInput = ref('')
+const resetConfirmMatched = computed(
+  () => !!clanName.value && resetConfirmInput.value.trim() === clanName.value,
+)
+
+const openResetModal = () => {
+  resetConfirmInput.value = ''
+  showResetModal.value = true
+}
+const closeResetModal = () => {
+  if (resetting.value) return
+  showResetModal.value = false
+}
+const onConfirmReset = async () => {
+  if (!resetConfirmMatched.value || resetting.value) return
+  const ok = await handleResetClan(resetConfirmInput.value.trim())
+  if (ok) {
+    showResetModal.value = false
+    // 清完後重新拉資料
+    setTimeout(() => window.location.reload(), 800)
+  }
+}
 
 // 給 dropdown 用的可選幣別清單：
 // 1. 優先用後端 /clan-currencies 的資料（可區分 enabled/disabled）
@@ -335,7 +366,91 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
           </button>
         </div>
       </section>
+
+      <!-- ─── 危險區:血盟清 0 ─── -->
+      <section class="cs-card cs-card--full cs-danger">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">⚠️</span>
+          <div>
+            <h3 class="cs-danger-title">危險區 — 血盟清 0</h3>
+            <p>把整個血盟還原到「剛成立」的狀態,只保留血盟與成員名單</p>
+          </div>
+        </div>
+
+        <ul class="cs-danger-list">
+          <li>所有幣別的金庫餘額歸 0 (含凍結餘額)</li>
+          <li>所有成員錢包餘額歸 0 (含凍結與累積額)</li>
+          <li>刪除所有 掛賣道具 / 競標單 / 提領審查單</li>
+          <li>刪除所有事件 LOG / 操作紀錄 / 通知</li>
+          <li>保留:血盟本身、成員名單、幣別設定、Boss/Treasure 設定</li>
+        </ul>
+
+        <p class="cs-danger-warn">
+          ⚠️ 此操作無法復原,執行後所有交易記錄都會永久消失
+        </p>
+
+        <div class="cs-actions">
+          <button class="cs-btn-danger" @click="openResetModal">
+            🧨 血盟清 0
+          </button>
+        </div>
+      </section>
     </div>
+
+    <!-- 防呆 Modal -->
+    <Teleport to="body">
+      <div v-if="showResetModal" class="rc-modal">
+        <div class="rc-modal__mask" @click="closeResetModal"></div>
+        <div class="rc-modal__panel" role="dialog">
+          <div class="rc-modal__icon">🧨</div>
+          <h3 class="rc-modal__title">確認血盟清 0?</h3>
+          <p class="rc-modal__sub">此操作無法復原,請務必確認</p>
+
+          <div class="rc-modal__highlight">
+            <div class="rc-modal__row">
+              <span class="rc-modal__row-label">血盟名稱</span>
+              <span class="rc-modal__row-val">{{ clanName }}</span>
+            </div>
+          </div>
+
+          <ul class="rc-modal__list">
+            <li>所有幣別金庫 & 成員錢包餘額歸 0</li>
+            <li>掛賣 / 競標 / 審查單全部刪除</li>
+            <li>所有 LOG / 事件紀錄全部刪除</li>
+          </ul>
+
+          <p class="rc-modal__hint">
+            請輸入血盟名稱「<b>{{ clanName }}</b>」以確認:
+          </p>
+          <input
+            v-model="resetConfirmInput"
+            type="text"
+            class="rc-modal__input"
+            :class="{ ok: resetConfirmMatched }"
+            :placeholder="clanName"
+            spellcheck="false"
+            @keyup.enter="onConfirmReset"
+          />
+
+          <div class="rc-modal__actions">
+            <button
+              class="rc-modal__btn cancel"
+              :disabled="resetting"
+              @click="closeResetModal"
+            >
+              取消
+            </button>
+            <button
+              class="rc-modal__btn danger"
+              :disabled="!resetConfirmMatched || resetting"
+              @click="onConfirmReset"
+            >
+              {{ resetting ? '清 0 中...' : '確定清 0' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -793,6 +908,225 @@ select.cs-input {
   .cs-actions.discord-actions {
     flex-direction: column;
   }
+}
+
+/* 危險區 */
+.cs-card.cs-danger {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.06), rgba(22, 24, 34, 0.95) 60%);
+}
+.cs-danger-title {
+  color: #f87171 !important;
+  letter-spacing: 0.5px;
+}
+.cs-danger-list {
+  margin: 0 0 14px;
+  padding: 14px 18px 14px 32px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  color: #cbd5e1;
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+.cs-danger-list li::marker {
+  color: #f87171;
+}
+.cs-danger-warn {
+  margin: 0 0 4px;
+  font-size: 0.82rem;
+  color: #fca5a5;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.cs-btn-danger {
+  width: 100%;
+  height: 48px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.cs-btn-danger:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(239, 68, 68, 0.5);
+}
+.cs-btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+}
+
+/* 防呆 Modal */
+.rc-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.rc-modal__mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(2px);
+}
+.rc-modal__panel {
+  position: relative;
+  background: #1a1f2e;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 20px;
+  padding: 28px 24px 22px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 20px 60px rgba(239, 68, 68, 0.18), 0 20px 50px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  animation: rc-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+@keyframes rc-pop {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to { opacity: 1; transform: scale(1); }
+}
+.rc-modal__icon {
+  font-size: 2.4rem;
+  margin-bottom: 6px;
+}
+.rc-modal__title {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f87171;
+  letter-spacing: 1px;
+}
+.rc-modal__sub {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+.rc-modal__highlight {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+.rc-modal__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+}
+.rc-modal__row-label {
+  color: #94a3b8;
+}
+.rc-modal__row-val {
+  color: #fff;
+  font-weight: 700;
+  word-break: break-all;
+}
+.rc-modal__list {
+  text-align: left;
+  margin: 0 0 14px;
+  padding: 10px 14px 10px 26px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+.rc-modal__list li::marker {
+  color: #f87171;
+}
+.rc-modal__hint {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  text-align: left;
+}
+.rc-modal__hint b {
+  color: #f87171;
+  font-weight: 800;
+}
+.rc-modal__input {
+  width: 100%;
+  height: 44px;
+  background: #0f111a;
+  border: 1.5px solid #2e3147;
+  border-radius: 10px;
+  padding: 0 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  margin-bottom: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.rc-modal__input:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+.rc-modal__input.ok {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+.rc-modal__actions {
+  display: flex;
+  gap: 10px;
+}
+.rc-modal__btn {
+  flex: 1;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.rc-modal__btn.cancel {
+  background: #1e2233;
+  color: #e2e8f0;
+  border: 1px solid #3a3f5c;
+}
+.rc-modal__btn.cancel:hover:not(:disabled) {
+  background: #2a2f44;
+  color: #fff;
+  border-color: #555a78;
+}
+.rc-modal__btn.danger {
+  flex: 1.4;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+.rc-modal__btn.danger:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(239, 68, 68, 0.5);
+}
+.rc-modal__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
 }
 
 /* RWD */
