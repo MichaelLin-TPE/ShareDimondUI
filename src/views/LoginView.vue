@@ -117,6 +117,11 @@ const addMember = async () => {
     return
   }
 
+  if (!selectedClanForAppyly.value) {
+    errorForApply.value = '請選擇要加入的血盟'
+    return
+  }
+
   loadingForApply.value = true
 
   try {
@@ -142,12 +147,11 @@ const addMember = async () => {
       errorForApply.value = errorBody.message
       return
     }
-    const data = await res.json()
-    authStore.setToken(data.authToken)
-    authStore.setMember(data)
-
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    useAlert.success(`登入成功\n血盟：${selectedClanNameForApply.value}`)
+    // 後端回傳 BaseResponse:申請已送出,需等會長審核通過後才能登入 (不直接登入)
+    showApplyClanModal.value = false
+    useAlert.success(
+      `申請已送出！\n血盟：${selectedClanNameForApply.value}\n請等待會長審核通過後再登入`,
+    )
   } catch (e) {
     console.error(e)
     errorForApply.value = '申請失敗'
