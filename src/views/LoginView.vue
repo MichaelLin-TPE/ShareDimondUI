@@ -103,23 +103,24 @@ const autoLoginByToken = async () => {
 
 const addMember = async () => {
   errorForApply.value = ''
-  if (
-    !accountForApply.value ||
-    !passwordForApply.value ||
-    !passwordForApplyAgain.value ||
-    !userNameForApply.value
-  ) {
-    errorForApply.value = '請填滿所有的欄位!'
-    return
-  }
-  if (passwordForApply.value != passwordForApplyAgain.value) {
-    errorForApply.value = '請填寫正確的密碼'
-    return
-  }
-
   if (!selectedClanForAppyly.value) {
     errorForApply.value = '請選擇要加入的血盟'
     return
+  }
+  if (!accountForApply.value || !passwordForApply.value) {
+    errorForApply.value = '請填寫帳號與密碼'
+    return
+  }
+  // 新玩家才需要驗證:確認密碼 / 遊戲名稱 / Email
+  if (applyMode.value === 'new') {
+    if (!passwordForApplyAgain.value || !userNameForApply.value || !emailForAPply.value) {
+      errorForApply.value = '請填滿所有的欄位!'
+      return
+    }
+    if (passwordForApply.value != passwordForApplyAgain.value) {
+      errorForApply.value = '兩次密碼輸入不一致'
+      return
+    }
   }
 
   loadingForApply.value = true
@@ -138,13 +139,19 @@ const addMember = async () => {
         account: accountForApply.value,
         password: passwordForApply.value,
         clanId: selectedClanForAppyly.value,
-        userName: userNameForApply.value,
-        email: emailForAPply.value,
+        // 已有帳號模式:後端用 account+password 認身分,userName/email 不會被使用
+        userName: applyMode.value === 'new' ? userNameForApply.value : '',
+        email: applyMode.value === 'new' ? emailForAPply.value : '',
       }),
     })
     if (!res.ok) {
       const errorBody = await res.json()
-      errorForApply.value = errorBody.message
+      let msg = errorBody.message || '申請失敗'
+      // 已有帳號模式下帳號其實不存在 → 後端會走新帳號流程噴「遊戲名稱/Email 必填」,改成好懂的訊息
+      if (applyMode.value === 'existing' && (msg.includes('遊戲名稱') || msg.includes('Email'))) {
+        msg = '查無此帳號,請確認帳號密碼是否正確,或改用「我是新玩家」'
+      }
+      errorForApply.value = msg
       return
     }
     // 後端回傳 BaseResponse:申請已送出,需等會長審核通過後才能登入 (不直接登入)
@@ -162,6 +169,8 @@ const addMember = async () => {
 
 const selectedClan = ref('')
 const selectedClanForAppyly = ref('')
+// 申請模式:new = 沒帳號要註冊新帳號 / existing = 已有帳號 (例如退盟後想加新血盟)
+const applyMode = ref<'new' | 'existing'>('new')
 const accountForApply = ref('')
 const passwordForApply = ref('')
 const passwordForApplyAgain = ref('')
@@ -311,14 +320,44 @@ const onForgotPassword = () => {
       <div class="modal-card">
         <h3>申請加入血盟</h3>
 
+        <!-- 模式切換:新玩家 / 已有帳號 -->
+        <div class="apply-mode-tabs">
+          <button
+            type="button"
+            class="amt-btn"
+            :class="{ active: applyMode === 'new' }"
+            @click="applyMode = 'new'"
+          >
+            我是新玩家
+          </button>
+          <button
+            type="button"
+            class="amt-btn"
+            :class="{ active: applyMode === 'existing' }"
+            @click="applyMode = 'existing'"
+          >
+            我已有帳號
+          </button>
+        </div>
+        <p class="apply-mode-hint">
+          {{
+            applyMode === 'existing'
+              ? '用你現有的帳號密碼申請加入這個血盟,通過審核後即可登入'
+              : '第一次使用?填寫資料註冊新帳號並申請加入血盟'
+          }}
+        </p>
+
         <ClanSelect v-model="selectedClanForAppyly" :clans="clans" placeholder="選擇血盟" />
 
         <input v-model="accountForApply" placeholder="請輸入帳號" />
-
         <input v-model="passwordForApply" type="password" placeholder="請輸入密碼" />
-        <input v-model="passwordForApplyAgain" type="password" placeholder="再次輸入密碼" />
-        <input v-model="userNameForApply" type="text" placeholder="請輸入遊戲名稱" />
-        <input v-model="emailForAPply" type="email" placeholder="請輸入電子郵件" />
+
+        <template v-if="applyMode === 'new'">
+          <input v-model="passwordForApplyAgain" type="password" placeholder="再次輸入密碼" />
+          <input v-model="userNameForApply" type="text" placeholder="請輸入遊戲名稱" />
+          <input v-model="emailForAPply" type="email" placeholder="請輸入電子郵件" />
+        </template>
+
         <p v-if="errorForApply" class="errorForApply">{{ errorForApply }}</p>
 
         <button @click="addMember" :disabled="loadingForApply">
@@ -562,6 +601,54 @@ button:disabled {
 .modal-card select {
   width: 100%;
   box-sizing: border-box;
+}
+
+/* ===== 申請模式切換 (新玩家 / 已有帳號) — 父 48 / 子 38 / flex:1 1 0 ===== */
+.apply-mode-tabs {
+  display: flex;
+  height: 48px;
+  padding: 5px;
+  gap: 5px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.apply-mode-tabs .amt-btn {
+  flex: 1 1 0;
+  height: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: none;
+  transition: all 0.15s;
+}
+.apply-mode-tabs .amt-btn:hover {
+  filter: none;
+  transform: none;
+  color: #e2e8f0;
+}
+.apply-mode-tabs .amt-btn.active {
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+}
+.apply-mode-hint {
+  margin: -4px 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+  text-align: center;
 }
 
 /* ===== Modal 關閉鈕 — 次要按鈕風格 ===== */
