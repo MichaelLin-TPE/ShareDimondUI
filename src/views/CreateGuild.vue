@@ -319,43 +319,53 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   color: #94a3b8;
 }
 
-/* 帳號模式切換 — 父 48 / 子 38 / flex:1 1 0 */
+/* 帳號模式切換 — 抄 PersonalMarket .seg-tabs 範本:父 48 / 子固定 38 / flex:1 1 0 */
 .cg-mode-tabs {
   display: flex;
+  align-items: center;
   height: 48px;
-  padding: 5px;
-  gap: 5px;
+  background-color: #14161f;
+  padding: 4px;
+  border-radius: 10px;
   margin: 0 auto;
   max-width: 360px;
-  background: #0f111a;
-  border: 1px solid #2e3147;
-  border-radius: 12px;
+  gap: 4px;
+  border: 1px solid #24263a;
   box-sizing: border-box;
+  overflow: hidden;
 }
 .cg-mode-btn {
   flex: 1 1 0;
-  height: 100%;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: 700;
-  font-family: inherit;
-  letter-spacing: 0.5px;
-  cursor: pointer;
+  min-width: 0;
+  height: 38px; /* 48 - 8 padding - 2 border = 38, 完全填滿 */
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 600;
   line-height: 1;
+  cursor: pointer;
   transition: all 0.15s;
+  white-space: nowrap;
+  box-sizing: border-box;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
 }
 .cg-mode-btn:hover {
-  color: #e2e8f0;
+  color: #fff;
 }
 .cg-mode-btn.active {
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
 }
 .cg-mode-hint {
   margin: 8px 0 20px;
