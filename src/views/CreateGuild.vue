@@ -2,8 +2,16 @@
 import { useAuction } from '@/composables/createGuild.ts'
 import { useRouter } from 'vue-router'
 
-const { newCurrency, removeCurrency, addCurrency, submit, form, submitting, needExchangeRate } =
-  useAuction()
+const {
+  newCurrency,
+  removeCurrency,
+  addCurrency,
+  submit,
+  form,
+  submitting,
+  needExchangeRate,
+  accountMode,
+} = useAuction()
 const router = useRouter()
 
 const onCurrencyKeydown = (e: KeyboardEvent) => {
@@ -24,6 +32,33 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
         <p class="cg-sub">設定基本資訊與會長帳戶，三分鐘完成</p>
       </div>
 
+      <!-- 帳號模式切換:建立新帳號 / 用現有帳號 -->
+      <div class="cg-mode-tabs">
+        <button
+          type="button"
+          class="cg-mode-btn"
+          :class="{ active: accountMode === 'new' }"
+          @click="accountMode = 'new'"
+        >
+          建立新帳號
+        </button>
+        <button
+          type="button"
+          class="cg-mode-btn"
+          :class="{ active: accountMode === 'existing' }"
+          @click="accountMode = 'existing'"
+        >
+          用現有帳號
+        </button>
+      </div>
+      <p class="cg-mode-hint">
+        {{
+          accountMode === 'existing'
+            ? '已經有帳號了?用現有帳號密碼直接開新血盟,不必再辦一個帳號'
+            : '第一次使用?建立一個新帳號成為這個血盟的會長'
+        }}
+      </p>
+
       <!-- 雙欄表單區 -->
       <div class="cg-grid">
         <!-- 左欄：公會資訊 + 幣別 -->
@@ -40,7 +75,7 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
           <input v-model="form.guildName" placeholder="例如：神聖血盟" class="cg-input" />
         </div>
 
-        <div class="cg-field">
+        <div v-if="accountMode === 'new'" class="cg-field">
           <label>會長遊戲名稱 <span class="required">*</span></label>
           <input
             v-model="form.creatorGameName"
@@ -137,13 +172,13 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
           <label>帳號 <span class="required">*</span></label>
           <input
             v-model="form.account"
-            placeholder="設定登入帳號"
+            :placeholder="accountMode === 'existing' ? '輸入你現有的帳號' : '設定登入帳號'"
             class="cg-input"
             autocomplete="username"
           />
         </div>
 
-        <div class="cg-field">
+        <div v-if="accountMode === 'new'" class="cg-field">
           <label>電子郵件 <span class="required">*</span></label>
           <input
             v-model="form.email"
@@ -160,13 +195,13 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
           <input
             v-model="form.password"
             type="password"
-            placeholder="至少 6 碼"
+            :placeholder="accountMode === 'existing' ? '輸入你現有的密碼' : '至少 6 碼'"
             class="cg-input"
             autocomplete="new-password"
           />
         </div>
 
-        <div class="cg-field">
+        <div v-if="accountMode === 'new'" class="cg-field">
           <label>確認密碼 <span class="required">*</span></label>
           <input
             v-model="form.passwordConfirm"
@@ -186,6 +221,10 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
             兩次密碼不一致
           </p>
         </div>
+
+        <p v-if="accountMode === 'existing'" class="cg-hint">
+          用現有帳號開新血盟,你會直接成為這個血盟的會長,原本的血盟不受影響
+        </p>
 
         <div class="cg-field">
           <label>推薦碼 <span class="optional">(可選)</span></label>
@@ -278,6 +317,52 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
   margin: 0;
   font-size: 0.85rem;
   color: #94a3b8;
+}
+
+/* 帳號模式切換 — 父 48 / 子 38 / flex:1 1 0 */
+.cg-mode-tabs {
+  display: flex;
+  height: 48px;
+  padding: 5px;
+  gap: 5px;
+  margin: 0 auto;
+  max-width: 360px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+.cg-mode-btn {
+  flex: 1 1 0;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.15s;
+}
+.cg-mode-btn:hover {
+  color: #e2e8f0;
+}
+.cg-mode-btn.active {
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+}
+.cg-mode-hint {
+  margin: 8px 0 20px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
 }
 
 /* Section */

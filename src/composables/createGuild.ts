@@ -23,6 +23,8 @@ export function useAuction() {
   })
   const newCurrency = ref('')
   const submitting = ref(false)
+  // 帳號模式:new = 建立新帳號當會長 / existing = 用現有帳號再開一個血盟
+  const accountMode = ref<'new' | 'existing'>('new')
 
   const needExchangeRate = computed(() => form.value.currencies.length >= 2)
 
@@ -64,7 +66,6 @@ export function useAuction() {
 
   const validate = (): string | null => {
     if (!form.value.guildName.trim()) return '請輸入公會名稱'
-    if (!form.value.creatorGameName.trim()) return '請輸入會長遊戲名稱'
     if (form.value.currencies.length === 0) return '請至少新增一種分紅幣別'
     if (!form.value.baseCurrency) return '請選擇基準幣種'
     if (needExchangeRate.value && (!form.value.exchangeRate || form.value.exchangeRate <= 0)) {
@@ -72,10 +73,14 @@ export function useAuction() {
     }
     if (!form.value.account.trim()) return '請輸入帳號'
     if (!form.value.password) return '請輸入密碼'
-    if (form.value.password.length < 6) return '密碼至少需 6 碼'
-    if (form.value.password !== form.value.passwordConfirm) return '兩次密碼輸入不一致'
-    if (!form.value.email.trim()) return '請輸入電子郵件'
-    if (!isEmail(form.value.email)) return '電子郵件格式錯誤'
+    // 建立新帳號:才需要驗證會長遊戲名稱 / 密碼長度 / 確認密碼 / Email
+    if (accountMode.value === 'new') {
+      if (!form.value.creatorGameName.trim()) return '請輸入會長遊戲名稱'
+      if (form.value.password.length < 6) return '密碼至少需 6 碼'
+      if (form.value.password !== form.value.passwordConfirm) return '兩次密碼輸入不一致'
+      if (!form.value.email.trim()) return '請輸入電子郵件'
+      if (!isEmail(form.value.email)) return '電子郵件格式錯誤'
+    }
     return null
   }
 
@@ -103,7 +108,9 @@ export function useAuction() {
           // 後端目前要求公告非空：帶預設值，會長進入後可在血盟設置中修改
           announcement: '歡迎加入！可在血盟設置中修改公會公告。',
           clanName: form.value.guildName.trim(),
-          clanLeaderName: form.value.creatorGameName.trim(),
+          // 既有帳號模式:會長名稱後端不會採用 (沿用該帳號既有名稱),
+          // 但後端有非空檢查,故 fallback 帶帳號避免被擋
+          clanLeaderName: form.value.creatorGameName.trim() || form.value.account.trim(),
           account: form.value.account.trim(),
           password: form.value.password,
           email: form.value.email.trim(),
@@ -144,5 +151,6 @@ export function useAuction() {
     removeCurrency,
     addCurrency,
     needExchangeRate,
+    accountMode,
   }
 }
