@@ -603,45 +603,54 @@ button:disabled {
   box-sizing: border-box;
 }
 
-/* ===== 申請模式切換 (新玩家 / 已有帳號) — 父 48 / 子 38 / flex:1 1 0 ===== */
+/* ===== 申請模式切換 — 抄 PersonalMarket .seg-tabs 範本:父 48 / 子固定 38 / flex:1 1 0 ===== */
 .apply-mode-tabs {
   display: flex;
+  align-items: center;
   height: 48px;
-  padding: 5px;
-  gap: 5px;
-  background: #0f111a;
-  border: 1px solid #2e3147;
-  border-radius: 12px;
+  background-color: #14161f;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid #24263a;
+  border-radius: 10px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 .apply-mode-tabs .amt-btn {
   flex: 1 1 0;
-  height: 100%;
+  min-width: 0;
+  height: 38px; /* 48 - 8 padding - 2 border = 38, 完全填滿 */
   margin: 0;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  font-weight: 700;
-  font-family: inherit;
-  letter-spacing: 0.5px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 12px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  font-weight: 600;
   line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
   box-shadow: none;
   transition: all 0.15s;
 }
 .apply-mode-tabs .amt-btn:hover {
   filter: none;
   transform: none;
-  color: #e2e8f0;
+  color: #fff;
 }
 .apply-mode-tabs .amt-btn.active {
   background: linear-gradient(135deg, var(--c-light), var(--c-deep));
   color: var(--c-on);
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(var(--c-deep-rgb), 0.35);
 }
 .apply-mode-hint {
   margin: -4px 0 0;
