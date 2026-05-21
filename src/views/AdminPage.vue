@@ -384,6 +384,29 @@ type BroadcastResult = {
 const broadcasting = ref(false)
 const broadcastResult = ref<BroadcastResult | null>(null)
 
+// 預覽 — 跟後端 AdminBroadcastService.buildBody 對齊
+const broadcastSubject = '【Diamond Core】感謝您使用我們的分寶系統 💎'
+const broadcastBody = [
+  '親愛的 [會長名稱] 會長,您好',
+  '',
+  '感謝您選擇 Diamond Core 遊戲分寶系統,讓「[血盟名稱]」的血盟分寶、',
+  '競標、提領流程更輕鬆透明。',
+  '',
+  '如果您在使用上有任何疑問或需求,我們很樂意提供協助:',
+  '・免費試用與諮詢',
+  '・一對一教學服務',
+  '・客製化功能開發',
+  '',
+  'LINE 客服:https://lin.ee/QlLZrQa',
+  '網站:https://gameshare-system.com',
+  '',
+  '我們會盡快回覆,協助您把血盟營運得更順暢。',
+  '',
+  '祝您遊戲愉快,血盟興旺!',
+  '',
+  '— Diamond Core 團隊',
+].join('\n')
+
 async function broadcastLeaders() {
   if (broadcasting.value) return
   const ok = window.confirm(
@@ -925,33 +948,19 @@ onMounted(() => {
             </div>
           </div>
           <div class="card-body">
-            <div class="form-grid">
-              <div class="field-wrap" style="grid-column: 1 / -1">
-                <span class="label">信件預覽</span>
-                <pre class="bc-preview">主旨:【Diamond Core】感謝您使用我們的分寶系統 💎
-
-親愛的 [會長名稱] 會長,您好
-
-感謝您選擇 Diamond Core 遊戲分寶系統,讓「[血盟名稱]」的血盟分寶、
-競標、提領流程更輕鬆透明。
-
-如果您在使用上有任何疑問或需求,我們很樂意提供協助:
-・免費試用與諮詢
-・一對一教學服務
-・客製化功能開發
-
-LINE 客服:https://lin.ee/QlLZrQa
-網站:https://gameshare-system.com
-
-我們會盡快回覆,協助您把血盟營運得更順暢。
-
-祝您遊戲愉快,血盟興旺!
-
-— Diamond Core 團隊</pre>
-              </div>
+            <div class="bc-block">
+              <div class="bc-label">📬 信件主旨</div>
+              <div class="bc-subject">{{ broadcastSubject }}</div>
             </div>
+
+            <div class="bc-block">
+              <div class="bc-label">✉️ 信件內文預覽</div>
+              <div class="bc-preview">{{ broadcastBody }}</div>
+            </div>
+
             <div class="bc-actions">
               <button
+                type="button"
                 class="btn btn-primary btn-lg"
                 :disabled="broadcasting"
                 @click="broadcastLeaders"
@@ -1664,25 +1673,49 @@ select.field {
 }
 
 /* ===== Broadcast (群發信件) ===== */
+.bc-block {
+  display: block;
+  margin-bottom: 20px;
+}
+.bc-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+}
+.bc-subject {
+  display: block;
+  padding: 14px 16px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
+  color: #f1f5f9;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
 .bc-preview {
-  margin: 0;
+  display: block;
   padding: 16px 18px;
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 10px;
   color: #cbd5e1;
   font-family: 'Inter', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
-  font-size: 0.88rem;
-  line-height: 1.65;
+  font-size: 0.9rem;
+  line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
   max-height: 380px;
   overflow-y: auto;
 }
 .bc-actions {
-  margin-top: 18px;
   display: flex;
   justify-content: flex-end;
+  margin-top: 8px;
+  margin-bottom: 4px;
 }
 .bc-result {
   margin-top: 22px;
