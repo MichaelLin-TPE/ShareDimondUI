@@ -940,7 +940,7 @@ onMounted(() => {
 ・一對一教學服務
 ・客製化功能開發
 
-LINE 客服:https://line.me/R/ti/p/@920wuugp
+LINE 客服:https://lin.ee/QlLZrQa
 網站:https://gameshare-system.com
 
 我們會盡快回覆,協助您把血盟營運得更順暢。
