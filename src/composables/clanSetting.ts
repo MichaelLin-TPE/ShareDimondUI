@@ -217,6 +217,58 @@ export function useAuction() {
     }
   }
 
+  // ───── 血盟改名 ─────
+  const clanNameInput = ref<string>(authStore.member?.clanName ?? '')
+  const savingClanName = ref(false)
+
+  const handleSaveClanName = async (): Promise<boolean> => {
+    const newName = clanNameInput.value.trim()
+    if (!newName) {
+      useAlert.error('請輸入血盟名稱')
+      return false
+    }
+    if (newName.length < 2 || newName.length > 30) {
+      useAlert.error('血盟名稱長度需在 2 - 30 字之間')
+      return false
+    }
+    const currentName = authStore.member?.clanName ?? ''
+    if (newName === currentName) {
+      useAlert.error('新名稱跟原本相同')
+      return false
+    }
+    const confirm = await useAlert.confirm(
+      `確定把血盟改名為「${newName}」嗎?\n(原:${currentName})`,
+    )
+    if (!confirm?.isConfirmed) return false
+
+    savingClanName.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/updateClanName`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ newName }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message ?? '改名失敗')
+        return false
+      }
+      useAlert.success(data.message ?? '已改名')
+      // 同步 authStore.member.clanName,讓側邊欄 / 標題等顯示處即時更新
+      if (authStore.member) {
+        authStore.setMember({ ...authStore.member, clanName: newName })
+      }
+      return true
+    } catch (e) {
+      console.error(e)
+      useAlert.error('改名失敗,請稍後再試')
+      return false
+    } finally {
+      savingClanName.value = false
+    }
+  }
+
   // ───── 血盟清 0 (危險區) ─────
   const resetting = ref(false)
 
@@ -332,6 +384,10 @@ export function useAuction() {
     discordTesting,
     saveDiscordWebhook,
     testDiscordWebhook,
+    // 血盟改名
+    clanNameInput,
+    savingClanName,
+    handleSaveClanName,
     // 血盟清 0
     resetting,
     handleResetClan,

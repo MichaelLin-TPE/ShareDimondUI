@@ -21,6 +21,10 @@ const {
   discordTesting,
   saveDiscordWebhook,
   testDiscordWebhook,
+  // 血盟改名
+  clanNameInput,
+  savingClanName,
+  handleSaveClanName,
   // 血盟清 0
   resetting,
   handleResetClan,
@@ -75,6 +79,35 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
     </header>
 
     <div class="cs-grid">
+      <!-- ─── 血盟名稱 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🏷️</span>
+          <div>
+            <h3>血盟名稱</h3>
+            <p>會顯示在側邊欄、成員列表、登入頁與通知等所有地方</p>
+          </div>
+        </div>
+        <div class="cs-input-wrap">
+          <input
+            v-model="clanNameInput"
+            class="cs-input"
+            maxlength="30"
+            placeholder="輸入新的血盟名稱"
+          />
+        </div>
+        <div class="cs-actions">
+          <button
+            class="cs-btn-primary"
+            :disabled="savingClanName"
+            @click="handleSaveClanName"
+          >
+            <span v-if="!savingClanName">💾 儲存血盟名稱</span>
+            <span v-else>儲存中…</span>
+          </button>
+        </div>
+      </section>
+
       <!-- ─── 公告 ─── -->
       <section class="cs-card cs-card--full">
         <div class="cs-card-head">
