@@ -65,12 +65,13 @@ async function callApi<T>(method: string, path: string, body?: unknown): Promise
 }
 
 // ===== Tabs =====
-const activeTab = ref<'codes' | 'extend' | 'payments' | 'commissions'>('codes')
+const activeTab = ref<'codes' | 'extend' | 'payments' | 'commissions' | 'broadcast'>('codes')
 const tabs = [
   { key: 'codes', label: '推廣碼', emoji: '🎟️' },
   { key: 'extend', label: '血盟延期', emoji: '⏰' },
   { key: 'payments', label: '付款記錄', emoji: '💵' },
   { key: 'commissions', label: '抽成結算', emoji: '💰' },
+  { key: 'broadcast', label: '群發信件', emoji: '📧' },
 ] as const
 
 // ===== Toast =====
@@ -370,6 +371,39 @@ function refreshAll() {
   loadClans()
   loadPayments()
   loadCommissions()
+}
+
+// ===== Broadcast: 群發信件給所有血盟會長 =====
+type BroadcastResult = {
+  totalLeaders: number
+  sent: number
+  skippedNoEmail: number
+  failed: number
+  failedEmails: string[]
+}
+const broadcasting = ref(false)
+const broadcastResult = ref<BroadcastResult | null>(null)
+
+async function broadcastLeaders() {
+  if (broadcasting.value) return
+  const ok = window.confirm(
+    '確定要發信給所有現任血盟會長嗎?\n\n(同一帳號當多盟會長只寄一次,沒填 Email 的會跳過)',
+  )
+  if (!ok) return
+  broadcasting.value = true
+  broadcastResult.value = null
+  try {
+    const res = await callApi<BroadcastResult>('POST', '/admin/broadcast/leaders')
+    broadcastResult.value = res
+    showToast(
+      'success',
+      `寄信完成:成功 ${res.sent} / 略過無 Email ${res.skippedNoEmail} / 失敗 ${res.failed}`,
+    )
+  } catch (e) {
+    showToast('error', (e as Error).message)
+  } finally {
+    broadcasting.value = false
+  }
 }
 
 onMounted(() => {
@@ -873,6 +907,73 @@ onMounted(() => {
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Tab: 群發信件 ===== -->
+      <section v-if="activeTab === 'broadcast'" class="panel">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-head-text">
+              <h2>📧 一鍵發信給所有血盟會長</h2>
+              <p>
+                對象:所有目前 status = ACTIVE、role = LEADER 的會長,依 email 自動去重
+                (同一帳號當多盟會長只寄一次)
+              </p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field-wrap" style="grid-column: 1 / -1">
+                <span class="label">信件預覽</span>
+                <pre class="bc-preview">主旨:【Diamond Core】感謝您使用我們的分寶系統 💎
+
+親愛的 [會長名稱] 會長,您好
+
+感謝您選擇 Diamond Core 遊戲分寶系統,讓「[血盟名稱]」的血盟分寶、
+競標、提領流程更輕鬆透明。
+
+如果您在使用上有任何疑問或需求,我們很樂意提供協助:
+・免費試用與諮詢
+・一對一教學服務
+・客製化功能開發
+
+LINE 客服:https://line.me/R/ti/p/@920wuugp
+網站:https://gameshare-system.com
+
+我們會盡快回覆,協助您把血盟營運得更順暢。
+
+祝您遊戲愉快,血盟興旺!
+
+— Diamond Core 團隊</pre>
+              </div>
+            </div>
+            <div class="bc-actions">
+              <button
+                class="btn btn-primary btn-lg"
+                :disabled="broadcasting"
+                @click="broadcastLeaders"
+              >
+                {{ broadcasting ? '寄信中…' : '📨 一鍵發送給所有會長' }}
+              </button>
+            </div>
+
+            <div v-if="broadcastResult" class="bc-result">
+              <h3>📊 寄送結果</h3>
+              <ul>
+                <li>會長總數:<strong>{{ broadcastResult.totalLeaders }}</strong></li>
+                <li>✅ 成功寄出:<strong>{{ broadcastResult.sent }}</strong></li>
+                <li>⏭️ 略過 (沒填 Email):<strong>{{ broadcastResult.skippedNoEmail }}</strong></li>
+                <li>❌ 失敗:<strong>{{ broadcastResult.failed }}</strong></li>
+              </ul>
+              <div v-if="broadcastResult.failedEmails.length > 0" class="bc-failed">
+                <div class="bc-failed-title">失敗的 Email:</div>
+                <div class="bc-failed-list">
+                  <code v-for="e in broadcastResult.failedEmails" :key="e">{{ e }}</code>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1560,5 +1661,78 @@ select.field {
 .toast-info {
   background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
   color: #fff;
+}
+
+/* ===== Broadcast (群發信件) ===== */
+.bc-preview {
+  margin: 0;
+  padding: 16px 18px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
+  color: #cbd5e1;
+  font-family: 'Inter', 'PingFang TC', 'Noto Sans TC', system-ui, sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.bc-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+.bc-result {
+  margin-top: 22px;
+  padding: 18px 20px;
+  background: rgba(var(--c-light-rgb), 0.06);
+  border: 1px solid rgba(var(--c-light-rgb), 0.25);
+  border-radius: 12px;
+}
+.bc-result h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #e2e8f0;
+}
+.bc-result ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 16px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+.bc-result strong {
+  color: var(--c-light);
+  font-weight: 800;
+}
+.bc-failed {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+.bc-failed-title {
+  font-size: 0.85rem;
+  color: #f87171;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.bc-failed-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bc-failed-list code {
+  font-family: 'Menlo', 'Consolas', monospace;
+  font-size: 0.78rem;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 </style>
