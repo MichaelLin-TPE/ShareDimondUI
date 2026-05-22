@@ -299,9 +299,28 @@ function clearFilter() {
                   >{{ Number(item.currentPrice).toLocaleString() }} {{ item.currency }}</span
                 >
               </div>
-              <div v-if="item.biddingName == null || item.biddingName.length == 0" class="info-row">
-                <span class="label">競標名單</span>
-                <span class="value-text">{{ item.biddingMemberContent || '無' }}</span>
+            </div>
+
+            <!-- 競爭者清單 — 多人競標同一張時,讓所有會員清楚看見對手是誰 -->
+            <div
+              v-if="item.biddingMemberList && item.biddingMemberList.length > 1"
+              class="competitors-section"
+            >
+              <div class="competitors-label">
+                🎯 競爭名單 ({{ item.biddingMemberList.length }} 人爭奪中)
+              </div>
+              <div class="bidder-chips">
+                <span
+                  v-for="(m, idx) in item.biddingMemberList"
+                  :key="`${item.treasureCode}-${m.userName}-${idx}`"
+                  class="bidder-chip"
+                  :class="{ 'is-me': m.userName === authStore.member?.userName }"
+                >
+                  {{ m.userName === authStore.member?.userName ? `🫵 你 (${m.userName})` : `👤 ${m.userName}` }}
+                </span>
+              </div>
+              <div v-if="item.assignByLeader" class="competitors-hint">
+                等待會長/幹部指定得標者
               </div>
             </div>
 
@@ -1350,5 +1369,58 @@ function clearFilter() {
   text-align: center;
   font-size: 0.9rem;
   color: #888;
+}
+
+/* ===== 競爭者清單 — 讓所有會員清楚看到對手 ===== */
+.competitors-section {
+  margin: 12px 0;
+  padding: 12px 14px;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--c-light-rgb), 0.06),
+    rgba(var(--c-deep-rgb), 0.04)
+  );
+  border: 1px solid rgba(var(--c-light-rgb), 0.18);
+  border-radius: 12px;
+}
+.competitors-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--c-light);
+  letter-spacing: 0.3px;
+  margin-bottom: 10px;
+}
+.bidder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bidder-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  font-weight: 600;
+  line-height: 1.4;
+  transition: all 0.15s;
+}
+.bidder-chip.is-me {
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  border-color: var(--c-light);
+  color: var(--c-on);
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(var(--c-deep-rgb), 0.35);
+}
+.competitors-hint {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 0.76rem;
+  color: #94a3b8;
+  text-align: center;
 }
 </style>
