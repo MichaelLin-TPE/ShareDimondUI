@@ -91,6 +91,7 @@ const onMaskClick = () => emit('close')
 }
 .nd-panel {
   width: min(100vw, 380px);
+  max-width: 100vw;
   height: 100vh;
   height: 100dvh;
   max-height: 100%;
@@ -100,6 +101,11 @@ const onMaskClick = () => emit('close')
   display: flex;
   flex-direction: column;
   min-height: 0;
+  box-sizing: border-box;
+  overflow-x: hidden; /* 防止內部 flex 子元素水平溢出把 ✕ 推出螢幕 */
+}
+.nd-panel * {
+  box-sizing: border-box;
 }
 
 .nd-head {
@@ -283,23 +289,34 @@ const onMaskClick = () => emit('close')
 .drawer-leave-to .nd-panel {
   transform: translateX(100%);
 }
-/* 手機: 標題與按鈕擠壓時的修正 */
-@media (max-width: 420px) {
+/* 手機: 把 header 拆兩排 (標題一排 + 按鈕一排),
+   避免「全部已讀 + 🔄 + ✕」全擠一排時把 ✕ 推出畫面外造成無法關閉 */
+@media (max-width: 480px) {
   .nd-head {
-    padding: 14px 12px;
-    gap: 8px;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+    gap: 10px;
   }
   .nd-title {
     font-size: 1rem;
+    white-space: normal; /* 兩排版面,標題不用截斷了 */
+    overflow: visible;
+  }
+  .nd-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 6px;
   }
   .nd-btn {
-    height: 30px;
-    padding: 0 8px;
-    font-size: 0.74rem;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 0.8rem;
   }
   .nd-btn.close-btn {
-    width: 30px;
+    width: 38px; /* 在手機上把 ✕ 加大,好點 */
     padding: 0;
+    font-size: 1rem;
   }
   .nd-item {
     padding: 12px 14px 12px 20px;
