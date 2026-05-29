@@ -4,6 +4,7 @@ import { useAuction } from '@/composables/statCard.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import RemarkPickerModal from '@/components/RemarkPickerModal.vue'
+import { REMARK_WAREHOUSE } from '@/composables/remarkOptions.ts'
 
 const {
   auctions,
@@ -31,6 +32,16 @@ const {
   openCurrencyModal,
   currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
 } = useAuction()
+
+// 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
+const myName = computed(() => authStore.member?.userName ?? '')
+function isMyUnsubmitted(item: { ticketOwerName?: string; remark?: string }) {
+  return (
+    !!myName.value &&
+    item.ticketOwerName === myName.value &&
+    (item.remark || '').trim() !== REMARK_WAREHOUSE
+  )
+}
 
 // 備註選項彈窗
 type AuctionItem = (typeof auctions.value)[number]
@@ -175,6 +186,7 @@ function isExpanded(code: string): boolean {
           :class="{
             'is-expanded': isExpanded(item.treasureCode),
             'just-updated': recentlyUpdated.has(item.treasureCode),
+            'mine-unsubmitted': isMyUnsubmitted(item),
           }"
         >
           <div class="card-tools">
@@ -762,6 +774,25 @@ function isExpanded(code: string): boolean {
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+}
+/* 自己尚未繳交的單子 — 明顯線框,方便會員一眼找到 */
+.auction-card.mine-unsubmitted {
+  border: 2px dashed #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.auction-card.mine-unsubmitted::before {
+  content: '📦 我的待繳';
+  position: absolute;
+  top: -11px;
+  left: 14px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: #1a1305;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  z-index: 1;
 }
 
 /* 展開按鈕 — 預設手機才顯示,PC 自動隱藏 */
