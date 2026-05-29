@@ -115,7 +115,7 @@ export function useAuction() {
           itemName: itemName.value,
           bossName: bossName.value,
           lowestPrice: basePrice.value,
-          remark: remark.value,
+          remark: remark.value?.trim() || '在我身上',
           currency: selectedCurrency.value,
           type: type,
         }),
@@ -704,6 +704,11 @@ export function useAuction() {
       updateRemark(result)
     }
   }
+  // 備註選項彈窗用 — 直接帶入選好的備註字串送出
+  const submitRemark = async (item: Treasure, value: string) => {
+    submitDeleteTicketCode.value = item.treasureCode
+    await updateRemark(value)
+  }
   const updateRemark = async (value: string) => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
@@ -781,6 +786,7 @@ export function useAuction() {
     bossOptions,
     handleSubmit,
     handleUpdateRemark,
+    submitRemark,
     handleDeleteItem,
     openTicket,
     openAddTreasureDialog,

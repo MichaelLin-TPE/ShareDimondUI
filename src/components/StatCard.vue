@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useAuction } from '@/composables/statCard.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
+import RemarkPickerModal from '@/components/RemarkPickerModal.vue'
 
 const {
   auctions,
@@ -10,7 +11,7 @@ const {
   handleStatus,
   handlePersonClick,
   handleSubmit,
-  handleUpdateRemark,
+  submitRemark,
   handleDeleteItem,
   canSubmit,
   showPeopleList,
@@ -30,6 +31,18 @@ const {
   openCurrencyModal,
   currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
 } = useAuction()
+
+// 備註選項彈窗
+type AuctionItem = (typeof auctions.value)[number]
+const showRemarkPicker = ref(false)
+const remarkTarget = ref<AuctionItem | null>(null)
+function openRemarkPicker(item: AuctionItem) {
+  remarkTarget.value = item
+  showRemarkPicker.value = true
+}
+function onRemarkConfirm(value: string) {
+  if (remarkTarget.value) submitRemark(remarkTarget.value, value)
+}
 
 // 道具名稱搜尋
 const filterItem = ref('')
@@ -168,7 +181,7 @@ function isExpanded(code: string): boolean {
             <button
               class="tool-btn remark"
               v-show="item.showDeleteTicket"
-              @click="handleUpdateRemark(item)"
+              @click="openRemarkPicker(item)"
               title="備註"
               aria-label="備註"
             >
@@ -387,6 +400,12 @@ function isExpanded(code: string): boolean {
         </div>
       </div>
     </div>
+
+    <RemarkPickerModal
+      v-model="showRemarkPicker"
+      :current="remarkTarget?.remark"
+      @confirm="onRemarkConfirm"
+    />
   </div>
 </template>
 

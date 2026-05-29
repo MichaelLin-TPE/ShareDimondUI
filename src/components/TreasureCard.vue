@@ -2,6 +2,14 @@
 import { computed, ref, watch } from 'vue'
 import { useAuction } from '@/composables/treasureCare.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
+import RemarkPickerModal from '@/components/RemarkPickerModal.vue'
+import { useSharedListsStore } from '@/stores/sharedLists.ts'
+import {
+  REMARK_WAREHOUSE,
+  REMARK_ON_ME,
+  buildGiveRemark,
+  type RemarkChoice,
+} from '@/composables/remarkOptions.ts'
 
 const {
   auctions,
@@ -18,7 +26,7 @@ const {
   openTicket,
   handlePeopleCount,
   showPeopleList,
-  handleUpdateRemark,
+  submitRemark,
   openAddTreasureDialog,
   handleDeleteItem,
   showAddTreasureDialog,
@@ -42,6 +50,41 @@ const {
   updateBoss,
   deleteBoss,
 } = useAuction()
+
+// 備註選項彈窗
+type AuctionItem = (typeof auctions.value)[number]
+const showRemarkPicker = ref(false)
+const remarkTarget = ref<AuctionItem | null>(null)
+function openRemarkPicker(item: AuctionItem) {
+  remarkTarget.value = item
+  showRemarkPicker.value = true
+}
+function onRemarkConfirm(value: string) {
+  if (remarkTarget.value) submitRemark(remarkTarget.value, value)
+}
+
+// 開單表單的備註 — 預設「在我身上」,改用統一選項
+const sharedLists = useSharedListsStore()
+const memberOptions = computed(() =>
+  sharedLists.members.map((m) => ({ value: m.memberName, label: m.memberName })),
+)
+const openRemarkChoice = ref<RemarkChoice>('onme')
+const openGiveMember = ref('')
+watch([openRemarkChoice, openGiveMember], () => {
+  if (openRemarkChoice.value === 'warehouse') remark.value = REMARK_WAREHOUSE
+  else if (openRemarkChoice.value === 'give') remark.value = buildGiveRemark(openGiveMember.value)
+  else remark.value = REMARK_ON_ME
+})
+watch(
+  () => showModal.value,
+  (open) => {
+    if (!open) return
+    sharedLists.loadMembers()
+    openRemarkChoice.value = 'onme'
+    openGiveMember.value = ''
+    remark.value = REMARK_ON_ME
+  },
+)
 
 // 手機卡片展開狀態
 const expandedCards = ref<Set<string>>(new Set())
@@ -188,7 +231,7 @@ const closeManageDialog = () => {
             <button
               class="tool-btn"
               v-show="item.showDeleteTicket"
-              @click="handleUpdateRemark(item)"
+              @click="openRemarkPicker(item)"
               title="備註"
               aria-label="備註"
             >
@@ -339,8 +382,33 @@ const closeManageDialog = () => {
             </div>
 
             <div class="ot-field">
-              <label>備註說明</label>
-              <textarea v-model="remark" placeholder="輸入特殊說明..."></textarea>
+              <label>備註(道具去向)</label>
+              <div class="ot-chips">
+                <label class="ot-chip">
+                  <input
+                    type="radio"
+                    v-model="openRemarkChoice"
+                    value="warehouse"
+                    name="ot-remark"
+                  />
+                  <span>🏰 已繳倉庫</span>
+                </label>
+                <label class="ot-chip">
+                  <input type="radio" v-model="openRemarkChoice" value="onme" name="ot-remark" />
+                  <span>🧍 在我身上</span>
+                </label>
+                <label class="ot-chip">
+                  <input type="radio" v-model="openRemarkChoice" value="give" name="ot-remark" />
+                  <span>🎁 道具給 XXX 了</span>
+                </label>
+              </div>
+              <SearchableSelect
+                v-if="openRemarkChoice === 'give'"
+                v-model="openGiveMember"
+                :options="memberOptions"
+                placeholder="輸入關鍵字搜尋會員..."
+                style="margin-top: 10px"
+              />
             </div>
 
             <p v-if="error" class="ot-error">{{ error }}</p>
@@ -470,6 +538,12 @@ const closeManageDialog = () => {
         </div>
       </div>
     </Teleport>
+
+    <RemarkPickerModal
+      v-model="showRemarkPicker"
+      :current="remarkTarget?.remark"
+      @confirm="onRemarkConfirm"
+    />
   </div>
 </template>
 

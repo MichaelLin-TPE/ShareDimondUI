@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useAuction } from '@/composables/BiddingManageMent.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
+import RemarkPickerModal from '@/components/RemarkPickerModal.vue'
 
 // 手機卡片展開狀態
 const expandedCards = ref<Set<string>>(new Set())
@@ -21,7 +22,7 @@ const {
   handleStatus,
   handleSubmit,
   groupedAuctionsList,
-  handleUpdateRemark,
+  submitRemark,
   handleDeleteItem,
   canSubmit,
   showPeopleList,
@@ -37,6 +38,18 @@ const {
   handleStorageChange,
   selectedTreasure,
 } = useAuction()
+
+// 備註選項彈窗
+type AuctionItem = (typeof auctions.value)[number]
+const showRemarkPicker = ref(false)
+const remarkTarget = ref<AuctionItem | null>(null)
+function openRemarkPicker(item: AuctionItem) {
+  remarkTarget.value = item
+  showRemarkPicker.value = true
+}
+function onRemarkConfirm(value: string) {
+  if (remarkTarget.value) submitRemark(remarkTarget.value, value)
+}
 
 // === WS 推送即時動畫 (必須在 useAuction() 之後,否則 auctions TDZ) ===
 const recentlyUpdated = ref<Set<string>>(new Set())
@@ -256,7 +269,7 @@ function clearFilter() {
               <button
                 class="tool-btn remark"
                 v-show="item.showDeleteTicket"
-                @click="handleUpdateRemark(item)"
+                @click="openRemarkPicker(item)"
                 title="備註"
                 aria-label="備註"
               >
@@ -441,6 +454,12 @@ function clearFilter() {
         </div>
       </div>
     </div>
+
+    <RemarkPickerModal
+      v-model="showRemarkPicker"
+      :current="remarkTarget?.remark"
+      @confirm="onRemarkConfirm"
+    />
   </div>
 </template>
 
