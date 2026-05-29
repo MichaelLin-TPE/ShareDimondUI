@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
-import { useBiddingTreasureStore, type RawTreasure } from '@/stores/biddingTreasure.ts'
+import { useBiddingTreasureStore } from '@/stores/biddingTreasure.ts'
 import { useAuthStore } from '@/stores/auth.ts'
-import { isSubmitted, parseRemark } from '@/composables/remarkOptions.ts'
+import { isSubmitted } from '@/composables/remarkOptions.ts'
 
 const biddingStore = useBiddingTreasureStore()
 const authStore = useAuthStore()
 let unsubscribeWS: (() => void) | null = null
 
-// 還沒結束 / 已作廢的單子不算「待繳交」
-const EXCLUDED_STATUS = new Set(['ATTENDANCE_WAITING', 'BIDDING', 'CANCELED', 'FAILED'])
-
-// 判斷某筆道具目前在誰身上(給人了就算在收到的會員身上,否則在開單者身上)
-function holderOf(t: RawTreasure): string {
-  const parsed = parseRemark(t.remark)
-  if (parsed.choice === 'give' && parsed.memberName) return parsed.memberName
-  return t.ticketOwerName || '(未知)'
-}
+// 只有作廢的單子不算「待繳交」;其餘(競拍中/待結算等)只要還沒繳倉庫都算開單者身上未繳
+const EXCLUDED_STATUS = new Set(['CANCELED', 'FAILED'])
 
 interface PendingItem {
   itemName: string
@@ -33,7 +26,7 @@ const groups = computed<PendingGroup[]>(() => {
   for (const t of biddingStore.rawTreasures) {
     if (EXCLUDED_STATUS.has(t.status)) continue
     if (isSubmitted(t.remark, t.checkFromRepository)) continue
-    const member = holderOf(t)
+    const member = t.ticketOwerName || '(未知)'
     if (!map.has(member)) map.set(member, new Map())
     const items = map.get(member)!
     items.set(t.itemName, (items.get(t.itemName) ?? 0) + 1)
