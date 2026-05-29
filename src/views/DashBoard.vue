@@ -4,6 +4,7 @@ import TreasureCard from '@/components/TreasureCard.vue'
 import ClanNotice from '@/components/ClanNotice.vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import BiddingManagement from '@/components/BiddingManagement.vue'
+import PendingSubmission from '@/components/PendingSubmission.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Balance } from '@/types/balance.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
@@ -21,7 +22,7 @@ const balance = useBalanceStore()
 const showPushModal = ref<boolean>(false)
 
 // 競拍 / 結算 切換 tab
-type AuctionTab = 'active' | 'settle'
+type AuctionTab = 'active' | 'settle' | 'unpaid'
 const activeAuctionTab = ref<AuctionTab>('active')
 
 // 血盟試用倒數 — 後端在 /getBasicInfo 回傳 clanExpiresAt (epoch millis)
@@ -368,6 +369,14 @@ const closeUpdateModal = () => {
         >
           🏆 待結算
         </button>
+        <button
+          type="button"
+          class="auction-tab-btn"
+          :class="{ active: activeAuctionTab === 'unpaid' }"
+          @click="activeAuctionTab = 'unpaid'"
+        >
+          📦 待繳交
+        </button>
       </div>
 
       <StatCard v-show="activeAuctionTab === 'active'" />
@@ -375,6 +384,7 @@ const closeUpdateModal = () => {
         v-show="activeAuctionTab === 'settle'"
         class="biddingManagement"
       />
+      <PendingSubmission v-show="activeAuctionTab === 'unpaid'" />
     </div>
   </div>
 </template>

@@ -78,6 +78,11 @@ export function useAuction() {
       updateRemark(result)
     }
   }
+  // 備註選項彈窗用 — 直接帶入選好的備註字串送出
+  const submitRemark = async (item: Treasure, value: string) => {
+    submitDeleteTicketCode.value = item.treasureCode
+    await updateRemark(value)
+  }
 
   const updateRemark = async (value: string) => {
     try {
@@ -692,6 +697,7 @@ TimeStamp:currentTimeStamp
     groupedAuctionsList,
     handleSubmitFromWallet,
     handleUpdateRemark,
+    submitRemark,
     selectedTreasure,
     submitAssign,
     handlePeopleClick,
