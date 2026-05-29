@@ -2,14 +2,17 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useBiddingTreasureStore } from '@/stores/biddingTreasure.ts'
 import { useAuthStore } from '@/stores/auth.ts'
-import { isSubmitted } from '@/composables/remarkOptions.ts'
+import { REMARK_WAREHOUSE } from '@/composables/remarkOptions.ts'
 
 const biddingStore = useBiddingTreasureStore()
 const authStore = useAuthStore()
 let unsubscribeWS: (() => void) | null = null
 
-// 只有作廢的單子不算「待繳交」;其餘(競拍中/待結算等)只要還沒繳倉庫都算開單者身上未繳
+// 只有作廢的單子不算「待繳交」;其餘(競拍中/待結算等)只要備註不是「已繳倉庫」都算開單者身上未繳
 const EXCLUDED_STATUS = new Set(['CANCELED', 'FAILED'])
+
+// 只看備註 — 幹部有沒有勾「確認存倉」不影響,只要備註不是「已繳倉庫」就算未繳
+const isSubmitted = (remark?: string) => (remark || '').trim() === REMARK_WAREHOUSE
 
 interface PendingItem {
   itemName: string
@@ -25,7 +28,7 @@ const groups = computed<PendingGroup[]>(() => {
   const map = new Map<string, Map<string, number>>()
   for (const t of biddingStore.rawTreasures) {
     if (EXCLUDED_STATUS.has(t.status)) continue
-    if (isSubmitted(t.remark, t.checkFromRepository)) continue
+    if (isSubmitted(t.remark)) continue
     const member = t.ticketOwerName || '(未知)'
     if (!map.has(member)) map.set(member, new Map())
     const items = map.get(member)!

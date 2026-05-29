@@ -26,10 +26,3 @@ export const parseRemark = (remark?: string): { choice: RemarkChoice; memberName
   }
   return { choice: 'onme', memberName: '' }
 }
-
-/**
- * 是否已繳交 — 待繳交區判斷用。
- * 規則:幹部已勾「確認存倉」(checkFromRepository) 或 備註已是「已繳倉庫」都視為已繳交。
- */
-export const isSubmitted = (remark?: string, checkFromRepository?: boolean): boolean =>
-  checkFromRepository === true || (remark || '').trim() === REMARK_WAREHOUSE
