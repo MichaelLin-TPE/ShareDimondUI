@@ -84,10 +84,27 @@ async function updateRemarkToWarehouse(ticketCode: string) {
   if (!res.ok) throw new Error(data?.message || '更新備註失敗')
 }
 
-async function checkItem(group: PendingGroup, item: PendingItem) {
-  if (!canCheck(group.member)) return
+async function checkItem(group: PendingGroup, item: PendingItem, ev: Event) {
+  const input = ev.target as HTMLInputElement
   const key = itemKey(group.member, item.itemName)
-  if (busy.value.has(key)) return
+
+  // 沒權限或處理中 — 還原勾選狀態,不動作
+  if (!canCheck(group.member) || busy.value.has(key)) {
+    input.checked = busy.value.has(key)
+    return
+  }
+
+  // 防呆:依「自己的單」或「幹部代繳」顯示不同確認文字,避免誤按
+  const isMine = group.member === myName.value
+  const message = isMine
+    ? `確定要把「${item.itemName} ×${item.count}」標記為已繳倉庫?標記後會從待繳清單消失。`
+    : `你正在代「${group.member}」把「${item.itemName} ×${item.count}」標記為已繳倉庫,請確認道具確實已入庫,標記後將從該成員的待繳清單消失。`
+  const result = await useAlert.confirm(message, isMine ? '確認繳交' : '幹部代繳確認')
+  if (!result.isConfirmed) {
+    input.checked = false // 使用者取消 — 還原勾選狀態
+    return
+  }
+
   busy.value = new Set(busy.value).add(key)
   try {
     // 整批把此物品的單改成「已繳倉庫」
@@ -98,6 +115,7 @@ async function checkItem(group: PendingGroup, item: PendingItem) {
     await biddingStore.refresh()
   } catch (e) {
     useAlert.error(e instanceof Error ? e.message : '更新備註失敗,請再試一次')
+    input.checked = false // 失敗 — 還原勾選狀態讓使用者可重試
   } finally {
     const next = new Set(busy.value)
     next.delete(key)
@@ -155,7 +173,7 @@ onUnmounted(() => {
               class="ps-check"
               :checked="busy.has(itemKey(g.member, it.itemName))"
               :disabled="!canCheck(g.member) || busy.has(itemKey(g.member, it.itemName))"
-              @change="checkItem(g, it)"
+              @change="checkItem(g, it, $event)"
             />
             <span class="ps-item-name">{{ it.itemName }}<b>×{{ it.count }}</b></span>
           </label>
