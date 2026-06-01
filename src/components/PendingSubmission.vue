@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useBiddingTreasureStore } from '@/stores/biddingTreasure.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 import { REMARK_WAREHOUSE } from '@/composables/remarkOptions.ts'
+import { generateSignature } from '@/utils/SignTools.ts'
+import { useAlert } from '@/utils/alerts.ts'
 
 const biddingStore = useBiddingTreasureStore()
 const authStore = useAuthStore()
@@ -14,9 +16,19 @@ const EXCLUDED_STATUS = new Set(['CANCELED', 'FAILED'])
 // 只看備註 — 幹部有沒有勾「確認存倉」不影響,只要備註不是「已繳倉庫」就算未繳
 const isSubmitted = (remark?: string) => (remark || '').trim() === REMARK_WAREHOUSE
 
+// 權限:自己的單自己勾;幹部以上(OFFICER/LEADER)可勾所有人的單
+const myName = computed(() => authStore.member?.userName ?? '')
+const isOfficerUp = computed(() => {
+  const r = authStore.member?.role
+  return r === 'OFFICER' || r === 'LEADER'
+})
+const canCheck = (member: string) => isOfficerUp.value || member === myName.value
+
 interface PendingItem {
   itemName: string
   count: number
+  /** 此物品底下所有未繳的單號,勾選時整批改備註 */
+  codes: string[]
 }
 interface PendingGroup {
   member: string
@@ -25,18 +37,23 @@ interface PendingGroup {
 }
 
 const groups = computed<PendingGroup[]>(() => {
-  const map = new Map<string, Map<string, number>>()
+  const map = new Map<string, Map<string, string[]>>()
   for (const t of biddingStore.rawTreasures) {
     if (EXCLUDED_STATUS.has(t.status)) continue
     if (isSubmitted(t.remark)) continue
     const member = t.ticketOwerName || '(未知)'
     if (!map.has(member)) map.set(member, new Map())
     const items = map.get(member)!
-    items.set(t.itemName, (items.get(t.itemName) ?? 0) + 1)
+    if (!items.has(t.itemName)) items.set(t.itemName, [])
+    items.get(t.itemName)!.push(t.treasureCode)
   }
   const result: PendingGroup[] = []
   for (const [member, items] of map) {
-    const itemList = [...items].map(([itemName, count]) => ({ itemName, count }))
+    const itemList = [...items].map(([itemName, codes]) => ({
+      itemName,
+      count: codes.length,
+      codes,
+    }))
     itemList.sort((a, b) => b.count - a.count || a.itemName.localeCompare(b.itemName))
     const total = itemList.reduce((s, i) => s + i.count, 0)
     result.push({ member, total, items: itemList })
@@ -46,6 +63,47 @@ const groups = computed<PendingGroup[]>(() => {
 })
 
 const totalPending = computed(() => groups.value.reduce((s, g) => s + g.total, 0))
+
+// 處理中的物品 key(member|itemName),避免重複點擊;勾選後該物品會在 refresh 後消失
+const busy = ref<Set<string>>(new Set())
+const itemKey = (member: string, itemName: string) => `${member}|${itemName}`
+
+async function updateRemarkToWarehouse(ticketCode: string) {
+  const ts = Math.floor(Date.now() / 1000).toString()
+  const res = await window.fetch('https://api.gameshare-system.com/update_remark', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${authStore.authToken}`,
+      'Content-Type': 'application/json',
+      Sign: generateSignature(ts),
+      TimeStamp: ts,
+    },
+    body: JSON.stringify({ ticketCode, remark: REMARK_WAREHOUSE }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data?.message || '更新備註失敗')
+}
+
+async function checkItem(group: PendingGroup, item: PendingItem) {
+  if (!canCheck(group.member)) return
+  const key = itemKey(group.member, item.itemName)
+  if (busy.value.has(key)) return
+  busy.value = new Set(busy.value).add(key)
+  try {
+    // 整批把此物品的單改成「已繳倉庫」
+    for (const code of item.codes) {
+      await updateRemarkToWarehouse(code)
+    }
+    useAlert.success(`已將 ${item.itemName} ×${item.count} 標記為已繳倉庫`)
+    await biddingStore.refresh()
+  } catch (e) {
+    useAlert.error(e instanceof Error ? e.message : '更新備註失敗,請再試一次')
+  } finally {
+    const next = new Set(busy.value)
+    next.delete(key)
+    busy.value = next
+  }
+}
 
 onMounted(() => {
   biddingStore.refresh()
@@ -65,7 +123,10 @@ onUnmounted(() => {
       <span class="ps-total" v-if="totalPending > 0">共 {{ totalPending }} 件未繳</span>
     </div>
 
-    <p class="ps-hint">統計每位會員身上尚未繳交至倉庫的道具。備註已標記「已繳倉庫」或幹部已確認存倉者不列入。</p>
+    <p class="ps-hint">
+      統計每位會員身上尚未繳交至倉庫的道具。勾選物品即把該單備註改為「已繳倉庫」,整張單全勾後即從清單消失。
+      自己的單自己勾;{{ isOfficerUp ? '你是幹部以上,可代勾所有人的單。' : '幹部以上可代勾所有人的單。' }}
+    </p>
 
     <div v-if="groups.length === 0" class="ps-empty">
       <span class="ps-empty-icon">✅</span>
@@ -79,9 +140,25 @@ onUnmounted(() => {
           <span class="ps-count">{{ g.total }} 件</span>
         </div>
         <div class="ps-items">
-          <span v-for="it in g.items" :key="it.itemName" class="ps-item">
-            {{ it.itemName }}<b>×{{ it.count }}</b>
-          </span>
+          <label
+            v-for="it in g.items"
+            :key="it.itemName"
+            class="ps-item"
+            :class="{
+              'ps-item--disabled': !canCheck(g.member),
+              'ps-item--busy': busy.has(itemKey(g.member, it.itemName)),
+            }"
+            :title="canCheck(g.member) ? '勾選 = 已繳倉庫' : '只有本人或幹部以上可勾'"
+          >
+            <input
+              type="checkbox"
+              class="ps-check"
+              :checked="busy.has(itemKey(g.member, it.itemName))"
+              :disabled="!canCheck(g.member) || busy.has(itemKey(g.member, it.itemName))"
+              @change="checkItem(g, it)"
+            />
+            <span class="ps-item-name">{{ it.itemName }}<b>×{{ it.count }}</b></span>
+          </label>
         </div>
       </div>
     </div>
@@ -185,13 +262,42 @@ onUnmounted(() => {
 .ps-item {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 7px;
   padding: 6px 10px;
   border-radius: 8px;
   background: #0f172a;
   border: 1px solid #334155;
   font-size: 0.85rem;
   color: #cbd5e1;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, opacity 0.12s;
+}
+.ps-item:hover:not(.ps-item--disabled):not(.ps-item--busy) {
+  border-color: var(--c-light);
+  background: #131c30;
+}
+.ps-item--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.ps-item--busy {
+  cursor: progress;
+  border-color: var(--c-light);
+  opacity: 0.7;
+}
+.ps-check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--c-light);
+  cursor: inherit;
+}
+.ps-item-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
 }
 .ps-item b {
   color: var(--c-light);
