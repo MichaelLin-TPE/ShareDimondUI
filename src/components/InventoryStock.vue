@@ -8,8 +8,7 @@ const biddingStore = useBiddingTreasureStore()
 const authStore = useAuthStore()
 let unsubscribeWS: (() => void) | null = null
 
-// 作廢的單子不算庫存;其餘只要備註是「已繳倉庫」就視為現有庫存
-const EXCLUDED_STATUS = new Set(['CANCELED', 'FAILED'])
+// 只認備註「已繳倉庫」,其餘一律不算庫存(不看 status)
 const isWarehouse = (remark?: string) => (remark || '').trim() === REMARK_WAREHOUSE
 
 interface StockItem {
@@ -21,7 +20,6 @@ interface StockItem {
 const stocks = computed<StockItem[]>(() => {
   const map = new Map<string, number>()
   for (const t of biddingStore.rawTreasures) {
-    if (EXCLUDED_STATUS.has(t.status)) continue
     if (!isWarehouse(t.remark)) continue
     const name = t.itemName || '(未知)'
     map.set(name, (map.get(name) ?? 0) + 1)
