@@ -54,11 +54,13 @@ const groups = computed<PendingGroup[]>(() => {
       count: codes.length,
       codes,
     }))
-    itemList.sort((a, b) => b.count - a.count || a.itemName.localeCompare(b.itemName))
+    // 用物品名排序(穩定),不依數量 — 否則有人銷單後件數變動,順序就會跳來跳去
+    itemList.sort((a, b) => a.itemName.localeCompare(b.itemName))
     const total = itemList.reduce((s, i) => s + i.count, 0)
     result.push({ member, total, items: itemList })
   }
-  result.sort((a, b) => b.total - a.total || a.member.localeCompare(b.member))
+  // 用會員名排序(穩定),不依總件數 — 銷單/繳交後件數會變,但卡片位置維持不動
+  result.sort((a, b) => a.member.localeCompare(b.member))
   return result
 })
 
