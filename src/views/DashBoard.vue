@@ -5,6 +5,7 @@ import ClanNotice from '@/components/ClanNotice.vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import BiddingManagement from '@/components/BiddingManagement.vue'
 import PendingSubmission from '@/components/PendingSubmission.vue'
+import InventoryStock from '@/components/InventoryStock.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Balance } from '@/types/balance.ts'
 import { useBalanceStore } from '@/stores/balanceTool.ts'
@@ -22,8 +23,14 @@ const balance = useBalanceStore()
 const showPushModal = ref<boolean>(false)
 
 // 競拍 / 結算 切換 tab
-type AuctionTab = 'active' | 'settle' | 'unpaid'
+type AuctionTab = 'active' | 'settle' | 'unpaid' | 'stock'
 const activeAuctionTab = ref<AuctionTab>('active')
+
+// 庫存分頁僅幹部以上(OFFICER/LEADER)可見
+const isOfficerUp = computed(() => {
+  const r = authStore.member?.role
+  return r === 'OFFICER' || r === 'LEADER'
+})
 
 // 血盟試用倒數 — 後端在 /getBasicInfo 回傳 clanExpiresAt (epoch millis)
 const trialDaysRemaining = computed<number | null>(() => {
@@ -377,6 +384,15 @@ const closeUpdateModal = () => {
         >
           📦 待繳交
         </button>
+        <button
+          v-if="isOfficerUp"
+          type="button"
+          class="auction-tab-btn"
+          :class="{ active: activeAuctionTab === 'stock' }"
+          @click="activeAuctionTab = 'stock'"
+        >
+          🗃️ 目前庫存
+        </button>
       </div>
 
       <StatCard v-show="activeAuctionTab === 'active'" />
@@ -385,6 +401,7 @@ const closeUpdateModal = () => {
         class="biddingManagement"
       />
       <PendingSubmission v-show="activeAuctionTab === 'unpaid'" />
+      <InventoryStock v-if="isOfficerUp" v-show="activeAuctionTab === 'stock'" />
     </div>
   </div>
 </template>
