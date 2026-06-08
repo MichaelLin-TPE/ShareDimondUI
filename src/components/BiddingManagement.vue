@@ -38,6 +38,18 @@ const {
   selectedMemberId,
   handleStorageChange,
   selectedTreasure,
+  showDiceModal,
+  diceLoading,
+  diceAnimating,
+  diceTreasure,
+  diceRoundLabel,
+  diceVisibleRolls,
+  diceWinnerName,
+  diceFinalPrice,
+  diceCurrency,
+  diceDone,
+  openDiceAssign,
+  closeDiceModal,
 } = useAuction()
 
 // 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
@@ -408,6 +420,15 @@ function clearFilter() {
               <span v-else-if="item.canVerifyBiddingTicket">取得帳款並派發獎金</span>
             </button>
 
+            <!-- 手動分配模式(assignByLeader)才出現:讓系統骰點決定得標者 -->
+            <button
+              v-if="!item.isBidding && item.assignByLeader"
+              class="submit-btn dice-btn"
+              @click="openDiceAssign(item)"
+            >
+              🎲 由系統指定得標者
+            </button>
+
             <div class="card-footer" @click="handlePeopleCount(item)">
               <span class="timer">⏳ {{ formatTime(item.remainSeconds) }}</span>
               <span class="people">👥 {{ item.treasureAttendanceList.length }}人</span>
@@ -464,6 +485,58 @@ function clearFilter() {
           <button class="confirm-btn" @click="submitAssign">確認得標</button>
           <button class="cancel-btn" @click="showAssignModal = false">取消</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 系統骰點指定得標者 -->
+    <div class="modal-overlay dice-overlay" v-if="showDiceModal" @click.self="closeDiceModal">
+      <div class="boss-container dice-modal">
+        <div class="dice-head">
+          <div class="boss-title">🎲 系統骰點分配</div>
+          <div class="dice-sub" v-if="diceTreasure">
+            道具：<span class="gold">{{ diceTreasure.itemName }}</span>
+          </div>
+        </div>
+
+        <div v-if="diceLoading" class="dice-loading">
+          <div class="dice-spinner">🎲</div>
+          <p>骰子準備中…</p>
+        </div>
+
+        <template v-else>
+          <div class="dice-round-label">{{ diceRoundLabel }}</div>
+
+          <div class="dice-arena">
+            <div
+              v-for="(r, i) in diceVisibleRolls"
+              :key="i"
+              class="dice-player"
+              :class="{ 'is-top': r.isTop, 'is-winner': diceDone && r.isTop }"
+            >
+              <div class="dice-cube" :class="{ rolling: r.rolling }">
+                <span>{{ r.rolling ? '🎲' : r.value }}</span>
+              </div>
+              <div class="dice-name">{{ r.userName }}</div>
+            </div>
+          </div>
+
+          <transition name="dice-winner">
+            <div v-if="diceDone" class="dice-result">
+              <div class="dice-trophy">🏆</div>
+              <div class="dice-winner-name">{{ diceWinnerName }} 得標！</div>
+              <div class="dice-price">成交價 {{ Number(diceFinalPrice).toLocaleString() }} {{ diceCurrency }}</div>
+              <p class="dice-note">已指定得標者並凍結金額，請再到「取得帳款並派發獎金」完成分紅。</p>
+            </div>
+          </transition>
+
+          <button
+            class="close-btn dice-close"
+            :disabled="diceAnimating"
+            @click="closeDiceModal"
+          >
+            {{ diceAnimating ? '骰點中…' : '關閉' }}
+          </button>
+        </template>
       </div>
     </div>
 
@@ -1253,6 +1326,176 @@ function clearFilter() {
 .submit-btn.btn-verify-gem {
   background: linear-gradient(135deg, #0e7490, #155e75) !important;
   color: white;
+}
+
+/* 系統骰點按鈕 — 放在「指定得標者」下面,用主題漸層區隔 */
+.submit-btn.dice-btn {
+  margin-top: 8px;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep)) !important;
+  color: var(--c-on);
+}
+.submit-btn.dice-btn:hover {
+  filter: brightness(1.08);
+}
+
+/* === 骰骰子 Modal === */
+.dice-modal {
+  height: auto;
+  max-height: 88vh;
+  max-width: 440px;
+  overflow-y: auto;
+}
+.dice-head {
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+.dice-head .boss-title {
+  margin-bottom: 6px;
+}
+.dice-sub {
+  text-align: center;
+  font-size: 0.88rem;
+  color: #94a3b8;
+}
+.dice-sub .gold {
+  color: var(--c-light);
+  font-weight: 700;
+}
+.dice-loading {
+  text-align: center;
+  padding: 40px 0 30px;
+  color: #94a3b8;
+}
+.dice-spinner {
+  font-size: 3rem;
+  animation: dice-shake 0.5s linear infinite;
+}
+.dice-round-label {
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--c-light);
+  min-height: 1.2em;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+.dice-arena {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px 18px;
+  padding: 6px 0 18px;
+}
+.dice-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.2s;
+}
+.dice-player.is-top {
+  transform: translateY(-4px);
+}
+.dice-cube {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #f8fafc;
+  background: #0f172a;
+  border: 2px solid #334155;
+  border-radius: 12px;
+  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.4);
+}
+.dice-cube.rolling {
+  animation: dice-shake 0.45s linear infinite;
+  color: var(--c-light);
+}
+.dice-cube:not(.rolling) {
+  animation: dice-pop 0.3s ease-out;
+}
+.dice-player.is-top .dice-cube {
+  border-color: var(--c-light);
+  color: var(--c-light);
+  box-shadow: 0 0 14px rgba(var(--c-light-rgb), 0.6);
+}
+.dice-player.is-winner .dice-cube {
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  animation: dice-winner-glow 1s ease-in-out infinite;
+}
+.dice-name {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dice-player.is-top .dice-name {
+  color: var(--c-light);
+  font-weight: 700;
+}
+@keyframes dice-shake {
+  0% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-6px) rotate(-18deg); }
+  50% { transform: translateY(0) rotate(14deg); }
+  75% { transform: translateY(-4px) rotate(-8deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+@keyframes dice-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+@keyframes dice-winner-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(var(--c-light-rgb), 0.5); }
+  50% { box-shadow: 0 0 26px 4px rgba(var(--c-light-rgb), 0.85); }
+}
+.dice-result {
+  text-align: center;
+  padding: 8px 0 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 6px;
+}
+.dice-trophy {
+  font-size: 2.4rem;
+  animation: dice-pop 0.4s ease-out;
+}
+.dice-winner-name {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--c-light);
+  margin-top: 4px;
+}
+.dice-price {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.dice-note {
+  font-size: 0.74rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 10px 0 0;
+}
+.dice-close {
+  margin-top: 14px;
+}
+.dice-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dice-winner-enter-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.dice-winner-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 /* 底部數據 */
