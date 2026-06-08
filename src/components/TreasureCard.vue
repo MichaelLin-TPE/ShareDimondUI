@@ -50,6 +50,13 @@ const {
   deleteTreasureItem,
   updateBoss,
   deleteBoss,
+  showQuickModal,
+  quickHistory,
+  quickLoading,
+  quickBusyKey,
+  openQuickTicket,
+  quickResubmit,
+  removeQuickEntry,
 } = useAuction()
 
 // 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
@@ -223,6 +230,9 @@ const closeManageDialog = () => {
       </h3>
       <div class="header-btns">
         <button class="btn-top open" @click="openTicket">開單</button>
+        <button class="btn-top quick" @click="openQuickTicket" title="從最近的開單紀錄一鍵重送">
+          ⚡ 快速開單
+        </button>
         <button class="btn-top add" @click="openAddTreasureDialog">道具</button>
         <button class="btn-top add" @click="openAddBossDialog">首領</button>
       </div>
@@ -435,6 +445,65 @@ const closeManageDialog = () => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showQuickModal" class="ot-modal">
+        <div class="ot-modal__mask" @click="showQuickModal = false"></div>
+        <div class="ot-modal__panel ot-modal__panel--quick" role="dialog">
+          <button class="ot-modal__close" type="button" @click="showQuickModal = false">×</button>
+          <div class="ot-modal__head">
+            <h2>⚡ 快速開單</h2>
+            <p>點「送出」即重送一模一樣的開單請求</p>
+          </div>
+
+          <div v-if="quickHistory.length === 0" class="qk-empty">
+            <span class="qk-empty-icon">🗒️</span>
+            <p>還沒有開單紀錄,先用「開單」建立第一筆,之後就能在這裡一鍵重送。</p>
+          </div>
+
+          <ul v-else class="qk-list">
+            <li v-for="(entry, idx) in quickHistory" :key="idx" class="qk-item">
+              <div class="qk-info">
+                <div class="qk-title-row">
+                  <span class="qk-item-name">{{ entry.itemLabel }}</span>
+                  <span class="qk-type" :class="entry.type === 0 ? 'is-bid' : 'is-fixed'">
+                    {{ entry.type === 0 ? '競標' : '固定' }}
+                  </span>
+                </div>
+                <div class="qk-meta">
+                  <span>👑 {{ entry.bossLabel }}</span>
+                  <span class="qk-price">{{ Number(entry.lowestPrice).toLocaleString() }} {{ entry.currency }}</span>
+                </div>
+                <div class="qk-remark">📝 {{ entry.remark || '無' }}</div>
+              </div>
+              <div class="qk-actions">
+                <button
+                  type="button"
+                  class="qk-submit"
+                  :disabled="quickLoading"
+                  @click="quickResubmit(entry)"
+                >
+                  {{ quickBusyKey === `${entry.itemName}|${entry.bossName}` ? '送出中…' : '送出' }}
+                </button>
+                <button
+                  type="button"
+                  class="qk-remove"
+                  title="從紀錄移除"
+                  :disabled="quickLoading"
+                  @click="removeQuickEntry(entry)"
+                >
+                  ✕
+                </button>
+              </div>
+            </li>
+          </ul>
+
+          <button type="button" class="ot-btn ot-btn--cancel qk-close" @click="showQuickModal = false">
+            關閉
+          </button>
         </div>
       </div>
     </Teleport>
@@ -802,6 +871,16 @@ const closeManageDialog = () => {
   background: #1e293b;
   color: #00d4ff;
   cursor: pointer;
+}
+/* 快速開單 — 用主題漸層強調,跟一般 btn-top 區隔 */
+.btn-top.quick {
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  font-weight: 700;
+}
+.btn-top.quick:hover {
+  filter: brightness(1.08);
 }
 
 .auction-grid {
@@ -1481,6 +1560,175 @@ const closeManageDialog = () => {
 /* 新增道具 / 首領 Mini Panel 變體 */
 .ot-modal__panel--mini {
   max-width: 360px;
+}
+
+/* === 快速開單 Panel === */
+.ot-modal__panel--quick {
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  max-height: 86vh;
+}
+.qk-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+.qk-list::-webkit-scrollbar {
+  width: 6px;
+}
+.qk-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 10px;
+}
+.qk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+.qk-item:hover {
+  border-color: var(--c-light);
+}
+.qk-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.qk-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.qk-item-name {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qk-type {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.qk-type.is-bid {
+  background: rgba(180, 110, 255, 0.16);
+  color: #c4a0ff;
+  border: 1px solid rgba(180, 110, 255, 0.4);
+}
+.qk-type.is-fixed {
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+.qk-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  min-width: 0;
+}
+.qk-meta > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qk-price {
+  flex-shrink: 0;
+  color: var(--c-light);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.qk-remark {
+  font-size: 0.78rem;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qk-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.qk-submit {
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+  color: var(--c-on);
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+  font-family: inherit;
+}
+.qk-submit:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+.qk-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.qk-remove {
+  width: 30px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+  font-family: inherit;
+}
+.qk-remove:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+.qk-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.qk-empty {
+  text-align: center;
+  padding: 36px 16px;
+  color: #94a3b8;
+}
+.qk-empty-icon {
+  font-size: 2.2rem;
+  display: block;
+  margin-bottom: 10px;
+}
+.qk-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.qk-close {
+  width: 100%;
 }
 
 /* === 管理彈窗 (道具 / 首領) === */
