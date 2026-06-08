@@ -5,12 +5,7 @@ import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
-import {
-  loadQuickHistory,
-  pushQuickHistory,
-  removeQuickHistory,
-  type QuickTicketEntry,
-} from '@/composables/quickTicketHistory.ts'
+import { mapRecentTickets, type QuickTicketEntry } from '@/composables/quickTicketHistory.ts'
 export function useAuction() {
   const showModal = ref(false)
   const itemName = ref('')
@@ -32,26 +27,41 @@ export function useAuction() {
   const showQuickModal = ref(false)
   const quickHistory = ref<QuickTicketEntry[]>([])
   const quickLoading = ref(false)
+  const quickFetching = ref(false)
   // 正在重送的那筆簽章(itemName|bossName),讓該列顯示「送出中」
   const quickBusyKey = ref('')
 
-  // 記錄一筆成功開單到歷史(去重 + 留最新 5 筆)
-  const recordQuickHistory = (entry: QuickTicketEntry) => {
-    const clanId = authStore.member?.clanId ?? ''
-    quickHistory.value = pushQuickHistory(clanId, entry, quickHistory.value)
+  // 從後端載入最近開單紀錄(會員自己最近開過的單,已去重最多 5 筆)
+  const loadRecentTickets = async () => {
+    quickFetching.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/recent-open-tickets', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          Accept: 'application/json',
+          Sign: generateSignature(ts),
+          TimeStamp: ts,
+        },
+      })
+      if (!res.ok) {
+        quickHistory.value = []
+        return
+      }
+      quickHistory.value = mapRecentTickets(await res.json())
+    } catch (e) {
+      console.error(e)
+      quickHistory.value = []
+    } finally {
+      quickFetching.value = false
+    }
   }
 
-  // 開啟快速開單彈窗 — 從 localStorage 重新載入最新歷史
+  // 開啟快速開單彈窗 — 即時向後端要最新歷史
   const openQuickTicket = () => {
-    const clanId = authStore.member?.clanId ?? ''
-    quickHistory.value = loadQuickHistory(clanId)
     showQuickModal.value = true
-  }
-
-  // 從歷史移除一筆
-  const removeQuickEntry = (entry: QuickTicketEntry) => {
-    const clanId = authStore.member?.clanId ?? ''
-    quickHistory.value = removeQuickHistory(clanId, entry, quickHistory.value)
+    loadRecentTickets()
   }
 
   // 一鍵重送「一模一樣的請求」
@@ -82,8 +92,7 @@ export function useAuction() {
         useAlert.error('快速開單失敗!!!')
         return
       }
-      // 重送成功 — 把這筆移到歷史最前並關閉彈窗
-      recordQuickHistory(entry)
+      // 重送成功 — 關閉彈窗(下次開啟會重新向後端拿最新歷史)
       showQuickModal.value = false
       // 等彈窗從 DOM 移除再彈 Swal,避免兩層 blur 卡住合成(同 createTicket)
       await nextTick()
@@ -201,22 +210,6 @@ export function useAuction() {
         useAlert.error('開單失敗!!!')
         return
       }
-      // 開單成功 — 記錄到快速開單歷史(label 用當前選項反查,供彈窗顯示)
-      const itemLabel =
-        itemOptions.value.find((i) => i.itemId === itemName.value)?.itemName || itemName.value
-      const bossLabel =
-        bossOptions.value.find((b) => b.bossId === bossName.value)?.bossName || bossName.value
-      recordQuickHistory({
-        itemName: itemName.value,
-        bossName: bossName.value,
-        lowestPrice: basePrice.value,
-        remark: remark.value?.trim() || '在我身上',
-        currency: selectedCurrency.value,
-        type,
-        itemLabel,
-        bossLabel,
-        savedAt: 0,
-      })
       // 先清空 & 關閉原 modal
       itemName.value = ''
       bossName.value = ''
@@ -656,7 +649,6 @@ export function useAuction() {
   onMounted(() => {
     fetchOngoingTreasures()
     const clanId = authStore?.member?.clanId
-    quickHistory.value = loadQuickHistory(clanId ?? '')
     if (clanId) {
       wsHandle = createReconnectingStomp('/topic/treasure/' + clanId, (body) => {
         if (body === 'STATUS_UPDATED') {
@@ -902,9 +894,9 @@ export function useAuction() {
     showQuickModal,
     quickHistory,
     quickLoading,
+    quickFetching,
     quickBusyKey,
     openQuickTicket,
     quickResubmit,
-    removeQuickEntry,
   }
 }
