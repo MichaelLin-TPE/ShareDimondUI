@@ -1657,7 +1657,13 @@ const closeManageDialog = () => {
 }
 .qk-submit {
   height: 40px;
-  padding: 0 16px;
+  /* min-width 至少容得下「送出中…」,避免太窄 & 切換文字時寬度跳動 */
+  min-width: 88px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
   border: none;
   border-radius: 9px;
   background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
