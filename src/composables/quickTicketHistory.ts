@@ -1,12 +1,7 @@
 /**
- * 快速開單歷史 — 把每次成功開單的原始 payload 存到 localStorage,
- * 讓使用者一鍵重送「一模一樣的請求」加速開單。
- *
- * 設計:
- * - 依血盟 ID 分開存(不同盟的開單紀錄不混在一起)
- * - 只留最新 5 筆,相同內容去重(移到最前並更新時間)
- * - itemName / bossName 欄位沿用 open-ticket payload 語意(實際是 itemId / bossId)
- *   另存 itemLabel / bossLabel 供彈窗顯示用
+ * 快速開單 — 最近開單紀錄的型別與對應。
+ * 資料來自後端 GET /recent-open-tickets(直接從 Treasure 表撈會員自己最近開的單、去重),
+ * 不再用 localStorage,因此跨裝置 / 換瀏覽器都看得到真實歷史。
  */
 
 export interface QuickTicketEntry {
@@ -23,62 +18,31 @@ export interface QuickTicketEntry {
   itemLabel: string
   /** 顯示用:首領名稱 */
   bossLabel: string
-  /** 存入時間(epoch ms) */
-  savedAt: number
 }
 
-const KEY_PREFIX = 'quick_ticket_history'
-const MAX = 5
-
-const keyOf = (clanId: string) => `${KEY_PREFIX}:${clanId || 'unknown'}`
-
-/** 用內容(不含時間 / 顯示 label)當去重簽章 */
-const sigOf = (e: QuickTicketEntry) =>
-  `${e.itemName}|${e.bossName}|${e.lowestPrice}|${e.currency}|${e.type}|${e.remark}`
-
-export function loadQuickHistory(clanId: string): QuickTicketEntry[] {
-  try {
-    const raw = localStorage.getItem(keyOf(clanId))
-    if (!raw) return []
-    const arr = JSON.parse(raw)
-    if (!Array.isArray(arr)) return []
-    return arr.slice(0, MAX)
-  } catch {
-    return []
-  }
+/** 後端 /recent-open-tickets 的單筆回傳 */
+interface RecentOpenTicketApi {
+  itemId: string
+  itemName: string
+  bossId: string
+  bossName: string
+  lowestPrice: number | string
+  currency: string
+  type: number
+  remark: string | null
 }
 
-/** 推入一筆(相同內容去重移到最前),回傳更新後的清單 */
-export function pushQuickHistory(
-  clanId: string,
-  entry: QuickTicketEntry,
-  current: QuickTicketEntry[],
-): QuickTicketEntry[] {
-  const sig = sigOf(entry)
-  const next = [{ ...entry, savedAt: Date.now() }, ...current.filter((e) => sigOf(e) !== sig)].slice(
-    0,
-    MAX,
-  )
-  try {
-    localStorage.setItem(keyOf(clanId), JSON.stringify(next))
-  } catch {
-    /* localStorage 滿 / 隱私模式 — 靜默忽略,不影響開單 */
-  }
-  return next
-}
-
-/** 移除一筆,回傳更新後的清單 */
-export function removeQuickHistory(
-  clanId: string,
-  target: QuickTicketEntry,
-  current: QuickTicketEntry[],
-): QuickTicketEntry[] {
-  const sig = sigOf(target)
-  const next = current.filter((e) => sigOf(e) !== sig)
-  try {
-    localStorage.setItem(keyOf(clanId), JSON.stringify(next))
-  } catch {
-    /* 同上 */
-  }
-  return next
+/** 把後端回傳對應成前端重播 / 顯示用的 entry */
+export function mapRecentTickets(list: RecentOpenTicketApi[] | null | undefined): QuickTicketEntry[] {
+  if (!Array.isArray(list)) return []
+  return list.map((r) => ({
+    itemName: r.itemId,
+    bossName: r.bossId,
+    itemLabel: r.itemName,
+    bossLabel: r.bossName,
+    lowestPrice: r.lowestPrice == null ? '' : String(r.lowestPrice),
+    currency: r.currency,
+    type: r.type,
+    remark: r.remark ?? '',
+  }))
 }

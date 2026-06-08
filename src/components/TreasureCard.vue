@@ -53,10 +53,10 @@ const {
   showQuickModal,
   quickHistory,
   quickLoading,
+  quickFetching,
   quickBusyKey,
   openQuickTicket,
   quickResubmit,
-  removeQuickEntry,
 } = useAuction()
 
 // 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
@@ -457,7 +457,12 @@ const closeManageDialog = () => {
             <p>點「送出」即重送一模一樣的開單請求</p>
           </div>
 
-          <div v-if="quickHistory.length === 0" class="qk-empty">
+          <div v-if="quickFetching" class="qk-empty">
+            <span class="qk-empty-icon">⏳</span>
+            <p>讀取最近開單紀錄…</p>
+          </div>
+
+          <div v-else-if="quickHistory.length === 0" class="qk-empty">
             <span class="qk-empty-icon">🗒️</span>
             <p>還沒有開單紀錄,先用「開單」建立第一筆,之後就能在這裡一鍵重送。</p>
           </div>
@@ -485,15 +490,6 @@ const closeManageDialog = () => {
                   @click="quickResubmit(entry)"
                 >
                   {{ quickBusyKey === `${entry.itemName}|${entry.bossName}` ? '送出中…' : '送出' }}
-                </button>
-                <button
-                  type="button"
-                  class="qk-remove"
-                  title="從紀錄移除"
-                  :disabled="quickLoading"
-                  @click="removeQuickEntry(entry)"
-                >
-                  ✕
                 </button>
               </div>
             </li>
@@ -1677,27 +1673,6 @@ const closeManageDialog = () => {
 }
 .qk-submit:disabled {
   opacity: 0.55;
-  cursor: not-allowed;
-}
-.qk-remove {
-  width: 30px;
-  height: 40px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #64748b;
-  font-size: 0.95rem;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: color 0.15s, background 0.15s;
-  font-family: inherit;
-}
-.qk-remove:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.1);
-  color: #fca5a5;
-}
-.qk-remove:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
 }
 .qk-empty {
