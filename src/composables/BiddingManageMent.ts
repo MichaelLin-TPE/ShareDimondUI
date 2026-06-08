@@ -149,6 +149,124 @@ TimeStamp:currentTimeStamp
     selectedMemberId.value = null
   }
 
+  // === 系統骰點指定得標者 ===
+  interface DiceRoll {
+    userName: string
+    value: number
+  }
+  interface DiceRound {
+    roundNo: number
+    tieBreak: boolean
+    rolls: DiceRoll[]
+  }
+  interface DiceDisplayRoll {
+    userName: string
+    value: number
+    rolling: boolean
+    isTop: boolean
+  }
+  const showDiceModal = ref(false)
+  const diceLoading = ref(false) // 呼叫 API 中
+  const diceAnimating = ref(false) // 動畫播放中
+  const diceTreasure = ref<Treasure | null>(null)
+  const diceRoundLabel = ref('')
+  const diceVisibleRolls = ref<DiceDisplayRoll[]>([])
+  const diceWinnerName = ref('')
+  const diceFinalPrice = ref('')
+  const diceCurrency = ref('')
+  const diceDone = ref(false)
+
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+  // 用後端骰好的真實結果重播動畫(點數由後端決定,前端只負責呈現)
+  const playDiceAnimation = async (rounds: DiceRound[], winnerName: string) => {
+    diceAnimating.value = true
+    diceDone.value = false
+    diceWinnerName.value = ''
+    for (let i = 0; i < rounds.length; i++) {
+      const round = rounds[i]
+      if (!round) continue
+      diceRoundLabel.value = round.tieBreak
+        ? `🔥 平手重骰!(第 ${round.roundNo} 輪)`
+        : `第 ${round.roundNo} 輪`
+      // 1) 全部進入「轉動中」
+      diceVisibleRolls.value = round.rolls.map((r) => ({
+        userName: r.userName,
+        value: r.value,
+        rolling: true,
+        isTop: false,
+      }))
+      await sleep(1100)
+      // 2) 落點顯示數字
+      diceVisibleRolls.value = round.rolls.map((r) => ({
+        userName: r.userName,
+        value: r.value,
+        rolling: false,
+        isTop: false,
+      }))
+      await sleep(550)
+      // 3) 高亮本輪最高點
+      const max = Math.max(...round.rolls.map((r) => r.value))
+      diceVisibleRolls.value = diceVisibleRolls.value.map((r) => ({ ...r, isTop: r.value === max }))
+      await sleep(i < rounds.length - 1 ? 950 : 700)
+    }
+    // 揭曉得標者
+    diceWinnerName.value = winnerName
+    diceDone.value = true
+    diceAnimating.value = false
+    await sleep(300)
+    fetchOngoingTreasures()
+  }
+
+  const openDiceAssign = async (item: Treasure) => {
+    if (diceLoading.value || diceAnimating.value) return
+    diceTreasure.value = item
+    diceVisibleRolls.value = []
+    diceRoundLabel.value = ''
+    diceWinnerName.value = ''
+    diceFinalPrice.value = ''
+    diceCurrency.value = ''
+    diceDone.value = false
+    showDiceModal.value = true
+    diceLoading.value = true
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/dice-assign-buyer', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+        body: JSON.stringify({ ticketCode: item.treasureCode }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data?.message ?? '骰點失敗,請再試一次')
+        showDiceModal.value = false
+        return
+      }
+      diceLoading.value = false
+      diceFinalPrice.value = String(data.finalPrice ?? '')
+      diceCurrency.value = data.currency ?? ''
+      await playDiceAnimation(data.rounds ?? [], data.winnerName ?? '')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('骰點失敗,請再試一次')
+      showDiceModal.value = false
+    } finally {
+      diceLoading.value = false
+    }
+  }
+
+  const closeDiceModal = () => {
+    // 動畫中不可關閉(避免關到一半);完成後才允許
+    if (diceAnimating.value) return
+    showDiceModal.value = false
+    fetchOngoingTreasures()
+  }
+
   const submitAssign = async () => {
     if (!selectedTreasure.value || !selectedMemberId.value) {
       useAlert.success('請選擇一位成員！')
@@ -703,6 +821,19 @@ TimeStamp:currentTimeStamp
     handlePeopleClick,
     showAssignModal,
     selectedMemberId,
+    // 系統骰點
+    showDiceModal,
+    diceLoading,
+    diceAnimating,
+    diceTreasure,
+    diceRoundLabel,
+    diceVisibleRolls,
+    diceWinnerName,
+    diceFinalPrice,
+    diceCurrency,
+    diceDone,
+    openDiceAssign,
+    closeDiceModal,
     formatTimestamp,
     handlePeopleCount,
     showPeopleList,
