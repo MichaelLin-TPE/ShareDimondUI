@@ -230,9 +230,7 @@ const closeManageDialog = () => {
       </h3>
       <div class="header-btns">
         <button class="btn-top open" @click="openTicket">開單</button>
-        <button class="btn-top quick" @click="openQuickTicket" title="從最近的開單紀錄一鍵重送">
-          ⚡ 快速開單
-        </button>
+        <button class="btn-top" @click="openQuickTicket" title="從最近的開單紀錄一鍵重送">快速</button>
         <button class="btn-top add" @click="openAddTreasureDialog">道具</button>
         <button class="btn-top add" @click="openAddBossDialog">首領</button>
       </div>
@@ -455,7 +453,7 @@ const closeManageDialog = () => {
         <div class="ot-modal__panel ot-modal__panel--quick" role="dialog">
           <button class="ot-modal__close" type="button" @click="showQuickModal = false">×</button>
           <div class="ot-modal__head">
-            <h2>⚡ 快速開單</h2>
+            <h2>快速開單</h2>
             <p>點「送出」即重送一模一樣的開單請求</p>
           </div>
 
@@ -871,16 +869,6 @@ const closeManageDialog = () => {
   background: #1e293b;
   color: #00d4ff;
   cursor: pointer;
-}
-/* 快速開單 — 用主題漸層強調,跟一般 btn-top 區隔 */
-.btn-top.quick {
-  border: 1px solid transparent;
-  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
-  color: var(--c-on);
-  font-weight: 700;
-}
-.btn-top.quick:hover {
-  filter: brightness(1.08);
 }
 
 .auction-grid {
