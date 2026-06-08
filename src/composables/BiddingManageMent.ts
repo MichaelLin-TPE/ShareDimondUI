@@ -220,6 +220,12 @@ TimeStamp:currentTimeStamp
 
   const openDiceAssign = async (item: Treasure) => {
     if (diceLoading.value || diceAnimating.value) return
+    // 骰完即定案(指定得標者+凍結金額),先二次確認避免手滑誤點
+    const ok = await useAlert.confirm(
+      `確定讓系統骰點決定「${item.itemName}」的得標者?\n骰完即定案,會直接指定得標者並凍結其金額。`,
+      '🎲 系統骰點分配',
+    )
+    if (!ok.isConfirmed) return
     diceTreasure.value = item
     diceVisibleRolls.value = []
     diceRoundLabel.value = ''
