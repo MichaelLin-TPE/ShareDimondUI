@@ -7,6 +7,10 @@ const {
   handleSave,
   handleSaveRate,
   handleUpdateBalance,
+  // 拉霸機
+  slotConfig,
+  slotSaving,
+  saveSlotConfig,
   settings,
   selectedCurrency,
   clanCurrencies,
@@ -67,6 +71,14 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
       .map((c) => ({ currencyName: c.currencyName }))
   }
   return (balance.balanceList || []).map((b) => ({ currencyName: b.currency }))
+})
+
+// 拉霸機：彩金池分潤用「百分比」呈現給會長（後端存 0~0.8 小數）
+const jackpotPercent = computed<number>({
+  get: () => Math.round((slotConfig.value.jackpotShareOfEdge ?? 0) * 100),
+  set: (v: number) => {
+    slotConfig.value.jackpotShareOfEdge = (Number(v) || 0) / 100
+  },
 })
 </script>
 
@@ -208,6 +220,101 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
 
         <div class="cs-actions">
           <button class="cs-btn-primary" @click="handleSave">💾 儲存競標規則</button>
+        </div>
+      </section>
+
+      <!-- ─── 拉霸機設定 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🎰</span>
+          <div>
+            <h3>拉霸機設定</h3>
+            <p>設定下注額與輸贏分配（公積金 / 彩金池）</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>開放拉霸機</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: slotConfig.enabled }"
+              @click="slotConfig.enabled = !slotConfig.enabled"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ slotConfig.enabled ? '🎰 已開放' : '🚫 已關閉' }}
+              </span>
+            </div>
+            <p class="cs-hint">關閉後成員無法拉霸</p>
+          </div>
+
+          <div class="cs-field">
+            <label>一次下注額</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="slotConfig.betAmount" type="number" class="cs-input" min="1" />
+              <span class="cs-suffix">{{ slotConfig.currency || '基準幣' }}</span>
+            </div>
+            <p class="cs-hint">每拉一次扣的金額</p>
+          </div>
+
+          <div class="cs-field">
+            <label>彩金池分潤</label>
+            <div class="cs-input-wrap">
+              <input
+                v-model.number="jackpotPercent"
+                type="number"
+                class="cs-input"
+                min="0"
+                max="80"
+              />
+              <span class="cs-suffix">%</span>
+            </div>
+            <p class="cs-hint">
+              玩家輸的錢 → {{ 100 - jackpotPercent }}% 進公積金、{{ jackpotPercent }}% 進彩金池（彩金池上限
+              80%）
+            </p>
+          </div>
+
+          <div class="cs-field">
+            <label>公積金地板</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="slotConfig.fundFloor" type="number" class="cs-input" min="0" />
+              <span class="cs-suffix">{{ slotConfig.currency || '基準幣' }}</span>
+            </div>
+            <p class="cs-hint">公積金低於此值自動暫停拉霸，避免金庫被掏空</p>
+          </div>
+
+          <div class="cs-field">
+            <label>單次最高賠付</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="slotConfig.maxPayout" type="number" class="cs-input" min="1" />
+              <span class="cs-suffix">{{ slotConfig.currency || '基準幣' }}</span>
+            </div>
+            <p class="cs-hint">單次中獎賠付上限，封頂頭獎風險</p>
+          </div>
+
+          <div class="cs-field">
+            <label>理論返還率 (RTP)</label>
+            <div class="cs-input-wrap">
+              <input
+                :value="slotConfig.rtp ? (slotConfig.rtp * 100).toFixed(1) : '—'"
+                type="text"
+                class="cs-input"
+                disabled
+              />
+              <span class="cs-suffix">%</span>
+            </div>
+            <p class="cs-hint">由賠率表決定（玩家長期拿回比例），不可調</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" :disabled="slotSaving" @click="saveSlotConfig">
+            {{ slotSaving ? '儲存中…' : '💾 儲存拉霸設定' }}
+          </button>
         </div>
       </section>
 

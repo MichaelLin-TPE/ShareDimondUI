@@ -38,7 +38,6 @@ const clientSeed = ref('')
 const lastResult = ref<{ win: boolean; payout: number; multiplier: number; message: string } | null>(null)
 const fair = ref<{ serverSeed: string; serverSeedHash: string; clientSeed: string; nonce: number } | null>(null)
 const showFair = ref(false)
-const showLeader = ref(false)
 
 // ---- 工具 ----
 const headers = (): Record<string, string> => {
@@ -181,39 +180,6 @@ async function spin() {
   }
 }
 
-// ---- 盟主設定 ----
-const saving = ref(false)
-async function saveConfig() {
-  if (saving.value) return
-  saving.value = true
-  try {
-    const res = await fetch(`${API}/slot/config`, {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({
-        enabled: config.value.enabled,
-        betAmount: config.value.betAmount,
-        jackpotShareOfEdge: config.value.jackpotShareOfEdge,
-        fundFloor: config.value.fundFloor,
-        maxPayout: config.value.maxPayout,
-      }),
-    })
-    const d = await res.json()
-    if (!res.ok) {
-      useAlert.error(d.message ?? '儲存失敗')
-      return
-    }
-    config.value.rtp = Number(d.rtp)
-    config.value.houseEdge = Number(d.houseEdge)
-    useAlert.success('設定已儲存')
-  } catch (e) {
-    console.error(e)
-    useAlert.error('連線失敗')
-  } finally {
-    saving.value = false
-  }
-}
-
 onMounted(loadAll)
 </script>
 
@@ -307,38 +273,7 @@ onMounted(loadAll)
       </div>
     </section>
 
-    <!-- 盟主設定 -->
-    <section class="card" v-if="isLeader">
-      <button class="collapse-head" @click="showLeader = !showLeader">
-        <span>⚙️ 盟主設定</span>
-        <span>{{ showLeader ? '▲' : '▼' }}</span>
-      </button>
-      <div v-if="showLeader" class="leader-body">
-        <label class="field">
-          <span>開放拉霸機</span>
-          <input type="checkbox" v-model="config.enabled" />
-        </label>
-        <label class="field">
-          <span>每次下注額</span>
-          <input type="number" v-model.number="config.betAmount" min="1" />
-        </label>
-        <label class="field">
-          <span>彩金池分潤（佔邊際，0~0.8）</span>
-          <input type="number" step="0.01" v-model.number="config.jackpotShareOfEdge" min="0" max="0.8" />
-        </label>
-        <label class="field">
-          <span>公積金地板</span>
-          <input type="number" v-model.number="config.fundFloor" min="0" />
-        </label>
-        <label class="field">
-          <span>單次最高賠付</span>
-          <input type="number" v-model.number="config.maxPayout" min="1" />
-        </label>
-        <button class="save-btn" :disabled="saving" @click="saveConfig">
-          {{ saving ? '儲存中…' : '儲存設定' }}
-        </button>
-      </div>
-    </section>
+    <p v-if="isLeader" class="leader-link">⚙️ 下注額與輸贏分配請到「血盟設置 → 拉霸機設定」調整</p>
   </div>
 </template>
 
@@ -580,48 +515,11 @@ onMounted(loadAll)
   border-radius: 6px;
 }
 
-/* 盟主設定 */
-.leader-body {
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.field span {
-  font-size: 0.85rem;
-  color: #cbd5e1;
-}
-.field input[type='number'] {
-  width: 140px;
-  height: 36px;
-  background: #0e0f13;
-  border: 1px solid #24263a;
-  border-radius: 8px;
-  color: #f1f5f9;
-  padding: 0 10px;
-  text-align: right;
-}
-.field input[type='checkbox'] {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--c-deep);
-}
-.save-btn {
-  height: 44px;
-  border: none;
-  border-radius: 10px;
-  font-weight: 800;
-  cursor: pointer;
-  color: var(--c-on);
-  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
-}
-.save-btn:disabled {
-  opacity: 0.5;
+/* 盟主設定提示 */
+.leader-link {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 4px 0 0;
 }
 </style>
