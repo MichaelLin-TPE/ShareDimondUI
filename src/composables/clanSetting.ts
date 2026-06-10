@@ -356,14 +356,94 @@ export function useAuction() {
     }
   }
 
+  // ───── 拉霸機設定 ─────
+  const slotConfig = ref({
+    currency: '',
+    enabled: true,
+    betAmount: 10,
+    jackpotShareOfEdge: 0.2,
+    fundFloor: 0,
+    maxPayout: 1000000,
+    rtp: 0,
+    houseEdge: 0,
+  })
+  const slotSaving = ref(false)
+
+  const fetchSlotConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/slot/config`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      slotConfig.value = {
+        currency: d.currency ?? '',
+        enabled: d.enabled,
+        betAmount: Number(d.betAmount),
+        jackpotShareOfEdge: Number(d.jackpotShareOfEdge),
+        fundFloor: Number(d.fundFloor),
+        maxPayout: Number(d.maxPayout),
+        rtp: Number(d.rtp),
+        houseEdge: Number(d.houseEdge),
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveSlotConfig = async () => {
+    if (slotSaving.value) return
+    // 前端先擋：彩金池分潤 0~0.8
+    if (slotConfig.value.jackpotShareOfEdge < 0 || slotConfig.value.jackpotShareOfEdge > 0.8) {
+      useAlert.error('彩金池分潤比例必須介於 0 ~ 0.8')
+      return
+    }
+    if (!slotConfig.value.betAmount || slotConfig.value.betAmount <= 0) {
+      useAlert.error('每次下注額必須大於 0')
+      return
+    }
+    slotSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/slot/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({
+          enabled: slotConfig.value.enabled,
+          betAmount: slotConfig.value.betAmount,
+          jackpotShareOfEdge: slotConfig.value.jackpotShareOfEdge,
+          fundFloor: slotConfig.value.fundFloor,
+          maxPayout: slotConfig.value.maxPayout,
+        }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      slotConfig.value.rtp = Number(d.rtp)
+      slotConfig.value.houseEdge = Number(d.houseEdge)
+      useAlert.success('拉霸機設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      slotSaving.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
     fetchClanCurrencies()
     fetchDiscordWebhook()
+    fetchSlotConfig()
   })
 
   return {
+    // 拉霸機
+    slotConfig,
+    slotSaving,
+    saveSlotConfig,
     settings,
     balance,
     selectedCurrency,
