@@ -32,6 +32,8 @@ interface RecentOpenTicketApi {
   remark: string | null
 }
 
+import { REMARK_ON_ME } from '@/composables/remarkOptions.ts'
+
 /** 把後端回傳對應成前端重播 / 顯示用的 entry */
 export function mapRecentTickets(list: RecentOpenTicketApi[] | null | undefined): QuickTicketEntry[] {
   if (!Array.isArray(list)) return []
@@ -43,6 +45,8 @@ export function mapRecentTickets(list: RecentOpenTicketApi[] | null | undefined)
     lowestPrice: r.lowestPrice == null ? '' : String(r.lowestPrice),
     currency: r.currency,
     type: r.type,
-    remark: r.remark ?? '',
+    // 備註是舊單「目前」的去向(可能早被改成已繳倉庫/給某人),不可沿用。
+    // 剛開的新單道具一定還在開單者身上,一律重設為「在我身上」。
+    remark: REMARK_ON_ME,
   }))
 }
