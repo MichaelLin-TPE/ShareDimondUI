@@ -57,12 +57,12 @@ const canSpin = computed(
 )
 
 const PAYTABLE = [
-  { reel: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×120' },
-  { reel: '⭐ ⭐ ⭐', label: '', mult: '×40' },
-  { reel: '🔔 🔔 🔔', label: '', mult: '×18' },
-  { reel: '🍋 🍋 🍋', label: '', mult: '×12' },
-  { reel: '🍒 🍒 🍒', label: '', mult: '×8' },
-  { reel: '🍒 🍒 ·', label: '兩個櫻桃', mult: '×0.5' },
+  { reel: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×170' },
+  { reel: '⭐ ⭐ ⭐', label: '', mult: '×48' },
+  { reel: '🔔 🔔 🔔', label: '', mult: '×17' },
+  { reel: '🍋 🍋 🍋', label: '', mult: '×10' },
+  { reel: '🍒 🍒 🍒', label: '', mult: '×5' },
+  { reel: '🍒 🍒 ·', label: '兩個櫻桃 · 回本', mult: '×1' },
 ]
 
 // ---- API ----
