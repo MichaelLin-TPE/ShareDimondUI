@@ -477,10 +477,8 @@ const closeManageDialog = () => {
                   </span>
                 </div>
                 <div class="qk-meta">
-                  <span>👑 {{ entry.bossLabel }}</span>
                   <span class="qk-price">{{ Number(entry.lowestPrice).toLocaleString() }} {{ entry.currency }}</span>
                 </div>
-                <div class="qk-remark">📝 {{ entry.remark || '無' }}</div>
               </div>
               <div class="qk-actions">
                 <button
@@ -1631,23 +1629,11 @@ const closeManageDialog = () => {
   color: #94a3b8;
   min-width: 0;
 }
-.qk-meta > span:first-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .qk-price {
   flex-shrink: 0;
   color: var(--c-light);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-.qk-remark {
-  font-size: 0.78rem;
-  color: #64748b;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .qk-actions {
   flex-shrink: 0;
