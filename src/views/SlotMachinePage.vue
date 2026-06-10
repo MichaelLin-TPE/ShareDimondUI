@@ -50,20 +50,39 @@ const headers = (): Record<string, string> => {
   }
 }
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
-const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
+// 一律不顯示小數點（虛擬幣為整數）
+const fmt = (n: number) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
+
+// 機率 → 「每 N 把」
+function oddsText(p: number): string {
+  if (!p || p <= 0) return ''
+  return '每 ' + Math.round(1 / p).toLocaleString('en-US') + ' 把'
+}
 
 const canSpin = computed(
   () => !spinning.value && config.value.enabled && walletBalance.value >= Number(config.value.betAmount),
 )
 
-const PAYTABLE = [
-  { reel: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×170' },
-  { reel: '⭐ ⭐ ⭐', label: '', mult: '×48' },
-  { reel: '🔔 🔔 🔔', label: '', mult: '×17' },
-  { reel: '🍋 🍋 🍋', label: '', mult: '×10' },
-  { reel: '🍒 🍒 🍒', label: '', mult: '×5' },
-  { reel: '🍒 🍒 ·', label: '兩個櫻桃 · 回本', mult: '×1' },
+interface PayRow {
+  reels: string
+  label: string
+  mult: string
+  odds: string
+}
+
+// 後端動態賠率表（含機率）；未載入前用靜態 fallback
+const paytable = ref<PayRow[]>([])
+const STATIC_PAYTABLE: PayRow[] = [
+  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×170', odds: '' },
+  { reels: '⭐ ⭐ ⭐', label: '', mult: '×48', odds: '' },
+  { reels: '🔔 🔔 🔔', label: '', mult: '×17', odds: '' },
+  { reels: '🍋 🍋 🍋', label: '', mult: '×10', odds: '' },
+  { reels: '🍒 🍒 🍒', label: '', mult: '×5', odds: '' },
+  { reels: '🍒 🍒 ·', label: '回本', mult: '×1', odds: '' },
 ]
+const displayPaytable = computed<PayRow[]>(() =>
+  paytable.value.length ? paytable.value : STATIC_PAYTABLE,
+)
 
 // ---- API ----
 async function loadConfig() {
@@ -80,6 +99,16 @@ async function loadConfig() {
     rtp: Number(d.rtp),
     houseEdge: Number(d.houseEdge),
   }
+  paytable.value = Array.isArray(d.paytable)
+    ? d.paytable.map(
+        (r: { reels: string; label?: string; multiplier: number; probability: number }): PayRow => ({
+          reels: r.reels,
+          label: r.label || '',
+          mult: '×' + r.multiplier,
+          odds: oddsText(r.probability),
+        }),
+      )
+    : []
 }
 
 async function loadJackpot() {
@@ -248,9 +277,10 @@ onMounted(loadAll)
         </span>
       </div>
       <div class="paytable">
-        <div v-for="row in PAYTABLE" :key="row.reel" class="pay-row">
-          <span class="pay-reel">{{ row.reel }}</span>
-          <span class="pay-label">{{ row.label }}</span>
+        <div v-for="row in displayPaytable" :key="row.reels" class="pay-row">
+          <span class="pay-reel">{{ row.reels }}</span>
+          <span class="pay-odds">{{ row.odds }}</span>
+          <span v-if="row.label" class="pay-label">{{ row.label }}</span>
           <span class="pay-mult">{{ row.mult }}</span>
         </div>
       </div>
@@ -451,8 +481,7 @@ onMounted(loadAll)
   gap: 6px;
 }
 .pay-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
+  display: flex;
   align-items: center;
   gap: 10px;
   padding: 6px 8px;
@@ -462,12 +491,26 @@ onMounted(loadAll)
 .pay-reel {
   font-size: 1rem;
   letter-spacing: 2px;
+  flex: 0 0 auto;
+}
+.pay-odds {
+  flex: 1 1 auto;
+  font-size: 0.72rem;
+  color: #94a3b8;
 }
 .pay-label {
-  font-size: 0.72rem;
-  color: #64748b;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  color: var(--c-on);
+  background: var(--c-light);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-weight: 700;
 }
 .pay-mult {
+  flex: 0 0 auto;
+  min-width: 48px;
+  text-align: right;
   font-size: 0.95rem;
   font-weight: 800;
   color: var(--c-light);
