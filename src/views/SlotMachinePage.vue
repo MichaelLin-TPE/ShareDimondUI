@@ -35,6 +35,11 @@ const jackpotBalance = ref(0)
 const reels = ref<string[]>(['🍒', '🔔', '7️⃣'])
 const clientSeed = ref('')
 
+// 下注倍率
+const betMultipliers = ref<number[]>([1, 2, 3, 5])
+const selectedMultiplier = ref(1)
+const effectiveBet = computed(() => Number(config.value.betAmount || 0) * selectedMultiplier.value)
+
 const lastResult = ref<{ win: boolean; payout: number; multiplier: number; message: string } | null>(null)
 const fair = ref<{ serverSeed: string; serverSeedHash: string; clientSeed: string; nonce: number } | null>(null)
 const showFair = ref(false)
@@ -60,7 +65,7 @@ function oddsText(p: number): string {
 }
 
 const canSpin = computed(
-  () => !spinning.value && config.value.enabled && walletBalance.value >= Number(config.value.betAmount),
+  () => !spinning.value && config.value.enabled && walletBalance.value >= effectiveBet.value,
 )
 
 interface PayRow {
@@ -98,6 +103,12 @@ async function loadConfig() {
     maxPayout: Number(d.maxPayout),
     rtp: Number(d.rtp),
     houseEdge: Number(d.houseEdge),
+  }
+  if (Array.isArray(d.betMultipliers) && d.betMultipliers.length) {
+    betMultipliers.value = d.betMultipliers
+    if (!betMultipliers.value.includes(selectedMultiplier.value)) {
+      selectedMultiplier.value = betMultipliers.value[0] ?? 1
+    }
   }
   paytable.value = Array.isArray(d.paytable)
     ? d.paytable.map(
@@ -159,7 +170,7 @@ function stopAnim() {
 async function spin() {
   if (!canSpin.value) {
     if (!config.value.enabled) useAlert.error('拉霸機目前未開放')
-    else if (walletBalance.value < Number(config.value.betAmount)) useAlert.error('餘額不足')
+    else if (walletBalance.value < effectiveBet.value) useAlert.error('餘額不足')
     return
   }
   spinning.value = true
@@ -170,7 +181,10 @@ async function spin() {
       fetch(`${API}/slot/spin`, {
         method: 'POST',
         headers: headers(),
-        body: JSON.stringify({ clientSeed: clientSeed.value || undefined }),
+        body: JSON.stringify({
+          clientSeed: clientSeed.value || undefined,
+          betMultiplier: selectedMultiplier.value,
+        }),
       }),
       delay(900),
     ])
@@ -232,9 +246,9 @@ onMounted(loadAll)
         <div class="stat-unit">{{ config.currency }}</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">每次下注</div>
-        <div class="stat-value">{{ fmt(config.betAmount) }}</div>
-        <div class="stat-unit">{{ config.currency }}</div>
+        <div class="stat-label">本次下注</div>
+        <div class="stat-value">{{ fmt(effectiveBet) }}</div>
+        <div class="stat-unit">{{ config.currency }} · ×{{ selectedMultiplier }}</div>
       </div>
     </section>
 
@@ -260,9 +274,25 @@ onMounted(loadAll)
         <template v-else>拉一把試試 👇</template>
       </div>
 
+      <div class="mult-row">
+        <span class="mult-label">倍率</span>
+        <div class="mult-group">
+          <button
+            v-for="m in betMultipliers"
+            :key="m"
+            class="mult-btn"
+            :class="{ active: selectedMultiplier === m }"
+            :disabled="spinning"
+            @click="selectedMultiplier = m"
+          >
+            {{ m }}x
+          </button>
+        </div>
+      </div>
+
       <button class="spin-btn" :disabled="!canSpin || loading" @click="spin">
         <span v-if="spinning">🎲 轉動中…</span>
-        <span v-else>SPIN（-{{ fmt(config.betAmount) }} {{ config.currency }}）</span>
+        <span v-else>SPIN（-{{ fmt(effectiveBet) }} {{ config.currency }}）</span>
       </button>
 
       <p v-if="!config.enabled && !loading" class="closed-hint">⚠️ 拉霸機目前未開放</p>
@@ -417,6 +447,48 @@ onMounted(loadAll)
 .res-lose {
   color: #94a3b8;
 }
+.mult-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.mult-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  flex: 0 0 auto;
+}
+.mult-group {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 6px;
+}
+.mult-btn {
+  flex: 1 1 0;
+  height: 38px;
+  border: 1px solid #24263a;
+  border-radius: 8px;
+  background: #0e0f13;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mult-btn:hover:not(:disabled):not(.active) {
+  color: #fff;
+  border-color: rgba(var(--c-light-rgb), 0.4);
+}
+.mult-btn.active {
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  border-color: transparent;
+}
+.mult-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .spin-btn {
   width: 100%;
   height: 56px;
