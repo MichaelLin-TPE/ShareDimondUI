@@ -28,6 +28,7 @@ import AdminPage from '@/views/AdminPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
 import FaqAssistantPage from '@/views/FaqAssistantPage.vue'
+import SlotMachinePage from '@/views/SlotMachinePage.vue'
 import FaqManagePage from '@/views/FaqManagePage.vue'
 
 const router = createRouter({
@@ -184,6 +185,10 @@ const router = createRouter({
         {
           path: 'settings',
           component: SettingsPage,
+        },
+        {
+          path: 'slot',
+          component: SlotMachinePage,
         },
       ],
     },
