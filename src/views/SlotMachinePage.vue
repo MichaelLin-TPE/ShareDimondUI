@@ -94,7 +94,10 @@ async function loadJackpot() {
 async function loadWallet() {
   const res = await fetch(`${API}/getBalance`, { headers: headers() })
   if (!res.ok) return
-  const list: Balance[] = await res.json()
+  // /getBalance 回傳 { memberBalanceResponseList, clanBalanceResponseList }
+  const data: { memberBalanceResponseList?: Balance[]; clanBalanceResponseList?: Balance[] } =
+    await res.json()
+  const list = data.memberBalanceResponseList ?? []
   balanceStore.setBalanceList(list)
   const w = list.find((b) => b.currency === config.value.currency)
   walletBalance.value = w ? Number(w.balance) : 0
