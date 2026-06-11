@@ -104,13 +104,14 @@ interface PayRow {
 // 後端動態賠率表（含機率）；未載入前用靜態 fallback
 const paytable = ref<PayRow[]>([])
 const STATIC_PAYTABLE: PayRow[] = [
-  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×10', odds: '' },
-  { reels: '⭐ ⭐ ⭐', label: '', mult: '×6', odds: '' },
-  { reels: '🔔 🔔 🔔', label: '', mult: '×4', odds: '' },
-  { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×3', odds: '' },
-  { reels: '🍒 🍒 🍒 / 🍋 🍋 🍋', label: '', mult: '×2', odds: '' },
-  { reels: '⭐ ⭐ ·', label: '', mult: '×2', odds: '' },
-  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.5', odds: '' },
+  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×30', odds: '' },
+  { reels: '⭐ ⭐ ⭐', label: '', mult: '×16', odds: '' },
+  { reels: '🔔 🔔 🔔', label: '', mult: '×8', odds: '' },
+  { reels: '🍋 🍋 🍋', label: '', mult: '×4', odds: '' },
+  { reels: '🍒 🍒 🍒', label: '', mult: '×3', odds: '' },
+  { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×2.5', odds: '' },
+  { reels: '⭐ ⭐ ·', label: '', mult: '×1.7', odds: '' },
+  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.2~1.3', odds: '' },
 ]
 const displayPaytable = computed<PayRow[]>(() =>
   paytable.value.length ? paytable.value : STATIC_PAYTABLE,
