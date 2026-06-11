@@ -521,6 +521,8 @@ onMounted(loadAll)
       </div>
     </div>
 
+    <div class="slot-grid">
+      <div class="col-main">
     <!-- 上方資訊卡 -->
     <section class="stats-grid">
       <div class="stat-card">
@@ -630,6 +632,9 @@ onMounted(loadAll)
       </p>
     </section>
 
+      </div>
+      <!-- ===== 右欄(資訊) ===== -->
+      <div class="col-side">
     <!-- 賺錢排行榜 -->
     <section class="card" v-if="leaderboard.length">
       <div class="card-head">
@@ -711,6 +716,8 @@ onMounted(loadAll)
     </section>
 
     <p v-if="isLeader" class="leader-link">⚙️ 下注額與輸贏分配請到「血盟設置 → 拉霸機設定」調整</p>
+      </div>
+    </div>
 
     <!-- 777 尊榮頭獎動畫 -->
     <Teleport to="body">
@@ -746,6 +753,34 @@ onMounted(loadAll)
   padding: 24px 18px 60px;
   max-width: 560px;
   margin: 0 auto;
+}
+
+/* 版面:手機直式單欄;PC 左右兩欄 */
+.slot-grid {
+  display: flex;
+  flex-direction: column;
+}
+.col-main,
+.col-side {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .slot-container {
+    max-width: 1000px;
+  }
+  .slot-grid {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 22px;
+  }
+  .col-main {
+    flex: 1.05 1 0;
+  }
+  .col-side {
+    flex: 0.95 1 0;
+  }
 }
 
 .title-wrap {
