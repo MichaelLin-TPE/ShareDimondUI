@@ -631,8 +631,8 @@ onMounted(loadAll)
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 38px;
-  padding: 0 16px;
+  width: auto; /* 寬度隨字長度 */
+  padding: 9px 14px; /* 貼字, 用 padding 撐大小 */
   border: none;
   border-radius: 9px;
   font-size: 0.88rem;
