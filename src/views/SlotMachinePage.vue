@@ -37,7 +37,7 @@ const clientSeed = ref('')
 // 莊家座位
 const banker = ref({ hasBanker: false, bankerName: '', bankroll: 0, isMe: false })
 
-// 賺錢排行榜
+// 賺錢排行榜 / 莊家戰績
 interface RankRow {
   rank: number
   userName: string
@@ -46,6 +46,18 @@ interface RankRow {
   me: boolean
 }
 const leaderboard = ref<RankRow[]>([])
+const bankerStats = ref<RankRow[]>([])
+
+// 近期大獎跑馬燈
+interface BigWin {
+  userName: string
+  reels: string
+  multiplier: number
+  payout: number
+  poolWin: number
+  jackpot: boolean
+}
+const recentWins = ref<BigWin[]>([])
 
 // 下注倍率
 const betMultipliers = ref<number[]>([1, 2, 3, 5, 10])
@@ -231,11 +243,67 @@ async function loadLeaderboard() {
     : []
 }
 
+async function loadBankerStats() {
+  const res = await fetch(`${API}/slot/banker-stats?limit=10`, { headers: headers() })
+  if (!res.ok) return
+  const d = await res.json()
+  bankerStats.value = Array.isArray(d)
+    ? d.map(
+        (r: { rank: number; userName: string; net: number; spins: number; me: boolean }): RankRow => ({
+          rank: r.rank,
+          userName: r.userName,
+          net: Number(r.net),
+          spins: Number(r.spins),
+          me: !!r.me,
+        }),
+      )
+    : []
+}
+
+async function loadRecentWins() {
+  const res = await fetch(`${API}/slot/recent-wins`, { headers: headers() })
+  if (!res.ok) return
+  const d = await res.json()
+  recentWins.value = Array.isArray(d)
+    ? d.map(
+        (w: {
+          userName: string
+          reels: string
+          multiplier: number
+          payout: number
+          poolWin: number
+          jackpot: boolean
+        }): BigWin => ({
+          userName: w.userName,
+          reels: w.reels,
+          multiplier: Number(w.multiplier),
+          payout: Number(w.payout),
+          poolWin: Number(w.poolWin || 0),
+          jackpot: !!w.jackpot,
+        }),
+      )
+    : []
+}
+
+// 排行榜/戰績/跑馬燈 一起刷新
+function refreshBoards() {
+  loadLeaderboard()
+  loadBankerStats()
+  loadRecentWins()
+}
+
 async function loadAll() {
   loading.value = true
   try {
     await loadConfig()
-    await Promise.all([loadWallet(), loadJackpot(), loadBank(), loadLeaderboard()])
+    await Promise.all([
+      loadWallet(),
+      loadJackpot(),
+      loadBank(),
+      loadLeaderboard(),
+      loadBankerStats(),
+      loadRecentWins(),
+    ])
   } catch (e) {
     console.error(e)
   } finally {
@@ -371,7 +439,7 @@ async function spin() {
     return
   }
   await spinOnce(false)
-  loadLeaderboard()
+  refreshBoards()
 }
 
 // 自動轉 N 次（轉前防呆：餘額是否夠 N 次）
@@ -415,7 +483,7 @@ async function startAuto(times: number) {
     }
   } finally {
     autoRunning.value = false
-    loadLeaderboard()
+    refreshBoards()
     // 中頭獎時不跳結算 toast(讓尊榮動畫獨佔畫面)
     if (!jackpotStopped) {
       const net = walletBalance.value - startWallet
@@ -437,6 +505,20 @@ onMounted(loadAll)
     <div class="title-wrap">
       <h2 class="title">🎰 拉霸機</h2>
       <p class="subtitle">用 {{ config.currency || '基準幣' }} 試手氣 · 玩家當莊，你跟莊家對賭</p>
+    </div>
+
+    <!-- 近期大獎跑馬燈 -->
+    <div v-if="recentWins.length" class="marquee">
+      <div class="marquee-track">
+        <span v-for="(w, i) in [...recentWins, ...recentWins]" :key="i" class="mq-item">
+          {{ w.jackpot ? '🎰' : '🎉' }} {{ w.userName }} {{ w.reels }}
+          <b>{{
+            w.jackpot
+              ? '獨得彩金池 +' + fmt(w.payout + w.poolWin)
+              : '×' + w.multiplier + ' 贏 ' + fmt(w.payout)
+          }}</b>
+        </span>
+      </div>
     </div>
 
     <!-- 上方資訊卡 -->
@@ -566,6 +648,26 @@ onMounted(loadAll)
           </span>
           <span class="rank-name">{{ row.userName }}<span v-if="row.me" class="rank-me">（你）</span></span>
           <span class="rank-spins">{{ row.spins }} 轉</span>
+          <span class="rank-net" :class="row.net >= 0 ? 'pos' : 'neg'">
+            {{ row.net >= 0 ? '+' : '−' }}{{ fmt(Math.abs(row.net)) }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 莊家戰績 -->
+    <section class="card" v-if="bankerStats.length">
+      <div class="card-head">
+        <h3 class="card-title">👑 莊家戰績</h3>
+        <span class="rank-hint">當莊累積盈虧</span>
+      </div>
+      <div class="rank-list">
+        <div v-for="row in bankerStats" :key="row.rank" class="rank-row" :class="{ mine: row.me }">
+          <span class="rank-no">
+            {{ row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : '#' + row.rank }}
+          </span>
+          <span class="rank-name">{{ row.userName }}<span v-if="row.me" class="rank-me">（你）</span></span>
+          <span class="rank-spins">坐莊 {{ row.spins }} 局</span>
           <span class="rank-net" :class="row.net >= 0 ? 'pos' : 'neg'">
             {{ row.net >= 0 ? '+' : '−' }}{{ fmt(Math.abs(row.net)) }}
           </span>
@@ -1051,6 +1153,43 @@ onMounted(loadAll)
 }
 
 /* 盟主設定提示 */
+/* ===== 近期大獎跑馬燈 ===== */
+.marquee {
+  overflow: hidden;
+  margin-bottom: 14px;
+  padding: 8px 0;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 209, 102, 0.06);
+  white-space: nowrap;
+}
+.marquee-track {
+  display: inline-flex;
+  gap: 28px;
+  padding-left: 28px;
+  animation: marquee 28s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.mq-item {
+  font-size: 0.82rem;
+  color: #e2c98a;
+  flex: 0 0 auto;
+}
+.mq-item b {
+  color: #ffd166;
+  font-weight: 800;
+}
+
 /* ===== 賺錢排行榜 ===== */
 .rank-hint {
   font-size: 0.72rem;
