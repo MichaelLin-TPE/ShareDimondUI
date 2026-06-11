@@ -104,9 +104,9 @@ interface PayRow {
 // 後端動態賠率表（含機率）；未載入前用靜態 fallback
 const paytable = ref<PayRow[]>([])
 const STATIC_PAYTABLE: PayRow[] = [
-  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×190', odds: '' },
-  { reels: '⭐ ⭐ ⭐', label: '', mult: '×50', odds: '' },
-  { reels: '🔔 🔔 🔔', label: '', mult: '×20', odds: '' },
+  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×200', odds: '' },
+  { reels: '⭐ ⭐ ⭐', label: '', mult: '×53', odds: '' },
+  { reels: '🔔 🔔 🔔', label: '', mult: '×22', odds: '' },
   { reels: '🍋 🍋 🍋', label: '', mult: '×11', odds: '' },
   { reels: '🍒 🍒 🍒', label: '', mult: '×5', odds: '' },
   { reels: '🍒 🍒 ·', label: '回本', mult: '×1', odds: '' },
