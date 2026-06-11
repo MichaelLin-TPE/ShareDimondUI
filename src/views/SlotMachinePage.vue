@@ -688,6 +688,11 @@ onMounted(loadAll)
           返還率 {{ (config.rtp * 100).toFixed(1) }}%
         </span>
       </div>
+      <!-- 彩金池大獎說明 -->
+      <div class="grand-banner">
+        💰 中 <b>7️⃣7️⃣7️⃣</b> 除 ×30 外，再<b>獨得整個彩金池</b>！
+        <span class="grand-amt">目前 {{ fmt(jackpotBalance) }} {{ config.currency }}</span>
+      </div>
       <div class="paytable">
         <div v-for="row in displayPaytable" :key="row.reels" class="pay-row">
           <span class="pay-reel">{{ row.reels }}</span>
@@ -1101,6 +1106,27 @@ onMounted(loadAll)
   background: rgba(var(--c-light-rgb), 0.12);
   border-radius: 999px;
   padding: 3px 10px;
+}
+
+/* 彩金池大獎說明條 */
+.grand-banner {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #ffe9b0;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.16), rgba(255, 160, 0, 0.08));
+  border: 1px solid rgba(255, 209, 102, 0.45);
+}
+.grand-banner b {
+  color: #ffd166;
+}
+.grand-amt {
+  display: block;
+  margin-top: 2px;
+  font-weight: 800;
+  color: #ffd166;
 }
 
 /* 賠率表 */
