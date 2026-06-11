@@ -73,11 +73,11 @@ const enabledCurrencies = computed<{ currencyName: string }[]>(() => {
   return (balance.balanceList || []).map((b) => ({ currencyName: b.currency }))
 })
 
-// 拉霸機：彩金池分潤用「百分比」呈現給會長（後端存 0~0.8 小數）
-const jackpotPercent = computed<number>({
-  get: () => Math.round((slotConfig.value.jackpotShareOfEdge ?? 0) * 100),
+// 拉霸機：彩金池抽水用「百分比」呈現給會長（後端存 0~0.1 小數）
+const rakePercent = computed<number>({
+  get: () => Math.round((slotConfig.value.rakeRate ?? 0) * 100),
   set: (v: number) => {
-    slotConfig.value.jackpotShareOfEdge = (Number(v) || 0) / 100
+    slotConfig.value.rakeRate = (Number(v) || 0) / 100
   },
 })
 </script>
@@ -229,7 +229,7 @@ const jackpotPercent = computed<number>({
           <span class="cs-card-icon">🎰</span>
           <div>
             <h3>拉霸機設定</h3>
-            <p>設定下注額與輸贏分配（公積金 / 彩金池）</p>
+            <p>玩家當莊，每注抽水進彩金池</p>
           </div>
         </div>
 
@@ -261,30 +261,14 @@ const jackpotPercent = computed<number>({
           </div>
 
           <div class="cs-field">
-            <label>彩金池分潤</label>
+            <label>彩金池抽水</label>
             <div class="cs-input-wrap">
-              <input
-                v-model.number="jackpotPercent"
-                type="number"
-                class="cs-input"
-                min="0"
-                max="80"
-              />
+              <input v-model.number="rakePercent" type="number" class="cs-input" min="0" max="10" />
               <span class="cs-suffix">%</span>
             </div>
             <p class="cs-hint">
-              玩家輸的錢 → {{ 100 - jackpotPercent }}% 進公積金、{{ jackpotPercent }}% 進彩金池（彩金池上限
-              80%）
+              每注不論輸贏抽 {{ rakePercent }}% 進彩金池（供抽獎），其餘由玩家與莊家對賭（上限 10%）
             </p>
-          </div>
-
-          <div class="cs-field">
-            <label>公積金地板</label>
-            <div class="cs-input-wrap">
-              <input v-model.number="slotConfig.fundFloor" type="number" class="cs-input" min="0" />
-              <span class="cs-suffix">{{ slotConfig.currency || '基準幣' }}</span>
-            </div>
-            <p class="cs-hint">公積金低於此值自動暫停拉霸，避免金庫被掏空</p>
           </div>
 
           <div class="cs-field">

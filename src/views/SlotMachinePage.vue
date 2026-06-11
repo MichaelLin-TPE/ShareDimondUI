@@ -23,8 +23,7 @@ const config = ref({
   currency: '',
   enabled: true,
   betAmount: 10,
-  jackpotShareOfEdge: 0.2,
-  fundFloor: 0,
+  rakeRate: 0.02,
   maxPayout: 1000000,
   rtp: 0,
   houseEdge: 0,
@@ -34,6 +33,9 @@ const walletBalance = ref(0)
 const jackpotBalance = ref(0)
 const reels = ref<string[]>(['🍒', '🔔', '7️⃣'])
 const clientSeed = ref('')
+
+// 莊家座位
+const banker = ref({ hasBanker: false, bankerName: '', bankroll: 0, isMe: false })
 
 // 下注倍率
 const betMultipliers = ref<number[]>([1, 2, 3, 5])
@@ -65,7 +67,13 @@ function oddsText(p: number): string {
 }
 
 const canSpin = computed(
-  () => !spinning.value && config.value.enabled && walletBalance.value >= effectiveBet.value,
+  () =>
+    !spinning.value &&
+    config.value.enabled &&
+    banker.value.hasBanker &&
+    !banker.value.isMe &&
+    walletBalance.value >= effectiveBet.value &&
+    effectiveBet.value <= banker.value.bankroll,
 )
 
 interface PayRow {
@@ -98,8 +106,7 @@ async function loadConfig() {
     currency: d.currency ?? '',
     enabled: d.enabled,
     betAmount: Number(d.betAmount),
-    jackpotShareOfEdge: Number(d.jackpotShareOfEdge),
-    fundFloor: Number(d.fundFloor),
+    rakeRate: Number(d.rakeRate),
     maxPayout: Number(d.maxPayout),
     rtp: Number(d.rtp),
     houseEdge: Number(d.houseEdge),
@@ -142,15 +149,78 @@ async function loadWallet() {
   walletBalance.value = w ? Number(w.balance) : 0
 }
 
+async function loadBank() {
+  const res = await fetch(`${API}/slot/bank`, { headers: headers() })
+  if (!res.ok) return
+  const d = await res.json()
+  banker.value = {
+    hasBanker: !!d.hasBanker,
+    bankerName: d.bankerName ?? '',
+    bankroll: Number(d.bankroll ?? 0),
+    isMe: !!d.isMe,
+  }
+}
+
 async function loadAll() {
   loading.value = true
   try {
     await loadConfig()
-    await Promise.all([loadWallet(), loadJackpot()])
+    await Promise.all([loadWallet(), loadJackpot(), loadBank()])
   } catch (e) {
     console.error(e)
   } finally {
     loading.value = false
+  }
+}
+
+// 坐莊 / 搶莊
+async function takeBank() {
+  const challenge = banker.value.hasBanker
+  const title = challenge ? '搶莊' : '我要坐莊'
+  const hint = challenge
+    ? `本金必須大於現任莊家 ${fmt(banker.value.bankroll)}`
+    : '輸入你要投入的本金（= 最多可輸的金額）'
+  const input = await useAlert.inputDialog(hint, title)
+  const amount = Number(input)
+  if (!amount || amount <= 0) return
+  if (challenge && amount <= banker.value.bankroll) {
+    useAlert.error(`搶莊本金必須大於現任莊家 ${fmt(banker.value.bankroll)}`)
+    return
+  }
+  try {
+    const res = await fetch(`${API}/slot/bank/take`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ amount }),
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      useAlert.error(d.message ?? '坐莊失敗')
+      return
+    }
+    useAlert.success(d.message)
+    await Promise.all([loadBank(), loadWallet()])
+  } catch (e) {
+    console.error(e)
+    useAlert.error('連線失敗')
+  }
+}
+
+async function leaveBank() {
+  const ok = await useAlert.confirm('確定要下莊？剩餘本金會退回你的錢包')
+  if (!ok?.isConfirmed) return
+  try {
+    const res = await fetch(`${API}/slot/bank/leave`, { method: 'POST', headers: headers() })
+    const d = await res.json()
+    if (!res.ok) {
+      useAlert.error(d.message ?? '下莊失敗')
+      return
+    }
+    useAlert.success(d.message)
+    await Promise.all([loadBank(), loadWallet()])
+  } catch (e) {
+    console.error(e)
+    useAlert.error('連線失敗')
   }
 }
 
@@ -170,6 +240,10 @@ function stopAnim() {
 async function spin() {
   if (!canSpin.value) {
     if (!config.value.enabled) useAlert.error('拉霸機目前未開放')
+    else if (!banker.value.hasBanker) useAlert.error('目前沒有莊家，先坐莊或等人坐莊')
+    else if (banker.value.isMe) useAlert.error('你是莊家，不能玩自己的莊')
+    else if (effectiveBet.value > banker.value.bankroll)
+      useAlert.error(`下注額不可超過莊家本金 ${fmt(banker.value.bankroll)}，請降低倍率`)
     else if (walletBalance.value < effectiveBet.value) useAlert.error('餘額不足')
     return
   }
@@ -214,6 +288,8 @@ async function spin() {
       b.currency === config.value.currency ? { ...b, balance: String(d.balanceAfter) } : b,
     )
     balanceStore.setBalanceList(list)
+    // 莊家本金已變動，重新抓
+    loadBank()
   } catch (e) {
     console.error(e)
     useAlert.error('連線失敗，請稍後再試')
@@ -230,7 +306,7 @@ onMounted(loadAll)
   <div class="slot-container">
     <div class="title-wrap">
       <h2 class="title">🎰 拉霸機</h2>
-      <p class="subtitle">用 {{ config.currency || '基準幣' }} 試手氣 · 贏的賠付來自公積金</p>
+      <p class="subtitle">用 {{ config.currency || '基準幣' }} 試手氣 · 玩家當莊，你跟莊家對賭</p>
     </div>
 
     <!-- 上方資訊卡 -->
@@ -249,6 +325,31 @@ onMounted(loadAll)
         <div class="stat-label">本次下注</div>
         <div class="stat-value">{{ fmt(effectiveBet) }}</div>
         <div class="stat-unit">{{ config.currency }} · ×{{ selectedMultiplier }}</div>
+      </div>
+    </section>
+
+    <!-- 莊家座位 -->
+    <section class="banker-card" :class="{ mine: banker.isMe, empty: !banker.hasBanker }">
+      <div class="banker-info">
+        <div class="banker-line">
+          <span class="banker-emoji">👑</span>
+          <span class="banker-name">
+            <template v-if="banker.hasBanker">
+              莊家：{{ banker.bankerName }}<span v-if="banker.isMe">（你）</span>
+            </template>
+            <template v-else>目前沒有莊家</template>
+          </span>
+        </div>
+        <div v-if="banker.hasBanker" class="banker-roll">
+          本金 {{ fmt(banker.bankroll) }} {{ config.currency }} · 單次最高可贏 ≈ {{ fmt(banker.bankroll) }}
+        </div>
+        <div v-else class="banker-roll">先有人坐莊才能玩</div>
+      </div>
+      <div class="banker-actions">
+        <button v-if="banker.isMe" class="bank-btn leave" @click="leaveBank">下莊</button>
+        <button v-else class="bank-btn take" @click="takeBank">
+          {{ banker.hasBanker ? '搶莊' : '我要坐莊' }}
+        </button>
       </div>
     </section>
 
@@ -296,6 +397,11 @@ onMounted(loadAll)
       </button>
 
       <p v-if="!config.enabled && !loading" class="closed-hint">⚠️ 拉霸機目前未開放</p>
+      <p v-else-if="!loading && !banker.hasBanker" class="closed-hint">⏳ 等待有人坐莊</p>
+      <p v-else-if="!loading && banker.isMe" class="closed-hint">👑 你是莊家，不能玩自己的莊</p>
+      <p v-else-if="!loading && effectiveBet > banker.bankroll" class="closed-hint">
+        ⚠️ 此注超過莊家本金，請降低倍率
+      </p>
     </section>
 
     <!-- 賠率表 -->
@@ -395,6 +501,67 @@ onMounted(loadAll)
   font-size: 0.7rem;
   color: #64748b;
   margin-top: 2px;
+}
+
+/* 莊家卡 */
+.banker-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(22, 24, 34, 0.85);
+  border: 1px solid #24263a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+.banker-card.mine {
+  border-color: rgba(var(--c-light-rgb), 0.5);
+}
+.banker-card.empty {
+  border-style: dashed;
+}
+.banker-info {
+  min-width: 0;
+}
+.banker-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.banker-emoji {
+  font-size: 1.1rem;
+}
+.banker-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+.banker-roll {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.banker-actions {
+  flex: 0 0 auto;
+}
+.bank-btn {
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.bank-btn.take {
+  color: var(--c-on);
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+}
+.bank-btn.leave {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
 /* 機台 */

@@ -361,8 +361,7 @@ export function useAuction() {
     currency: '',
     enabled: true,
     betAmount: 10,
-    jackpotShareOfEdge: 0.2,
-    fundFloor: 0,
+    rakeRate: 0.02,
     maxPayout: 1000000,
     rtp: 0,
     houseEdge: 0,
@@ -379,8 +378,7 @@ export function useAuction() {
         currency: d.currency ?? '',
         enabled: d.enabled,
         betAmount: Number(d.betAmount),
-        jackpotShareOfEdge: Number(d.jackpotShareOfEdge),
-        fundFloor: Number(d.fundFloor),
+        rakeRate: Number(d.rakeRate),
         maxPayout: Number(d.maxPayout),
         rtp: Number(d.rtp),
         houseEdge: Number(d.houseEdge),
@@ -392,9 +390,9 @@ export function useAuction() {
 
   const saveSlotConfig = async () => {
     if (slotSaving.value) return
-    // 前端先擋：彩金池分潤 0~0.8
-    if (slotConfig.value.jackpotShareOfEdge < 0 || slotConfig.value.jackpotShareOfEdge > 0.8) {
-      useAlert.error('彩金池分潤比例必須介於 0 ~ 0.8')
+    // 前端先擋：彩金池抽水 0~0.1 (0~10%)
+    if (slotConfig.value.rakeRate < 0 || slotConfig.value.rakeRate > 0.1) {
+      useAlert.error('彩金池抽水比例必須介於 0 ~ 10%')
       return
     }
     if (!slotConfig.value.betAmount || slotConfig.value.betAmount <= 0) {
@@ -410,8 +408,7 @@ export function useAuction() {
         body: JSON.stringify({
           enabled: slotConfig.value.enabled,
           betAmount: slotConfig.value.betAmount,
-          jackpotShareOfEdge: slotConfig.value.jackpotShareOfEdge,
-          fundFloor: slotConfig.value.fundFloor,
+          rakeRate: slotConfig.value.rakeRate,
           maxPayout: slotConfig.value.maxPayout,
         }),
       })
