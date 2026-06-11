@@ -54,18 +54,20 @@ const showFair = ref(false)
 
 // 777 頭獎尊榮動畫
 const showJackpot = ref(false)
-const jackpotWin = ref(0) // 滾動中的數字
-function triggerJackpot(amount: number) {
+const jackpotWin = ref(0) // 滾動中的總額
+const jackpotPoolWin = ref(0) // 其中獨得彩金池的部分
+function triggerJackpot(total: number, poolWin = 0) {
   showJackpot.value = true
+  jackpotPoolWin.value = poolWin
   jackpotWin.value = 0
   const dur = 1400
   const t0 = Date.now()
   const tick = () => {
     const p = Math.min(1, (Date.now() - t0) / dur)
     const eased = 0.5 - Math.cos(p * Math.PI) / 2 // ease-in-out
-    jackpotWin.value = Math.floor(amount * eased)
+    jackpotWin.value = Math.floor(total * eased)
     if (p < 1) requestAnimationFrame(tick)
-    else jackpotWin.value = amount
+    else jackpotWin.value = total
   }
   requestAnimationFrame(tick)
 }
@@ -321,7 +323,8 @@ async function spinOnce(fast = false): Promise<Record<string, unknown> | null> {
     )
     balanceStore.setBalanceList(list)
     await loadBank() // 莊家本金已變動
-    if (d.jackpot) triggerJackpot(Number(d.payout)) // 777 尊榮動畫
+    if (d.jackpot)
+      triggerJackpot(Number(d.payout) + Number(d.poolWin || 0), Number(d.poolWin || 0)) // 777 尊榮動畫(含彩金池)
     return d
   } catch (e) {
     console.error(e)
@@ -574,6 +577,7 @@ onMounted(loadAll)
           </div>
           <div class="jp-amount">+{{ fmt(jackpotWin) }}</div>
           <div class="jp-currency">{{ config.currency }}</div>
+          <div v-if="jackpotPoolWin > 0" class="jp-pool">💰 獨得彩金池 +{{ fmt(jackpotPoolWin) }}</div>
           <button class="jp-close" @click="closeJackpot">太爽啦！收下 🎉</button>
         </div>
       </div>
@@ -1123,6 +1127,17 @@ onMounted(loadAll)
   font-size: 0.9rem;
   color: #e2c98a;
   margin-top: 2px;
+}
+.jp-pool {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff3c4;
+  background: rgba(255, 209, 102, 0.18);
+  border: 1px solid rgba(255, 209, 102, 0.5);
+  border-radius: 999px;
+  padding: 5px 14px;
+  display: inline-block;
 }
 .jp-close {
   margin-top: 20px;
