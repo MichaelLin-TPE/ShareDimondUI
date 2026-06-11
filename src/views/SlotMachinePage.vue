@@ -52,6 +52,27 @@ const lastResult = ref<{ win: boolean; payout: number; multiplier: number; messa
 const fair = ref<{ serverSeed: string; serverSeedHash: string; clientSeed: string; nonce: number } | null>(null)
 const showFair = ref(false)
 
+// 777 頭獎尊榮動畫
+const showJackpot = ref(false)
+const jackpotWin = ref(0) // 滾動中的數字
+function triggerJackpot(amount: number) {
+  showJackpot.value = true
+  jackpotWin.value = 0
+  const dur = 1400
+  const t0 = Date.now()
+  const tick = () => {
+    const p = Math.min(1, (Date.now() - t0) / dur)
+    const eased = 0.5 - Math.cos(p * Math.PI) / 2 // ease-in-out
+    jackpotWin.value = Math.floor(amount * eased)
+    if (p < 1) requestAnimationFrame(tick)
+    else jackpotWin.value = amount
+  }
+  requestAnimationFrame(tick)
+}
+function closeJackpot() {
+  showJackpot.value = false
+}
+
 // ---- 工具 ----
 const headers = (): Record<string, string> => {
   const ts = Math.floor(Date.now() / 1000).toString()
@@ -258,7 +279,7 @@ function stopAnim() {
 }
 
 // 單次轉動（假設呼叫端已確認可下注）。回傳是否成功，可繼續。
-async function spinOnce(fast = false): Promise<boolean> {
+async function spinOnce(fast = false): Promise<Record<string, unknown> | null> {
   spinning.value = true
   lastResult.value = null
   startAnim()
@@ -278,7 +299,7 @@ async function spinOnce(fast = false): Promise<boolean> {
     stopAnim()
     if (!res.ok) {
       useAlert.error(d.message ?? '拉霸失敗')
-      return false
+      return null
     }
     reels.value = d.reels
     walletBalance.value = Number(d.balanceAfter)
@@ -300,11 +321,12 @@ async function spinOnce(fast = false): Promise<boolean> {
     )
     balanceStore.setBalanceList(list)
     await loadBank() // 莊家本金已變動
-    return true
+    if (d.jackpot) triggerJackpot(Number(d.payout)) // 777 尊榮動畫
+    return d
   } catch (e) {
     console.error(e)
     useAlert.error('連線失敗，請稍後再試')
-    return false
+    return null
   } finally {
     stopAnim()
     spinning.value = false
@@ -342,6 +364,7 @@ async function startAuto(times: number) {
   autoTotal.value = times
   autoDone.value = 0
   const startWallet = walletBalance.value
+  let jackpotStopped = false
   try {
     for (let i = 0; i < times; i++) {
       if (autoStop) break
@@ -349,17 +372,24 @@ async function startAuto(times: number) {
         useAlert.error('自動轉中止：' + ineligibleReason())
         break
       }
-      const ok = await spinOnce(true)
+      const d = await spinOnce(true)
       autoDone.value = i + 1
-      if (!ok) break
+      if (!d) break
+      if (d.jackpot) {
+        jackpotStopped = true // 中頭獎,停下放尊榮動畫,不再續轉
+        break
+      }
       if (autoStop) break
       await delay(260)
     }
   } finally {
     autoRunning.value = false
-    const net = walletBalance.value - startWallet
-    const sign = net >= 0 ? '+' : '−'
-    useAlert.success(`自動轉結束（${autoDone.value} 次）淨${net >= 0 ? '賺' : '賠'} ${sign}${fmt(Math.abs(net))}`)
+    // 中頭獎時不跳結算 toast(讓尊榮動畫獨佔畫面)
+    if (!jackpotStopped) {
+      const net = walletBalance.value - startWallet
+      const sign = net >= 0 ? '+' : '−'
+      useAlert.success(`自動轉結束（${autoDone.value} 次）淨${net >= 0 ? '賺' : '賠'} ${sign}${fmt(Math.abs(net))}`)
+    }
   }
 }
 
@@ -522,6 +552,32 @@ onMounted(loadAll)
     </section>
 
     <p v-if="isLeader" class="leader-link">⚙️ 下注額與輸贏分配請到「血盟設置 → 拉霸機設定」調整</p>
+
+    <!-- 777 尊榮頭獎動畫 -->
+    <Teleport to="body">
+      <div v-if="showJackpot" class="jp-overlay" @click="closeJackpot">
+        <div class="jp-rays"></div>
+        <span
+          v-for="n in 18"
+          :key="n"
+          class="jp-confetti"
+          :style="{
+            left: (n * 5.5) + '%',
+            animationDelay: (n % 6) * 0.18 + 's',
+            background: ['#ffd166', '#6cf2ff', '#b46eff', '#ff6b9d', '#44d62c'][n % 5],
+          }"
+        ></span>
+        <div class="jp-card" @click.stop>
+          <div class="jp-title">🎰 JACKPOT 頭獎 🎰</div>
+          <div class="jp-reels">
+            <span class="jp-7">7️⃣</span><span class="jp-7">7️⃣</span><span class="jp-7">7️⃣</span>
+          </div>
+          <div class="jp-amount">+{{ fmt(jackpotWin) }}</div>
+          <div class="jp-currency">{{ config.currency }}</div>
+          <button class="jp-close" @click="closeJackpot">太爽啦！收下 🎉</button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -937,6 +993,151 @@ onMounted(loadAll)
 }
 
 /* 盟主設定提示 */
+/* ===== 777 尊榮頭獎動畫 ===== */
+.jp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100002; /* 蓋過所有彈窗 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, rgba(20, 16, 0, 0.82), rgba(0, 0, 0, 0.92));
+  overflow: hidden;
+  animation: jp-fadein 0.25s ease;
+}
+@keyframes jp-fadein {
+  from {
+    opacity: 0;
+  }
+}
+.jp-rays {
+  position: absolute;
+  width: 160vmax;
+  height: 160vmax;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 209, 102, 0.16) 0deg 8deg,
+    transparent 8deg 16deg
+  );
+  animation: jp-spin 18s linear infinite;
+  pointer-events: none;
+}
+@keyframes jp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.jp-confetti {
+  position: absolute;
+  top: -20px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0.9;
+  animation: jp-fall 2.6s linear infinite;
+  pointer-events: none;
+}
+@keyframes jp-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(540deg);
+    opacity: 0.8;
+  }
+}
+.jp-card {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 30px 28px 26px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #2a2410, #14110a);
+  border: 2px solid #ffd166;
+  box-shadow:
+    0 0 40px rgba(255, 209, 102, 0.55),
+    0 0 90px rgba(255, 160, 0, 0.3);
+  animation: jp-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes jp-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.jp-title {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #ffd166, #fff3c4, #ffd166);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: jp-pulse 1.1s ease-in-out infinite;
+}
+@keyframes jp-pulse {
+  50% {
+    filter: brightness(1.4);
+  }
+}
+.jp-reels {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 0 6px;
+}
+.jp-7 {
+  font-size: 3.4rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 12px rgba(255, 209, 102, 0.9));
+  animation: jp-bounce 0.7s ease infinite alternate;
+}
+.jp-7:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.jp-7:nth-child(3) {
+  animation-delay: 0.24s;
+}
+@keyframes jp-bounce {
+  to {
+    transform: translateY(-10px) scale(1.08);
+  }
+}
+.jp-amount {
+  margin-top: 10px;
+  font-size: 2.6rem;
+  font-weight: 900;
+  color: #ffd166;
+  text-shadow: 0 0 18px rgba(255, 209, 102, 0.7);
+  font-variant-numeric: tabular-nums;
+}
+.jp-currency {
+  font-size: 0.9rem;
+  color: #e2c98a;
+  margin-top: 2px;
+}
+.jp-close {
+  margin-top: 20px;
+  height: 46px;
+  padding: 0 26px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  color: #14110a;
+  background: linear-gradient(135deg, #ffe08a, #ffb300);
+  box-shadow: 0 6px 18px rgba(255, 160, 0, 0.45);
+}
+
 .leader-link {
   text-align: center;
   font-size: 0.8rem;
