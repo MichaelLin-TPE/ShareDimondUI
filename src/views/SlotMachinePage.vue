@@ -37,6 +37,16 @@ const clientSeed = ref('')
 // 莊家座位
 const banker = ref({ hasBanker: false, bankerName: '', bankroll: 0, isMe: false })
 
+// 賺錢排行榜
+interface RankRow {
+  rank: number
+  userName: string
+  net: number
+  spins: number
+  me: boolean
+}
+const leaderboard = ref<RankRow[]>([])
+
 // 下注倍率
 const betMultipliers = ref<number[]>([1, 2, 3, 5, 10])
 const selectedMultiplier = ref(1)
@@ -204,11 +214,28 @@ async function loadBank() {
   }
 }
 
+async function loadLeaderboard() {
+  const res = await fetch(`${API}/slot/leaderboard?limit=10`, { headers: headers() })
+  if (!res.ok) return
+  const d = await res.json()
+  leaderboard.value = Array.isArray(d)
+    ? d.map(
+        (r: { rank: number; userName: string; net: number; spins: number; me: boolean }): RankRow => ({
+          rank: r.rank,
+          userName: r.userName,
+          net: Number(r.net),
+          spins: Number(r.spins),
+          me: !!r.me,
+        }),
+      )
+    : []
+}
+
 async function loadAll() {
   loading.value = true
   try {
     await loadConfig()
-    await Promise.all([loadWallet(), loadJackpot(), loadBank()])
+    await Promise.all([loadWallet(), loadJackpot(), loadBank(), loadLeaderboard()])
   } catch (e) {
     console.error(e)
   } finally {
@@ -344,6 +371,7 @@ async function spin() {
     return
   }
   await spinOnce(false)
+  loadLeaderboard()
 }
 
 // 自動轉 N 次（轉前防呆：餘額是否夠 N 次）
@@ -387,6 +415,7 @@ async function startAuto(times: number) {
     }
   } finally {
     autoRunning.value = false
+    loadLeaderboard()
     // 中頭獎時不跳結算 toast(讓尊榮動畫獨佔畫面)
     if (!jackpotStopped) {
       const net = walletBalance.value - startWallet
@@ -517,6 +546,31 @@ onMounted(loadAll)
       <p v-else-if="!loading && effectiveBet > banker.bankroll" class="closed-hint">
         ⚠️ 此注超過莊家本金，請降低倍率
       </p>
+    </section>
+
+    <!-- 賺錢排行榜 -->
+    <section class="card" v-if="leaderboard.length">
+      <div class="card-head">
+        <h3 class="card-title">🏆 賺錢排行榜</h3>
+        <span class="rank-hint">拉霸淨輸贏</span>
+      </div>
+      <div class="rank-list">
+        <div
+          v-for="row in leaderboard"
+          :key="row.rank"
+          class="rank-row"
+          :class="{ mine: row.me }"
+        >
+          <span class="rank-no" :class="'r' + row.rank">
+            {{ row.rank === 1 ? '🥇' : row.rank === 2 ? '🥈' : row.rank === 3 ? '🥉' : '#' + row.rank }}
+          </span>
+          <span class="rank-name">{{ row.userName }}<span v-if="row.me" class="rank-me">（你）</span></span>
+          <span class="rank-spins">{{ row.spins }} 轉</span>
+          <span class="rank-net" :class="row.net >= 0 ? 'pos' : 'neg'">
+            {{ row.net >= 0 ? '+' : '−' }}{{ fmt(Math.abs(row.net)) }}
+          </span>
+        </div>
+      </div>
     </section>
 
     <!-- 賠率表 -->
@@ -997,6 +1051,70 @@ onMounted(loadAll)
 }
 
 /* 盟主設定提示 */
+/* ===== 賺錢排行榜 ===== */
+.rank-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+}
+.rank-row.mine {
+  background: rgba(var(--c-light-rgb), 0.12);
+  border: 1px solid rgba(var(--c-light-rgb), 0.4);
+}
+.rank-no {
+  flex: 0 0 auto;
+  width: 30px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+.rank-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-me {
+  color: var(--c-light);
+  font-size: 0.78rem;
+}
+.rank-spins {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+.rank-net {
+  flex: 0 0 auto;
+  min-width: 72px;
+  text-align: right;
+  font-size: 0.92rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.rank-net.pos {
+  color: #4ade80;
+}
+.rank-net.neg {
+  color: #f87171;
+}
+
 /* ===== 777 尊榮頭獎動畫 ===== */
 .jp-overlay {
   position: fixed;
