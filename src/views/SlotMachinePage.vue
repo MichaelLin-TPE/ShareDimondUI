@@ -38,9 +38,15 @@ const clientSeed = ref('')
 const banker = ref({ hasBanker: false, bankerName: '', bankroll: 0, isMe: false })
 
 // 下注倍率
-const betMultipliers = ref<number[]>([1, 2, 3, 5])
+const betMultipliers = ref<number[]>([1, 2, 3, 5, 10])
 const selectedMultiplier = ref(1)
 const effectiveBet = computed(() => Number(config.value.betAmount || 0) * selectedMultiplier.value)
+
+// 自動轉
+const autoRunning = ref(false)
+const autoTotal = ref(0)
+const autoDone = ref(0)
+let autoStop = false
 
 const lastResult = ref<{ win: boolean; payout: number; multiplier: number; message: string } | null>(null)
 const fair = ref<{ serverSeed: string; serverSeedHash: string; clientSeed: string; nonce: number } | null>(null)
@@ -66,15 +72,27 @@ function oddsText(p: number): string {
   return '每 ' + Math.round(1 / p).toLocaleString('en-US') + ' 把'
 }
 
-const canSpin = computed(
+// 是否可下注（不含 spinning / auto 狀態）
+const eligible = computed(
   () =>
-    !spinning.value &&
     config.value.enabled &&
     banker.value.hasBanker &&
     !banker.value.isMe &&
     walletBalance.value >= effectiveBet.value &&
     effectiveBet.value <= banker.value.bankroll,
 )
+const canSpin = computed(() => !spinning.value && !autoRunning.value && eligible.value)
+
+// 不能下注的原因（給提示用）
+function ineligibleReason(): string {
+  if (!config.value.enabled) return '拉霸機目前未開放'
+  if (!banker.value.hasBanker) return '目前沒有莊家，先坐莊或等人坐莊'
+  if (banker.value.isMe) return '你是莊家，不能玩自己的莊'
+  if (effectiveBet.value > banker.value.bankroll)
+    return `下注額不可超過莊家本金 ${fmt(banker.value.bankroll)}，請降低倍率`
+  if (walletBalance.value < effectiveBet.value) return '餘額不足'
+  return ''
+}
 
 interface PayRow {
   reels: string
@@ -237,16 +255,8 @@ function stopAnim() {
   }
 }
 
-async function spin() {
-  if (!canSpin.value) {
-    if (!config.value.enabled) useAlert.error('拉霸機目前未開放')
-    else if (!banker.value.hasBanker) useAlert.error('目前沒有莊家，先坐莊或等人坐莊')
-    else if (banker.value.isMe) useAlert.error('你是莊家，不能玩自己的莊')
-    else if (effectiveBet.value > banker.value.bankroll)
-      useAlert.error(`下注額不可超過莊家本金 ${fmt(banker.value.bankroll)}，請降低倍率`)
-    else if (walletBalance.value < effectiveBet.value) useAlert.error('餘額不足')
-    return
-  }
+// 單次轉動（假設呼叫端已確認可下注）。回傳是否成功，可繼續。
+async function spinOnce(fast = false): Promise<boolean> {
   spinning.value = true
   lastResult.value = null
   startAnim()
@@ -260,13 +270,13 @@ async function spin() {
           betMultiplier: selectedMultiplier.value,
         }),
       }),
-      delay(900),
+      delay(fast ? 320 : 900),
     ])
     const d = await res.json()
     stopAnim()
     if (!res.ok) {
       useAlert.error(d.message ?? '拉霸失敗')
-      return
+      return false
     }
     reels.value = d.reels
     walletBalance.value = Number(d.balanceAfter)
@@ -283,20 +293,76 @@ async function spin() {
       clientSeed: d.clientSeed,
       nonce: d.nonce,
     }
-    // 同步 store 餘額
     const list = balanceStore.balanceList.map((b) =>
       b.currency === config.value.currency ? { ...b, balance: String(d.balanceAfter) } : b,
     )
     balanceStore.setBalanceList(list)
-    // 莊家本金已變動，重新抓
-    loadBank()
+    await loadBank() // 莊家本金已變動
+    return true
   } catch (e) {
     console.error(e)
     useAlert.error('連線失敗，請稍後再試')
+    return false
   } finally {
     stopAnim()
     spinning.value = false
   }
+}
+
+// 手動單轉
+async function spin() {
+  if (spinning.value || autoRunning.value) return
+  if (!eligible.value) {
+    useAlert.error(ineligibleReason())
+    return
+  }
+  await spinOnce(false)
+}
+
+// 自動轉 N 次（轉前防呆：餘額是否夠 N 次）
+async function startAuto(times: number) {
+  if (autoRunning.value || spinning.value) return
+  // 防呆
+  if (!eligible.value) {
+    useAlert.error(ineligibleReason())
+    return
+  }
+  const need = effectiveBet.value * times
+  if (walletBalance.value < need) {
+    useAlert.error(
+      `餘額不足：自動轉 ${times} 次需要 ${fmt(need)} ${config.value.currency}，你目前只有 ${fmt(walletBalance.value)}`,
+    )
+    return
+  }
+
+  autoStop = false
+  autoRunning.value = true
+  autoTotal.value = times
+  autoDone.value = 0
+  const startWallet = walletBalance.value
+  try {
+    for (let i = 0; i < times; i++) {
+      if (autoStop) break
+      if (!eligible.value) {
+        useAlert.error('自動轉中止：' + ineligibleReason())
+        break
+      }
+      const ok = await spinOnce(true)
+      autoDone.value = i + 1
+      if (!ok) break
+      if (autoStop) break
+      await delay(260)
+    }
+  } finally {
+    autoRunning.value = false
+    const net = walletBalance.value - startWallet
+    const sign = net >= 0 ? '+' : '−'
+    useAlert.success(`自動轉結束（${autoDone.value} 次）淨${net >= 0 ? '賺' : '賠'} ${sign}${fmt(Math.abs(net))}`)
+  }
+}
+
+function stopAuto() {
+  autoStop = true
 }
 
 onMounted(loadAll)
@@ -383,7 +449,7 @@ onMounted(loadAll)
             :key="m"
             class="mult-btn"
             :class="{ active: selectedMultiplier === m }"
-            :disabled="spinning"
+            :disabled="spinning || autoRunning"
             @click="selectedMultiplier = m"
           >
             {{ m }}x
@@ -392,9 +458,23 @@ onMounted(loadAll)
       </div>
 
       <button class="spin-btn" :disabled="!canSpin || loading" @click="spin">
-        <span v-if="spinning">🎲 轉動中…</span>
+        <span v-if="spinning && !autoRunning">🎲 轉動中…</span>
         <span v-else>SPIN（-{{ fmt(effectiveBet) }} {{ config.currency }}）</span>
       </button>
+
+      <!-- 自動轉 -->
+      <div class="auto-row" v-if="!autoRunning">
+        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(10)">
+          ⟳ 自動轉 10 次
+        </button>
+        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(30)">
+          ⟳ 自動轉 30 次
+        </button>
+      </div>
+      <div class="auto-running" v-else>
+        <span class="auto-progress">自動轉中… {{ autoDone }} / {{ autoTotal }}</span>
+        <button class="auto-stop" @click="stopAuto">■ 停止</button>
+      </div>
 
       <p v-if="!config.enabled && !loading" class="closed-hint">⚠️ 拉霸機目前未開放</p>
       <p v-else-if="!loading && !banker.hasBanker" class="closed-hint">⏳ 等待有人坐莊</p>
@@ -682,6 +762,57 @@ onMounted(loadAll)
 .spin-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 自動轉 */
+.auto-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.auto-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid rgba(var(--c-light-rgb), 0.4);
+  border-radius: 10px;
+  background: rgba(var(--c-light-rgb), 0.08);
+  color: var(--c-light);
+  font-size: 0.88rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.auto-btn:hover:not(:disabled) {
+  background: rgba(var(--c-light-rgb), 0.16);
+}
+.auto-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.auto-running {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+.auto-progress {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--c-light);
+}
+.auto-stop {
+  height: 42px;
+  padding: 0 22px;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
 }
 .closed-hint {
   text-align: center;
