@@ -546,12 +546,18 @@ onMounted(loadAll)
   flex: 0 0 auto;
 }
 .bank-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 38px;
   padding: 0 16px;
   border: none;
   border-radius: 9px;
   font-size: 0.88rem;
   font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
   cursor: pointer;
 }
 .bank-btn.take {
