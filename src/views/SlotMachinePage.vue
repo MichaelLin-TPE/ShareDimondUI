@@ -157,7 +157,7 @@ const STATIC_PAYTABLE: PayRow[] = [
   { reels: '🍒 🍒 🍒', label: '', mult: '×3', odds: '' },
   { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×3', odds: '' },
   { reels: '⭐ ⭐ ·', label: '', mult: '×1.9', odds: '' },
-  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.35~1.5', odds: '' },
+  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.3~1.45', odds: '' },
 ]
 const displayPaytable = computed<PayRow[]>(() =>
   paytable.value.length ? paytable.value : STATIC_PAYTABLE,
