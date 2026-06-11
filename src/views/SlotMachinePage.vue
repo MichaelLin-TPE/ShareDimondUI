@@ -14,7 +14,7 @@ const balanceStore = useBalanceStore()
 const isLeader = computed(() => authStore.member?.role === 'LEADER')
 
 // ---- 狀態 ----
-const SYMBOLS = ['🍒', '🍋', '🔔', '⭐', '7️⃣']
+const SYMBOLS = ['🍒', '🍋', '🔔', '⭐', '7️⃣', '💎']
 
 const loading = ref(true)
 const spinning = ref(false)
@@ -149,14 +149,15 @@ interface PayRow {
 // 後端動態賠率表（含機率）；未載入前用靜態 fallback
 const paytable = ref<PayRow[]>([])
 const STATIC_PAYTABLE: PayRow[] = [
-  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×30', odds: '' },
-  { reels: '⭐ ⭐ ⭐', label: '', mult: '×16', odds: '' },
-  { reels: '🔔 🔔 🔔', label: '', mult: '×8', odds: '' },
-  { reels: '🍋 🍋 🍋', label: '', mult: '×4', odds: '' },
+  { reels: '💎 💎 💎', label: '獨得彩金池', mult: '🏆 整池', odds: '' },
+  { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×32', odds: '' },
+  { reels: '⭐ ⭐ ⭐', label: '', mult: '×18', odds: '' },
+  { reels: '🔔 🔔 🔔', label: '', mult: '×9', odds: '' },
+  { reels: '🍋 🍋 🍋', label: '', mult: '×5', odds: '' },
   { reels: '🍒 🍒 🍒', label: '', mult: '×3', odds: '' },
-  { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×2.5', odds: '' },
-  { reels: '⭐ ⭐ ·', label: '', mult: '×1.7', odds: '' },
-  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.2~1.3', odds: '' },
+  { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×3', odds: '' },
+  { reels: '⭐ ⭐ ·', label: '', mult: '×1.9', odds: '' },
+  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.35~1.5', odds: '' },
 ]
 const displayPaytable = computed<PayRow[]>(() =>
   paytable.value.length ? paytable.value : STATIC_PAYTABLE,
@@ -187,7 +188,7 @@ async function loadConfig() {
         (r: { reels: string; label?: string; multiplier: number; probability: number }): PayRow => ({
           reels: r.reels,
           label: r.label || '',
-          mult: '×' + r.multiplier,
+          mult: r.multiplier >= 999999 ? '🏆 整池' : '×' + r.multiplier,
           odds: oddsText(r.probability),
         }),
       )
@@ -690,8 +691,8 @@ onMounted(loadAll)
       </div>
       <!-- 彩金池大獎說明 -->
       <div class="grand-banner">
-        💰 中 <b>7️⃣7️⃣7️⃣</b> 除 ×30 外，再<b>獨得整個彩金池</b>！
-        <span class="grand-amt">目前 {{ fmt(jackpotBalance) }} {{ config.currency }}</span>
+        💎 中 <b>💎💎💎</b> 即<b>獨得整個彩金池</b>（比 7️⃣7️⃣7️⃣ 更稀有）！
+        <span class="grand-amt">目前彩金池 {{ fmt(jackpotBalance) }} {{ config.currency }}</span>
       </div>
       <div class="paytable">
         <div v-for="row in displayPaytable" :key="row.reels" class="pay-row">
@@ -741,7 +742,7 @@ onMounted(loadAll)
         <div class="jp-card" @click.stop>
           <div class="jp-title">🎰 JACKPOT 頭獎 🎰</div>
           <div class="jp-reels">
-            <span class="jp-7">7️⃣</span><span class="jp-7">7️⃣</span><span class="jp-7">7️⃣</span>
+            <span v-for="(s, i) in reels" :key="i" class="jp-7">{{ s }}</span>
           </div>
           <div class="jp-amount">+{{ fmt(jackpotWin) }}</div>
           <div class="jp-currency">{{ config.currency }}</div>
