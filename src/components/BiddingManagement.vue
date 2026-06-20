@@ -328,7 +328,13 @@ function clearFilter() {
               </button>
             </div>
 
-            <div class="item-main" :class="{ 'has-tools': item.showDeleteTicket || canEditAmount(item) }">
+            <div
+              class="item-main"
+              :class="{
+                'has-tools': item.showDeleteTicket || canEditAmount(item),
+                'has-tools-wide': item.showDeleteTicket && canEditAmount(item),
+              }"
+            >
               <div class="item-name gold">{{ item.itemName }}</div>
               <div class="boss-name">頭目：{{ item.bossName }}</div>
             </div>
@@ -1251,6 +1257,10 @@ function clearFilter() {
 /* 有備註/撤單按鈕時,留右側空間避免長名字被蓋住 */
 .item-main.has-tools {
   padding-right: 64px;
+}
+/* 幹部又是開單者時會有 3 顆按鈕 ($ ✎ ✕),需更寬留白 */
+.item-main.has-tools-wide {
+  padding-right: 96px;
 }
 
 .item-name {
