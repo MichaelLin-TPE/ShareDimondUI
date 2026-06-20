@@ -112,6 +112,46 @@ TimeStamp:currentTimeStamp
     }
   }
 
+  // 幹部以上修改該單成交金額(最終價格)
+  const handleEditAmount = async (item: Treasure) => {
+    const newAmount = await useAlert.amountInput(item.currentPrice, item.currency, '修改成交金額')
+    if (newAmount == null) return
+    if (Number(newAmount) === Number(item.currentPrice)) {
+      useAlert.error('新金額與原金額相同')
+      return
+    }
+    await updateTicketAmount(item.treasureCode, newAmount)
+  }
+
+  const updateTicketAmount = async (ticketCode: string, amount: number) => {
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/update-ticket-amount', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+        body: JSON.stringify({
+          ticketCode: ticketCode,
+          amount: amount,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        useAlert.error(data?.message ?? '修改金額失敗,請再試一次')
+        return
+      }
+      useAlert.success(data?.message ?? '修改成功!')
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.error(e)
+      useAlert.error('修改金額失敗,請再試一次')
+    }
+  }
+
   const deleteTreasure = async () => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
@@ -861,6 +901,7 @@ TimeStamp:currentTimeStamp
     bossOptions,
     handleSubmit,
     handleDeleteItem,
+    handleEditAmount,
     openAddTreasureDialog,
     showAddTreasureDialog,
     addItemName,
