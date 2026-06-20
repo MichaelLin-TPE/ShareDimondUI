@@ -180,6 +180,46 @@ TimeStamp:currentTimeStamp
     }
   }
 
+  // 幹部以上修改競標中單的底價/掛單價(lowestPrice)
+  const handleEditBasePrice = async (item: Treasure) => {
+    const newAmount = await useAlert.amountInput(item.lowestPrice, item.currency, '修改底價/掛單價')
+    if (newAmount == null) return
+    if (Number(newAmount) === Number(item.lowestPrice)) {
+      useAlert.error('新金額與原金額相同')
+      return
+    }
+    await updateTicketBasePrice(item.treasureCode, newAmount)
+  }
+
+  const updateTicketBasePrice = async (ticketCode: string, amount: number) => {
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/update-ticket-base-price', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+        body: JSON.stringify({
+          ticketCode: ticketCode,
+          amount: amount,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        useAlert.error(data?.message ?? '修改底價失敗,請再試一次')
+        return
+      }
+      useAlert.success(data?.message ?? '修改成功!')
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.error(e)
+      useAlert.error('修改底價失敗,請再試一次')
+    }
+  }
+
   const deleteTreasure = async () => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
@@ -841,6 +881,7 @@ TimeStamp:currentTimeStamp
     handleSubmit,
     showCurrencyModal,
     handleDeleteItem,
+    handleEditBasePrice,
     openAddTreasureDialog,
     showAddTreasureDialog,
     addItemName,

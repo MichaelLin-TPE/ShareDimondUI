@@ -14,6 +14,7 @@ const {
   handleSubmit,
   submitRemark,
   handleDeleteItem,
+  handleEditBasePrice,
   canSubmit,
   showPeopleList,
   getJoinList,
@@ -32,6 +33,11 @@ const {
   openCurrencyModal,
   currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
 } = useAuction()
+
+// 幹部以上(會長/幹部)才可修改競標中單的底價/掛單價
+const isOfficer = computed(
+  () => authStore.member?.role === 'LEADER' || authStore.member?.role === 'OFFICER',
+)
 
 // 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
 const myName = computed(() => authStore.member?.userName ?? '')
@@ -191,6 +197,15 @@ function isExpanded(code: string): boolean {
         >
           <div class="card-tools">
             <button
+              class="tool-btn amount"
+              v-if="isOfficer"
+              @click="handleEditBasePrice(item)"
+              title="修改底價/掛單價"
+              aria-label="修改底價/掛單價"
+            >
+              $
+            </button>
+            <button
               class="tool-btn remark"
               v-show="item.showDeleteTicket"
               @click="openRemarkPicker(item)"
@@ -210,7 +225,13 @@ function isExpanded(code: string): boolean {
             </button>
           </div>
 
-          <div class="item-main" :class="{ 'has-tools': item.showDeleteTicket }">
+          <div
+            class="item-main"
+            :class="{
+              'has-tools': item.showDeleteTicket || isOfficer,
+              'has-tools-wide': item.showDeleteTicket && isOfficer,
+            }"
+          >
             <div class="item-name gold">{{ item.itemName }}</div>
             <div class="boss-name">BOSS: {{ item.bossName }}</div>
           </div>
@@ -835,6 +856,9 @@ function isExpanded(code: string): boolean {
   .item-main.has-tools {
     padding-right: 64px; /* icon 化後 2 顆按鈕 + gap 約 60px,留 4 餘裕 */
   }
+  .item-main.has-tools-wide {
+    padding-right: 96px; /* 3 顆按鈕 ($ ✎ ✕) */
+  }
   .item-name {
     font-size: 1.05rem;
     line-height: 1.3;
@@ -937,6 +961,15 @@ function isExpanded(code: string): boolean {
   color: #fca5a5;
   border-color: rgba(239, 68, 68, 0.35);
 }
+/* 改底價 — 用主題色點綴,與 ✎/✕ 同尺寸風格一致 */
+.tool-btn.amount {
+  font-weight: 800;
+}
+.tool-btn.amount:hover {
+  background: rgba(var(--c-light-rgb), 0.15);
+  color: var(--c-light);
+  border-color: rgba(var(--c-light-rgb), 0.35);
+}
 
 /* 物品與來源 */
 .item-main {
@@ -946,6 +979,10 @@ function isExpanded(code: string): boolean {
 /* 有備註/撤單按鈕時,留右側空間避免長名字被蓋住 (icon 化後縮小) */
 .item-main.has-tools {
   padding-right: 70px;
+}
+/* 幹部又是開單者時會有 3 顆按鈕 ($ ✎ ✕),需更寬留白避免長名字被蓋住 */
+.item-main.has-tools-wide {
+  padding-right: 96px;
 }
 
 .item-name {
