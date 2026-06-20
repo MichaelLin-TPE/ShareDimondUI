@@ -26,6 +26,7 @@ const {
   submitRemark,
   handleDeleteItem,
   handleEditAmount,
+  handleRevokeBuyer,
   canSubmit,
   showPeopleList,
   getJoinList,
@@ -307,6 +308,15 @@ function clearFilter() {
                 aria-label="修改成交金額"
               >
                 $
+              </button>
+              <button
+                class="tool-btn revoke"
+                v-if="canEditAmount(item)"
+                @click="handleRevokeBuyer(item)"
+                title="撤銷得標者(退回競標中)"
+                aria-label="撤銷得標者"
+              >
+                ↩
               </button>
               <button
                 class="tool-btn remark"
@@ -1248,6 +1258,15 @@ function clearFilter() {
   color: var(--c-light);
   border-color: rgba(var(--c-light-rgb), 0.35);
 }
+/* 撤銷得標者 — 用琥珀色點綴(警示但非刪除),與 ✕ 紅色區隔 */
+.tool-btn.revoke {
+  font-weight: 800;
+}
+.tool-btn.revoke:hover {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
 
 /* 物品與來源 */
 .item-main {
@@ -1258,9 +1277,9 @@ function clearFilter() {
 .item-main.has-tools {
   padding-right: 64px;
 }
-/* 幹部又是開單者時會有 3 顆按鈕 ($ ✎ ✕),需更寬留白 */
+/* 幹部又是開單者時會有 4 顆按鈕 ($ ↩ ✎ ✕),需更寬留白 */
 .item-main.has-tools-wide {
-  padding-right: 96px;
+  padding-right: 124px;
 }
 
 .item-name {

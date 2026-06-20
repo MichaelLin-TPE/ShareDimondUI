@@ -152,6 +152,44 @@ TimeStamp:currentTimeStamp
     }
   }
 
+  // 幹部以上撤銷該單得標者 → 退回競標中、重新計算時間、解凍買家款項
+  const handleRevokeBuyer = async (item: Treasure) => {
+    const result = await useAlert.confirm(
+      `確定撤銷「${item.itemName}」的得標者「${item.biddingName}」嗎?\n單據會退回競標中、重新開放競標,並解凍對方已凍結的款項。`,
+      '撤銷得標者',
+    )
+    if (!result.isConfirmed) return
+    await revokeBuyer(item.treasureCode)
+  }
+
+  const revokeBuyer = async (ticketCode: string) => {
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/revoke-buyer', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+        body: JSON.stringify({
+          ticketCode: ticketCode,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        useAlert.error(data?.message ?? '撤銷得標者失敗,請再試一次')
+        return
+      }
+      useAlert.success(data?.message ?? '已撤銷得標者!')
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.error(e)
+      useAlert.error('撤銷得標者失敗,請再試一次')
+    }
+  }
+
   const deleteTreasure = async () => {
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
@@ -902,6 +940,7 @@ TimeStamp:currentTimeStamp
     handleSubmit,
     handleDeleteItem,
     handleEditAmount,
+    handleRevokeBuyer,
     openAddTreasureDialog,
     showAddTreasureDialog,
     addItemName,
