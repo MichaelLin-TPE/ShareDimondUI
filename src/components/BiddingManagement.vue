@@ -25,6 +25,7 @@ const {
   groupedAuctionsList,
   submitRemark,
   handleDeleteItem,
+  handleEditAmount,
   canSubmit,
   showPeopleList,
   getJoinList,
@@ -51,6 +52,14 @@ const {
   openDiceAssign,
   closeDiceModal,
 } = useAuction()
+
+// 幹部以上(會長/幹部)才可修改成交金額,且該單需已有得標者(最終價格才有意義)
+const isOfficer = computed(
+  () => authStore.member?.role === 'LEADER' || authStore.member?.role === 'OFFICER',
+)
+function canEditAmount(item: { biddingName?: string }) {
+  return isOfficer.value && item.biddingName !== '尚未有得標者'
+}
 
 // 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
 const myName = computed(() => authStore.member?.userName ?? '')
@@ -291,6 +300,15 @@ function clearFilter() {
           >
             <div class="card-tools">
               <button
+                class="tool-btn amount"
+                v-if="canEditAmount(item)"
+                @click="handleEditAmount(item)"
+                title="修改成交金額"
+                aria-label="修改成交金額"
+              >
+                $
+              </button>
+              <button
                 class="tool-btn remark"
                 v-show="item.showDeleteTicket"
                 @click="openRemarkPicker(item)"
@@ -310,7 +328,7 @@ function clearFilter() {
               </button>
             </div>
 
-            <div class="item-main" :class="{ 'has-tools': item.showDeleteTicket }">
+            <div class="item-main" :class="{ 'has-tools': item.showDeleteTicket || canEditAmount(item) }">
               <div class="item-name gold">{{ item.itemName }}</div>
               <div class="boss-name">頭目：{{ item.bossName }}</div>
             </div>
@@ -1214,6 +1232,15 @@ function clearFilter() {
   background: rgba(239, 68, 68, 0.15);
   color: #fca5a5;
   border-color: rgba(239, 68, 68, 0.35);
+}
+/* 改金額 — 用主題色點綴,與 ✎/✕ 同尺寸風格一致 */
+.tool-btn.amount {
+  font-weight: 800;
+}
+.tool-btn.amount:hover {
+  background: rgba(var(--c-light-rgb), 0.15);
+  color: var(--c-light);
+  border-color: rgba(var(--c-light-rgb), 0.35);
 }
 
 /* 物品與來源 */

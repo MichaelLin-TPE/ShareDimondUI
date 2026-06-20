@@ -118,6 +118,40 @@ export const useAlert = {
       cancelButtonText: '取消',
     })
   },
+  // 數字金額輸入彈窗 — 幹部改成交金額用,可帶入目前金額與幣別
+  amountInput: async (
+    currentAmount: number | string,
+    currency = '',
+    title = '修改成交金額',
+  ): Promise<number | undefined> => {
+    const { value } = await SwalApp.fire({
+      title,
+      input: 'number',
+      inputValue: String(currentAmount ?? ''),
+      inputLabel: currency ? `幣別：${currency}` : undefined,
+      inputAttributes: { min: '1', step: '1' },
+      background: '#1e1e1e',
+      color: '#ffffff',
+      showCancelButton: true,
+      confirmButtonText: '確認修改',
+      cancelButtonText: '取消',
+      customClass: {
+        input: 'custom-swal-input',
+        actions: 'custom-swal-actions',
+        confirmButton: 'custom-swal-confirm',
+        cancelButton: 'custom-swal-cancel',
+      },
+      preConfirm: (val) => {
+        const num = Number(val)
+        if (!val || isNaN(num) || num <= 0) {
+          SwalApp.showValidationMessage('請輸入大於 0 的金額！')
+          return
+        }
+        return Math.floor(num)
+      },
+    })
+    return value as number | undefined
+  },
   inputDialog: async (placeholder = '請輸入內容', title = '系統輸入') => {
     const { value: text } = await SwalApp.fire({
       title,
