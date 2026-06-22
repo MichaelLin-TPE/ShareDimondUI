@@ -82,6 +82,10 @@ let tickTimer: number | undefined
 const displayDice = ref<number[]>([1, 1, 1])
 const rolling = ref(false)
 let lastSettledRoundId = -1
+// 只有「這次連線現場看到的結算局」才顯示結果/動畫;重整後為 null → 不重播、桌面清空
+const liveResultRoundId = ref<number | null>(null)
+let initialized = false
+let resultClearTimer: number | undefined
 let animTimer: number | undefined
 
 // 音效(Web Audio 合成,免音檔) + 震動
@@ -269,14 +273,23 @@ const bankerIsMe = computed(
 )
 const hasBanker = computed(() => !!state.value?.bankerName)
 
+// 顯示階段:重整後不顯示舊結果,SETTLED 但非現場看到的一律當 waiting
+const phase = computed<'betting' | 'result' | 'waiting'>(() => {
+  const s = state.value
+  if (!s) return 'waiting'
+  if (s.status === 'BETTING') return 'betting'
+  if (s.status === 'SETTLED' && s.roundId != null && s.roundId === liveResultRoundId.value) return 'result'
+  return 'waiting'
+})
+
 const phaseText = computed(() => {
   const s = state.value
   if (!s) return ''
   if (!s.diceEnabled) return '骰寶目前未開放'
   if (rolling.value) return '開骰中…'
-  if (s.status === 'BETTING') return closing.value ? '封盤，開骰中…' : `下注中 ${countdown.value}s`
-  if (s.status === 'SETTLED') return '本局結束 · 有人下注就開新局'
-  return '等待開局 · 下注即開始'
+  if (phase.value === 'betting') return closing.value ? '封盤，開骰中…' : `下注中 ${countdown.value}s`
+  if (phase.value === 'result') return '本局結果'
+  return '等待開局 · 有人下注就開始'
 })
 
 const canBet = computed(
@@ -344,12 +357,19 @@ async function fetchRound() {
     if (!res.ok) return
     const d: RoundState = await res.json()
     state.value = d
-    // 新的一局結算 → 播開骰動畫
-    if (d.status === 'SETTLED' && d.dice && d.roundId && d.roundId !== lastSettledRoundId) {
+    if (!initialized) {
+      // 首次載入 / 重整:不重播動畫,把目前已結算局標記成「已看過」→ 桌面顯示等待,不再跑一次
+      initialized = true
+      if (d.status === 'SETTLED' && d.roundId) lastSettledRoundId = d.roundId
+    } else if (d.status === 'SETTLED' && d.dice && d.roundId && d.roundId !== lastSettledRoundId) {
+      // 現場結算 → 播開骰動畫 + 顯示結果,7 秒後自動清空(回到等待)
       lastSettledRoundId = d.roundId
+      liveResultRoundId.value = d.roundId
+      if (resultClearTimer) clearTimeout(resultClearTimer)
+      resultClearTimer = window.setTimeout(() => {
+        liveResultRoundId.value = null
+      }, 7000)
       void animateRoll(d.dice)
-    } else if (d.status !== 'SETTLED' && d.dice == null && !rolling.value) {
-      // 下注中,骰子待命
     }
   } catch (e) {
     console.error(e)
@@ -473,6 +493,7 @@ onUnmounted(() => {
   if (heartbeat) clearInterval(heartbeat)
   if (animTimer) clearInterval(animTimer)
   if (celeTimer) clearTimeout(celeTimer)
+  if (resultClearTimer) clearTimeout(resultClearTimer)
   if (audioCtx) {
     audioCtx.close().catch(() => {})
     audioCtx = null
@@ -527,18 +548,23 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
       </div>
 
       <!-- 階段 + 倒數 -->
-      <div class="phase" :class="{ betting: state.status === 'BETTING' && !closing, rolling }">
+      <div class="phase" :class="{ betting: phase === 'betting' && !closing, rolling }">
         <span class="phase-text">{{ phaseText }}</span>
-        <div v-if="state.status === 'BETTING' && !closing" class="cd-bar">
+        <div v-if="phase === 'betting' && !closing" class="cd-bar">
           <div class="cd-fill" :style="{ width: (countdown / 30) * 100 + '%' }"></div>
         </div>
       </div>
 
       <!-- 骰盅 -->
       <div class="dice-arena" :class="{ shaking: rolling }">
-        <div v-for="(d, i) in displayDice" :key="i" class="die" :class="{ spin: rolling }">{{ FACES[d] }}</div>
+        <template v-if="rolling || phase === 'result'">
+          <div v-for="(d, i) in displayDice" :key="i" class="die" :class="{ spin: rolling }">{{ FACES[d] }}</div>
+        </template>
+        <template v-else>
+          <div v-for="i in 3" :key="'idle' + i" class="die idle">🎲</div>
+        </template>
       </div>
-      <div v-if="state.status === 'SETTLED' && !rolling" class="total-row">
+      <div v-if="phase === 'result' && !rolling" class="total-row">
         <span class="total-tag">總點 {{ total }}</span>
         <span v-if="isTriple" class="triple-tag">豹子！</span>
         <span v-else-if="total >= 11 && total <= 17" class="bs-tag big">大</span>
@@ -548,20 +574,25 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 
       <!-- 本局下注 -->
       <div class="bets-board">
-        <div class="bets-head">
-          本局下注（{{ state.bets.length }}）<span v-if="myBetsTotal > 0" class="my-total">· 我押 {{ fmt(myBetsTotal) }}</span>
-        </div>
-        <div v-if="!state.bets.length" class="bets-empty">還沒有人下注，下第一注即開局！</div>
-        <div v-else class="bets-list">
-          <div v-for="(b, i) in state.bets" :key="i" class="bet-chip" :class="{ mine: b.mine, won: b.settled && b.win, lost: b.settled && !b.win }">
-            <span class="bet-who">{{ b.mine ? '你' : b.userName }}</span>
-            <span class="bet-what">{{ betTypeLabel(b.betType) }}{{ b.betType === 'SUM' || b.betType === 'SINGLE' ? b.pick : '' }}</span>
-            <span class="bet-amt">{{ fmt(b.amount) }}</span>
-            <span v-if="b.settled" class="bet-res">
-              {{ b.poolWin > 0 ? '🏆+' + fmt(b.poolWin) : b.win ? '+' + fmt(b.payout) : '✕' }}
-            </span>
+        <template v-if="phase === 'waiting'">
+          <div class="bets-empty">🪑 桌面已清空 · 下第一注即開新局！</div>
+        </template>
+        <template v-else>
+          <div class="bets-head">
+            {{ phase === 'result' ? '本局結果' : '本局下注' }}（{{ state.bets.length }}）<span v-if="myBetsTotal > 0" class="my-total">· 我押 {{ fmt(myBetsTotal) }}</span>
           </div>
-        </div>
+          <div v-if="!state.bets.length" class="bets-empty">還沒有人下注，下第一注即開局！</div>
+          <div v-else class="bets-list">
+            <div v-for="(b, i) in state.bets" :key="i" class="bet-chip" :class="{ mine: b.mine, won: b.settled && b.win, lost: b.settled && !b.win }">
+              <span class="bet-who">{{ b.mine ? '你' : b.userName }}</span>
+              <span class="bet-what">{{ betTypeLabel(b.betType) }}{{ b.betType === 'SUM' || b.betType === 'SINGLE' ? b.pick : '' }}</span>
+              <span class="bet-amt">{{ fmt(b.amount) }}</span>
+              <span v-if="b.settled" class="bet-res">
+                {{ b.poolWin > 0 ? '🏆+' + fmt(b.poolWin) : b.win ? '+' + fmt(b.payout) : '✕' }}
+              </span>
+            </div>
+          </div>
+        </template>
       </div>
 
       <!-- 下注玩法 -->
@@ -628,7 +659,7 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
       </div>
 
       <!-- 公平性 -->
-      <div v-if="state.serverSeed" class="fair">
+      <div v-if="phase === 'result' && state.serverSeed" class="fair">
         <div>🔒 上局公平性 · nonce {{ state.nonce }}</div>
         <div>serverSeed: <code>{{ state.serverSeed }}</code></div>
       </div>
@@ -791,6 +822,10 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   animation: die-shake 0.4s linear infinite;
   border-color: var(--c-light);
   color: var(--c-light);
+}
+.die.idle {
+  opacity: 0.4;
+  font-size: 2.4rem;
 }
 @keyframes die-shake {
   0% { transform: translateY(0) rotate(0); }
