@@ -975,37 +975,39 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 .chat-form {
   display: flex;
   align-items: center; /* 不要把「送」鈕拉伸到滿高 */
-  gap: 6px;
+  gap: 8px;
   padding: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 .chat-input {
-  flex: 1;
+  flex: 1 1 auto; /* 輸入框吃滿剩餘寬度 */
+  width: 100%;
   min-width: 0;
-  height: 38px;
+  height: 40px;
   box-sizing: border-box;
-  padding: 0 10px;
+  padding: 0 12px;
   background: #0f172a;
   border: 1px solid #334155;
   border-radius: 9px;
   color: #fff;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
 }
 .chat-input:focus {
   outline: none;
   border-color: var(--c-light);
 }
 .chat-send {
-  flex-shrink: 0;
-  height: 38px;
-  padding: 0 14px;
+  flex: 0 0 56px; /* 固定窄寬,不長不縮 */
+  width: 56px;
+  height: 40px;
+  padding: 0;
   box-sizing: border-box;
   border: none;
   border-radius: 9px;
   background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
   color: var(--c-on);
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1;
   cursor: pointer;
 }
