@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useAuction } from '@/composables/BiddingManageMent.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import RemarkPickerModal from '@/components/RemarkPickerModal.vue'
-import { REMARK_WAREHOUSE } from '@/composables/remarkOptions.ts'
+import { parseRemark } from '@/composables/remarkOptions.ts'
 
 // 手機卡片展開狀態
 const expandedCards = ref<Set<string>>(new Set())
@@ -62,14 +62,24 @@ function canEditAmount(item: { biddingName?: string }) {
   return isOfficer.value && item.biddingName !== '尚未有得標者'
 }
 
-// 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
+// 結標前置:備註仍為「在我身上」(含空值/舊備註,parseRemark 一律視為 onme) = 待繳,不可結標;
+// 已繳倉庫 / 道具給XXX了 = 可移交,可結標
+function isPending(item: { remark?: string }) {
+  return parseRemark(item.remark).choice === 'onme'
+}
+// 只擋「結標/派發」動作(已可結標且非指定得標者階段),但備註仍在我身上 → 擋住,不擋「指定得標者」
+function settleBlocked(item: {
+  remark?: string
+  canVerifyBiddingTicket?: boolean
+  assignByLeader?: boolean
+}) {
+  return !!item.canVerifyBiddingTicket && !item.assignByLeader && isPending(item)
+}
+
+// 標示「自己尚未繳交」的單子 — 開單者是我且備註仍在我身上(待繳)
 const myName = computed(() => authStore.member?.userName ?? '')
 function isMyUnsubmitted(item: { ticketOwerName?: string; remark?: string }) {
-  return (
-    !!myName.value &&
-    item.ticketOwerName === myName.value &&
-    (item.remark || '').trim() !== REMARK_WAREHOUSE
-  )
+  return !!myName.value && item.ticketOwerName === myName.value && isPending(item)
 }
 
 // 備註選項彈窗
@@ -131,6 +141,7 @@ interface GroupItem {
   currency: string
   currentPrice: number
   biddingName: string
+  remark?: string
 }
 
 const summaryTotals = (items: GroupItem[]) => {
@@ -141,6 +152,10 @@ const summaryTotals = (items: GroupItem[]) => {
   }
   return totals
 }
+
+// 可移交(已繳倉庫/已交付) vs 待繳(在我身上),統計分開呈現
+const transferableOf = (items: GroupItem[]) => items.filter((it) => !isPending(it))
+const pendingOf = (items: GroupItem[]) => items.filter((it) => isPending(it))
 
 const itemNameCounts = (items: GroupItem[]) => {
   const counts: Record<string, number> = {}
@@ -260,13 +275,35 @@ function clearFilter() {
             {{ isUrgent(group.title) ? '待審核分配 — 請管理員處理' : group.title }}
           </h4>
           <div v-if="isAssigned(group.title)" class="group-summary">
-            <span class="sum-count">共 {{ (group.items ?? []).length }} 件</span>
+            <!-- 可移交:已繳倉庫/已交付,可結標 -->
             <span
-              v-for="(amt, ccy) in summaryTotals((group.items ?? []) as GroupItem[])"
-              :key="String(ccy)"
-              class="sum-amount"
+              v-if="transferableOf((group.items ?? []) as GroupItem[]).length"
+              class="seg-stat seg-transferable"
             >
-              {{ ccy }}<span class="sum-amount-num">{{ amt.toLocaleString() }}</span>
+              <span class="seg-label">✅ 可移交</span>
+              <span class="seg-count">{{ transferableOf((group.items ?? []) as GroupItem[]).length }} 件</span>
+              <span
+                v-for="(amt, ccy) in summaryTotals(transferableOf((group.items ?? []) as GroupItem[]))"
+                :key="'t-' + ccy"
+                class="sum-amount"
+              >
+                {{ ccy }}<span class="sum-amount-num">{{ amt.toLocaleString() }}</span>
+              </span>
+            </span>
+            <!-- 待繳:備註仍在我身上,不可結標 -->
+            <span
+              v-if="pendingOf((group.items ?? []) as GroupItem[]).length"
+              class="seg-stat seg-pending"
+            >
+              <span class="seg-label">⏳ 待繳</span>
+              <span class="seg-count">{{ pendingOf((group.items ?? []) as GroupItem[]).length }} 件</span>
+              <span
+                v-for="(amt, ccy) in summaryTotals(pendingOf((group.items ?? []) as GroupItem[]))"
+                :key="'p-' + ccy"
+                class="sum-amount sum-amount-pending"
+              >
+                {{ ccy }}<span class="sum-amount-num">{{ amt.toLocaleString() }}</span>
+              </span>
             </span>
           </div>
           <div v-else class="group-summary urgent-summary">
@@ -297,6 +334,8 @@ function clearFilter() {
               'is-expanded': isExpanded(item.treasureCode),
               'just-updated': recentlyUpdated.has(item.treasureCode),
               'mine-unsubmitted': isMyUnsubmitted(item),
+              'settle-ready': item.biddingName !== '尚未有得標者' && !isPending(item),
+              'settle-pending': item.biddingName !== '尚未有得標者' && isPending(item),
             }"
           >
             <div class="card-tools">
@@ -428,11 +467,16 @@ function clearFilter() {
               <span v-else>展開細節 ⌄</span>
             </button>
 
+            <!-- 待繳(備註在我身上)無法結標的提示 -->
+            <div v-if="settleBlocked(item)" class="settle-block-hint">
+              ⏳ 道具尚未繳交倉庫（備註仍為「在我身上」），無法結標
+            </div>
+
             <div class="action-wrapper">
               <button
                 class="submit-btn wallet-btn"
                 v-if="item.canVerifyBiddingTicket && item.hasEnoughMoneyToBuy"
-                :disabled="canSubmit(item)"
+                :disabled="canSubmit(item) || settleBlocked(item)"
                 @click="handleSubmitFromWallet(item)"
               >
                 從錢包扣除並派發
@@ -445,7 +489,7 @@ function clearFilter() {
                 'btn-verify-gem':
                   !item.isBidding && !item.assignByLeader && item.canVerifyBiddingTicket,
               }"
-              :disabled="canSubmit(item)"
+              :disabled="canSubmit(item) || settleBlocked(item)"
               @click="handleSubmit(item)"
             >
               <span v-if="item.isBidding">確認出價</span>
@@ -847,6 +891,48 @@ function clearFilter() {
   letter-spacing: 0.3px;
 }
 
+/* === 統計分段:可移交(綠) / 待繳(琥珀) === */
+.seg-stat {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 10px 4px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+.seg-transferable {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+.seg-pending {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+.seg-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.seg-transferable .seg-label {
+  color: #4ade80;
+}
+.seg-pending .seg-label {
+  color: #fbbf24;
+}
+.seg-count {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+/* 待繳金額用琥珀色,跟可移交的金色 sum-amount 區隔 */
+.sum-amount-pending {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(245, 158, 11, 0.1)) !important;
+  border-color: rgba(245, 158, 11, 0.55) !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15) !important;
+}
+
 /* === 「尚未分配」緊急樣式 — 永遠置頂 + 強制展開 + 橘色脈動邊框 === */
 .group-wrapper.is-urgent {
   margin-bottom: 32px;
@@ -1136,6 +1222,15 @@ function clearFilter() {
   transition: all 0.3s ease;
 }
 /* 自己尚未繳交的單子 — 明顯線框,方便會員一眼找到 */
+/* === 結標狀態邊框:可移交(綠) / 待繳(琥珀) — 讓管理員一眼分辨哪些能結標 === */
+.auction-card.settle-ready {
+  border-color: rgba(34, 197, 94, 0.6);
+}
+.auction-card.settle-pending {
+  border-color: rgba(245, 158, 11, 0.65);
+}
+/* 開單者本人的待繳(mine-unsubmitted)樣式定義在後面,會蓋過 settle-pending 邊框,
+   保留虛線 + 📦 徽章;兩者都是琥珀色,視覺一致 */
 .auction-card.mine-unsubmitted,
 .auction-card.mine-unsubmitted:hover {
   border: 2px dashed #f59e0b;
@@ -1355,6 +1450,20 @@ function clearFilter() {
 }
 
 /* 按鈕 */
+/* 待繳無法結標的提示條 */
+.settle-block-hint {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
 .submit-btn {
   width: 100%;
   height: 44px;
