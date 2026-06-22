@@ -775,7 +775,17 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 
       <div class="mult-row">
         <span class="pick-label">倍率</span>
-        <button v-for="m in betMultipliers" :key="m" class="pick-btn" :class="{ active: selectedMultiplier === m }" @click="selectedMultiplier = m">×{{ m }}</button>
+        <div class="mult-grid">
+          <button
+            v-for="m in betMultipliers"
+            :key="m"
+            class="mult-btn"
+            :class="{ active: selectedMultiplier === m }"
+            @click="selectedMultiplier = m"
+          >
+            ×{{ m }}
+          </button>
+        </div>
       </div>
 
       <div class="bet-summary">本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(state.myBalance) }}</div>
@@ -1379,6 +1389,34 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   height: 34px;
 }
 .pick-btn.active {
+  border-color: var(--c-light);
+  background: rgba(var(--c-light-rgb), 0.15);
+  color: var(--c-light);
+}
+
+/* 倍率:等寬 grid 一排,不再滿版直排 */
+.mult-grid {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
+  gap: 6px;
+}
+.mult-btn {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  border: 1px solid #2e3147;
+  background: #0f111a;
+  color: #cbd5e1;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mult-btn.active {
   border-color: var(--c-light);
   background: rgba(var(--c-light-rgb), 0.15);
   color: var(--c-light);
