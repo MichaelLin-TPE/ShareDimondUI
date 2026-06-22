@@ -63,6 +63,14 @@ const betType = ref<BetType>('BIG')
 const singlePick = ref(1)
 const sumPick = ref(10)
 const sumOptions = Array.from({ length: 14 }, (_, i) => i + 4)
+// 和(總點)下拉選單,順便帶賠率,例如「10 點 · 6:1」
+const sumSelectOptions = computed(() =>
+  sumOptions.map((n) => {
+    const row = paytable.value.find((r) => r.type === 'SUM' + n)
+    const pay = row && row.multiplier > 1 ? ` · ${row.multiplier - 1}:1` : ''
+    return { value: n, label: `${n} 點${pay}` }
+  }),
+)
 const placing = ref(false)
 
 // 倒數
@@ -544,9 +552,11 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
           </button>
         </div>
       </div>
-      <div v-if="betType === 'SUM'" class="pick-row wrap">
+      <div v-if="betType === 'SUM'" class="pick-row">
         <span class="pick-label">總點</span>
-        <button v-for="n in sumOptions" :key="n" class="pick-btn sum" :class="{ active: sumPick === n }" @click="sumPick = n">{{ n }}</button>
+        <select v-model.number="sumPick" class="sum-select">
+          <option v-for="o in sumSelectOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        </select>
       </div>
 
       <div class="mult-row">
@@ -908,6 +918,35 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   border-color: var(--c-light);
   background: rgba(var(--c-light-rgb), 0.15);
   color: var(--c-light);
+}
+
+/* 和(總點)下拉選單 */
+.sum-select {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 34px 0 12px;
+  border-radius: 9px;
+  border: 1px solid #2e3147;
+  background-color: #0f111a;
+  color: #e2e8f0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2394a3b8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.sum-select:focus {
+  outline: none;
+  border-color: var(--c-light);
+}
+.sum-select option {
+  background: #161822;
+  color: #e2e8f0;
 }
 
 /* 猜點數:大骰面 + 數字標籤,看得清楚是幾點 */
