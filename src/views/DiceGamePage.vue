@@ -283,7 +283,8 @@ const countdown = computed(() => {
   if (!s || s.status !== 'BETTING') return 0
   return Math.max(0, Math.ceil((s.deadlineEpochMs - nowMs.value) / 1000))
 })
-const closing = computed(() => state.value?.status === 'BETTING' && countdown.value <= 0)
+// 倒數剩 ≤1 秒就封盤(擋最後一秒,避免壓秒/與結算競態)
+const closing = computed(() => state.value?.status === 'BETTING' && countdown.value <= 1)
 const bankerIsMe = computed(
   () => !!state.value?.bankerName && state.value?.bankerName === authStore.member?.userName,
 )
@@ -297,13 +298,15 @@ const phase = computed<'betting' | 'result' | 'waiting'>(() => {
   if (s.status === 'SETTLED' && s.roundId != null && s.roundId === liveResultRoundId.value) return 'result'
   return 'waiting'
 })
+// 開骰中 / 結果展示中,直到桌面清空(下一場開放)前都不給下注
+const revealLocked = computed(() => rolling.value || phase.value === 'result')
 
 const phaseText = computed(() => {
   const s = state.value
   if (!s) return ''
   if (!s.diceEnabled) return '骰寶目前未開放'
   if (rolling.value) return '開骰中…'
-  if (phase.value === 'betting') return closing.value ? '封盤，開骰中…' : `下注中 ${countdown.value}s`
+  if (phase.value === 'betting') return closing.value ? '🔒 已封盤，準備開骰…' : `下注中 ${countdown.value}s`
   if (phase.value === 'result') return '本局結果'
   return '等待開局 · 有人下注就開始'
 })
@@ -314,6 +317,7 @@ const canBet = computed(
     hasBanker.value &&
     !bankerIsMe.value &&
     !closing.value &&
+    !revealLocked.value &&
     !placing.value &&
     !overCap.value &&
     Number(state.value?.myBalance || 0) >= effectiveBet.value,
@@ -323,7 +327,8 @@ function cantBetReason(): string {
   if (!s?.diceEnabled) return '骰寶目前未開放'
   if (!hasBanker.value) return '目前沒有莊家，先坐莊或等人坐莊'
   if (bankerIsMe.value) return '你是莊家，不能玩自己的莊'
-  if (closing.value) return '本局已封盤，等待開骰'
+  if (closing.value) return '本局已封盤，等下一局再下注'
+  if (revealLocked.value) return '開獎中，等下一局開放再下注'
   if (Number(s?.myBalance || 0) < effectiveBet.value) return '餘額不足'
   if (overCap.value)
     return `此玩法本局上限約 ${fmt(maxBetForCurrent.value)}，莊家賠付能力不足，請降低倍率`
@@ -725,7 +730,7 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         · 莊家本局還可承受 {{ fmt(state.remainingCapacity) }} {{ state.currency }}
       </div>
       <button class="roll-btn" :disabled="!canBet" @click="placeBet">
-        {{ placing ? '下注中…' : closing ? '封盤中…' : '🪙 下注' }}
+        {{ placing ? '下注中…' : closing ? '封盤中…' : revealLocked ? '開獎中…' : '🪙 下注' }}
       </button>
       <p v-if="!canBet && !placing" class="ineligible">{{ cantBetReason() }}</p>
 
