@@ -153,11 +153,12 @@ const STATIC_PAYTABLE: PayRow[] = [
   { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×32', odds: '' },
   { reels: '⭐ ⭐ ⭐', label: '', mult: '×18', odds: '' },
   { reels: '🔔 🔔 🔔', label: '', mult: '×9', odds: '' },
+  { reels: '💎 💎 ·', label: '兩鑽大獎', mult: '×8', odds: '' },
   { reels: '🍋 🍋 🍋', label: '', mult: '×5', odds: '' },
   { reels: '🍒 🍒 🍒', label: '', mult: '×3', odds: '' },
-  { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×3', odds: '' },
-  { reels: '⭐ ⭐ ·', label: '', mult: '×1.9', odds: '' },
-  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.3~1.45', odds: '' },
+  { reels: '7️⃣ 7️⃣ ·', label: '', mult: '×2.79', odds: '' },
+  { reels: '⭐ ⭐ ·', label: '', mult: '×1.73', odds: '' },
+  { reels: '🍒/🍋/🔔 兩個', label: '小賺', mult: '×1.18~1.32', odds: '' },
 ]
 const displayPaytable = computed<PayRow[]>(() =>
   paytable.value.length ? paytable.value : STATIC_PAYTABLE,
