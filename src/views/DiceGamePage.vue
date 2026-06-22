@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
@@ -74,6 +74,19 @@ interface RankRow {
 }
 const recentRounds = ref<RecentRound[]>([])
 const leaderboard = ref<RankRow[]>([])
+
+// 聊天室
+interface ChatMsg {
+  userName: string
+  text: string
+  ts: number
+}
+const chatMessages = ref<ChatMsg[]>([])
+const chatDraft = ref('')
+const chatOpen = ref(false) // 手機抽屜開關
+const chatSending = ref(false)
+const chatScroll = ref<HTMLElement | null>(null)
+const myName = computed(() => authStore.member?.userName ?? '')
 
 // 下注選擇
 const betType = ref<BetType>('BIG')
@@ -418,6 +431,45 @@ async function loadBoards() {
   }
 }
 
+async function loadChat() {
+  try {
+    const res = await fetch(`${API}/dice/chat`, { headers: headers() })
+    if (!res.ok) return
+    chatMessages.value = await res.json()
+    nextTick(scrollChatToBottom)
+  } catch (e) {
+    console.error(e)
+  }
+}
+function scrollChatToBottom() {
+  const el = chatScroll.value
+  if (el) el.scrollTop = el.scrollHeight
+}
+async function sendChat() {
+  const text = chatDraft.value.trim()
+  if (!text || chatSending.value) return
+  chatSending.value = true
+  try {
+    const res = await fetch(`${API}/dice/chat`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({ text }),
+    })
+    const d = await res.json()
+    if (!res.ok) {
+      useAlert.error(d.message ?? '送出失敗')
+      return
+    }
+    chatDraft.value = ''
+    await loadChat()
+  } catch (e) {
+    console.error(e)
+    useAlert.error('連線失敗')
+  } finally {
+    chatSending.value = false
+  }
+}
+
 let fetching = false
 async function fetchRound() {
   if (fetching) return
@@ -546,12 +598,14 @@ onMounted(async () => {
   await loadConfig()
   await fetchRound()
   loadBoards()
+  loadChat()
   loading.value = false
 
   const clanId = authStore.member?.clanId
   if (clanId) {
     ws = createReconnectingStomp(`/topic/dice/${clanId}`, (body) => {
       if (body === 'DICE_UPDATED') fetchRound()
+      else if (body === 'DICE_CHAT') loadChat()
     })
   }
   // 倒數 ticker
@@ -579,7 +633,8 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 </script>
 
 <template>
-  <div class="dice-page">
+  <div class="dice-shell">
+    <div class="dice-page">
     <div v-if="loading" class="loading">載入中…</div>
 
     <template v-else-if="state">
@@ -764,6 +819,36 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         <div>serverSeed: <code>{{ state.serverSeed }}</code></div>
       </div>
     </template>
+    </div><!-- /.dice-page -->
+
+    <!-- 聊天室(桌面右側 / 手機浮動抽屜) -->
+    <aside class="dice-chat" :class="{ open: chatOpen }">
+      <div class="chat-head">
+        <span>💬 聊天室</span>
+        <button class="chat-x" @click="chatOpen = false" aria-label="關閉">✕</button>
+      </div>
+      <div ref="chatScroll" class="chat-msgs">
+        <div v-if="!chatMessages.length" class="chat-empty">還沒有人說話，來開個話題吧～</div>
+        <div
+          v-for="(m, i) in chatMessages"
+          :key="i"
+          class="chat-msg"
+          :class="{ mine: m.userName === myName }"
+        >
+          <span class="chat-who">{{ m.userName === myName ? '我' : m.userName }}</span>
+          <span class="chat-bubble">{{ m.text }}</span>
+        </div>
+      </div>
+      <form class="chat-form" @submit.prevent="sendChat">
+        <input v-model="chatDraft" class="chat-input" maxlength="100" placeholder="說點什麼…" />
+        <button type="submit" class="chat-send" :disabled="chatSending || !chatDraft.trim()">送</button>
+      </form>
+    </aside>
+
+    <!-- 手機:浮動聊天鈕 -->
+    <button class="chat-fab" :class="{ active: chatOpen }" @click="chatOpen = !chatOpen" aria-label="聊天室">
+      {{ chatOpen ? '✕' : '💬' }}
+    </button>
 
     <!-- 中獎尊榮動畫 -->
     <transition name="cele">
@@ -792,11 +877,188 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 </template>
 
 <style scoped>
-.dice-page {
-  max-width: 560px;
+/* 外層:桌面 = 賭桌 + 右側聊天室並排;手機 = 單欄 */
+.dice-shell {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 900px;
   margin: 0 auto;
+  position: relative;
+}
+.dice-page {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 560px;
   padding: 16px;
   color: #e2e8f0;
+}
+
+/* === 聊天室 === */
+.dice-chat {
+  flex: 0 0 300px;
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px);
+  max-height: 700px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--c-light);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.chat-x {
+  display: none;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.chat-msgs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+}
+.chat-empty {
+  color: #64748b;
+  font-size: 0.8rem;
+  text-align: center;
+  margin: auto 0;
+}
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 90%;
+}
+.chat-msg.mine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.chat-who {
+  font-size: 0.66rem;
+  color: #94a3b8;
+  margin: 0 4px 1px;
+}
+.chat-bubble {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  word-break: break-word;
+  line-height: 1.4;
+}
+.chat-msg.mine .chat-bubble {
+  background: rgba(var(--c-light-rgb), 0.18);
+  border-color: rgba(var(--c-light-rgb), 0.4);
+  color: var(--c-light);
+}
+.chat-form {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 10px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+.chat-input:focus {
+  outline: none;
+  border-color: var(--c-light);
+}
+.chat-send {
+  flex-shrink: 0;
+  width: 44px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+  color: var(--c-on);
+  font-weight: 800;
+  cursor: pointer;
+}
+.chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.chat-fab {
+  display: none;
+}
+
+/* 手機:聊天室變底部抽屜 + 浮動鈕 */
+@media (max-width: 880px) {
+  .dice-shell {
+    display: block;
+    max-width: 560px;
+  }
+  .dice-page {
+    max-width: none;
+  }
+  .dice-chat {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    height: 62vh;
+    max-height: none;
+    flex: none;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(105%);
+    transition: transform 0.3s ease;
+    z-index: 1500;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+  }
+  .dice-chat.open {
+    transform: translateY(0);
+  }
+  .chat-x {
+    display: inline-flex;
+  }
+  .chat-fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+    color: var(--c-on);
+    font-size: 1.4rem;
+    cursor: pointer;
+    z-index: 1600;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
 }
 .loading {
   text-align: center;
