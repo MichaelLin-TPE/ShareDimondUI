@@ -828,18 +828,26 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 }
 .bet-types {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* minmax(0,1fr):強制 5 欄真正等寬,不被「猜點數」內容撐開 */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 10px;
 }
 .bet-btn {
-  padding: 12px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 46px;
+  padding: 0 2px;
   border-radius: 10px;
   border: 1px solid #2e3147;
   background: #0f111a;
   color: #cbd5e1;
   font-weight: 800;
   font-size: 0.9rem;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1122,9 +1130,13 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
     height: 58px;
     font-size: 2.8rem;
   }
+  .bet-types {
+    gap: 6px;
+  }
   .bet-btn {
-    font-size: 0.78rem;
-    padding: 10px 2px;
+    height: 42px;
+    font-size: 0.8rem;
+    letter-spacing: 0;
   }
 }
 </style>
