@@ -614,12 +614,9 @@ onMounted(loadAll)
 
       <!-- 自動轉 -->
       <div class="auto-row" v-if="!autoRunning">
-        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(10)">
-          ⟳ 自動轉 10 次
-        </button>
-        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(30)">
-          ⟳ 自動轉 30 次
-        </button>
+        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(10)">⟳ 自動 10</button>
+        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(30)">⟳ 自動 30</button>
+        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(100)">⟳ 自動 100</button>
       </div>
       <div class="auto-running" v-else>
         <span class="auto-progress">自動轉中… {{ autoDone }} / {{ autoTotal }}</span>
