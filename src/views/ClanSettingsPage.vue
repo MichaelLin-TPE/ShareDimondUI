@@ -11,6 +11,10 @@ const {
   slotConfig,
   slotSaving,
   saveSlotConfig,
+  // 骰寶
+  diceEnabled,
+  diceSaving,
+  saveDiceConfig,
   settings,
   selectedCurrency,
   clanCurrencies,
@@ -298,6 +302,42 @@ const rakePercent = computed<number>({
         <div class="cs-actions">
           <button class="cs-btn-primary" :disabled="slotSaving" @click="saveSlotConfig">
             {{ slotSaving ? '儲存中…' : '💾 儲存拉霸設定' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── 骰寶設定 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🎲</span>
+          <div>
+            <h3>骰寶設定</h3>
+            <p>猜點數遊戲。與拉霸<b>共用莊家與彩金池</b>，下注額/抽水/上限沿用上方拉霸設定</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>開放骰寶</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: diceEnabled }"
+              @click="diceEnabled = !diceEnabled"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ diceEnabled ? '🎲 已開放' : '🚫 已關閉' }}
+              </span>
+            </div>
+            <p class="cs-hint">擲出豹子(三同)獨得整個彩金池</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" :disabled="diceSaving" @click="saveDiceConfig">
+            {{ diceSaving ? '儲存中…' : '💾 儲存骰寶設定' }}
           </button>
         </div>
       </section>

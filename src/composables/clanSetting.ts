@@ -428,12 +428,53 @@ export function useAuction() {
     }
   }
 
+  // ───── 骰寶設定 (共用拉霸的 betAmount/rake/maxPayout,只多一個開關) ─────
+  const diceEnabled = ref(false)
+  const diceSaving = ref(false)
+
+  const fetchDiceConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/dice/config`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      diceEnabled.value = !!d.enabled
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveDiceConfig = async () => {
+    if (diceSaving.value) return
+    diceSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/dice/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ enabled: diceEnabled.value }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(d.message ?? '骰寶設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      diceSaving.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
     fetchClanCurrencies()
     fetchDiscordWebhook()
     fetchSlotConfig()
+    fetchDiceConfig()
   })
 
   return {
@@ -441,6 +482,10 @@ export function useAuction() {
     slotConfig,
     slotSaving,
     saveSlotConfig,
+    // 骰寶
+    diceEnabled,
+    diceSaving,
+    saveDiceConfig,
     settings,
     balance,
     selectedCurrency,
