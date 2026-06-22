@@ -315,14 +315,36 @@ function clearFilter() {
         <div class="collapse-wrap">
           <div class="collapse-inner">
             <div v-if="isAssigned(group.title)" class="group-items-preview">
-              <span
-                v-for="entry in itemNameCounts((group.items ?? []) as GroupItem[])"
-                :key="entry.name"
-                class="item-chip"
-                :title="entry.name"
+              <!-- 可移交道具:管理員可以直接交給得標者的 -->
+              <div
+                v-if="itemNameCounts(transferableOf((group.items ?? []) as GroupItem[])).length"
+                class="chip-line chip-line-ready"
               >
-                {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
-              </span>
+                <span class="chip-line-label label-ready">✅ 可移交</span>
+                <span
+                  v-for="entry in itemNameCounts(transferableOf((group.items ?? []) as GroupItem[]))"
+                  :key="'t-' + entry.name"
+                  class="item-chip chip-ready"
+                  :title="entry.name"
+                >
+                  {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
+                </span>
+              </div>
+              <!-- 待繳道具:備註仍在我身上,還不能交付/結標 -->
+              <div
+                v-if="itemNameCounts(pendingOf((group.items ?? []) as GroupItem[])).length"
+                class="chip-line chip-line-pending"
+              >
+                <span class="chip-line-label label-pending">⏳ 待繳</span>
+                <span
+                  v-for="entry in itemNameCounts(pendingOf((group.items ?? []) as GroupItem[]))"
+                  :key="'p-' + entry.name"
+                  class="item-chip chip-pending"
+                  :title="entry.name"
+                >
+                  {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
+                </span>
+              </div>
             </div>
 
             <div class="auction-grid">
@@ -1011,9 +1033,60 @@ function clearFilter() {
 /* 道具 chips 預覽列 */
 .group-items-preview {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   margin-bottom: 16px;
+}
+/* 可移交 / 待繳 各一列:標籤 + 道具 chips,讓管理員一眼看出能交付哪些 */
+.chip-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.chip-line-label {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+.label-ready {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+}
+.label-pending {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #fbbf24;
+}
+/* 可移交道具 chip:綠 */
+.item-chip.chip-ready {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+}
+.chip-ready .item-chip-count {
+  background: linear-gradient(135deg, #22c55e, #15803d);
+  color: #fff;
+  box-shadow: none;
+}
+/* 待繳道具 chip:琥珀 */
+.item-chip.chip-pending {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+}
+.chip-pending .item-chip-count {
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+  color: #1a1305;
+  box-shadow: none;
 }
 .item-chip {
   display: inline-flex;
