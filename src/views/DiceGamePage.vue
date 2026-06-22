@@ -75,6 +75,124 @@ const rolling = ref(false)
 let lastSettledRoundId = -1
 let animTimer: number | undefined
 
+// 音效(Web Audio 合成,免音檔) + 震動
+const soundOn = ref(localStorage.getItem('dice_sound') !== 'off')
+function toggleSound() {
+  soundOn.value = !soundOn.value
+  localStorage.setItem('dice_sound', soundOn.value ? 'on' : 'off')
+  if (soundOn.value) ensureAudio()
+}
+let audioCtx: AudioContext | null = null
+function ensureAudio(): AudioContext | null {
+  if (!soundOn.value) return null
+  try {
+    if (!audioCtx) {
+      const Ctor =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      audioCtx = new Ctor()
+    }
+    if (audioCtx.state === 'suspended') void audioCtx.resume()
+    return audioCtx
+  } catch {
+    return null
+  }
+}
+function noiseBurst(ctx: AudioContext, t: number, dur: number, freq: number, gainVal: number) {
+  const n = Math.max(1, Math.floor(ctx.sampleRate * dur))
+  const buffer = ctx.createBuffer(1, n, ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < n; i++) data[i] = Math.random() * 2 - 1
+  const src = ctx.createBufferSource()
+  src.buffer = buffer
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = freq
+  bp.Q.value = 1.3
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.linearRampToValueAtTime(gainVal, t + 0.004)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  src.connect(bp)
+  bp.connect(g)
+  g.connect(ctx.destination)
+  src.start(t)
+  src.stop(t + dur)
+}
+function tone(ctx: AudioContext, t: number, freq: number, dur: number, gainVal: number, type: OscillatorType) {
+  const o = ctx.createOscillator()
+  o.type = type
+  o.frequency.value = freq
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.linearRampToValueAtTime(gainVal, t + 0.02)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  o.connect(g)
+  g.connect(ctx.destination)
+  o.start(t)
+  o.stop(t + dur)
+}
+function playShake() {
+  const ctx = ensureAudio()
+  if (!ctx) return
+  let t = ctx.currentTime
+  for (let i = 0; i < 11; i++) {
+    noiseBurst(ctx, t, 0.05, 1100 + Math.random() * 900, 0.22)
+    t += 0.17 - i * 0.007 // 稍微加速,像搖盅
+  }
+}
+function playWin() {
+  const ctx = ensureAudio()
+  if (!ctx) return
+  const t = ctx.currentTime
+  ;[523, 659, 784].forEach((f, i) => tone(ctx, t + i * 0.1, f, 0.26, 0.16, 'triangle'))
+}
+function playJackpot() {
+  const ctx = ensureAudio()
+  if (!ctx) return
+  const t = ctx.currentTime
+  ;[523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) =>
+    tone(ctx, t + i * 0.12, f, 0.32, 0.18, 'sawtooth'),
+  )
+}
+function vibrate(pattern: number[]) {
+  try {
+    navigator.vibrate?.(pattern)
+  } catch {
+    /* 不支援就算了 */
+  }
+}
+
+// 中獎尊榮動畫
+const celebration = ref<{ show: boolean; tier: 'jackpot' | 'win'; amount: number; title: string } | null>(
+  null,
+)
+let celeTimer: number | undefined
+function closeCelebration() {
+  if (celebration.value) celebration.value.show = false
+}
+function showMyResult() {
+  const myBets = (state.value?.bets ?? []).filter((b) => b.mine && b.settled)
+  if (!myBets.length) return
+  const poolWin = myBets.reduce((s, b) => s + Number(b.poolWin || 0), 0)
+  const ret = myBets.reduce((s, b) => s + Number(b.payout || 0) + Number(b.poolWin || 0), 0)
+  const stake = myBets.reduce((s, b) => s + Number(b.amount || 0), 0)
+  const net = ret - stake
+  if (poolWin > 0) {
+    celebration.value = { show: true, tier: 'jackpot', amount: ret, title: '豹子！獨得彩金池' }
+    playJackpot()
+    vibrate([0, 80, 40, 80, 40, 120, 60, 220])
+  } else if (net > 0) {
+    celebration.value = { show: true, tier: 'win', amount: net, title: '恭喜中獎' }
+    playWin()
+    vibrate([0, 60, 40, 110])
+  } else {
+    return
+  }
+  if (celeTimer) clearTimeout(celeTimer)
+  celeTimer = window.setTimeout(closeCelebration, 4500)
+}
+
 const headers = (): Record<string, string> => {
   const ts = Math.floor(Date.now() / 1000).toString()
   return {
@@ -194,6 +312,9 @@ async function fetchRound() {
 
 async function animateRoll(finalDice: number[]) {
   rolling.value = true
+  // 搖盅:音效 + 震動 + 視覺
+  playShake()
+  vibrate([0, 40, 30, 40, 30, 40, 30, 50, 40, 60, 50, 80])
   if (animTimer) clearInterval(animTimer)
   animTimer = window.setInterval(() => {
     displayDice.value = [0, 1, 2].map(() => 1 + Math.floor(Math.random() * 6))
@@ -202,6 +323,9 @@ async function animateRoll(finalDice: number[]) {
   if (animTimer) clearInterval(animTimer)
   displayDice.value = finalDice.slice()
   rolling.value = false
+  // 開盅後短暫停頓再揭曉中獎動畫
+  await delay(250)
+  showMyResult()
 }
 
 async function placeBet() {
@@ -210,6 +334,7 @@ async function placeBet() {
     if (r) useAlert.error(r)
     return
   }
+  ensureAudio() // 用使用者點擊手勢解鎖音訊,稍後開骰才出得了聲
   placing.value = true
   try {
     const res = await fetch(`${API}/dice/bet`, {
@@ -299,6 +424,11 @@ onUnmounted(() => {
   if (tickTimer) clearInterval(tickTimer)
   if (heartbeat) clearInterval(heartbeat)
   if (animTimer) clearInterval(animTimer)
+  if (celeTimer) clearTimeout(celeTimer)
+  if (audioCtx) {
+    audioCtx.close().catch(() => {})
+    audioCtx = null
+  }
   // 通知離開遊戲室
   fetch(`${API}/dice/leave`, { method: 'POST', headers: headers() }).catch(() => {})
 })
@@ -314,7 +444,12 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
     <template v-else-if="state">
       <!-- 標頭 + 彩金池 -->
       <div class="topbar">
-        <h2 class="title">🎲 骰寶賭桌</h2>
+        <h2 class="title">
+          🎲 骰寶賭桌
+          <button class="mute-btn" :title="soundOn ? '靜音' : '開聲音'" @click="toggleSound">
+            {{ soundOn ? '🔊' : '🔇' }}
+          </button>
+        </h2>
         <div class="pool">
           <span class="pool-label">💰 彩金池</span>
           <span class="pool-amt">{{ fmt(state.poolBalance) }} {{ state.currency }}</span>
@@ -352,7 +487,7 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
       </div>
 
       <!-- 骰盅 -->
-      <div class="dice-arena">
+      <div class="dice-arena" :class="{ shaking: rolling }">
         <div v-for="(d, i) in displayDice" :key="i" class="die" :class="{ spin: rolling }">{{ FACES[d] }}</div>
       </div>
       <div v-if="state.status === 'SETTLED' && !rolling" class="total-row">
@@ -432,6 +567,24 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         <div>serverSeed: <code>{{ state.serverSeed }}</code></div>
       </div>
     </template>
+
+    <!-- 中獎尊榮動畫 -->
+    <transition name="cele">
+      <div
+        v-if="celebration?.show"
+        class="cele-overlay"
+        :class="celebration.tier"
+        @click="closeCelebration"
+      >
+        <div class="cele-rays"></div>
+        <div class="cele-card">
+          <div class="cele-emoji">{{ celebration.tier === 'jackpot' ? '🎲🎲🎲' : '🎉' }}</div>
+          <div class="cele-title">{{ celebration.title }}</div>
+          <div class="cele-amt">+{{ fmt(celebration.amount) }} {{ state?.currency }}</div>
+          <button class="btn btn-take cele-btn" @click.stop="closeCelebration">收下！</button>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -832,6 +985,137 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 .fair code {
   color: #94a3b8;
 }
+.mute-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+.mute-btn:hover {
+  opacity: 1;
+}
+
+/* 搖盅:整個骰盅左右晃 */
+.dice-arena.shaking {
+  animation: cup-shake 0.28s ease-in-out infinite;
+}
+@keyframes cup-shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  25% { transform: translateX(-7px) rotate(-1.5deg); }
+  75% { transform: translateX(7px) rotate(1.5deg); }
+}
+
+/* === 中獎尊榮動畫 === */
+.cele-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  overflow: hidden;
+}
+.cele-overlay.win {
+  background: radial-gradient(circle at center, rgba(16, 64, 40, 0.92), rgba(5, 10, 16, 0.95));
+}
+.cele-overlay.jackpot {
+  background: radial-gradient(circle at center, rgba(80, 55, 8, 0.94), rgba(8, 6, 2, 0.96));
+}
+.cele-rays {
+  position: absolute;
+  width: 200vmax;
+  height: 200vmax;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0.07) 0deg 6deg,
+    transparent 6deg 12deg
+  );
+  animation: rays-spin 9s linear infinite;
+}
+.cele-overlay.jackpot .cele-rays {
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(251, 191, 36, 0.18) 0deg 6deg,
+    transparent 6deg 12deg
+  );
+}
+@keyframes rays-spin {
+  to { transform: rotate(360deg); }
+}
+.cele-card {
+  position: relative;
+  text-align: center;
+  padding: 30px 34px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, #1e1e2e, #0f0f1a);
+  animation: cele-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.cele-overlay.win .cele-card {
+  border: 2px solid #4ade80;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.45);
+}
+.cele-overlay.jackpot .cele-card {
+  border: 2px solid #fbbf24;
+  box-shadow: 0 0 50px rgba(245, 158, 11, 0.6);
+}
+@keyframes cele-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.cele-emoji {
+  font-size: 3.2rem;
+  animation: cele-bounce 0.9s ease-in-out infinite;
+}
+@keyframes cele-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.08); }
+}
+.cele-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin: 10px 0 4px;
+}
+.cele-overlay.win .cele-title {
+  color: #4ade80;
+}
+.cele-overlay.jackpot .cele-title {
+  color: #fbbf24;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+}
+.cele-amt {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 18px;
+}
+.cele-btn {
+  padding: 10px 28px;
+  font-size: 1rem;
+}
+.cele-enter-active {
+  transition: opacity 0.3s ease;
+}
+.cele-leave-active {
+  transition: opacity 0.4s ease;
+}
+.cele-enter-from,
+.cele-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-arena.shaking,
+  .cele-rays,
+  .cele-emoji,
+  .die.spin {
+    animation: none;
+  }
+}
+
 @media (max-width: 480px) {
   .die {
     width: 58px;
