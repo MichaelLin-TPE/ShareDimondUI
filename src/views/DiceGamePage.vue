@@ -163,6 +163,13 @@ function playJackpot() {
     tone(ctx, t + i * 0.12, f, 0.32, 0.18, 'sawtooth'),
   )
 }
+function playLose() {
+  const ctx = ensureAudio()
+  if (!ctx) return
+  const t = ctx.currentTime
+  // 兩個下降的低音,像「噢～」殘念
+  ;[330, 247].forEach((f, i) => tone(ctx, t + i * 0.14, f, 0.28, 0.12, 'sine'))
+}
 function vibrate(pattern: number[]) {
   try {
     navigator.vibrate?.(pattern)
@@ -172,9 +179,12 @@ function vibrate(pattern: number[]) {
 }
 
 // 中獎尊榮動畫
-const celebration = ref<{ show: boolean; tier: 'jackpot' | 'win'; amount: number; title: string } | null>(
-  null,
-)
+const celebration = ref<{
+  show: boolean
+  tier: 'jackpot' | 'win' | 'lose'
+  amount: number
+  title: string
+} | null>(null)
 let celeTimer: number | undefined
 function closeCelebration() {
   if (celebration.value) celebration.value.show = false
@@ -186,6 +196,7 @@ function showMyResult() {
   const ret = myBets.reduce((s, b) => s + Number(b.payout || 0) + Number(b.poolWin || 0), 0)
   const stake = myBets.reduce((s, b) => s + Number(b.amount || 0), 0)
   const net = ret - stake
+  let closeMs = 4500
   if (poolWin > 0) {
     celebration.value = { show: true, tier: 'jackpot', amount: ret, title: '豹子！獨得彩金池' }
     playJackpot()
@@ -194,11 +205,17 @@ function showMyResult() {
     celebration.value = { show: true, tier: 'win', amount: net, title: '恭喜中獎' }
     playWin()
     vibrate([0, 60, 40, 110])
+  } else if (net < 0) {
+    // 輸:殘念動畫(低調、較快關閉)
+    celebration.value = { show: true, tier: 'lose', amount: -net, title: '殘念～下次再來' }
+    playLose()
+    vibrate([0, 130])
+    closeMs = 1800
   } else {
-    return
+    return // net == 0(保本,例如豹子退本但池空),不打擾
   }
   if (celeTimer) clearTimeout(celeTimer)
-  celeTimer = window.setTimeout(closeCelebration, 4500)
+  celeTimer = window.setTimeout(closeCelebration, closeMs)
 }
 
 const headers = (): Record<string, string> => {
@@ -597,12 +614,18 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         :class="celebration.tier"
         @click="closeCelebration"
       >
-        <div class="cele-rays"></div>
+        <div v-if="celebration.tier !== 'lose'" class="cele-rays"></div>
         <div class="cele-card">
-          <div class="cele-emoji">{{ celebration.tier === 'jackpot' ? '🎲🎲🎲' : '🎉' }}</div>
+          <div class="cele-emoji">
+            {{ celebration.tier === 'jackpot' ? '🎲🎲🎲' : celebration.tier === 'win' ? '🎉' : '💸' }}
+          </div>
           <div class="cele-title">{{ celebration.title }}</div>
-          <div class="cele-amt">+{{ fmt(celebration.amount) }} {{ state?.currency }}</div>
-          <button class="btn btn-take cele-btn" @click.stop="closeCelebration">收下！</button>
+          <div class="cele-amt">
+            {{ celebration.tier === 'lose' ? '-' : '+' }}{{ fmt(celebration.amount) }} {{ state?.currency }}
+          </div>
+          <button class="btn cele-btn" :class="celebration.tier === 'lose' ? 'btn-leave' : 'btn-take'" @click.stop="closeCelebration">
+            {{ celebration.tier === 'lose' ? '知道了' : '收下！' }}
+          </button>
         </div>
       </div>
     </transition>
@@ -1130,6 +1153,26 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 }
 .cele-overlay.jackpot {
   background: radial-gradient(circle at center, rgba(80, 55, 8, 0.94), rgba(8, 6, 2, 0.96));
+}
+.cele-overlay.lose {
+  background: rgba(8, 10, 14, 0.85);
+}
+.cele-overlay.lose .cele-card {
+  border: 1px solid #3a3f5c;
+  box-shadow: none;
+}
+.cele-overlay.lose .cele-title {
+  color: #94a3b8;
+}
+.cele-overlay.lose .cele-amt {
+  color: #cbd5e1;
+}
+.cele-overlay.lose .cele-emoji {
+  animation: lose-sink 0.6s ease-out;
+}
+@keyframes lose-sink {
+  0% { transform: translateY(-10px) scale(1.1); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 .cele-rays {
   position: absolute;
