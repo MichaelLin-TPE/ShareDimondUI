@@ -1349,6 +1349,7 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 .mult-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
 }
