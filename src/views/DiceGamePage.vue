@@ -334,6 +334,31 @@ const myBetsTotal = computed(() =>
   (state.value?.bets ?? []).filter((b) => b.mine).reduce((sum, b) => sum + Number(b.amount), 0),
 )
 
+// 同一人 + 同玩法 + 同點數的注疊加成一筆,避免一直下同樣的把清單拉太長
+const aggregatedBets = computed<(BetView & { key: string })[]>(() => {
+  const map = new Map<string, BetView & { key: string }>()
+  for (const b of state.value?.bets ?? []) {
+    const key = `${b.memberId}|${b.betType}|${b.pick}`
+    const ex = map.get(key)
+    if (ex) {
+      ex.amount += Number(b.amount)
+      ex.payout += Number(b.payout)
+      ex.poolWin += Number(b.poolWin)
+      ex.win = ex.win || b.win
+      ex.settled = ex.settled || b.settled
+    } else {
+      map.set(key, {
+        ...b,
+        key,
+        amount: Number(b.amount),
+        payout: Number(b.payout),
+        poolWin: Number(b.poolWin),
+      })
+    }
+  }
+  return Array.from(map.values())
+})
+
 // ---- API ----
 async function loadConfig() {
   const res = await fetch(`${API}/dice/config`, { headers: headers() })
@@ -637,11 +662,11 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         </template>
         <template v-else>
           <div class="bets-head">
-            {{ phase === 'result' ? '本局結果' : '本局下注' }}（{{ state.bets.length }}）<span v-if="myBetsTotal > 0" class="my-total">· 我押 {{ fmt(myBetsTotal) }}</span>
+            {{ phase === 'result' ? '本局結果' : '本局下注' }}（{{ aggregatedBets.length }}）<span v-if="myBetsTotal > 0" class="my-total">· 我押 {{ fmt(myBetsTotal) }}</span>
           </div>
-          <div v-if="!state.bets.length" class="bets-empty">還沒有人下注，下第一注即開局！</div>
+          <div v-if="!aggregatedBets.length" class="bets-empty">還沒有人下注，下第一注即開局！</div>
           <div v-else class="bets-list">
-            <div v-for="(b, i) in state.bets" :key="i" class="bet-chip" :class="{ mine: b.mine, won: b.settled && b.win, lost: b.settled && !b.win }">
+            <div v-for="b in aggregatedBets" :key="b.key" class="bet-chip" :class="{ mine: b.mine, won: b.settled && b.win, lost: b.settled && !b.win }">
               <span class="bet-who">{{ b.mine ? '你' : b.userName }}</span>
               <span class="bet-what">{{ betTypeLabel(b.betType) }}{{ b.betType === 'SUM' || b.betType === 'SINGLE' ? b.pick : '' }}</span>
               <span class="bet-amt">{{ fmt(b.amount) }}</span>
