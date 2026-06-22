@@ -39,6 +39,7 @@ interface RoundState {
   poolWin: number
   bankerName: string | null
   bankroll: number | null
+  remainingCapacity: number | null
   diceEnabled: boolean
   currency: string
   myBalance: number | null
@@ -235,6 +236,25 @@ const effectiveBet = computed(() => Number(config.value.betAmount || 0) * select
 const pick = computed(() =>
   betType.value === 'SINGLE' ? singlePick.value : betType.value === 'SUM' ? sumPick.value : 0,
 )
+
+// 目前玩法的最大總返還倍率(莊家賠付能力預留用)
+const curMaxReturn = computed(() => {
+  const t = betType.value
+  if (t === 'BIG' || t === 'SMALL') return 2
+  if (t === 'SINGLE') return 13
+  if (t === 'TRIPLE') return 1
+  const row = paytable.value.find((r) => r.type === 'SUM' + sumPick.value)
+  return row ? row.multiplier : 0
+})
+const curNet = computed(() => Math.max(0, curMaxReturn.value - 1))
+// 此注上限 = 本局莊家剩餘可承受 ÷ (賠率-1);豹子(net 0)莊家面不限
+const maxBetForCurrent = computed(() => {
+  if (curNet.value <= 0) return Infinity
+  return Math.floor(Number(state.value?.remainingCapacity ?? 0) / curNet.value)
+})
+const overCap = computed(
+  () => maxBetForCurrent.value !== Infinity && effectiveBet.value > maxBetForCurrent.value,
+)
 const betTypeLabel = (t: string): string =>
   ({ BIG: '大', SMALL: '小', SUM: '和', SINGLE: '點數', TRIPLE: '豹子' })[t] ?? t
 
@@ -266,6 +286,7 @@ const canBet = computed(
     !bankerIsMe.value &&
     !closing.value &&
     !placing.value &&
+    !overCap.value &&
     Number(state.value?.myBalance || 0) >= effectiveBet.value,
 )
 function cantBetReason(): string {
@@ -275,6 +296,8 @@ function cantBetReason(): string {
   if (bankerIsMe.value) return '你是莊家，不能玩自己的莊'
   if (closing.value) return '本局已封盤，等待開骰'
   if (Number(s?.myBalance || 0) < effectiveBet.value) return '餘額不足'
+  if (overCap.value)
+    return `此玩法本局上限約 ${fmt(maxBetForCurrent.value)}，莊家賠付能力不足，請降低倍率`
   return ''
 }
 
@@ -582,6 +605,11 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
       </div>
 
       <div class="bet-summary">本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(state.myBalance) }}</div>
+      <div class="cap-hint">
+        此注上限
+        <b :class="{ over: overCap }">{{ maxBetForCurrent === Infinity ? '不限' : fmt(maxBetForCurrent) }}</b>
+        · 莊家本局還可承受 {{ fmt(state.remainingCapacity) }} {{ state.currency }}
+      </div>
       <button class="roll-btn" :disabled="!canBet" @click="placeBet">
         {{ placing ? '下注中…' : closing ? '封盤中…' : '🪙 下注' }}
       </button>
@@ -1023,8 +1051,20 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 .bet-summary {
   text-align: center;
   font-size: 0.9rem;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   color: #cbd5e1;
+}
+.cap-hint {
+  text-align: center;
+  font-size: 0.76rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+.cap-hint b {
+  color: #94a3b8;
+}
+.cap-hint b.over {
+  color: #f87171;
 }
 .roll-btn {
   width: 100%;
