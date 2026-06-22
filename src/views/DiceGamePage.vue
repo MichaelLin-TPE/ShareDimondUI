@@ -59,6 +59,22 @@ interface PayRow {
 }
 const paytable = ref<PayRow[]>([])
 
+// 開獎紀錄(看路) + 排行榜
+interface RecentRound {
+  dice: number[]
+  total: number
+  kind: 'BIG' | 'SMALL' | 'TRIPLE'
+}
+interface RankRow {
+  rank: number
+  userName: string
+  net: number
+  spins: number
+  me: boolean
+}
+const recentRounds = ref<RecentRound[]>([])
+const leaderboard = ref<RankRow[]>([])
+
 // 下注選擇
 const betType = ref<BetType>('BIG')
 const singlePick = ref(1)
@@ -348,6 +364,30 @@ async function loadConfig() {
     : []
 }
 
+async function loadBoards() {
+  try {
+    const [rr, lb] = await Promise.all([
+      fetch(`${API}/dice/recent-rounds?limit=24`, { headers: headers() }),
+      fetch(`${API}/dice/leaderboard?limit=10`, { headers: headers() }),
+    ])
+    if (rr.ok) recentRounds.value = await rr.json()
+    if (lb.ok) {
+      const d = await lb.json()
+      leaderboard.value = Array.isArray(d)
+        ? d.map((r: RankRow) => ({
+            rank: r.rank,
+            userName: r.userName,
+            net: Number(r.net),
+            spins: Number(r.spins),
+            me: !!r.me,
+          }))
+        : []
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 let fetching = false
 async function fetchRound() {
   if (fetching) return
@@ -370,6 +410,7 @@ async function fetchRound() {
         liveResultRoundId.value = null
       }, 7000)
       void animateRoll(d.dice)
+      loadBoards() // 結算後刷新開獎紀錄 + 排行榜
     }
   } catch (e) {
     console.error(e)
@@ -474,6 +515,7 @@ onMounted(async () => {
   loading.value = true
   await loadConfig()
   await fetchRound()
+  loadBoards()
   loading.value = false
 
   const clanId = authStore.member?.clanId
@@ -572,6 +614,22 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         <span v-if="state.poolWin > 0" class="pool-win-tag">🏆 彩金池 {{ fmt(state.poolWin) }}</span>
       </div>
 
+      <!-- 開獎紀錄(看路) -->
+      <div v-if="recentRounds.length" class="road">
+        <span class="road-label">開獎</span>
+        <div class="road-list">
+          <span
+            v-for="(r, i) in recentRounds"
+            :key="i"
+            class="road-chip"
+            :class="r.kind.toLowerCase()"
+            :title="r.dice.join('-') + ' = ' + r.total"
+          >
+            {{ r.kind === 'TRIPLE' ? '豹' : r.total }}
+          </span>
+        </div>
+      </div>
+
       <!-- 本局下注 -->
       <div class="bets-board">
         <template v-if="phase === 'waiting'">
@@ -645,6 +703,18 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         {{ placing ? '下注中…' : closing ? '封盤中…' : '🪙 下注' }}
       </button>
       <p v-if="!canBet && !placing" class="ineligible">{{ cantBetReason() }}</p>
+
+      <!-- 賺錢排行榜 -->
+      <div v-if="leaderboard.length" class="board">
+        <h3>🏆 賺錢排行榜</h3>
+        <div class="rank-list">
+          <div v-for="r in leaderboard" :key="r.rank" class="rank-row" :class="{ me: r.me }">
+            <span class="rank-no">{{ r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '#' + r.rank }}</span>
+            <span class="rank-name">{{ r.me ? '你' : r.userName }}</span>
+            <span class="rank-net" :class="r.net >= 0 ? 'up' : 'down'">{{ r.net >= 0 ? '+' : '−' }}{{ fmt(Math.abs(r.net)) }}</span>
+          </div>
+        </div>
+      </div>
 
       <!-- 賠率表 -->
       <div class="paytable">
@@ -1180,6 +1250,106 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   color: #64748b;
   font-size: 0.75rem;
 }
+
+/* === 開獎紀錄(看路) === */
+.road {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.road-label {
+  flex-shrink: 0;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+.road-list {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+.road-chip {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+.road-chip.big {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.road-chip.small {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.4);
+}
+.road-chip.triple {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #1a1305;
+}
+
+/* === 排行榜 === */
+.board {
+  margin-top: 18px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+.board h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--c-light);
+}
+.rank-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rank-row {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+}
+.rank-row.me {
+  background: rgba(var(--c-light-rgb), 0.12);
+  border: 1px solid rgba(var(--c-light-rgb), 0.35);
+}
+.rank-no {
+  text-align: center;
+}
+.rank-name {
+  color: #e2e8f0;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-net {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.rank-net.up {
+  color: #4ade80;
+}
+.rank-net.down {
+  color: #f87171;
+}
+
 .fair {
   margin-top: 12px;
   font-size: 0.7rem;
