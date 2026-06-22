@@ -29,6 +29,7 @@ import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
 import FaqAssistantPage from '@/views/FaqAssistantPage.vue'
 import SlotMachinePage from '@/views/SlotMachinePage.vue'
+import DiceGamePage from '@/views/DiceGamePage.vue'
 import DepositPage from '@/views/DepositPage.vue'
 import VerifyDepositPage from '@/views/VerifyDepositPage.vue'
 import FaqManagePage from '@/views/FaqManagePage.vue'
@@ -191,6 +192,10 @@ const router = createRouter({
         {
           path: 'slot',
           component: SlotMachinePage,
+        },
+        {
+          path: 'dice',
+          component: DiceGamePage,
         },
         {
           path: 'deposit',
