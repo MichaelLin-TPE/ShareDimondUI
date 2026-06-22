@@ -529,9 +529,20 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
         </button>
       </div>
 
-      <div v-if="betType === 'SINGLE'" class="pick-row">
+      <div v-if="betType === 'SINGLE'" class="single-pick">
         <span class="pick-label">點數</span>
-        <button v-for="n in 6" :key="n" class="pick-btn" :class="{ active: singlePick === n }" @click="singlePick = n">{{ FACES[n] }}</button>
+        <div class="single-grid">
+          <button
+            v-for="n in 6"
+            :key="n"
+            class="die-pick"
+            :class="{ active: singlePick === n }"
+            @click="singlePick = n"
+          >
+            <span class="die-face">{{ FACES[n] }}</span>
+            <span class="die-num">{{ n }} 點</span>
+          </button>
+        </div>
       </div>
       <div v-if="betType === 'SUM'" class="pick-row wrap">
         <span class="pick-label">總點</span>
@@ -896,6 +907,55 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 .pick-btn.active {
   border-color: var(--c-light);
   background: rgba(var(--c-light-rgb), 0.15);
+  color: var(--c-light);
+}
+
+/* 猜點數:大骰面 + 數字標籤,看得清楚是幾點 */
+.single-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.single-grid {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.die-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 56px;
+  border: 1px solid #2e3147;
+  background: #0f111a;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.die-pick .die-face {
+  font-size: 1.7rem;
+  line-height: 1;
+  color: #e2e8f0;
+}
+.die-pick .die-num {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.3px;
+}
+.die-pick.active {
+  border-color: var(--c-light);
+  background: rgba(var(--c-light-rgb), 0.15);
+}
+.die-pick.active .die-face {
+  color: var(--c-light);
+}
+.die-pick.active .die-num {
   color: var(--c-light);
 }
 .bet-summary {
