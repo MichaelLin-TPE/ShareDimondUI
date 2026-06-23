@@ -61,6 +61,14 @@ const isOfficer = computed(
 function canEditAmount(item: { biddingName?: string }) {
   return isOfficer.value && item.biddingName !== '尚未有得標者'
 }
+// 右上角工具按鈕數量(算留白用):$↩(改價+撤銷)、✎✕(開單者)、或幹部多一顆 ✕
+function toolCount(item: { biddingName?: string; showDeleteTicket?: boolean }) {
+  let n = 0
+  if (canEditAmount(item)) n += 2
+  if (item.showDeleteTicket) n += 2
+  else if (isOfficer.value) n += 1
+  return n
+}
 
 // 結標前置:備註仍為「在我身上」(含空值/舊備註,parseRemark 一律視為 onme) = 待繳,不可結標;
 // 已繳倉庫 / 道具給XXX了 = 可移交,可結標
@@ -390,9 +398,9 @@ function clearFilter() {
               </button>
               <button
                 class="tool-btn delete"
-                v-show="item.showDeleteTicket"
+                v-show="item.showDeleteTicket || isOfficer"
                 @click="handleDeleteItem(item)"
-                title="撤單"
+                :title="item.showDeleteTicket ? '撤單' : '撤單(幹部)'"
                 aria-label="撤單"
               >
                 ✕
@@ -401,10 +409,7 @@ function clearFilter() {
 
             <div
               class="item-main"
-              :class="{
-                'has-tools': item.showDeleteTicket || canEditAmount(item),
-                'has-tools-wide': item.showDeleteTicket && canEditAmount(item),
-              }"
+              :style="toolCount(item) ? { paddingRight: 34 * toolCount(item) - 13 + 'px' } : undefined"
             >
               <div class="item-name gold">{{ item.itemName }}</div>
               <div class="boss-name">頭目：{{ item.bossName }}</div>
