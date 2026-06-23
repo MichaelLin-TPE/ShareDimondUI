@@ -38,6 +38,14 @@ const {
 const isOfficer = computed(
   () => authStore.member?.role === 'LEADER' || authStore.member?.role === 'OFFICER',
 )
+// 右上角工具按鈕數量(算留白用):$(改底價,幹部)、✎✕(開單者)、或幹部多一顆 ✕
+function toolCount(item: { showDeleteTicket?: boolean }) {
+  let n = 0
+  if (isOfficer.value) n += 1
+  if (item.showDeleteTicket) n += 2
+  else if (isOfficer.value) n += 1
+  return n
+}
 
 // 標示「自己尚未繳交」的單子 — 開單者是我且備註不是已繳倉庫
 const myName = computed(() => authStore.member?.userName ?? '')
@@ -216,9 +224,9 @@ function isExpanded(code: string): boolean {
             </button>
             <button
               class="tool-btn delete"
-              v-show="item.showDeleteTicket"
+              v-show="item.showDeleteTicket || isOfficer"
               @click="handleDeleteItem(item)"
-              title="撤單"
+              :title="item.showDeleteTicket ? '撤單' : '撤單(幹部)'"
               aria-label="撤單"
             >
               ✕
@@ -227,10 +235,7 @@ function isExpanded(code: string): boolean {
 
           <div
             class="item-main"
-            :class="{
-              'has-tools': item.showDeleteTicket || isOfficer,
-              'has-tools-wide': item.showDeleteTicket && isOfficer,
-            }"
+            :style="toolCount(item) ? { paddingRight: 34 * toolCount(item) - 13 + 'px' } : undefined"
           >
             <div class="item-name gold">{{ item.itemName }}</div>
             <div class="boss-name">BOSS: {{ item.bossName }}</div>
