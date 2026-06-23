@@ -232,7 +232,7 @@ function showMyResult() {
   const net = ret - stake
   let closeMs = 4500
   if (poolWin > 0) {
-    celebration.value = { show: true, tier: 'jackpot', amount: ret, title: '豹子！獨得彩金池' }
+    celebration.value = { show: true, tier: 'jackpot', amount: ret, title: '豹子中彩金池！' }
     playJackpot()
     vibrate([0, 80, 40, 80, 40, 120, 60, 220])
   } else if (net > 0) {
