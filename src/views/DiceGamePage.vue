@@ -1054,11 +1054,15 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
     height: 62vh;
     max-height: none;
     flex: none;
+    /* 手機抽屜浮在遊戲上方,要實心深色背景,不能透明否則會看穿到後面 */
+    background: #131722;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
     border-radius: 16px 16px 0 0;
     transform: translateY(105%);
     transition: transform 0.3s ease;
     z-index: 1500;
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.6);
   }
   .dice-chat.open {
     transform: translateY(0);
