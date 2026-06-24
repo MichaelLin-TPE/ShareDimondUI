@@ -14,7 +14,6 @@ type BetType = 'BIG' | 'SMALL' | 'SUM' | 'SINGLE' | 'TRIPLE'
 const loading = ref(true)
 const config = ref({ currency: '', enabled: false, betAmount: 10, maxPayout: 1000000 })
 const betMultipliers = ref<number[]>([1, 2, 3, 5, 10])
-const selectedMultiplier = ref(1)
 
 interface BetView {
   memberId: number
@@ -265,7 +264,13 @@ const fmt = (n: number | null | undefined) =>
   Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-const effectiveBet = computed(() => Number(config.value.betAmount || 0) * selectedMultiplier.value)
+// 下注金額(可由倍率快選帶入,也可自訂);最小 = 基準注
+const betAmountInput = ref<number | null>(null)
+const minBet = computed(() => Number(config.value.betAmount || 0))
+const effectiveBet = computed(() => Math.floor(Number(betAmountInput.value) || 0))
+function setMult(m: number) {
+  betAmountInput.value = Number(config.value.betAmount || 0) * m
+}
 const pick = computed(() =>
   betType.value === 'SINGLE' ? singlePick.value : betType.value === 'SUM' ? sumPick.value : 0,
 )
@@ -288,6 +293,7 @@ const maxBetForCurrent = computed(() => {
 const overCap = computed(
   () => maxBetForCurrent.value !== Infinity && effectiveBet.value > maxBetForCurrent.value,
 )
+const belowMin = computed(() => effectiveBet.value < minBet.value)
 const betTypeLabel = (t: string): string =>
   ({ BIG: '大', SMALL: '小', SUM: '和', SINGLE: '點數', TRIPLE: '豹子' })[t] ?? t
 
@@ -332,6 +338,7 @@ const canBet = computed(
     !closing.value &&
     !revealLocked.value &&
     !placing.value &&
+    !belowMin.value &&
     !overCap.value &&
     Number(state.value?.myBalance || 0) >= effectiveBet.value,
 )
@@ -342,9 +349,10 @@ function cantBetReason(): string {
   if (bankerIsMe.value) return '你是莊家，不能玩自己的莊'
   if (closing.value) return '本局已封盤，等下一局再下注'
   if (revealLocked.value) return '開獎中，等下一局開放再下注'
-  if (Number(s?.myBalance || 0) < effectiveBet.value) return '餘額不足'
+  if (belowMin.value) return `最小下注 ${fmt(minBet.value)} ${s?.currency ?? ''}`
   if (overCap.value)
-    return `此玩法本局上限約 ${fmt(maxBetForCurrent.value)}，莊家賠付能力不足，請降低倍率`
+    return `此玩法本局上限約 ${fmt(maxBetForCurrent.value)}，請降低金額`
+  if (Number(s?.myBalance || 0) < effectiveBet.value) return '餘額不足'
   return ''
 }
 
@@ -390,9 +398,10 @@ async function loadConfig() {
   }
   if (Array.isArray(d.betMultipliers) && d.betMultipliers.length) {
     betMultipliers.value = d.betMultipliers
-    if (!betMultipliers.value.includes(selectedMultiplier.value)) {
-      selectedMultiplier.value = betMultipliers.value[0] ?? 1
-    }
+  }
+  // 預設下注金額 = 基準注(最小注)
+  if (betAmountInput.value == null || betAmountInput.value <= 0) {
+    betAmountInput.value = Number(d.betAmount) || 0
   }
   paytable.value = Array.isArray(d.paytable)
     ? d.paytable.map(
@@ -534,7 +543,7 @@ async function placeBet() {
       body: JSON.stringify({
         betType: betType.value,
         pick: pick.value,
-        betMultiplier: selectedMultiplier.value,
+        amount: effectiveBet.value,
       }),
     })
     const d = await res.json()
@@ -774,23 +783,37 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
       </div>
 
       <div class="mult-row">
-        <span class="pick-label">倍率</span>
+        <span class="pick-label">快選</span>
         <div class="mult-grid">
           <button
             v-for="m in betMultipliers"
             :key="m"
             class="mult-btn"
-            :class="{ active: selectedMultiplier === m }"
-            @click="selectedMultiplier = m"
+            :class="{ active: effectiveBet === minBet * m }"
+            @click="setMult(m)"
           >
             ×{{ m }}
           </button>
         </div>
       </div>
 
+      <!-- 自訂下注金額 -->
+      <div class="amount-row">
+        <span class="pick-label">金額</span>
+        <input
+          v-model.number="betAmountInput"
+          type="number"
+          class="amount-input"
+          :class="{ bad: belowMin || overCap }"
+          :min="minBet"
+          step="1"
+          placeholder="自訂下注金額"
+        />
+      </div>
+
       <div class="bet-summary">本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(state.myBalance) }}</div>
       <div class="cap-hint">
-        此注上限
+        最小 {{ fmt(minBet) }} · 此注上限
         <b :class="{ over: overCap }">{{ maxBetForCurrent === Infinity ? '不限' : fmt(maxBetForCurrent) }}</b>
         · 莊家本局還可承受 {{ fmt(state.remainingCapacity) }} {{ state.currency }}
       </div>
@@ -1424,6 +1447,34 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   border-color: var(--c-light);
   background: rgba(var(--c-light-rgb), 0.15);
   color: var(--c-light);
+}
+
+/* 自訂下注金額 */
+.amount-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.amount-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.amount-input:focus {
+  outline: none;
+  border-color: var(--c-light);
+}
+.amount-input.bad {
+  border-color: #f87171;
 }
 
 /* 和(總點)下拉選單 */
