@@ -74,6 +74,47 @@ export const useAlert = {
     return selectedCurrency
   },
 
+  // 選擇一位成員(下拉),回傳選到的 memberId(number)或 undefined(取消)
+  selectMember: async (
+    members: { id: number; name: string }[],
+    title = '選擇要補登記的人',
+    confirmText = '補登記 +1',
+  ): Promise<number | undefined> => {
+    if (!members.length) {
+      await SwalApp.fire({
+        title: '沒有可補登記的人',
+        text: '這張單的成員都已在分紅名單中了',
+        icon: 'info',
+        background: '#1e1e1e',
+        color: '#ffffff',
+        confirmButtonText: '關閉',
+        confirmButtonColor: '#b46eff',
+      })
+      return undefined
+    }
+    const inputOptions: Record<string, string> = {}
+    members.forEach((m) => {
+      inputOptions[String(m.id)] = m.name
+    })
+    const { value } = await SwalApp.fire({
+      title,
+      input: 'select',
+      inputOptions,
+      inputPlaceholder: '請選擇成員',
+      background: '#1e1e1e',
+      color: '#ffffff',
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      cancelButtonText: '取消',
+      confirmButtonColor: '#b46eff',
+      cancelButtonColor: '#334155',
+      inputValidator: (v) => {
+        if (!v) return '請選擇一位成員才能繼續！'
+      },
+    })
+    return value ? Number(value) : undefined
+  },
+
   // 成功通知
   success: (message: string, title = '系統通知') => {
     return SwalApp.fire({

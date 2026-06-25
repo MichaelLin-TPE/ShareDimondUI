@@ -15,6 +15,7 @@ const {
   submitRemark,
   handleDeleteItem,
   handleEditBasePrice,
+  handleSupplementAttendance,
   canSubmit,
   showPeopleList,
   getJoinList,
@@ -38,10 +39,11 @@ const {
 const isOfficer = computed(
   () => authStore.member?.role === 'LEADER' || authStore.member?.role === 'OFFICER',
 )
-// 右上角工具按鈕數量(算留白用):$(改底價,幹部)、✎✕(開單者)、或幹部多一顆 ✕
+// 右上角工具按鈕數量(算留白用):$(改底價,幹部)、補(補登記,幹部)、✎✕(開單者)、或幹部多一顆 ✕
 function toolCount(item: { showDeleteTicket?: boolean }) {
   let n = 0
-  if (isOfficer.value) n += 1
+  if (isOfficer.value) n += 1 // $ 改底價
+  if (isOfficer.value) n += 1 // 補 補登記
   if (item.showDeleteTicket) n += 2
   else if (isOfficer.value) n += 1
   return n
@@ -212,6 +214,15 @@ function isExpanded(code: string): boolean {
               aria-label="修改底價/掛單價"
             >
               $
+            </button>
+            <button
+              class="tool-btn supplement"
+              v-if="isOfficer"
+              @click="handleSupplementAttendance(item)"
+              title="補登記 +1"
+              aria-label="補登記 +1"
+            >
+              補
             </button>
             <button
               class="tool-btn remark"
@@ -974,6 +985,16 @@ function isExpanded(code: string): boolean {
   background: rgba(var(--c-light-rgb), 0.15);
   color: var(--c-light);
   border-color: rgba(var(--c-light-rgb), 0.35);
+}
+/* 補登記 — 綠色點綴(新增一個人) */
+.tool-btn.supplement {
+  font-weight: 800;
+  font-size: 12px;
+}
+.tool-btn.supplement:hover {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 /* 物品與來源 */

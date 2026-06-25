@@ -27,6 +27,7 @@ const {
   handleDeleteItem,
   handleEditAmount,
   handleRevokeBuyer,
+  handleSupplementAttendance,
   canSubmit,
   showPeopleList,
   getJoinList,
@@ -61,10 +62,11 @@ const isOfficer = computed(
 function canEditAmount(item: { biddingName?: string }) {
   return isOfficer.value && item.biddingName !== '尚未有得標者'
 }
-// 右上角工具按鈕數量(算留白用):$↩(改價+撤銷)、✎✕(開單者)、或幹部多一顆 ✕
+// 右上角工具按鈕數量(算留白用):$↩(改價+撤銷)、補(補登記,幹部)、✎✕(開單者)、或幹部多一顆 ✕
 function toolCount(item: { biddingName?: string; showDeleteTicket?: boolean }) {
   let n = 0
   if (canEditAmount(item)) n += 2
+  if (isOfficer.value) n += 1 // 補 補登記
   if (item.showDeleteTicket) n += 2
   else if (isOfficer.value) n += 1
   return n
@@ -386,6 +388,15 @@ function clearFilter() {
                 aria-label="撤銷得標者"
               >
                 ↩
+              </button>
+              <button
+                class="tool-btn supplement"
+                v-if="isOfficer"
+                @click="handleSupplementAttendance(item)"
+                title="補登記 +1"
+                aria-label="補登記 +1"
+              >
+                補
               </button>
               <button
                 class="tool-btn remark"
@@ -1439,6 +1450,16 @@ function clearFilter() {
   background: rgba(245, 158, 11, 0.15);
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.35);
+}
+/* 補登記 — 綠色點綴(新增一個人) */
+.tool-btn.supplement {
+  font-weight: 800;
+  font-size: 12px;
+}
+.tool-btn.supplement:hover {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 /* 物品與來源 */
