@@ -3,8 +3,10 @@ import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 import { useBiddingTreasureStore } from '@/stores/biddingTreasure'
+import { useSharedListsStore } from '@/stores/sharedLists'
 
 export function useAuction() {
+  const sharedLists = useSharedListsStore()
   const showModal = ref(false)
   const itemName = ref('')
   const bossName = ref('')
@@ -684,6 +686,52 @@ TimeStamp:currentTimeStamp
     }
   }
 
+  // 幹部補登記:選一位「還沒在這張單分紅名單」的成員,替他補 +1
+  const handleSupplementAttendance = async (item: Treasure) => {
+    if (authStore.member?.role === 'MEMBER') return
+    await sharedLists.loadMembers()
+    const already = new Set(
+      (item.treasureAttendanceList ?? [])
+        .filter((a) => !a.canceled)
+        .map((a) => a.memberId),
+    )
+    const candidates = sharedLists.members
+      .filter((m) => !already.has(m.memberId))
+      .map((m) => ({ id: m.memberId, name: m.memberName }))
+    const userId = await useAlert.selectMember(candidates, `補登記 — ${item.itemName}`)
+    if (userId == null) return
+    await addAttendanceByLeader(item.treasureCode, userId)
+  }
+
+  const addAttendanceByLeader = async (ticketCode: string, userId: number) => {
+    try {
+      const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch('https://api.gameshare-system.com/add-attendance-by-leader', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authStore.authToken}`,
+          'Content-Type': 'application/json',
+          Sign: generateSignature(currentTimeStamp),
+          TimeStamp: currentTimeStamp,
+        },
+        body: JSON.stringify({
+          ticketCode: ticketCode,
+          userId: userId,
+        }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        useAlert.error(data?.message ?? '補登記失敗,請再試一次')
+        return
+      }
+      useAlert.success(data?.message ?? '補登記成功!')
+      fetchOngoingTreasures()
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗')
+    }
+  }
+
   // 共用 store 的 raw 資料,在這裡 filter 出 BIDDING 並做本地 post-processing
   const rebuildAuctions = () => {
     auctions.value = (biddingStore.rawTreasures as unknown as Treasure[])
@@ -882,6 +930,7 @@ TimeStamp:currentTimeStamp
     showCurrencyModal,
     handleDeleteItem,
     handleEditBasePrice,
+    handleSupplementAttendance,
     openAddTreasureDialog,
     showAddTreasureDialog,
     addItemName,
