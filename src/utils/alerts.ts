@@ -92,14 +92,51 @@ export const useAlert = {
       })
       return undefined
     }
-    const inputOptions: Record<string, string> = {}
-    members.forEach((m) => {
-      inputOptions[String(m.id)] = m.name
-    })
-    const { value } = await SwalApp.fire({
+    // SweetAlert 內建的 select/radio 都被預設白底樣式綁死、深色主題壓不動,
+    // 直接自刻一份乾淨清單:一列一人(小圓點 + 名字)、可搜尋、可捲動、選中高亮。
+    const esc = (s: string) =>
+      s.replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
+      )
+    const rows = members
+      .map(
+        (m) => `
+        <button type="button" class="sd-mem-row" data-id="${m.id}">
+          <span class="sd-mem-dot"></span>
+          <span class="sd-mem-name">${esc(m.name)}</span>
+        </button>`,
+      )
+      .join('')
+    const html = `
+      <style>
+        .sd-mem-wrap{display:flex;flex-direction:column;gap:10px}
+        .sd-mem-search{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;
+          border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#f1f5f9;
+          font-size:14px;outline:none}
+        .sd-mem-search:focus{border-color:#b46eff}
+        .sd-mem-list{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow-y:auto;
+          padding:2px;margin:0}
+        .sd-mem-row{display:flex;align-items:center;gap:11px;width:100%;box-sizing:border-box;
+          padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.08);
+          background:rgba(255,255,255,.04);color:#e5e7eb;font-size:15px;text-align:left;
+          cursor:pointer;transition:background .12s,border-color .12s}
+        .sd-mem-row:hover{background:rgba(255,255,255,.1)}
+        .sd-mem-row.selected{background:rgba(180,110,255,.22);border-color:#b46eff;color:#fff;font-weight:700}
+        .sd-mem-dot{width:16px;height:16px;border-radius:50%;border:2px solid #64748b;flex:0 0 auto;
+          box-sizing:border-box;transition:all .12s}
+        .sd-mem-row.selected .sd-mem-dot{border-color:#b46eff;background:#b46eff;box-shadow:inset 0 0 0 3px #1e1e1e}
+        .sd-mem-name{flex:1 1 auto;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .sd-mem-empty{color:#94a3b8;font-size:13px;padding:14px;text-align:center}
+      </style>
+      <div class="sd-mem-wrap">
+        <input class="sd-mem-search" type="text" placeholder="🔍 搜尋成員…" />
+        <div class="sd-mem-list">${rows}</div>
+      </div>`
+
+    let selectedId: number | null = null
+    const result = await SwalApp.fire({
       title,
-      input: 'radio',
-      inputOptions,
+      html,
       background: '#1e1e1e',
       color: '#ffffff',
       showCancelButton: true,
@@ -107,54 +144,52 @@ export const useAlert = {
       cancelButtonText: '取消',
       confirmButtonColor: '#b46eff',
       cancelButtonColor: '#334155',
-      // 原生 select 的選項清單是 OS 白底,深色主題壓不到 → 改用 radio。
-      // 但 SweetAlert 的 .swal2-radio 預設是白底,文字白色會變白底白字 →
-      // 這裡把容器設透明、文字設亮色,並排成「圈圈+名字」左對齊、可捲動的直向清單。
+      focusConfirm: false,
       didOpen: () => {
-        const radio = document.querySelector('.swal2-radio') as HTMLElement | null
-        if (radio) {
-          Object.assign(radio.style, {
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            gap: '4px',
-            maxHeight: '45vh',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            width: '100%',
-            margin: '0',
-            padding: '4px',
-            background: 'transparent',
-            boxSizing: 'border-box',
+        const popup = Swal.getPopup()
+        if (!popup) return
+        const list = popup.querySelector('.sd-mem-list') as HTMLElement
+        const search = popup.querySelector('.sd-mem-search') as HTMLInputElement
+        const rowEls = Array.from(popup.querySelectorAll<HTMLButtonElement>('.sd-mem-row'))
+        rowEls.forEach((row) => {
+          row.addEventListener('click', () => {
+            rowEls.forEach((r) => r.classList.remove('selected'))
+            row.classList.add('selected')
+            selectedId = Number(row.dataset.id)
+            Swal.resetValidationMessage()
           })
-          radio.querySelectorAll('label').forEach((el) => {
-            Object.assign((el as HTMLElement).style, {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-start',
-              gap: '10px',
-              width: '100%',
-              margin: '0',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '15px',
-              color: '#e5e7eb',
-              background: 'rgba(255,255,255,0.05)',
-              boxSizing: 'border-box',
-            })
+        })
+        search?.addEventListener('input', () => {
+          const q = search.value.trim().toLowerCase()
+          let visible = 0
+          rowEls.forEach((row) => {
+            const name = (row.querySelector('.sd-mem-name')?.textContent ?? '').toLowerCase()
+            const show = !q || name.includes(q)
+            row.style.display = show ? '' : 'none'
+            if (show) visible++
           })
-          // 內層文字 span 也強制亮色,避免被預設樣式蓋成白色(白底白字)
-          radio.querySelectorAll('.swal2-label').forEach((el) => {
-            ;(el as HTMLElement).style.color = '#e5e7eb'
-          })
-        }
+          let empty = list.querySelector('.sd-mem-empty') as HTMLElement | null
+          if (visible === 0) {
+            if (!empty) {
+              empty = document.createElement('div')
+              empty.className = 'sd-mem-empty'
+              empty.textContent = '找不到符合的成員'
+              list.appendChild(empty)
+            }
+          } else if (empty) {
+            empty.remove()
+          }
+        })
       },
-      inputValidator: (v) => {
-        if (!v) return '請選擇一位成員才能繼續！'
+      preConfirm: () => {
+        if (selectedId == null) {
+          Swal.showValidationMessage('請先點選一位成員')
+          return false
+        }
+        return selectedId
       },
     })
-    return value ? Number(value) : undefined
+    return result.isConfirmed && typeof result.value === 'number' ? result.value : undefined
   },
 
   // 成功通知
