@@ -204,12 +204,10 @@ async function fetchRound() {
     localStartDeadline.value = d.status === 'WAITING' ? Date.now() + Number(d.startRemainingMs || 0) : 0
     localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
     // 開局發牌特效:剛從非理牌狀態轉成理牌、且我有牌(現場開局,非重整)
-    if (d.status === 'ARRANGING' && d.mineSeated && d.roundId !== dealtAnimRound
+    if (d.status === 'ARRANGING' && d.mineSeated && d.myCards && d.roundId !== dealtAnimRound
         && prevStatus !== null && prevStatus !== 'ARRANGING') {
       dealtAnimRound = d.roundId
-      dealing.value = true
-      if (dealTimer) clearTimeout(dealTimer)
-      dealTimer = window.setTimeout(() => { dealing.value = false }, 1400)
+      startDealAnimation(d.myCards)
     }
     prevStatus = d.status
     initArrange(d)
@@ -331,11 +329,27 @@ function triggerCelebrate(type: string, text: string) {
   celeTimer = window.setTimeout(() => { celebrate.value = null }, type === 'pool' ? 5000 : 3500)
 }
 
-// ---- 發牌特效 ----
+// ---- 發牌特效(真的把我的牌一張張發出來,再整理排序) ----
 const dealing = ref(false)
+const dealHand = ref<string[]>([])
+const dealPhase = ref<'deal' | 'sort'>('deal')
 let dealtAnimRound: number | null = null
 let prevStatus: string | null = null
 let dealTimer: number | undefined
+let sortTimer: number | undefined
+function startDealAnimation(cards: string[]) {
+  dealHand.value = [...cards] // 先按發牌順序攤出來
+  dealPhase.value = 'deal'
+  dealing.value = true
+  if (dealTimer) clearTimeout(dealTimer)
+  if (sortTimer) clearTimeout(sortTimer)
+  // 發完(約 1s) → 整理:重新排序,卡片滑到定位(transition-group move)
+  sortTimer = window.setTimeout(() => {
+    dealPhase.value = 'sort'
+    dealHand.value = sortCards(cards)
+  }, 1050)
+  dealTimer = window.setTimeout(() => { dealing.value = false }, 2200)
+}
 
 // ---- 再來一局邀請 ----
 const inviteDismissed = ref<number | null>(null)
@@ -346,6 +360,8 @@ const rematch = () => post('/thirteen/rematch')
 const acceptInvite = () => sit()
 function declineInvite() {
   inviteDismissed.value = state.value?.roundId ?? null
+  // 通知後端我婉拒了 → 其他人不必等我,可立即開牌
+  fetch(`${API}/thirteen/decline`, { method: 'POST', headers: headers() }).catch(() => {})
 }
 
 // ---- 衍生 ----
@@ -388,6 +404,7 @@ onUnmounted(() => {
   if (resultTimer) clearTimeout(resultTimer)
   if (celeTimer) clearTimeout(celeTimer)
   if (dealTimer) clearTimeout(dealTimer)
+  if (sortTimer) clearTimeout(sortTimer)
   fetch(`${API}/thirteen/leave`, { method: 'POST', headers: headers() }).catch(() => {})
 })
 </script>
@@ -402,13 +419,22 @@ onUnmounted(() => {
       </div>
     </transition>
 
-    <!-- 開局發牌特效 -->
+    <!-- 開局發牌特效:從牌堆把我的牌一張張發出來,再整理排序 -->
     <transition name="t13-cele">
       <div v-if="dealing" class="t13-dealing">
-        <div class="t13-deal-text">🀄 發牌中…</div>
-        <div class="t13-deal-cards">
-          <span v-for="n in 13" :key="n" class="t13-deal-card" :style="{ animationDelay: ((n - 1) * 75) + 'ms' }"></span>
-        </div>
+        <div class="t13-deck"><span></span><span></span><span></span></div>
+        <div class="t13-deal-text">{{ dealPhase === 'deal' ? '🀄 發牌中…' : '✋ 整理牌…' }}</div>
+        <transition-group name="t13-deal" tag="div" class="t13-deal-hand">
+          <div
+            v-for="(c, i) in dealHand"
+            :key="c"
+            class="t13-card deal"
+            :class="{ red: isRed(c) }"
+            :style="dealPhase === 'deal' ? { animationDelay: (i * 70) + 'ms' } : {}"
+          >
+            <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
+          </div>
+        </transition-group>
       </div>
     </transition>
 
@@ -803,16 +829,25 @@ onUnmounted(() => {
 .t13-cele-enter-active, .t13-cele-leave-active { transition: opacity .35s; }
 .t13-cele-enter-from, .t13-cele-leave-to { opacity: 0; }
 
-/* 開局發牌特效 */
-.t13-dealing { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: rgba(8,10,18,.88); }
-.t13-deal-text { font-size: 22px; font-weight: 900; color: #d8b4fe; text-shadow: 0 2px 14px rgba(180,110,255,.7); }
-.t13-deal-cards { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 320px; }
-.t13-deal-card { width: 30px; height: 42px; border-radius: 5px; background: repeating-linear-gradient(45deg, #b46eff, #b46eff 4px, #7c3aed 4px, #7c3aed 8px); border: 2px solid #fff; opacity: 0; animation: t13-deal-in .5s cubic-bezier(.2,.8,.3,1) both; }
-@keyframes t13-deal-in {
-  0% { opacity: 0; transform: translateY(-220px) rotate(-90deg) scale(.6); }
-  70% { opacity: 1; }
-  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+/* 開局發牌特效:牌堆 + 一張張發出我的牌 + 整理 */
+.t13-dealing { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(8,10,18,.92); }
+.t13-deck { position: relative; width: 46px; height: 64px; }
+.t13-deck span { position: absolute; inset: 0; border-radius: 7px; border: 2px solid #fff;
+  background: repeating-linear-gradient(45deg, #b46eff, #b46eff 5px, #7c3aed 5px, #7c3aed 10px);
+  animation: t13-deck-pulse 1s ease-in-out infinite; }
+.t13-deck span:nth-child(2) { transform: translate(3px, -3px); opacity: .8; }
+.t13-deck span:nth-child(3) { transform: translate(6px, -6px); opacity: .6; }
+@keyframes t13-deck-pulse { 0%,100% { box-shadow: 0 0 0 rgba(180,110,255,0); } 50% { box-shadow: 0 0 18px rgba(180,110,255,.8); } }
+.t13-deal-text { font-size: 20px; font-weight: 900; color: #d8b4fe; text-shadow: 0 2px 14px rgba(180,110,255,.7); }
+.t13-deal-hand { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 340px; }
+.t13-card.deal { animation: t13-card-deal .45s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes t13-card-deal {
+  0% { opacity: 0; transform: translate(-40vw, -180px) rotate(-120deg) scale(.5); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: translate(0,0) rotate(0) scale(1); }
 }
+/* 整理:重新排序時卡片平滑滑到定位 */
+.t13-deal-move { transition: transform .5s cubic-bezier(.2,.7,.3,1); }
 
 /* 再來一局邀請 */
 .t13-invite-mask { position: fixed; inset: 0; z-index: 9997; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.7); padding: 20px; }
