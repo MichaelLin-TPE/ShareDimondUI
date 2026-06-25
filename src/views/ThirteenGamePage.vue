@@ -275,6 +275,9 @@ async function submit() {
   await post('/thirteen/submit', { front: front.value, middle: middle.value, back: back.value })
 }
 
+interface SuggestOpt { front: string[]; middle: string[]; back: string[] }
+const suggestOptions = ref<SuggestOpt[]>([])
+const showSuggest = ref(false)
 async function autoSuggest() {
   if (busy.value || state.value?.mySubmitted) return
   busy.value = true
@@ -282,12 +285,22 @@ async function autoSuggest() {
     const res = await fetch(`${API}/thirteen/suggest`, { headers: headers() })
     const d = await res.json().catch(() => null)
     if (!res.ok) { useAlert.error(d?.message ?? '取得建議失敗'); return }
-    front.value = [...d.front]
-    middle.value = [...d.middle]
-    back.value = [...d.back]
-    pool.value = []
+    const opts: SuggestOpt[] = Array.isArray(d) ? d : d ? [d] : []
+    if (opts.length === 0) { useAlert.error('沒有可用的理牌建議'); return }
+    if (opts.length === 1 && opts[0]) { applyOption(opts[0]); return }
+    suggestOptions.value = opts
+    showSuggest.value = true
   } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy.value = false }
 }
+function applyOption(o: SuggestOpt) {
+  front.value = [...o.front]
+  middle.value = [...o.middle]
+  back.value = [...o.back]
+  pool.value = []
+  activeZone.value = 'back'
+  showSuggest.value = false
+}
+const OPT_TAGS = ['🛡 穩尾(後墩最強)', '⚔ 強中(中墩最強)', '👑 沖頭(前墩拿道獎)']
 
 // ---- 聊天室 ----
 interface ChatMsg { userName: string; text: string; ts: number }
@@ -461,6 +474,31 @@ onUnmounted(() => {
             <button class="t13-btn primary" :disabled="busy" @click="acceptInvite">✅ 同意，再來一局</button>
             <button class="t13-btn ghost" :disabled="busy" @click="declineInvite">✖ 不玩了</button>
           </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 智能理牌:挑一種 -->
+    <transition name="t13-cele">
+      <div v-if="showSuggest" class="t13-suggest-mask" @click.self="showSuggest = false">
+        <div class="t13-suggest">
+          <div class="t13-suggest-title">🪄 選一種理牌（最佳 {{ suggestOptions.length }} 種）</div>
+          <div class="t13-suggest-opts">
+            <div v-for="(o, oi) in suggestOptions" :key="oi" class="t13-suggest-opt" :class="{ rec: oi === 0 }">
+              <div class="t13-suggest-tag">
+                {{ OPT_TAGS[oi] ?? ('方案 ' + (oi + 1)) }}<span v-if="oi === 0" class="rec-badge">推薦</span>
+              </div>
+              <div v-for="(row, ri) in [o.back, o.middle, o.front]" :key="ri" class="t13-suggest-row">
+                <span class="rl">{{ ri === 0 ? '尾' : ri === 1 ? '中' : '頭' }}</span>
+                <button v-for="c in displayHand(row)" :key="c" class="t13-card sm" :class="suitClass(c)" disabled>
+                  <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
+                </button>
+                <span class="ty">{{ row.length ? evaluate(row).label : '' }}</span>
+              </div>
+              <button class="t13-btn primary" @click="applyOption(o)">選這個</button>
+            </div>
+          </div>
+          <button class="t13-btn ghost" @click="showSuggest = false">取消</button>
         </div>
       </div>
     </transition>
@@ -880,4 +918,18 @@ onUnmounted(() => {
 .t13-invite-btns .t13-btn { width: 100%; box-sizing: border-box; padding: 14px; font-size: 15px; }
 .t13-after-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .t13-after-actions .t13-btn { flex: 1 1 0; min-width: 140px; }
+
+/* 智能理牌選項 */
+.t13-suggest-mask { position: fixed; inset: 0; z-index: 9997; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.72); padding: 16px; }
+.t13-suggest { background: #1b2030; border: 1px solid rgba(var(--c-light-rgb),.4); border-radius: 16px; padding: 16px; max-width: 420px; width: 100%; max-height: 88vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.t13-suggest-title { font-size: 16px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 12px; }
+.t13-suggest-opts { display: flex; flex-direction: column; gap: 10px; }
+.t13-suggest-opt { border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px; background: rgba(255,255,255,.03); }
+.t13-suggest-opt.rec { border-color: rgba(var(--c-light-rgb),.55); background: rgba(var(--c-light-rgb),.06); }
+.t13-suggest-tag { font-weight: 800; color: var(--c-light); font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.rec-badge { font-size: 11px; background: var(--c-light); color: var(--c-on); border-radius: 6px; padding: 1px 7px; font-weight: 800; }
+.t13-suggest-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
+.t13-suggest-row .rl { font-size: 11px; color: #94a3b8; width: 16px; flex: 0 0 auto; }
+.t13-suggest-row .ty { font-size: 12px; color: var(--c-light); margin-left: 6px; white-space: nowrap; }
+.t13-suggest-opt .t13-btn.primary { width: 100%; margin-top: 8px; padding: 10px; }
 </style>
