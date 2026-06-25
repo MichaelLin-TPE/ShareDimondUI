@@ -98,9 +98,8 @@ export const useAlert = {
     })
     const { value } = await SwalApp.fire({
       title,
-      input: 'select',
+      input: 'radio',
       inputOptions,
-      inputPlaceholder: '請選擇成員',
       background: '#1e1e1e',
       color: '#ffffff',
       showCancelButton: true,
@@ -108,6 +107,30 @@ export const useAlert = {
       cancelButtonText: '取消',
       confirmButtonColor: '#b46eff',
       cancelButtonColor: '#334155',
+      // 原生 select 的選項清單是 OS 白底,深色主題壓不到 → 改用 radio,
+      // 並把清單排成可捲動的直向清單(成員多也不爆版、名字看得清楚)
+      didOpen: () => {
+        const radio = document.querySelector('.swal2-radio') as HTMLElement | null
+        if (radio) {
+          radio.style.display = 'flex'
+          radio.style.flexDirection = 'column'
+          radio.style.alignItems = 'flex-start'
+          radio.style.gap = '2px'
+          radio.style.maxHeight = '45vh'
+          radio.style.overflowY = 'auto'
+          radio.style.width = '100%'
+          radio.style.margin = '0'
+          radio.querySelectorAll('label').forEach((el) => {
+            const label = el as HTMLElement
+            label.style.width = '100%'
+            label.style.margin = '0'
+            label.style.padding = '8px 10px'
+            label.style.borderRadius = '8px'
+            label.style.cursor = 'pointer'
+            label.style.fontSize = '15px'
+          })
+        }
+      },
       inputValidator: (v) => {
         if (!v) return '請選擇一位成員才能繼續！'
       },
