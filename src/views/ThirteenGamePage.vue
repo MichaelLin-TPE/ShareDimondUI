@@ -44,11 +44,25 @@ interface SeatView {
   poolWin?: number
   autoArranged?: boolean
 }
+interface RoomSummary {
+  roundId: number
+  hostName: string
+  players: number
+  maxPlayers: number
+  baseBet: number
+  status: string
+  rematch: boolean
+}
 interface State {
   thirteenEnabled: boolean
+  inLobby: boolean
+  rooms?: RoomSummary[]
   status: string
   roundId: number | null
   baseBet: number
+  isHost: boolean
+  hostName?: string
+  maxPlayers: number
   currency: string
   online: string[]
   myBalance: number | null
@@ -59,6 +73,8 @@ interface State {
   mySubmitted: boolean
   rematchInvite?: boolean
   rematchByName?: string
+  rematchRoundId?: number
+  rematchRemainingMs?: number
   myCards?: string[]
   myFront?: string[]
   myMiddle?: string[]
@@ -214,6 +230,9 @@ async function fetchRound() {
     if (!res.ok) return
     const d: State = await res.json()
     state.value = d
+    // 進到真正的房間(或本來就在大廳)就解除「回大廳」暫時旗標
+    if (d.inLobby || d.status === 'WAITING' || d.status === 'ARRANGING') forceLobby.value = false
+    localInviteDeadline.value = d.rematchInvite ? Date.now() + Number(d.rematchRemainingMs || 0) : 0
     localStartDeadline.value = d.status === 'WAITING' ? Date.now() + Number(d.startRemainingMs || 0) : 0
     localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
     // 開局發牌特效:剛從非理牌狀態轉成理牌、且我有牌(現場開局,非重整)
@@ -263,8 +282,20 @@ async function post(path: string, body?: unknown) {
   } finally { busy.value = false }
 }
 
-const sit = () => post('/thirteen/sit')
-const standUp = () => post('/thirteen/standup')
+async function createRoom() {
+  const v = await useAlert.inputDialog('設定底注（1 水多少）', '開房間')
+  const bet = Math.floor(Number(v))
+  if (!bet || bet < 1) { if (v != null) useAlert.error('底注至少 1'); return }
+  await post('/thirteen/room/create', { baseBet: bet })
+}
+const joinRoom = (roundId: number) => post('/thirteen/room/join', { roundId })
+const leaveRoom = () => post('/thirteen/room/leave')
+const startRoom = () => post('/thirteen/room/start')
+async function kick(memberId: number, name: string) {
+  const ok = await useAlert.confirm(`確定要把「${name}」踢出房間嗎？`)
+  if (!ok?.isConfirmed) return
+  await post('/thirteen/room/kick', { memberId })
+}
 
 async function submit() {
   if (!allPlaced.value) { useAlert.error('請把 13 張都擺好(頭3/中5/尾5)'); return }
@@ -378,29 +409,34 @@ function startDealAnimation(cards: string[]) {
 
 // ---- 再來一局邀請 ----
 const inviteDismissed = ref<number | null>(null)
+const localInviteDeadline = ref(0)
 const showInvite = computed(() =>
-  !!state.value?.rematchInvite && state.value?.roundId !== inviteDismissed.value && !state.value?.mineSeated,
+  !!state.value?.rematchInvite && state.value?.rematchRoundId !== inviteDismissed.value,
+)
+const inviteCountdown = computed(() =>
+  Math.max(0, Math.ceil((localInviteDeadline.value - nowMs.value) / 1000)),
 )
 const rematch = () => post('/thirteen/rematch')
-const acceptInvite = () => sit()
+function acceptInvite() {
+  const rid = state.value?.rematchRoundId
+  if (rid) joinRoom(rid)
+}
 function declineInvite() {
-  inviteDismissed.value = state.value?.roundId ?? null
+  const rid = state.value?.rematchRoundId ?? null
+  inviteDismissed.value = rid
   // 通知後端我婉拒了 → 其他人不必等我,可立即開牌
-  fetch(`${API}/thirteen/decline`, { method: 'POST', headers: headers() }).catch(() => {})
+  fetch(`${API}/thirteen/decline`, { method: 'POST', headers: headers(), body: JSON.stringify({ roundId: rid }) }).catch(() => {})
 }
 
 // ---- 衍生 ----
+const forceLobby = ref(false) // 結算後按「回大廳」先在前端回大廳(後端結算房還會留30秒)
+const showLobby = computed(() => !!state.value?.inLobby || forceLobby.value)
 const seatedCount = computed(() => state.value?.seats?.length ?? 0)
-const canSit = computed(() => {
-  const s = state.value
-  if (!s || !s.thirteenEnabled) return false
-  if (s.status === 'ARRANGING') return false
-  if (s.status === 'WAITING' && s.mineSeated) return false
-  if (s.status === 'WAITING' && seatedCount.value >= config.value.maxPlayers) return false
-  return true
-})
 const myResult = computed(() => state.value?.seats?.find((x) => x.mine))
-const escrowNeeded = computed(() => config.value.baseBet * 12 * (config.value.maxPlayers - 1))
+// 凍結賭本 = 該房底注 × 36(房間內用 state.baseBet)
+const escrowNeeded = computed(() => Number(state.value?.baseBet ?? config.value.baseBet) * 12 * (config.value.maxPlayers - 1))
+const isWaiting = computed(() => state.value?.status === 'WAITING')
+const canStart = computed(() => !!state.value?.isHost && isWaiting.value && seatedCount.value >= config.value.minPlayers)
 
 // ---- WS + 心跳 ----
 let ws: StompHandle | null = null
@@ -469,6 +505,7 @@ onUnmounted(() => {
         <div class="t13-invite">
           <div class="t13-invite-emoji">🀄</div>
           <div class="t13-invite-title">{{ state?.rematchByName || '有人' }} 邀請你再來一局！</div>
+          <div class="t13-invite-count">⏱ {{ inviteCountdown }} 秒內回應，沒按視同離開</div>
           <div class="t13-invite-sub">同意就回座位續戰（凍結賭本 {{ fmt(escrowNeeded) }} {{ config.currency }}），不同意就略過。</div>
           <div class="t13-invite-btns">
             <button class="t13-btn primary" :disabled="busy" @click="acceptInvite">✅ 同意，再來一局</button>
@@ -527,15 +564,40 @@ onUnmounted(() => {
           <span class="t13-online-names">{{ (state?.online ?? []).join('、') || '—' }}</span>
         </div>
 
-        <!-- 牌桌座位 -->
+        <!-- 大廳:房間清單 -->
+        <div v-if="showLobby" class="t13-lobby">
+          <div class="t13-lobby-head">
+            <span>🀄 對戰房間</span>
+            <button class="t13-btn primary mini" :disabled="busy" @click="createRoom">＋ 開房間</button>
+          </div>
+          <div v-if="(state?.rooms ?? []).length === 0" class="t13-lobby-empty">
+            目前沒有房間。按「開房間」設定底注(1 水多少)開一桌，邀大家來玩 🎲
+          </div>
+          <div v-for="r in (state?.rooms ?? [])" :key="r.roundId" class="t13-room-row">
+            <div class="t13-room-info">
+              <div class="t13-room-host">👑 {{ r.hostName }}<span v-if="r.rematch" class="t13-room-tag">再戰</span></div>
+              <div class="t13-room-meta">底注 {{ fmt(r.baseBet) }} · {{ r.players }}/{{ r.maxPlayers }} 人 · {{ r.status === 'WAITING' ? '湊人中' : '對戰中' }}</div>
+            </div>
+            <button
+              class="t13-btn primary mini"
+              :disabled="busy || r.status !== 'WAITING' || r.players >= r.maxPlayers"
+              @click="joinRoom(r.roundId)"
+            >
+              {{ r.status !== 'WAITING' ? '進行中' : r.players >= r.maxPlayers ? '已滿' : '加入' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 房間內 -->
+        <template v-else>
         <div class="t13-table">
           <div class="t13-table-head">
-            <span v-if="state?.status === 'WAITING'">🪑 湊人中 {{ seatedCount }}/{{ config.maxPlayers }}（滿 {{ config.minPlayers }} 人即開牌）</span>
+            <span v-if="state?.status === 'WAITING'">🪑 湊人中 {{ seatedCount }}/{{ state?.maxPlayers }}</span>
             <span v-else-if="state?.status === 'ARRANGING'">🃏 理牌中（{{ seatedCount }} 人對戰）</span>
             <span v-else-if="state?.status === 'SETTLED'">🏆 本局結果</span>
-            <span v-else>桌面空著，按「坐下開桌」開一桌吧</span>
             <span v-if="countdown > 0" class="t13-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
           </div>
+          <div class="t13-room-bar">房主 👑 {{ state?.hostName }} · 底注 {{ fmt(state?.baseBet) }} {{ config.currency }}（凍結 {{ fmt(escrowNeeded) }}）</div>
 
           <div class="t13-seats">
             <div
@@ -546,6 +608,10 @@ onUnmounted(() => {
             >
               <div class="t13-seat-name">
                 {{ s.userName }}<span v-if="s.mine"> (你)</span>
+                <button
+                  v-if="state?.isHost && !s.mine && state?.status === 'WAITING'"
+                  class="t13-kick" @click="kick(s.memberId, s.userName)" title="踢出"
+                >✕</button>
               </div>
               <div class="t13-seat-status">
                 <template v-if="state?.status === 'ARRANGING'">
@@ -557,15 +623,12 @@ onUnmounted(() => {
             <div v-if="seatedCount === 0" class="t13-seat empty">尚無玩家</div>
           </div>
 
-          <!-- 坐下 / 離桌 -->
-          <div class="t13-lobby-actions" v-if="state?.status !== 'ARRANGING'">
-            <button v-if="canSit" class="t13-btn primary" :disabled="busy" @click="sit">
-              坐下開桌（凍結賭本 {{ fmt(escrowNeeded) }}）
-            </button>
-            <button v-if="state?.status === 'WAITING' && state?.mineSeated" class="t13-btn ghost" :disabled="busy" @click="standUp">
-              離桌（退回賭本）
-            </button>
-            <p class="t13-note">坐下會先凍結 {{ fmt(escrowNeeded) }} {{ config.currency }} 當賭本，結算後退回沒輸掉的部分。</p>
+          <!-- 房主控制 / 離開 -->
+          <div class="t13-lobby-actions" v-if="state?.status === 'WAITING'">
+            <button v-if="canStart" class="t13-btn primary" :disabled="busy" @click="startRoom">▶ 開始（{{ seatedCount }} 人）</button>
+            <p v-else-if="state?.isHost" class="t13-note">等人到齊（至少 {{ config.minPlayers }} 人）就能按開始；滿 {{ state?.maxPlayers }} 人自動開始。</p>
+            <p v-else class="t13-note">等房主開始；滿 {{ state?.maxPlayers }} 人自動開始。</p>
+            <button class="t13-btn ghost" :disabled="busy" @click="leaveRoom">離開房間（退回賭本）</button>
           </div>
         </div>
 
@@ -682,10 +745,11 @@ onUnmounted(() => {
           </div>
 
           <div class="t13-after-actions">
-            <button v-if="myResult" class="t13-btn primary" :disabled="busy" @click="rematch">🔁 再來一局（揪原班人馬）</button>
-            <button v-if="canSit" class="t13-btn ghost" :disabled="busy" @click="sit">＋ 再來一桌</button>
+            <button v-if="myResult" class="t13-btn primary" :disabled="busy" @click="rematch">🔁 再來一局（揪原班人馬，10秒）</button>
+            <button class="t13-btn ghost" :disabled="busy" @click="forceLobby = true">🏠 回大廳</button>
           </div>
         </div>
+        </template>
 
         <!-- 排行榜 / 我的戰績 -->
         <div class="t13-panel">
@@ -763,6 +827,17 @@ onUnmounted(() => {
 .t13-empty { text-align: center; color: #94a3b8; padding: 40px 12px; background: #131722; border-radius: 12px; line-height: 1.8; }
 .t13-online { font-size: 12px; color: #94a3b8; background: #131722; border-radius: 8px; padding: 6px 10px; }
 .t13-online-names { color: #cbd5e1; }
+/* 大廳 */
+.t13-lobby { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
+.t13-lobby-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; margin-bottom: 10px; }
+.t13-lobby-empty { color: #94a3b8; font-size: 13px; text-align: center; padding: 24px 8px; line-height: 1.7; }
+.t13-room-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; margin-bottom: 8px; background: rgba(255,255,255,.03); }
+.t13-room-host { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.t13-room-tag { font-size: 10px; background: rgba(var(--c-light-rgb),.2); color: var(--c-light); border-radius: 5px; padding: 1px 6px; }
+.t13-room-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.t13-room-bar { font-size: 12px; color: #cbd5e1; margin-bottom: 10px; }
+.t13-kick { margin-left: 8px; border: none; background: rgba(248,113,113,.18); color: #fca5a5; border-radius: 6px; width: 20px; height: 20px; cursor: pointer; font-weight: 800; line-height: 1; padding: 0; }
+.t13-kick:hover { background: rgba(248,113,113,.32); }
 .t13-table { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
 .t13-table-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
 .t13-countdown { color: #fbbf24; font-variant-numeric: tabular-nums; }
@@ -912,7 +987,8 @@ onUnmounted(() => {
 .t13-invite-mask { position: fixed; inset: 0; z-index: 9997; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.7); padding: 20px; }
 .t13-invite { background: #1b2030; border: 1px solid rgba(var(--c-light-rgb),.4); border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
 .t13-invite-emoji { font-size: 52px; animation: t13-pop .5s cubic-bezier(.2,1.4,.4,1) both; }
-.t13-invite-title { font-size: 18px; font-weight: 800; color: #fff; margin: 8px 0; }
+.t13-invite-title { font-size: 18px; font-weight: 800; color: #fff; margin: 8px 0 4px; }
+.t13-invite-count { font-size: 14px; font-weight: 800; color: #fbbf24; margin-bottom: 8px; }
 .t13-invite-sub { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 16px; }
 .t13-invite-btns { display: flex; flex-direction: column; gap: 10px; }
 .t13-invite-btns .t13-btn { width: 100%; box-sizing: border-box; padding: 14px; font-size: 15px; }
