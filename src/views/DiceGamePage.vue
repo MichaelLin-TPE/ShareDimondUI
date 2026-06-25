@@ -31,6 +31,7 @@ interface RoundState {
   status: string
   roundId: number | null
   deadlineEpochMs: number
+  remainingMs: number
   dice: number[] | null
   bets: BetView[]
   online: string[]
@@ -297,10 +298,12 @@ const belowMin = computed(() => effectiveBet.value < minBet.value)
 const betTypeLabel = (t: string): string =>
   ({ BIG: '大', SMALL: '小', SUM: '和', SINGLE: '點數', TRIPLE: '豹子' })[t] ?? t
 
+// 用伺服器給的剩餘時間換算成「本地截止時刻」,倒數只看本地經過時間 → 免裝置時鐘誤差
+const localDeadlineMs = ref(0)
 const countdown = computed(() => {
   const s = state.value
   if (!s || s.status !== 'BETTING') return 0
-  return Math.max(0, Math.ceil((s.deadlineEpochMs - nowMs.value) / 1000))
+  return Math.max(0, Math.ceil((localDeadlineMs.value - nowMs.value) / 1000))
 })
 // 倒數剩 ≤1 秒就封盤(擋最後一秒,避免壓秒/與結算競態)
 const closing = computed(() => state.value?.status === 'BETTING' && countdown.value <= 1)
@@ -488,6 +491,8 @@ async function fetchRound() {
     if (!res.ok) return
     const d: RoundState = await res.json()
     state.value = d
+    // 用「本地當下 + 伺服器剩餘時間」當截止時刻,倒數只看本地經過時間(免裝置時鐘誤差)
+    localDeadlineMs.value = d.status === 'BETTING' ? Date.now() + Number(d.remainingMs || 0) : 0
     if (!initialized) {
       // 首次載入 / 重整:不重播動畫,把目前已結算局標記成「已看過」→ 桌面顯示等待,不再跑一次
       initialized = true
