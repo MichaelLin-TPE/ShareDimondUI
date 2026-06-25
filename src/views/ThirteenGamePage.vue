@@ -4,7 +4,13 @@ import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
 import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
-import { evaluate, isFoul, cardSuit } from '@/utils/thirteenEval'
+import { evaluate, isFoul, cardSuit, cardRank } from '@/utils/thirteenEval'
+
+// 依數字→花色由小到大排序(花色序 ♣♦♥♠)
+const SUIT_ORDER: Record<string, number> = { C: 0, D: 1, H: 2, S: 3 }
+function sortCards(cards: string[]): string[] {
+  return [...cards].sort((a, b) => (cardRank(a) - cardRank(b)) || ((SUIT_ORDER[cardSuit(a)] ?? 0) - (SUIT_ORDER[cardSuit(b)] ?? 0)))
+}
 
 const API = 'https://api.gameshare-system.com'
 const authStore = useAuthStore()
@@ -51,6 +57,8 @@ interface State {
   arrangeRemainingMs: number
   mineSeated: boolean
   mySubmitted: boolean
+  rematchInvite?: boolean
+  rematchByName?: string
   myCards?: string[]
   myFront?: string[]
   myMiddle?: string[]
@@ -101,7 +109,7 @@ function initArrange(d: State) {
     front.value = []
     middle.value = []
     back.value = []
-    pool.value = [...d.myCards]
+    pool.value = sortCards(d.myCards)
   }
   selected.value = null
 }
@@ -147,7 +155,7 @@ function resetArrange() {
   front.value = []
   middle.value = []
   back.value = []
-  pool.value = [...state.value.myCards]
+  pool.value = sortCards(state.value.myCards)
   selected.value = null
 }
 
@@ -195,6 +203,15 @@ async function fetchRound() {
     state.value = d
     localStartDeadline.value = d.status === 'WAITING' ? Date.now() + Number(d.startRemainingMs || 0) : 0
     localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
+    // 開局發牌特效:剛從非理牌狀態轉成理牌、且我有牌(現場開局,非重整)
+    if (d.status === 'ARRANGING' && d.mineSeated && d.roundId !== dealtAnimRound
+        && prevStatus !== null && prevStatus !== 'ARRANGING') {
+      dealtAnimRound = d.roundId
+      dealing.value = true
+      if (dealTimer) clearTimeout(dealTimer)
+      dealTimer = window.setTimeout(() => { dealing.value = false }, 1400)
+    }
+    prevStatus = d.status
     initArrange(d)
     if (d.status === 'SETTLED' && d.roundId && d.roundId !== lastSettledRound) {
       const fresh = lastSettledRound !== null // 首次載入(重整)不放煙火
@@ -314,6 +331,23 @@ function triggerCelebrate(type: string, text: string) {
   celeTimer = window.setTimeout(() => { celebrate.value = null }, type === 'pool' ? 5000 : 3500)
 }
 
+// ---- 發牌特效 ----
+const dealing = ref(false)
+let dealtAnimRound: number | null = null
+let prevStatus: string | null = null
+let dealTimer: number | undefined
+
+// ---- 再來一局邀請 ----
+const inviteDismissed = ref<number | null>(null)
+const showInvite = computed(() =>
+  !!state.value?.rematchInvite && state.value?.roundId !== inviteDismissed.value && !state.value?.mineSeated,
+)
+const rematch = () => post('/thirteen/rematch')
+const acceptInvite = () => sit()
+function declineInvite() {
+  inviteDismissed.value = state.value?.roundId ?? null
+}
+
 // ---- 衍生 ----
 const seatedCount = computed(() => state.value?.seats?.length ?? 0)
 const canSit = computed(() => {
@@ -353,6 +387,7 @@ onUnmounted(() => {
   if (heartbeat) clearInterval(heartbeat)
   if (resultTimer) clearTimeout(resultTimer)
   if (celeTimer) clearTimeout(celeTimer)
+  if (dealTimer) clearTimeout(dealTimer)
   fetch(`${API}/thirteen/leave`, { method: 'POST', headers: headers() }).catch(() => {})
 })
 </script>
@@ -364,6 +399,31 @@ onUnmounted(() => {
       <div v-if="celebrate" class="t13-celebrate" :class="celebrate.type" @click="celebrate = null">
         <div class="t13-cele-burst">{{ celebrate.type === 'win' ? '🎉' : '🀄' }}</div>
         <div class="t13-cele-text">{{ celebrate.text }}</div>
+      </div>
+    </transition>
+
+    <!-- 開局發牌特效 -->
+    <transition name="t13-cele">
+      <div v-if="dealing" class="t13-dealing">
+        <div class="t13-deal-text">🀄 發牌中…</div>
+        <div class="t13-deal-cards">
+          <span v-for="n in 13" :key="n" class="t13-deal-card" :style="{ animationDelay: ((n - 1) * 75) + 'ms' }"></span>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 再來一局邀請 -->
+    <transition name="t13-cele">
+      <div v-if="showInvite" class="t13-invite-mask">
+        <div class="t13-invite">
+          <div class="t13-invite-emoji">🀄</div>
+          <div class="t13-invite-title">{{ state?.rematchByName || '有人' }} 邀請你再來一局！</div>
+          <div class="t13-invite-sub">同意就回座位續戰（凍結賭本 {{ fmt(escrowNeeded) }} {{ config.currency }}），不同意就略過。</div>
+          <div class="t13-invite-btns">
+            <button class="t13-btn primary" :disabled="busy" @click="acceptInvite">✅ 同意，再來一局</button>
+            <button class="t13-btn ghost" :disabled="busy" @click="declineInvite">✖ 不玩了</button>
+          </div>
+        </div>
       </div>
     </transition>
 
@@ -543,7 +603,10 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <button v-if="canSit" class="t13-btn primary" :disabled="busy" @click="sit">再來一桌</button>
+          <div class="t13-after-actions">
+            <button v-if="myResult" class="t13-btn primary" :disabled="busy" @click="rematch">🔁 再來一局（揪原班人馬）</button>
+            <button v-if="canSit" class="t13-btn ghost" :disabled="busy" @click="sit">＋ 再來一桌</button>
+          </div>
         </div>
 
         <!-- 排行榜 / 我的戰績 -->
@@ -739,4 +802,25 @@ onUnmounted(() => {
 @keyframes t13-spin { 0%,100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.12); } }
 .t13-cele-enter-active, .t13-cele-leave-active { transition: opacity .35s; }
 .t13-cele-enter-from, .t13-cele-leave-to { opacity: 0; }
+
+/* 開局發牌特效 */
+.t13-dealing { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: rgba(8,10,18,.88); }
+.t13-deal-text { font-size: 22px; font-weight: 900; color: #d8b4fe; text-shadow: 0 2px 14px rgba(180,110,255,.7); }
+.t13-deal-cards { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 320px; }
+.t13-deal-card { width: 30px; height: 42px; border-radius: 5px; background: repeating-linear-gradient(45deg, #b46eff, #b46eff 4px, #7c3aed 4px, #7c3aed 8px); border: 2px solid #fff; opacity: 0; animation: t13-deal-in .5s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes t13-deal-in {
+  0% { opacity: 0; transform: translateY(-220px) rotate(-90deg) scale(.6); }
+  70% { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+/* 再來一局邀請 */
+.t13-invite-mask { position: fixed; inset: 0; z-index: 9997; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.7); padding: 20px; }
+.t13-invite { background: #1b2030; border: 1px solid rgba(180,110,255,.4); border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.t13-invite-emoji { font-size: 52px; animation: t13-pop .5s cubic-bezier(.2,1.4,.4,1) both; }
+.t13-invite-title { font-size: 18px; font-weight: 800; color: #fff; margin: 8px 0; }
+.t13-invite-sub { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 16px; }
+.t13-invite-btns { display: flex; flex-direction: column; gap: 8px; }
+.t13-after-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.t13-after-actions .t13-btn { flex: 1 1 0; min-width: 140px; }
 </style>
