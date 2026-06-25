@@ -105,9 +105,9 @@ function initArrange(d: State) {
   if (arrangedForRound === d.roundId) return // 已初始化此局,別覆蓋使用者擺好的牌
   arrangedForRound = d.roundId
   if (d.mySubmitted && d.myFront) {
-    front.value = [...d.myFront]
-    middle.value = [...(d.myMiddle ?? [])]
-    back.value = [...(d.myBack ?? [])]
+    front.value = displayHand(d.myFront)
+    middle.value = displayHand(d.myMiddle ?? [])
+    back.value = displayHand(d.myBack ?? [])
     pool.value = []
   } else {
     front.value = []
@@ -138,7 +138,7 @@ function addToActive(card: string) {
     return
   }
   removeFromAll(card)
-  arr.value.push(card)
+  arr.value = displayHand([...arr.value, card]) // 放進去就依牌型分組排好,方便看
   // 該區滿了 → 自動跳到下一個還沒滿的區(尾→中→頭)
   if (arr.value.length >= ZCAP[z]) {
     const order: Zone[] = ['back', 'middle', 'front']
@@ -149,7 +149,7 @@ function addToActive(card: string) {
 function removeToPool(card: string) {
   if (state.value?.mySubmitted) return
   removeFromAll(card)
-  pool.value.push(card)
+  pool.value = sortCards([...pool.value, card]) // 退回的牌也保持排序
 }
 function resetArrange() {
   if (state.value?.mySubmitted || !state.value?.myCards) return
@@ -293,9 +293,9 @@ async function autoSuggest() {
   } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy.value = false }
 }
 function applyOption(o: SuggestOpt) {
-  front.value = [...o.front]
-  middle.value = [...o.middle]
-  back.value = [...o.back]
+  front.value = displayHand(o.front)
+  middle.value = displayHand(o.middle)
+  back.value = displayHand(o.back)
   pool.value = []
   activeZone.value = 'back'
   showSuggest.value = false
