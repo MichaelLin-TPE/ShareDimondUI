@@ -197,11 +197,21 @@ async function fetchRound() {
     localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
     initArrange(d)
     if (d.status === 'SETTLED' && d.roundId && d.roundId !== lastSettledRound) {
+      const fresh = lastSettledRound !== null // 首次載入(重整)不放煙火
       lastSettledRound = d.roundId
       showResult.value = d.roundId
       if (resultTimer) clearTimeout(resultTimer)
       resultTimer = window.setTimeout(() => { showResult.value = null }, 12000)
       arrangedForRound = null // 下一局重新理牌
+      loadBoards()
+      if (fresh) {
+        const me = d.seats?.find((x) => x.mine)
+        if (me) {
+          if ((me.poolWin ?? 0) > 0) triggerCelebrate('pool', `🀄 ${me.specialZh ?? '特殊牌'} 中彩金池 +${fmt(me.poolWin)}！`)
+          else if (me.special) triggerCelebrate('special', `🀄 ${me.specialZh}！`)
+          else if ((me.netUnits ?? 0) >= 6) triggerCelebrate('win', `🎉 大贏 ${me.netUnits} 水！`)
+        }
+      }
     }
   } catch (e) { console.error(e) } finally { fetching = false }
 }
@@ -252,6 +262,58 @@ async function autoSuggest() {
   } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy.value = false }
 }
 
+// ---- 聊天室 ----
+interface ChatMsg { userName: string; text: string; ts: number }
+const chatOpen = ref(false)
+const chatMessages = ref<ChatMsg[]>([])
+const chatDraft = ref('')
+const chatSending = ref(false)
+async function loadChat() {
+  try {
+    const res = await fetch(`${API}/thirteen/chat`, { headers: headers() })
+    if (!res.ok) return
+    chatMessages.value = await res.json()
+  } catch (e) { console.error(e) }
+}
+async function sendChat() {
+  const text = chatDraft.value.trim()
+  if (!text || chatSending.value) return
+  chatSending.value = true
+  try {
+    const res = await fetch(`${API}/thirteen/chat`, { method: 'POST', headers: headers(), body: JSON.stringify({ text }) })
+    const d = await res.json().catch(() => null)
+    if (!res.ok) { useAlert.error(d?.message ?? '送出失敗'); return }
+    chatDraft.value = ''
+    await loadChat()
+  } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { chatSending.value = false }
+}
+
+// ---- 排行榜 / 我的戰績 ----
+interface RankRow { rank: number; userName: string; net: number; spins: number; me: boolean }
+interface HistRow { id: number; netUnits: number; settleAmount: number; poolWin: number; foul: boolean; special?: string | null }
+const boardsOpen = ref(false)
+const leaderboard = ref<RankRow[]>([])
+const myHistory = ref<HistRow[]>([])
+async function loadBoards() {
+  try {
+    const [lb, hi] = await Promise.all([
+      fetch(`${API}/thirteen/leaderboard?limit=10`, { headers: headers() }),
+      fetch(`${API}/thirteen/history?size=15`, { headers: headers() }),
+    ])
+    if (lb.ok) leaderboard.value = await lb.json()
+    if (hi.ok) { const p = await hi.json(); myHistory.value = p.content ?? [] }
+  } catch (e) { console.error(e) }
+}
+
+// ---- 尊榮中獎動畫 ----
+const celebrate = ref<{ type: string; text: string } | null>(null)
+let celeTimer: number | undefined
+function triggerCelebrate(type: string, text: string) {
+  celebrate.value = { type, text }
+  if (celeTimer) clearTimeout(celeTimer)
+  celeTimer = window.setTimeout(() => { celebrate.value = null }, type === 'pool' ? 5000 : 3500)
+}
+
 // ---- 衍生 ----
 const seatedCount = computed(() => state.value?.seats?.length ?? 0)
 const canSit = computed(() => {
@@ -272,11 +334,14 @@ onMounted(async () => {
   loading.value = true
   await loadConfig()
   await fetchRound()
+  loadBoards()
+  loadChat()
   loading.value = false
   const clanId = authStore.member?.clanId
   if (clanId) {
     ws = createReconnectingStomp(`/topic/thirteen/${clanId}`, (body) => {
       if (body === 'THIRTEEN_UPDATED') fetchRound()
+      else if (body === 'THIRTEEN_CHAT') loadChat()
     })
   }
   tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
@@ -287,12 +352,21 @@ onUnmounted(() => {
   if (tickTimer) clearInterval(tickTimer)
   if (heartbeat) clearInterval(heartbeat)
   if (resultTimer) clearTimeout(resultTimer)
+  if (celeTimer) clearTimeout(celeTimer)
   fetch(`${API}/thirteen/leave`, { method: 'POST', headers: headers() }).catch(() => {})
 })
 </script>
 
 <template>
   <div class="t13-shell">
+    <!-- 尊榮中獎動畫 -->
+    <transition name="t13-cele">
+      <div v-if="celebrate" class="t13-celebrate" :class="celebrate.type" @click="celebrate = null">
+        <div class="t13-cele-burst">{{ celebrate.type === 'win' ? '🎉' : '🀄' }}</div>
+        <div class="t13-cele-text">{{ celebrate.text }}</div>
+      </div>
+    </transition>
+
     <div class="t13-page">
       <!-- 頁首 -->
       <div class="t13-head">
@@ -472,6 +546,57 @@ onUnmounted(() => {
           <button v-if="canSit" class="t13-btn primary" :disabled="busy" @click="sit">再來一桌</button>
         </div>
 
+        <!-- 排行榜 / 我的戰績 -->
+        <div class="t13-panel">
+          <button class="t13-panel-toggle" @click="boardsOpen = !boardsOpen">
+            🏆 排行榜 / 我的戰績 <span>{{ boardsOpen ? '▲' : '▼' }}</span>
+          </button>
+          <div v-if="boardsOpen" class="t13-panel-body">
+            <div class="t13-board-col">
+              <h4>💰 賺錢排行榜</h4>
+              <div v-if="leaderboard.length === 0" class="t13-board-empty">尚無戰績</div>
+              <div v-for="r in leaderboard" :key="r.rank" class="t13-rank-row" :class="{ me: r.me }">
+                <span class="rk">{{ r.rank }}</span>
+                <span class="nm">{{ r.userName }}</span>
+                <span class="games">{{ r.spins }} 局</span>
+                <span class="net" :class="{ pos: r.net > 0, neg: r.net < 0 }">{{ r.net > 0 ? '+' : '' }}{{ fmt(r.net) }}</span>
+              </div>
+            </div>
+            <div class="t13-board-col">
+              <h4>📜 我的近期</h4>
+              <div v-if="myHistory.length === 0" class="t13-board-empty">還沒玩過</div>
+              <div v-for="h in myHistory" :key="h.id" class="t13-hist-row">
+                <span class="res" :class="{ pos: h.netUnits > 0, neg: h.netUnits < 0 }">
+                  {{ h.foul ? '倒水' : h.netUnits > 0 ? `贏${h.netUnits}水` : h.netUnits < 0 ? `輸${-h.netUnits}水` : '平' }}
+                </span>
+                <span v-if="h.special" class="sp">{{ '🀄' }}</span>
+                <span class="amt" :class="{ pos: h.settleAmount > 0, neg: h.settleAmount < 0 }">
+                  {{ h.settleAmount > 0 ? '+' : '' }}{{ fmt(h.settleAmount + (h.poolWin || 0)) }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 聊天室 -->
+        <div class="t13-panel">
+          <button class="t13-panel-toggle" @click="chatOpen = !chatOpen">
+            💬 賭桌聊天 <span>{{ chatOpen ? '▲' : '▼' }}</span>
+          </button>
+          <div v-if="chatOpen" class="t13-panel-body chat">
+            <div class="t13-chat-msgs">
+              <div v-if="chatMessages.length === 0" class="t13-board-empty">還沒人說話，來聊兩句 🗣️</div>
+              <div v-for="(m, i) in chatMessages" :key="i" class="t13-chat-msg">
+                <b>{{ m.userName }}</b><span>{{ m.text }}</span>
+              </div>
+            </div>
+            <div class="t13-chat-input">
+              <input v-model="chatDraft" maxlength="100" placeholder="說點什麼…" @keyup.enter="sendChat" />
+              <button :disabled="chatSending || !chatDraft.trim()" @click="sendChat">送</button>
+            </div>
+          </div>
+        </div>
+
         <!-- 特殊牌型說明 -->
         <details class="t13-rules">
           <summary>📜 規則 / 特殊牌型</summary>
@@ -564,4 +689,54 @@ onUnmounted(() => {
 .t13-rules { background: #131722; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #94a3b8; }
 .t13-rules summary { cursor: pointer; color: #cbd5e1; font-weight: 700; }
 .t13-rules p { line-height: 1.7; }
+
+/* 開牌翻牌動畫(整桌依序浮現) */
+.t13-reveal-seat { animation: t13-flip-in .45s cubic-bezier(.2,.7,.3,1) both; }
+.t13-reveal-seat:nth-child(2) { animation-delay: .12s; }
+.t13-reveal-seat:nth-child(3) { animation-delay: .24s; }
+.t13-reveal-seat:nth-child(4) { animation-delay: .36s; }
+@keyframes t13-flip-in {
+  from { opacity: 0; transform: perspective(600px) rotateX(-35deg) translateY(14px); }
+  to   { opacity: 1; transform: perspective(600px) rotateX(0) translateY(0); }
+}
+
+/* 面板(排行榜/聊天) */
+.t13-panel { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; }
+.t13-panel-toggle { width: 100%; background: transparent; border: none; color: #cbd5e1; font-weight: 700; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
+.t13-panel-body { padding: 0 12px 12px; display: flex; gap: 14px; }
+.t13-board-col { flex: 1 1 0; min-width: 0; }
+.t13-board-col h4 { margin: 0 0 8px; font-size: 13px; color: #94a3b8; }
+.t13-board-empty { font-size: 12px; color: #64748b; padding: 8px 0; }
+.t13-rank-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.t13-rank-row.me { color: #d8b4fe; font-weight: 700; }
+.t13-rank-row .rk { width: 18px; color: #94a3b8; }
+.t13-rank-row .nm { flex: 1 1 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t13-rank-row .games { font-size: 11px; color: #64748b; }
+.t13-rank-row .net.pos, .t13-hist-row .res.pos, .t13-hist-row .amt.pos { color: #86efac; }
+.t13-rank-row .net.neg, .t13-hist-row .res.neg, .t13-hist-row .amt.neg { color: #fca5a5; }
+.t13-hist-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.05); }
+.t13-hist-row .res { width: 56px; }
+.t13-hist-row .amt { margin-left: auto; }
+.t13-panel-body.chat { flex-direction: column; }
+.t13-chat-msgs { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+.t13-chat-msg { font-size: 13px; line-height: 1.4; }
+.t13-chat-msg b { color: #b46eff; margin-right: 6px; }
+.t13-chat-msg span { color: #cbd5e1; word-break: break-word; }
+.t13-chat-input { display: flex; gap: 8px; margin-top: 10px; }
+.t13-chat-input input { flex: 1 1 0; min-width: 0; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 9px 12px; color: #f1f5f9; outline: none; }
+.t13-chat-input input:focus { border-color: #b46eff; }
+.t13-chat-input button { flex: 0 0 52px; height: 38px; align-self: center; border: none; border-radius: 8px; background: #b46eff; color: #fff; font-weight: 700; cursor: pointer; box-sizing: border-box; }
+.t13-chat-input button:disabled { background: #4b3a66; color: #9ca3af; }
+
+/* 尊榮中獎動畫 */
+.t13-celebrate { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer;
+  background: radial-gradient(circle at center, rgba(180,110,255,.25), rgba(0,0,0,.82)); }
+.t13-celebrate.pool { background: radial-gradient(circle at center, rgba(251,191,36,.3), rgba(0,0,0,.85)); }
+.t13-cele-burst { font-size: 96px; animation: t13-pop .6s cubic-bezier(.2,1.4,.4,1) both, t13-spin 2.5s ease-in-out infinite .6s; }
+.t13-cele-text { font-size: 26px; font-weight: 900; color: #fff; text-shadow: 0 2px 18px rgba(180,110,255,.9); text-align: center; padding: 0 20px; animation: t13-pop .5s ease both .15s; }
+.t13-celebrate.pool .t13-cele-text { text-shadow: 0 2px 18px rgba(251,191,36,.9); }
+@keyframes t13-pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes t13-spin { 0%,100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.12); } }
+.t13-cele-enter-active, .t13-cele-leave-active { transition: opacity .35s; }
+.t13-cele-enter-from, .t13-cele-leave-to { opacity: 0; }
 </style>
