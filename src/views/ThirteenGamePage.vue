@@ -1,0 +1,567 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { useAlert } from '@/utils/alerts'
+import { generateSignature } from '@/utils/SignTools'
+import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
+import { evaluate, isFoul, cardSuit } from '@/utils/thirteenEval'
+
+const API = 'https://api.gameshare-system.com'
+const authStore = useAuthStore()
+
+const headers = (): Record<string, string> => {
+  const ts = Math.floor(Date.now() / 1000).toString()
+  return {
+    Authorization: `Bearer ${authStore.authToken}`,
+    'Content-Type': 'application/json',
+    Sign: generateSignature(ts),
+    TimeStamp: ts,
+  }
+}
+const fmt = (n: number | null | undefined) =>
+  Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
+
+interface SeatView {
+  memberId: number
+  userName: string
+  submitted: boolean
+  mine: boolean
+  front?: string[]
+  middle?: string[]
+  back?: string[]
+  foul?: boolean
+  special?: string | null
+  specialZh?: string | null
+  netUnits?: number
+  settleAmount?: number
+  rake?: number
+  poolWin?: number
+  autoArranged?: boolean
+}
+interface State {
+  thirteenEnabled: boolean
+  status: string
+  roundId: number | null
+  baseBet: number
+  currency: string
+  online: string[]
+  myBalance: number | null
+  poolBalance: number
+  startRemainingMs: number
+  arrangeRemainingMs: number
+  mineSeated: boolean
+  mySubmitted: boolean
+  myCards?: string[]
+  myFront?: string[]
+  myMiddle?: string[]
+  myBack?: string[]
+  myFoul?: boolean
+  seats: SeatView[]
+  poolWin?: number
+}
+
+const loading = ref(true)
+const state = ref<State | null>(null)
+const config = ref({ enabled: false, baseBet: 0, currency: '', minPlayers: 2, maxPlayers: 4, lobbySeconds: 60, arrangeSeconds: 90 })
+
+// ---- 倒數(本地經過時間,免裝置時鐘誤差) ----
+const nowMs = ref(Date.now())
+const localStartDeadline = ref(0)
+const localArrangeDeadline = ref(0)
+let tickTimer: number | undefined
+const countdown = computed(() => {
+  const s = state.value
+  if (!s) return 0
+  if (s.status === 'WAITING') return Math.max(0, Math.ceil((localStartDeadline.value - nowMs.value) / 1000))
+  if (s.status === 'ARRANGING') return Math.max(0, Math.ceil((localArrangeDeadline.value - nowMs.value) / 1000))
+  return 0
+})
+
+// ---- 理牌本地狀態 ----
+const front = ref<string[]>([])
+const middle = ref<string[]>([])
+const back = ref<string[]>([])
+const pool = ref<string[]>([]) // 尚未擺放
+const selected = ref<string | null>(null)
+let arrangedForRound: number | null = null
+const busy = ref(false)
+
+const ZCAP = { front: 3, middle: 5, back: 5 }
+
+function initArrange(d: State) {
+  if (d.status !== 'ARRANGING' || !d.mineSeated || !d.myCards) return
+  if (arrangedForRound === d.roundId) return // 已初始化此局,別覆蓋使用者擺好的牌
+  arrangedForRound = d.roundId
+  if (d.mySubmitted && d.myFront) {
+    front.value = [...d.myFront]
+    middle.value = [...(d.myMiddle ?? [])]
+    back.value = [...(d.myBack ?? [])]
+    pool.value = []
+  } else {
+    front.value = []
+    middle.value = []
+    back.value = []
+    pool.value = [...d.myCards]
+  }
+  selected.value = null
+}
+
+function zoneOf(card: string): 'front' | 'middle' | 'back' | 'pool' {
+  if (front.value.includes(card)) return 'front'
+  if (middle.value.includes(card)) return 'middle'
+  if (back.value.includes(card)) return 'back'
+  return 'pool'
+}
+function removeFromAll(card: string) {
+  front.value = front.value.filter((c) => c !== card)
+  middle.value = middle.value.filter((c) => c !== card)
+  back.value = back.value.filter((c) => c !== card)
+  pool.value = pool.value.filter((c) => c !== card)
+}
+function tapCard(card: string) {
+  if (state.value?.mySubmitted) return
+  selected.value = selected.value === card ? null : card
+}
+function placeTo(zone: 'front' | 'middle' | 'back') {
+  if (state.value?.mySubmitted) return
+  const card = selected.value
+  if (!card) return
+  const arr = zone === 'front' ? front : zone === 'middle' ? middle : back
+  if (zoneOf(card) === zone) return
+  if (arr.value.length >= ZCAP[zone]) {
+    useAlert.error(`${zone === 'front' ? '頭墩' : zone === 'middle' ? '中墩' : '尾墩'}已滿`)
+    return
+  }
+  removeFromAll(card)
+  arr.value.push(card)
+  selected.value = null
+}
+function sendBack(card: string) {
+  if (state.value?.mySubmitted) return
+  removeFromAll(card)
+  pool.value.push(card)
+  selected.value = null
+}
+function resetArrange() {
+  if (state.value?.mySubmitted || !state.value?.myCards) return
+  front.value = []
+  middle.value = []
+  back.value = []
+  pool.value = [...state.value.myCards]
+  selected.value = null
+}
+
+const evalFront = computed(() => (front.value.length === 3 ? evaluate(front.value).label : ''))
+const evalMiddle = computed(() => (middle.value.length === 5 ? evaluate(middle.value).label : ''))
+const evalBack = computed(() => (back.value.length === 5 ? evaluate(back.value).label : ''))
+const allPlaced = computed(() => front.value.length === 3 && middle.value.length === 5 && back.value.length === 5)
+const foulNow = computed(() => allPlaced.value && isFoul(front.value, middle.value, back.value))
+
+// ---- 牌面顯示 ----
+const SUIT = { C: '♣', D: '♦', H: '♥', S: '♠' } as Record<string, string>
+function suitSym(code: string) { return SUIT[cardSuit(code)] ?? '' }
+function rankLabel(code: string) { return code.slice(0, -1) }
+function isRed(code: string) { const s = cardSuit(code); return s === 'D' || s === 'H' }
+
+// ---- API ----
+async function loadConfig() {
+  try {
+    const res = await fetch(`${API}/thirteen/config`, { headers: headers() })
+    if (!res.ok) return
+    const d = await res.json()
+    config.value = {
+      enabled: !!d.enabled,
+      baseBet: Number(d.baseBet),
+      currency: d.currency ?? '',
+      minPlayers: Number(d.minPlayers ?? 2),
+      maxPlayers: Number(d.maxPlayers ?? 4),
+      lobbySeconds: Number(d.lobbySeconds ?? 60),
+      arrangeSeconds: Number(d.arrangeSeconds ?? 90),
+    }
+  } catch (e) { console.error(e) }
+}
+
+let fetching = false
+let lastSettledRound: number | null = null
+const showResult = ref<number | null>(null)
+let resultTimer: number | undefined
+async function fetchRound() {
+  if (fetching) return
+  fetching = true
+  try {
+    const res = await fetch(`${API}/thirteen/round`, { headers: headers() })
+    if (!res.ok) return
+    const d: State = await res.json()
+    state.value = d
+    localStartDeadline.value = d.status === 'WAITING' ? Date.now() + Number(d.startRemainingMs || 0) : 0
+    localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
+    initArrange(d)
+    if (d.status === 'SETTLED' && d.roundId && d.roundId !== lastSettledRound) {
+      lastSettledRound = d.roundId
+      showResult.value = d.roundId
+      if (resultTimer) clearTimeout(resultTimer)
+      resultTimer = window.setTimeout(() => { showResult.value = null }, 12000)
+      arrangedForRound = null // 下一局重新理牌
+    }
+  } catch (e) { console.error(e) } finally { fetching = false }
+}
+
+async function post(path: string, body?: unknown) {
+  if (busy.value) return
+  busy.value = true
+  try {
+    const res = await fetch(`${API}${path}`, {
+      method: 'POST',
+      headers: headers(),
+      body: body ? JSON.stringify(body) : undefined,
+    })
+    const d = await res.json().catch(() => null)
+    if (!res.ok) { useAlert.error(d?.message ?? '操作失敗'); return false }
+    if (d?.message) useAlert.success(d.message)
+    await fetchRound()
+    return true
+  } catch (e) {
+    console.error(e); useAlert.error('連線失敗'); return false
+  } finally { busy.value = false }
+}
+
+const sit = () => post('/thirteen/sit')
+const standUp = () => post('/thirteen/standup')
+
+async function submit() {
+  if (!allPlaced.value) { useAlert.error('請把 13 張都擺好(頭3/中5/尾5)'); return }
+  if (foulNow.value) {
+    const ok = await useAlert.confirm('目前是「倒水」(後墩<中墩 或 中墩<前墩),會直接輸給每一家！確定要這樣交牌?')
+    if (!ok?.isConfirmed) return
+  }
+  await post('/thirteen/submit', { front: front.value, middle: middle.value, back: back.value })
+}
+
+async function autoSuggest() {
+  if (busy.value || state.value?.mySubmitted) return
+  busy.value = true
+  try {
+    const res = await fetch(`${API}/thirteen/suggest`, { headers: headers() })
+    const d = await res.json().catch(() => null)
+    if (!res.ok) { useAlert.error(d?.message ?? '取得建議失敗'); return }
+    front.value = [...d.front]
+    middle.value = [...d.middle]
+    back.value = [...d.back]
+    pool.value = []
+    selected.value = null
+  } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy.value = false }
+}
+
+// ---- 衍生 ----
+const seatedCount = computed(() => state.value?.seats?.length ?? 0)
+const canSit = computed(() => {
+  const s = state.value
+  if (!s || !s.thirteenEnabled) return false
+  if (s.status === 'ARRANGING') return false
+  if (s.status === 'WAITING' && s.mineSeated) return false
+  if (s.status === 'WAITING' && seatedCount.value >= config.value.maxPlayers) return false
+  return true
+})
+const myResult = computed(() => state.value?.seats?.find((x) => x.mine))
+const escrowNeeded = computed(() => config.value.baseBet * 6 * (config.value.maxPlayers - 1))
+
+// ---- WS + 心跳 ----
+let ws: StompHandle | null = null
+let heartbeat: number | undefined
+onMounted(async () => {
+  loading.value = true
+  await loadConfig()
+  await fetchRound()
+  loading.value = false
+  const clanId = authStore.member?.clanId
+  if (clanId) {
+    ws = createReconnectingStomp(`/topic/thirteen/${clanId}`, (body) => {
+      if (body === 'THIRTEEN_UPDATED') fetchRound()
+    })
+  }
+  tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
+  heartbeat = window.setInterval(fetchRound, 8000)
+})
+onUnmounted(() => {
+  if (ws) ws.disconnect()
+  if (tickTimer) clearInterval(tickTimer)
+  if (heartbeat) clearInterval(heartbeat)
+  if (resultTimer) clearTimeout(resultTimer)
+  fetch(`${API}/thirteen/leave`, { method: 'POST', headers: headers() }).catch(() => {})
+})
+</script>
+
+<template>
+  <div class="t13-shell">
+    <div class="t13-page">
+      <!-- 頁首 -->
+      <div class="t13-head">
+        <div class="t13-title">🀄 十三支 <span class="t13-sub">玩家互賭 · 系統不抽頭只抽水進池</span></div>
+        <div class="t13-stats">
+          <div class="t13-stat"><span>彩金池</span><b>{{ config.currency }} {{ fmt(state?.poolBalance) }}</b></div>
+          <div class="t13-stat"><span>我的餘額</span><b>{{ config.currency }} {{ fmt(state?.myBalance) }}</b></div>
+          <div class="t13-stat"><span>底注(一水)</span><b>{{ fmt(state?.baseBet ?? config.baseBet) }}</b></div>
+        </div>
+      </div>
+
+      <div v-if="loading" class="t13-empty">載入中…</div>
+
+      <div v-else-if="!state?.thirteenEnabled" class="t13-empty">
+        🚫 本血盟尚未開放十三支<br /><small>請管理員到「設置」開啟</small>
+      </div>
+
+      <template v-else>
+        <!-- 在線 -->
+        <div class="t13-online">
+          🟢 遊戲室在線 {{ state?.online?.length ?? 0 }} 人：
+          <span class="t13-online-names">{{ (state?.online ?? []).join('、') || '—' }}</span>
+        </div>
+
+        <!-- 牌桌座位 -->
+        <div class="t13-table">
+          <div class="t13-table-head">
+            <span v-if="state?.status === 'WAITING'">🪑 湊人中 {{ seatedCount }}/{{ config.maxPlayers }}（滿 {{ config.minPlayers }} 人即開牌）</span>
+            <span v-else-if="state?.status === 'ARRANGING'">🃏 理牌中（{{ seatedCount }} 人對戰）</span>
+            <span v-else-if="state?.status === 'SETTLED'">🏆 本局結果</span>
+            <span v-else>桌面空著，按「坐下開桌」開一桌吧</span>
+            <span v-if="countdown > 0" class="t13-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
+          </div>
+
+          <div class="t13-seats">
+            <div
+              v-for="s in (state?.seats ?? [])"
+              :key="s.memberId"
+              class="t13-seat"
+              :class="{ mine: s.mine, done: s.submitted }"
+            >
+              <div class="t13-seat-name">
+                {{ s.userName }}<span v-if="s.mine"> (你)</span>
+              </div>
+              <div class="t13-seat-status">
+                <template v-if="state?.status === 'ARRANGING'">
+                  {{ s.submitted ? '✅ 已交牌' : '🤔 理牌中…' }}
+                </template>
+                <template v-else-if="state?.status === 'WAITING'">就緒</template>
+              </div>
+            </div>
+            <div v-if="seatedCount === 0" class="t13-seat empty">尚無玩家</div>
+          </div>
+
+          <!-- 坐下 / 離桌 -->
+          <div class="t13-lobby-actions" v-if="state?.status !== 'ARRANGING'">
+            <button v-if="canSit" class="t13-btn primary" :disabled="busy" @click="sit">
+              坐下開桌（凍結賭本 {{ fmt(escrowNeeded) }}）
+            </button>
+            <button v-if="state?.status === 'WAITING' && state?.mineSeated" class="t13-btn ghost" :disabled="busy" @click="standUp">
+              離桌（退回賭本）
+            </button>
+            <p class="t13-note">坐下會先凍結 {{ fmt(escrowNeeded) }} {{ config.currency }} 當賭本，結算後退回沒輸掉的部分。</p>
+          </div>
+        </div>
+
+        <!-- 理牌區(自己且 ARRANGING) -->
+        <div v-if="state?.status === 'ARRANGING' && state?.mineSeated" class="t13-arrange">
+          <div class="t13-arrange-head">
+            <b>整理你的牌</b>
+            <div class="t13-arrange-btns">
+              <button class="t13-btn mini" :disabled="busy || state?.mySubmitted" @click="autoSuggest">🪄 智能理牌</button>
+              <button class="t13-btn mini ghost" :disabled="busy || state?.mySubmitted" @click="resetArrange">↺ 重置</button>
+            </div>
+          </div>
+
+          <div v-if="foulNow" class="t13-foul">⚠️ 倒水！必須 後墩 ≥ 中墩 ≥ 前墩，這樣交牌會輸給每一家</div>
+
+          <!-- 三墩 -->
+          <div
+            v-for="z in (['back','middle','front'] as const)"
+            :key="z"
+            class="t13-zone"
+            :class="{ active: !!selected, foul: foulNow }"
+            @click="placeTo(z)"
+          >
+            <div class="t13-zone-label">
+              {{ z === 'back' ? '尾墩' : z === 'middle' ? '中墩' : '頭墩' }}
+              <span class="t13-zone-cap">{{ (z === 'back' ? back : z === 'middle' ? middle : front).length }}/{{ ZCAP[z] }}</span>
+              <span class="t13-zone-type">{{ z === 'back' ? evalBack : z === 'middle' ? evalMiddle : evalFront }}</span>
+            </div>
+            <div class="t13-zone-cards">
+              <button
+                v-for="c in (z === 'back' ? back : z === 'middle' ? middle : front)"
+                :key="c"
+                class="t13-card"
+                :class="{ red: isRed(c), sel: selected === c }"
+                @click.stop="state?.mySubmitted ? null : (selected === c ? sendBack(c) : tapCard(c))"
+              >
+                <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
+              </button>
+              <span v-if="(z === 'back' ? back : z === 'middle' ? middle : front).length === 0" class="t13-zone-hint">
+                點下方手牌選取，再點此處放入
+              </span>
+            </div>
+          </div>
+
+          <!-- 手牌池 -->
+          <div class="t13-pool">
+            <div class="t13-zone-label">手牌（點選再放入上方牌墩）</div>
+            <div class="t13-zone-cards">
+              <button
+                v-for="c in pool"
+                :key="c"
+                class="t13-card"
+                :class="{ red: isRed(c), sel: selected === c }"
+                @click="tapCard(c)"
+              >
+                <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
+              </button>
+              <span v-if="pool.length === 0" class="t13-zone-hint">手牌都擺好了 👍</span>
+            </div>
+          </div>
+
+          <button
+            class="t13-btn primary big"
+            :disabled="busy || state?.mySubmitted || !allPlaced"
+            @click="submit"
+          >
+            {{ state?.mySubmitted ? '✅ 已交牌，等其他人…' : (allPlaced ? '交牌' : `還要擺 ${13 - front.length - middle.length - back.length} 張`) }}
+          </button>
+        </div>
+
+        <div v-else-if="state?.status === 'ARRANGING' && !state?.mineSeated" class="t13-empty">
+          🃏 本桌對戰中，等這局結束再加入吧
+        </div>
+
+        <!-- 開牌結果 -->
+        <div v-if="state?.status === 'SETTLED'" class="t13-result">
+          <div v-if="myResult" class="t13-myresult" :class="{ win: (myResult.netUnits ?? 0) > 0, lose: (myResult.netUnits ?? 0) < 0 }">
+            <template v-if="myResult.foul">😵 你倒水了，輸 {{ config.currency }} {{ fmt(Math.abs(myResult.settleAmount ?? 0)) }}</template>
+            <template v-else-if="(myResult.netUnits ?? 0) > 0">🎉 你贏了 {{ myResult.netUnits }} 水（{{ config.currency }} +{{ fmt(myResult.settleAmount) }}{{ (myResult.rake ?? 0) > 0 ? `，抽水 ${fmt(myResult.rake)}` : '' }}）</template>
+            <template v-else-if="(myResult.netUnits ?? 0) < 0">😢 你輸了 {{ Math.abs(myResult.netUnits ?? 0) }} 水（{{ config.currency }} {{ fmt(myResult.settleAmount) }}）</template>
+            <template v-else>😐 平手</template>
+            <span v-if="(myResult.poolWin ?? 0) > 0" class="t13-pool-hit">🀄 特殊牌中彩金池 +{{ fmt(myResult.poolWin) }}！</span>
+          </div>
+
+          <div class="t13-reveal">
+            <div
+              v-for="s in (state?.seats ?? [])"
+              :key="s.memberId"
+              class="t13-reveal-seat"
+              :class="{ mine: s.mine, foul: s.foul }"
+            >
+              <div class="t13-reveal-head">
+                <span class="nm">{{ s.userName }}<span v-if="s.mine"> (你)</span></span>
+                <span class="net" :class="{ pos: (s.netUnits ?? 0) > 0, neg: (s.netUnits ?? 0) < 0 }">
+                  {{ (s.netUnits ?? 0) > 0 ? '+' : '' }}{{ s.netUnits ?? 0 }} 水
+                </span>
+              </div>
+              <div class="t13-badges">
+                <span v-if="s.foul" class="bad foul">倒水</span>
+                <span v-if="s.specialZh" class="bad special">{{ s.specialZh }}</span>
+                <span v-if="s.autoArranged" class="bad auto">自動</span>
+                <span v-if="(s.poolWin ?? 0) > 0" class="bad pool">中池 +{{ fmt(s.poolWin) }}</span>
+              </div>
+              <div v-for="(row, i) in [s.back, s.middle, s.front]" :key="i" class="t13-reveal-row">
+                <span class="rl">{{ i === 0 ? '尾' : i === 1 ? '中' : '頭' }}</span>
+                <button v-for="c in (row ?? [])" :key="c" class="t13-card sm" :class="{ red: isRed(c) }" disabled>
+                  <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
+                </button>
+                <span class="ty">{{ (row && row.length) ? evaluate(row).label : '' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <button v-if="canSit" class="t13-btn primary" :disabled="busy" @click="sit">再來一桌</button>
+        </div>
+
+        <!-- 特殊牌型說明 -->
+        <details class="t13-rules">
+          <summary>📜 規則 / 特殊牌型</summary>
+          <p>每人 13 張排成 頭墩(3) / 中墩(5) / 尾墩(5)，必須「後墩 ≥ 中墩 ≥ 前墩」否則倒水(輸給每一家)。每兩家逐墩比大小，各墩贏 1 水、三墩全勝為「打槍」翻倍。零和對賭，贏家抽一點水進彩金池。</p>
+          <p>特殊牌型(整副報到)：一條龍 / 至尊清龍 / 三同花順 等可額外<b>獨得/均分彩金池</b>。</p>
+        </details>
+      </template>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.t13-shell { padding: 12px; color: #e5e7eb; }
+.t13-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.t13-head { display: flex; flex-direction: column; gap: 8px; }
+.t13-title { font-size: 20px; font-weight: 800; }
+.t13-sub { font-size: 12px; font-weight: 400; color: #94a3b8; margin-left: 6px; }
+.t13-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.t13-stat { flex: 1 1 0; min-width: 110px; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
+.t13-stat span { display: block; font-size: 11px; color: #94a3b8; }
+.t13-stat b { font-size: 16px; color: #b46eff; }
+.t13-empty { text-align: center; color: #94a3b8; padding: 40px 12px; background: #131722; border-radius: 12px; line-height: 1.8; }
+.t13-online { font-size: 12px; color: #94a3b8; background: #131722; border-radius: 8px; padding: 6px 10px; }
+.t13-online-names { color: #cbd5e1; }
+.t13-table { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
+.t13-table-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
+.t13-countdown { color: #fbbf24; font-variant-numeric: tabular-nums; }
+.t13-countdown.urgent { color: #f87171; }
+.t13-seats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.t13-seat { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px; }
+.t13-seat.mine { border-color: #b46eff; }
+.t13-seat.done { border-color: rgba(34,197,94,.5); }
+.t13-seat.empty { grid-column: 1 / -1; text-align: center; color: #64748b; }
+.t13-seat-name { font-weight: 700; }
+.t13-seat-status { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.t13-lobby-actions { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.t13-note { font-size: 11px; color: #64748b; margin: 0; }
+.t13-btn { border: none; border-radius: 10px; padding: 12px 16px; font-weight: 700; cursor: pointer; font-size: 15px; }
+.t13-btn.primary { background: #b46eff; color: #fff; }
+.t13-btn.primary:disabled { background: #4b3a66; color: #9ca3af; cursor: not-allowed; }
+.t13-btn.ghost { background: rgba(255,255,255,.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,.12); }
+.t13-btn.big { width: 100%; padding: 14px; font-size: 16px; }
+.t13-btn.mini { padding: 7px 12px; font-size: 13px; }
+.t13-arrange { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.t13-arrange-head { display: flex; justify-content: space-between; align-items: center; }
+.t13-arrange-btns { display: flex; gap: 8px; }
+.t13-foul { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.4); color: #fca5a5; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 700; }
+.t13-zone { border: 1px dashed rgba(255,255,255,.18); border-radius: 10px; padding: 8px; transition: border-color .15s, background .15s; }
+.t13-zone.active { border-color: #b46eff; background: rgba(180,110,255,.06); cursor: pointer; }
+.t13-zone.foul { border-color: rgba(248,113,113,.4); }
+.t13-zone-label { font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.t13-zone-cap { color: #cbd5e1; }
+.t13-zone-type { margin-left: auto; color: #b46eff; font-weight: 700; }
+.t13-zone-cards { display: flex; flex-wrap: wrap; gap: 6px; min-height: 52px; align-items: center; }
+.t13-zone-hint { font-size: 12px; color: #475569; }
+.t13-pool { border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }
+.t13-card {
+  width: 40px; height: 54px; border-radius: 7px; background: #f8fafc; color: #0f172a;
+  border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-weight: 800; cursor: pointer; padding: 0; line-height: 1;
+}
+.t13-card .r { font-size: 16px; }
+.t13-card .s { font-size: 14px; }
+.t13-card.red { color: #dc2626; }
+.t13-card.sel { border-color: #b46eff; transform: translateY(-4px); box-shadow: 0 4px 10px rgba(180,110,255,.5); }
+.t13-card.sm { width: 32px; height: 44px; }
+.t13-card.sm .r { font-size: 13px; }
+.t13-card.sm .s { font-size: 11px; }
+.t13-card:disabled { cursor: default; }
+.t13-result { display: flex; flex-direction: column; gap: 10px; }
+.t13-myresult { text-align: center; font-weight: 800; font-size: 16px; padding: 12px; border-radius: 12px; background: #131722; }
+.t13-myresult.win { background: rgba(34,197,94,.15); color: #86efac; }
+.t13-myresult.lose { background: rgba(248,113,113,.12); color: #fca5a5; }
+.t13-pool-hit { display: block; color: #fbbf24; font-size: 14px; margin-top: 4px; }
+.t13-reveal { display: flex; flex-direction: column; gap: 8px; }
+.t13-reveal-seat { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px; }
+.t13-reveal-seat.mine { border-color: #b46eff; }
+.t13-reveal-seat.foul { border-color: rgba(248,113,113,.4); }
+.t13-reveal-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
+.net.pos { color: #86efac; } .net.neg { color: #fca5a5; }
+.t13-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.bad { font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 700; }
+.bad.foul { background: rgba(248,113,113,.2); color: #fca5a5; }
+.bad.special { background: rgba(251,191,36,.2); color: #fbbf24; }
+.bad.auto { background: rgba(148,163,184,.2); color: #cbd5e1; }
+.bad.pool { background: rgba(180,110,255,.2); color: #d8b4fe; }
+.t13-reveal-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+.t13-reveal-row .rl { font-size: 11px; color: #64748b; width: 16px; }
+.t13-reveal-row .ty { font-size: 12px; color: #b46eff; margin-left: 6px; }
+.t13-rules { background: #131722; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #94a3b8; }
+.t13-rules summary { cursor: pointer; color: #cbd5e1; font-weight: 700; }
+.t13-rules p { line-height: 1.7; }
+</style>

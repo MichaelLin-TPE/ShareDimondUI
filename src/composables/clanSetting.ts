@@ -468,6 +468,46 @@ export function useAuction() {
     }
   }
 
+  // ───── 十三支設定 (共用底注/抽水/彩金池,只多一個開關) ─────
+  const thirteenEnabled = ref(false)
+  const thirteenSaving = ref(false)
+
+  const fetchThirteenConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/thirteen/config`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      thirteenEnabled.value = !!d.enabled
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveThirteenConfig = async () => {
+    if (thirteenSaving.value) return
+    thirteenSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/thirteen/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ enabled: thirteenEnabled.value }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(d.message ?? '十三支設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      thirteenSaving.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
@@ -475,6 +515,7 @@ export function useAuction() {
     fetchDiscordWebhook()
     fetchSlotConfig()
     fetchDiceConfig()
+    fetchThirteenConfig()
   })
 
   return {
@@ -486,6 +527,10 @@ export function useAuction() {
     diceEnabled,
     diceSaving,
     saveDiceConfig,
+    // 十三支
+    thirteenEnabled,
+    thirteenSaving,
+    saveThirteenConfig,
     settings,
     balance,
     selectedCurrency,
