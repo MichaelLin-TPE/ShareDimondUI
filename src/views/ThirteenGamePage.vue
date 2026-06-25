@@ -170,7 +170,19 @@ const foulNow = computed(() => allPlaced.value && isFoul(front.value, middle.val
 const SUIT = { C: '♣', D: '♦', H: '♥', S: '♠' } as Record<string, string>
 function suitSym(code: string) { return SUIT[cardSuit(code)] ?? '' }
 function rankLabel(code: string) { return code.slice(0, -1) }
-function isRed(code: string) { const s = cardSuit(code); return s === 'D' || s === 'H' }
+// 四色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 → 黑桃梅花一眼分得出
+function suitClass(code: string) {
+  return { C: 'su-c', D: 'su-d', H: 'su-h', S: 'su-s' }[cardSuit(code)] ?? 'su-s'
+}
+// 結算顯示用:把同點數(對子/三條/鐵支)排在一起,再依張數→點數由大到小
+function displayHand(cards: string[]): string[] {
+  const cnt: Record<number, number> = {}
+  for (const c of cards) { const r = cardRank(c); cnt[r] = (cnt[r] ?? 0) + 1 }
+  return [...cards].sort((a, b) =>
+    ((cnt[cardRank(b)] ?? 0) - (cnt[cardRank(a)] ?? 0))
+    || (cardRank(b) - cardRank(a))
+    || ((SUIT_ORDER[cardSuit(a)] ?? 0) - (SUIT_ORDER[cardSuit(b)] ?? 0)))
+}
 
 // ---- API ----
 async function loadConfig() {
@@ -429,7 +441,7 @@ onUnmounted(() => {
             v-for="(c, i) in dealHand"
             :key="c"
             class="t13-card deal"
-            :class="{ red: isRed(c) }"
+            :class="suitClass(c)"
             :style="dealPhase === 'deal' ? { animationDelay: (i * 70) + 'ms' } : {}"
           >
             <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
@@ -551,7 +563,7 @@ onUnmounted(() => {
                 v-for="c in zCards(z)"
                 :key="c"
                 class="t13-card"
-                :class="{ red: isRed(c) }"
+                :class="suitClass(c)"
                 @click.stop="removeToPool(c)"
               >
                 <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
@@ -570,7 +582,7 @@ onUnmounted(() => {
                 v-for="c in pool"
                 :key="c"
                 class="t13-card"
-                :class="{ red: isRed(c) }"
+                :class="suitClass(c)"
                 @click="addToActive(c)"
               >
                 <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
@@ -623,7 +635,7 @@ onUnmounted(() => {
               </div>
               <div v-for="(row, i) in [s.back, s.middle, s.front]" :key="i" class="t13-reveal-row">
                 <span class="rl">{{ i === 0 ? '尾' : i === 1 ? '中' : '頭' }}</span>
-                <button v-for="c in (row ?? [])" :key="c" class="t13-card sm" :class="{ red: isRed(c) }" disabled>
+                <button v-for="c in displayHand(row ?? [])" :key="c" class="t13-card sm" :class="suitClass(c)" disabled>
                   <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
                 </button>
                 <span class="ty">{{ (row && row.length) ? evaluate(row).label : '' }}</span>
@@ -709,7 +721,7 @@ onUnmounted(() => {
 .t13-stats { display: flex; gap: 8px; flex-wrap: wrap; }
 .t13-stat { flex: 1 1 0; min-width: 110px; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
 .t13-stat span { display: block; font-size: 11px; color: #94a3b8; }
-.t13-stat b { font-size: 16px; color: #b46eff; }
+.t13-stat b { font-size: 16px; color: var(--c-light); }
 .t13-empty { text-align: center; color: #94a3b8; padding: 40px 12px; background: #131722; border-radius: 12px; line-height: 1.8; }
 .t13-online { font-size: 12px; color: #94a3b8; background: #131722; border-radius: 8px; padding: 6px 10px; }
 .t13-online-names { color: #cbd5e1; }
@@ -719,7 +731,7 @@ onUnmounted(() => {
 .t13-countdown.urgent { color: #f87171; }
 .t13-seats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .t13-seat { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px; }
-.t13-seat.mine { border-color: #b46eff; }
+.t13-seat.mine { border-color: var(--c-light); }
 .t13-seat.done { border-color: rgba(34,197,94,.5); }
 .t13-seat.empty { grid-column: 1 / -1; text-align: center; color: #64748b; }
 .t13-seat-name { font-weight: 700; }
@@ -727,8 +739,8 @@ onUnmounted(() => {
 .t13-lobby-actions { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .t13-note { font-size: 11px; color: #64748b; margin: 0; }
 .t13-btn { border: none; border-radius: 10px; padding: 12px 16px; font-weight: 700; cursor: pointer; font-size: 15px; }
-.t13-btn.primary { background: #b46eff; color: #fff; }
-.t13-btn.primary:disabled { background: #4b3a66; color: #9ca3af; cursor: not-allowed; }
+.t13-btn.primary { background: var(--c-light); color: var(--c-on); }
+.t13-btn.primary:disabled { background: #3a4356; color: #9ca3af; cursor: not-allowed; }
 .t13-btn.ghost { background: rgba(255,255,255,.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,.12); }
 .t13-btn.big { width: 100%; padding: 14px; font-size: 16px; }
 .t13-btn.mini { padding: 7px 12px; font-size: 13px; }
@@ -736,15 +748,15 @@ onUnmounted(() => {
 .t13-arrange-head { display: flex; justify-content: space-between; align-items: center; }
 .t13-arrange-btns { display: flex; gap: 8px; }
 .t13-foul { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.4); color: #fca5a5; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 700; }
-.t13-arrange-tip { font-size: 12px; color: #94a3b8; background: rgba(180,110,255,.08); border-radius: 8px; padding: 8px 10px; margin: 0; line-height: 1.6; }
+.t13-arrange-tip { font-size: 12px; color: #94a3b8; background: rgba(var(--c-light-rgb),.08); border-radius: 8px; padding: 8px 10px; margin: 0; line-height: 1.6; }
 .t13-zone { border: 1px dashed rgba(255,255,255,.18); border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
-.t13-zone.active { border: 2px solid #b46eff; background: rgba(180,110,255,.1); padding: 7px; }
+.t13-zone.active { border: 2px solid var(--c-light); background: rgba(var(--c-light-rgb),.1); padding: 7px; }
 .t13-zone.foul { border-color: rgba(248,113,113,.4); }
 .t13-zone-name { font-weight: 700; color: #cbd5e1; }
-.t13-zone-pick { color: #d8b4fe; font-weight: 800; margin-left: 6px; }
+.t13-zone-pick { color: var(--c-light); font-weight: 800; margin-left: 6px; }
 .t13-zone-label { font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .t13-zone-cap { color: #cbd5e1; }
-.t13-zone-type { margin-left: auto; color: #b46eff; font-weight: 700; }
+.t13-zone-type { margin-left: auto; color: var(--c-light); font-weight: 700; }
 .t13-zone-cards { display: flex; flex-wrap: wrap; gap: 6px; min-height: 52px; align-items: center; }
 .t13-zone-hint { font-size: 12px; color: #475569; }
 .t13-pool { border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }
@@ -754,12 +766,15 @@ onUnmounted(() => {
   font-weight: 800; cursor: pointer; padding: 0; line-height: 1;
 }
 .t13-card .r { font-size: 16px; }
-.t13-card .s { font-size: 14px; }
-.t13-card.red { color: #dc2626; }
-.t13-card.sel { border-color: #b46eff; transform: translateY(-4px); box-shadow: 0 4px 10px rgba(180,110,255,.5); }
+.t13-card .s { font-size: 18px; font-weight: 900; line-height: 1; }
+/* 四色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 — 黑桃梅花一眼分辨 */
+.t13-card.su-s { color: #0f172a; }
+.t13-card.su-h { color: #e11d48; }
+.t13-card.su-d { color: #2563eb; }
+.t13-card.su-c { color: #15a34a; }
 .t13-card.sm { width: 32px; height: 44px; }
 .t13-card.sm .r { font-size: 13px; }
-.t13-card.sm .s { font-size: 11px; }
+.t13-card.sm .s { font-size: 15px; }
 .t13-card:disabled { cursor: default; }
 .t13-result { display: flex; flex-direction: column; gap: 10px; }
 .t13-myresult { text-align: center; font-weight: 800; font-size: 16px; padding: 12px; border-radius: 12px; background: #131722; }
@@ -768,7 +783,7 @@ onUnmounted(() => {
 .t13-pool-hit { display: block; color: #fbbf24; font-size: 14px; margin-top: 4px; }
 .t13-reveal { display: flex; flex-direction: column; gap: 8px; }
 .t13-reveal-seat { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px; }
-.t13-reveal-seat.mine { border-color: #b46eff; }
+.t13-reveal-seat.mine { border-color: var(--c-light); }
 .t13-reveal-seat.foul { border-color: rgba(248,113,113,.4); }
 .t13-reveal-head { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 4px; }
 .net.pos { color: #86efac; } .net.neg { color: #fca5a5; }
@@ -777,10 +792,10 @@ onUnmounted(() => {
 .bad.foul { background: rgba(248,113,113,.2); color: #fca5a5; }
 .bad.special { background: rgba(251,191,36,.2); color: #fbbf24; }
 .bad.auto { background: rgba(148,163,184,.2); color: #cbd5e1; }
-.bad.pool { background: rgba(180,110,255,.2); color: #d8b4fe; }
+.bad.pool { background: rgba(var(--c-light-rgb),.2); color: var(--c-light); }
 .t13-reveal-row { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
 .t13-reveal-row .rl { font-size: 11px; color: #64748b; width: 16px; }
-.t13-reveal-row .ty { font-size: 12px; color: #b46eff; margin-left: 6px; }
+.t13-reveal-row .ty { font-size: 12px; color: var(--c-light); margin-left: 6px; }
 .t13-rules { background: #131722; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #94a3b8; }
 .t13-rules summary { cursor: pointer; color: #cbd5e1; font-weight: 700; }
 .t13-rules p { line-height: 1.7; }
@@ -803,7 +818,7 @@ onUnmounted(() => {
 .t13-board-col h4 { margin: 0 0 8px; font-size: 13px; color: #94a3b8; }
 .t13-board-empty { font-size: 12px; color: #64748b; padding: 8px 0; }
 .t13-rank-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.05); }
-.t13-rank-row.me { color: #d8b4fe; font-weight: 700; }
+.t13-rank-row.me { color: var(--c-light); font-weight: 700; }
 .t13-rank-row .rk { width: 18px; color: #94a3b8; }
 .t13-rank-row .nm { flex: 1 1 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .t13-rank-row .games { font-size: 11px; color: #64748b; }
@@ -815,20 +830,20 @@ onUnmounted(() => {
 .t13-panel-body.chat { flex-direction: column; }
 .t13-chat-msgs { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
 .t13-chat-msg { font-size: 13px; line-height: 1.4; }
-.t13-chat-msg b { color: #b46eff; margin-right: 6px; }
+.t13-chat-msg b { color: var(--c-light); margin-right: 6px; }
 .t13-chat-msg span { color: #cbd5e1; word-break: break-word; }
 .t13-chat-input { display: flex; gap: 8px; margin-top: 10px; }
 .t13-chat-input input { flex: 1 1 0; min-width: 0; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 9px 12px; color: #f1f5f9; outline: none; }
-.t13-chat-input input:focus { border-color: #b46eff; }
-.t13-chat-input button { flex: 0 0 52px; height: 38px; align-self: center; border: none; border-radius: 8px; background: #b46eff; color: #fff; font-weight: 700; cursor: pointer; box-sizing: border-box; }
-.t13-chat-input button:disabled { background: #4b3a66; color: #9ca3af; }
+.t13-chat-input input:focus { border-color: var(--c-light); }
+.t13-chat-input button { flex: 0 0 52px; height: 38px; align-self: center; border: none; border-radius: 8px; background: var(--c-light); color: var(--c-on); font-weight: 700; cursor: pointer; box-sizing: border-box; }
+.t13-chat-input button:disabled { background: #3a4356; color: #9ca3af; }
 
 /* 尊榮中獎動畫 */
 .t13-celebrate { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer;
-  background: radial-gradient(circle at center, rgba(180,110,255,.25), rgba(0,0,0,.82)); }
+  background: radial-gradient(circle at center, rgba(var(--c-light-rgb),.25), rgba(0,0,0,.82)); }
 .t13-celebrate.pool { background: radial-gradient(circle at center, rgba(251,191,36,.3), rgba(0,0,0,.85)); }
 .t13-cele-burst { font-size: 96px; animation: t13-pop .6s cubic-bezier(.2,1.4,.4,1) both, t13-spin 2.5s ease-in-out infinite .6s; }
-.t13-cele-text { font-size: 26px; font-weight: 900; color: #fff; text-shadow: 0 2px 18px rgba(180,110,255,.9); text-align: center; padding: 0 20px; animation: t13-pop .5s ease both .15s; }
+.t13-cele-text { font-size: 26px; font-weight: 900; color: #fff; text-shadow: 0 2px 18px rgba(var(--c-light-rgb),.9); text-align: center; padding: 0 20px; animation: t13-pop .5s ease both .15s; }
 .t13-celebrate.pool .t13-cele-text { text-shadow: 0 2px 18px rgba(251,191,36,.9); }
 @keyframes t13-pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: scale(1); } }
 @keyframes t13-spin { 0%,100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.12); } }
@@ -839,12 +854,12 @@ onUnmounted(() => {
 .t13-dealing { position: fixed; inset: 0; z-index: 9998; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: rgba(8,10,18,.92); }
 .t13-deck { position: relative; width: 46px; height: 64px; }
 .t13-deck span { position: absolute; inset: 0; border-radius: 7px; border: 2px solid #fff;
-  background: repeating-linear-gradient(45deg, #b46eff, #b46eff 5px, #7c3aed 5px, #7c3aed 10px);
+  background: repeating-linear-gradient(45deg, var(--c-light), var(--c-light) 5px, var(--c-deep) 5px, var(--c-deep) 10px);
   animation: t13-deck-pulse 1s ease-in-out infinite; }
 .t13-deck span:nth-child(2) { transform: translate(3px, -3px); opacity: .8; }
 .t13-deck span:nth-child(3) { transform: translate(6px, -6px); opacity: .6; }
-@keyframes t13-deck-pulse { 0%,100% { box-shadow: 0 0 0 rgba(180,110,255,0); } 50% { box-shadow: 0 0 18px rgba(180,110,255,.8); } }
-.t13-deal-text { font-size: 20px; font-weight: 900; color: #d8b4fe; text-shadow: 0 2px 14px rgba(180,110,255,.7); }
+@keyframes t13-deck-pulse { 0%,100% { box-shadow: 0 0 0 rgba(var(--c-light-rgb),0); } 50% { box-shadow: 0 0 18px rgba(var(--c-light-rgb),.8); } }
+.t13-deal-text { font-size: 20px; font-weight: 900; color: var(--c-light); text-shadow: 0 2px 14px rgba(var(--c-light-rgb),.7); }
 .t13-deal-hand { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; max-width: 340px; }
 .t13-card.deal { animation: t13-card-deal .45s cubic-bezier(.2,.8,.3,1) both; }
 @keyframes t13-card-deal {
@@ -857,11 +872,12 @@ onUnmounted(() => {
 
 /* 再來一局邀請 */
 .t13-invite-mask { position: fixed; inset: 0; z-index: 9997; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.7); padding: 20px; }
-.t13-invite { background: #1b2030; border: 1px solid rgba(180,110,255,.4); border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.t13-invite { background: #1b2030; border: 1px solid rgba(var(--c-light-rgb),.4); border-radius: 16px; padding: 22px; max-width: 360px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
 .t13-invite-emoji { font-size: 52px; animation: t13-pop .5s cubic-bezier(.2,1.4,.4,1) both; }
 .t13-invite-title { font-size: 18px; font-weight: 800; color: #fff; margin: 8px 0; }
 .t13-invite-sub { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-bottom: 16px; }
-.t13-invite-btns { display: flex; flex-direction: column; gap: 8px; }
+.t13-invite-btns { display: flex; flex-direction: column; gap: 10px; }
+.t13-invite-btns .t13-btn { width: 100%; box-sizing: border-box; padding: 14px; font-size: 15px; }
 .t13-after-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .t13-after-actions .t13-btn { flex: 1 1 0; min-width: 140px; }
 </style>
