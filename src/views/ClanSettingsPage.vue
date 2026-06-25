@@ -15,6 +15,10 @@ const {
   diceEnabled,
   diceSaving,
   saveDiceConfig,
+  // 十三支
+  thirteenEnabled,
+  thirteenSaving,
+  saveThirteenConfig,
   settings,
   selectedCurrency,
   clanCurrencies,
@@ -338,6 +342,42 @@ const rakePercent = computed<number>({
         <div class="cs-actions">
           <button class="cs-btn-primary" :disabled="diceSaving" @click="saveDiceConfig">
             {{ diceSaving ? '儲存中…' : '💾 儲存骰寶設定' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── 十三支設定 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🀄</span>
+          <div>
+            <h3>十三支設定</h3>
+            <p>玩家互賭、<b>系統不做莊</b>(零和)。底注沿用上方拉霸的下注額，贏家抽水進彩金池</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>開放十三支</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: thirteenEnabled }"
+              @click="thirteenEnabled = !thirteenEnabled"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ thirteenEnabled ? '🀄 已開放' : '🚫 已關閉' }}
+              </span>
+            </div>
+            <p class="cs-hint">2~4 人同桌對戰，特殊牌型(一條龍以上)中彩金池</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" :disabled="thirteenSaving" @click="saveThirteenConfig">
+            {{ thirteenSaving ? '儲存中…' : '💾 儲存十三支設定' }}
           </button>
         </div>
       </section>
