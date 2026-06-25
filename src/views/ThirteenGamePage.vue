@@ -90,11 +90,15 @@ const front = ref<string[]>([])
 const middle = ref<string[]>([])
 const back = ref<string[]>([])
 const pool = ref<string[]>([]) // 尚未擺放
-const selected = ref<string | null>(null)
+type Zone = 'front' | 'middle' | 'back'
+const activeZone = ref<Zone>('back') // 目前要放入的目標區(預設尾墩)
 let arrangedForRound: number | null = null
 const busy = ref(false)
 
 const ZCAP = { front: 3, middle: 5, back: 5 }
+const ZNAME = { front: '頭墩', middle: '中墩', back: '尾墩' }
+function zoneArr(z: Zone) { return z === 'front' ? front : z === 'middle' ? middle : back }
+function zCards(z: Zone): string[] { return zoneArr(z).value } // 模板用(已 unwrap)
 
 function initArrange(d: State) {
   if (d.status !== 'ARRANGING' || !d.mineSeated || !d.myCards) return
@@ -111,44 +115,41 @@ function initArrange(d: State) {
     back.value = []
     pool.value = sortCards(d.myCards)
   }
-  selected.value = null
+  activeZone.value = 'back'
 }
 
-function zoneOf(card: string): 'front' | 'middle' | 'back' | 'pool' {
-  if (front.value.includes(card)) return 'front'
-  if (middle.value.includes(card)) return 'middle'
-  if (back.value.includes(card)) return 'back'
-  return 'pool'
-}
 function removeFromAll(card: string) {
   front.value = front.value.filter((c) => c !== card)
   middle.value = middle.value.filter((c) => c !== card)
   back.value = back.value.filter((c) => c !== card)
   pool.value = pool.value.filter((c) => c !== card)
 }
-function tapCard(card: string) {
+// 先選區域,再連點手牌放入該區
+function setActive(z: Zone) {
   if (state.value?.mySubmitted) return
-  selected.value = selected.value === card ? null : card
+  activeZone.value = z
 }
-function placeTo(zone: 'front' | 'middle' | 'back') {
+function addToActive(card: string) {
   if (state.value?.mySubmitted) return
-  const card = selected.value
-  if (!card) return
-  const arr = zone === 'front' ? front : zone === 'middle' ? middle : back
-  if (zoneOf(card) === zone) return
-  if (arr.value.length >= ZCAP[zone]) {
-    useAlert.error(`${zone === 'front' ? '頭墩' : zone === 'middle' ? '中墩' : '尾墩'}已滿`)
+  const z = activeZone.value
+  const arr = zoneArr(z)
+  if (arr.value.length >= ZCAP[z]) {
+    useAlert.error(`${ZNAME[z]}已滿，請先選別的區`)
     return
   }
   removeFromAll(card)
   arr.value.push(card)
-  selected.value = null
+  // 該區滿了 → 自動跳到下一個還沒滿的區(尾→中→頭)
+  if (arr.value.length >= ZCAP[z]) {
+    const order: Zone[] = ['back', 'middle', 'front']
+    const next = order.find((zz) => zoneArr(zz).value.length < ZCAP[zz])
+    if (next) activeZone.value = next
+  }
 }
-function sendBack(card: string) {
+function removeToPool(card: string) {
   if (state.value?.mySubmitted) return
   removeFromAll(card)
   pool.value.push(card)
-  selected.value = null
 }
 function resetArrange() {
   if (state.value?.mySubmitted || !state.value?.myCards) return
@@ -156,7 +157,7 @@ function resetArrange() {
   middle.value = []
   back.value = []
   pool.value = sortCards(state.value.myCards)
-  selected.value = null
+  activeZone.value = 'back'
 }
 
 const evalFront = computed(() => (front.value.length === 3 ? evaluate(front.value).label : ''))
@@ -273,7 +274,6 @@ async function autoSuggest() {
     middle.value = [...d.middle]
     back.value = [...d.back]
     pool.value = []
-    selected.value = null
   } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy.value = false }
 }
 
@@ -375,7 +375,7 @@ const canSit = computed(() => {
   return true
 })
 const myResult = computed(() => state.value?.seats?.find((x) => x.mine))
-const escrowNeeded = computed(() => config.value.baseBet * 6 * (config.value.maxPlayers - 1))
+const escrowNeeded = computed(() => config.value.baseBet * 12 * (config.value.maxPlayers - 1))
 
 // ---- WS + 心跳 ----
 let ws: StompHandle | null = null
@@ -531,45 +531,47 @@ onUnmounted(() => {
 
           <div v-if="foulNow" class="t13-foul">⚠️ 倒水！必須 後墩 ≥ 中墩 ≥ 前墩，這樣交牌會輸給每一家</div>
 
-          <!-- 三墩 -->
+          <p class="t13-arrange-tip">① 先點下面的【尾墩/中墩/頭墩】選區 → ② 連點手牌就一直放進去（放滿自動跳下一區）</p>
+
+          <!-- 三墩(點標題選為目標區) -->
           <div
             v-for="z in (['back','middle','front'] as const)"
             :key="z"
             class="t13-zone"
-            :class="{ active: !!selected, foul: foulNow }"
-            @click="placeTo(z)"
+            :class="{ active: activeZone === z && !state?.mySubmitted, foul: foulNow }"
+            @click="setActive(z)"
           >
             <div class="t13-zone-label">
-              {{ z === 'back' ? '尾墩' : z === 'middle' ? '中墩' : '頭墩' }}
-              <span class="t13-zone-cap">{{ (z === 'back' ? back : z === 'middle' ? middle : front).length }}/{{ ZCAP[z] }}</span>
+              <span class="t13-zone-name">{{ ZNAME[z] }}<span v-if="activeZone === z && !state?.mySubmitted" class="t13-zone-pick">← 放這裡</span></span>
+              <span class="t13-zone-cap">{{ zCards(z).length }}/{{ ZCAP[z] }}</span>
               <span class="t13-zone-type">{{ z === 'back' ? evalBack : z === 'middle' ? evalMiddle : evalFront }}</span>
             </div>
             <div class="t13-zone-cards">
               <button
-                v-for="c in (z === 'back' ? back : z === 'middle' ? middle : front)"
+                v-for="c in zCards(z)"
                 :key="c"
                 class="t13-card"
-                :class="{ red: isRed(c), sel: selected === c }"
-                @click.stop="state?.mySubmitted ? null : (selected === c ? sendBack(c) : tapCard(c))"
+                :class="{ red: isRed(c) }"
+                @click.stop="removeToPool(c)"
               >
                 <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
               </button>
-              <span v-if="(z === 'back' ? back : z === 'middle' ? middle : front).length === 0" class="t13-zone-hint">
-                點下方手牌選取，再點此處放入
+              <span v-if="zCards(z).length === 0" class="t13-zone-hint">
+                {{ activeZone === z ? '👇 點手牌放進來' : '點這列選為目標區' }}
               </span>
             </div>
           </div>
 
           <!-- 手牌池 -->
           <div class="t13-pool">
-            <div class="t13-zone-label">手牌（點選再放入上方牌墩）</div>
+            <div class="t13-zone-label">手牌（點一下就放入【{{ ZNAME[activeZone] }}】）</div>
             <div class="t13-zone-cards">
               <button
                 v-for="c in pool"
                 :key="c"
                 class="t13-card"
-                :class="{ red: isRed(c), sel: selected === c }"
-                @click="tapCard(c)"
+                :class="{ red: isRed(c) }"
+                @click="addToActive(c)"
               >
                 <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
               </button>
@@ -690,6 +692,7 @@ onUnmounted(() => {
         <details class="t13-rules">
           <summary>📜 規則 / 特殊牌型</summary>
           <p>每人 13 張排成 頭墩(3) / 中墩(5) / 尾墩(5)，必須「後墩 ≥ 中墩 ≥ 前墩」否則倒水(輸給每一家)。每兩家逐墩比大小，各墩贏 1 水、三墩全勝為「打槍」翻倍。零和對賭，贏家抽一點水進彩金池。</p>
+          <p>道獎(×2)：用 <b>鐵支</b>、<b>同花順</b>、或 <b>頭墩三條(沖三)</b> 贏該墩 → 該墩收 2 水(打槍照樣再翻倍)。</p>
           <p>特殊牌型(整副報到)：一條龍 / 至尊清龍 / 三同花順 等可額外<b>獨得/均分彩金池</b>。</p>
         </details>
       </template>
@@ -733,9 +736,12 @@ onUnmounted(() => {
 .t13-arrange-head { display: flex; justify-content: space-between; align-items: center; }
 .t13-arrange-btns { display: flex; gap: 8px; }
 .t13-foul { background: rgba(248,113,113,.15); border: 1px solid rgba(248,113,113,.4); color: #fca5a5; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 700; }
-.t13-zone { border: 1px dashed rgba(255,255,255,.18); border-radius: 10px; padding: 8px; transition: border-color .15s, background .15s; }
-.t13-zone.active { border-color: #b46eff; background: rgba(180,110,255,.06); cursor: pointer; }
+.t13-arrange-tip { font-size: 12px; color: #94a3b8; background: rgba(180,110,255,.08); border-radius: 8px; padding: 8px 10px; margin: 0; line-height: 1.6; }
+.t13-zone { border: 1px dashed rgba(255,255,255,.18); border-radius: 10px; padding: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
+.t13-zone.active { border: 2px solid #b46eff; background: rgba(180,110,255,.1); padding: 7px; }
 .t13-zone.foul { border-color: rgba(248,113,113,.4); }
+.t13-zone-name { font-weight: 700; color: #cbd5e1; }
+.t13-zone-pick { color: #d8b4fe; font-weight: 800; margin-left: 6px; }
 .t13-zone-label { font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .t13-zone-cap { color: #cbd5e1; }
 .t13-zone-type { margin-left: auto; color: #b46eff; font-weight: 700; }
