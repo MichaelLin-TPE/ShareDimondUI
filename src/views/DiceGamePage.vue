@@ -575,7 +575,7 @@ async function takeBank() {
   const amount = Number(input)
   if (!amount || amount <= 0) return
   try {
-    const res = await fetch(`${API}/slot/bank/take`, {
+    const res = await fetch(`${API}/dice/bank/take`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify({ amount }),
@@ -593,7 +593,7 @@ async function leaveBank() {
   const ok = await useAlert.confirm('確定要下莊？剩餘本金會退回你的錢包')
   if (!ok?.isConfirmed) return
   try {
-    const res = await fetch(`${API}/slot/bank/leave`, { method: 'POST', headers: headers() })
+    const res = await fetch(`${API}/dice/bank/leave`, { method: 'POST', headers: headers() })
     const d = await res.json()
     if (!res.ok) return useAlert.error(d.message ?? '下莊失敗')
     useAlert.success(d.message)
