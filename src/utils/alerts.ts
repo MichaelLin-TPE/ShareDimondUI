@@ -107,27 +107,46 @@ export const useAlert = {
       cancelButtonText: '取消',
       confirmButtonColor: '#b46eff',
       cancelButtonColor: '#334155',
-      // 原生 select 的選項清單是 OS 白底,深色主題壓不到 → 改用 radio,
-      // 並把清單排成可捲動的直向清單(成員多也不爆版、名字看得清楚)
+      // 原生 select 的選項清單是 OS 白底,深色主題壓不到 → 改用 radio。
+      // 但 SweetAlert 的 .swal2-radio 預設是白底,文字白色會變白底白字 →
+      // 這裡把容器設透明、文字設亮色,並排成「圈圈+名字」左對齊、可捲動的直向清單。
       didOpen: () => {
         const radio = document.querySelector('.swal2-radio') as HTMLElement | null
         if (radio) {
-          radio.style.display = 'flex'
-          radio.style.flexDirection = 'column'
-          radio.style.alignItems = 'flex-start'
-          radio.style.gap = '2px'
-          radio.style.maxHeight = '45vh'
-          radio.style.overflowY = 'auto'
-          radio.style.width = '100%'
-          radio.style.margin = '0'
+          Object.assign(radio.style, {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: '4px',
+            maxHeight: '45vh',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            width: '100%',
+            margin: '0',
+            padding: '4px',
+            background: 'transparent',
+            boxSizing: 'border-box',
+          })
           radio.querySelectorAll('label').forEach((el) => {
-            const label = el as HTMLElement
-            label.style.width = '100%'
-            label.style.margin = '0'
-            label.style.padding = '8px 10px'
-            label.style.borderRadius = '8px'
-            label.style.cursor = 'pointer'
-            label.style.fontSize = '15px'
+            Object.assign((el as HTMLElement).style, {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: '10px',
+              width: '100%',
+              margin: '0',
+              padding: '10px 12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '15px',
+              color: '#e5e7eb',
+              background: 'rgba(255,255,255,0.05)',
+              boxSizing: 'border-box',
+            })
+          })
+          // 內層文字 span 也強制亮色,避免被預設樣式蓋成白色(白底白字)
+          radio.querySelectorAll('.swal2-label').forEach((el) => {
+            ;(el as HTMLElement).style.color = '#e5e7eb'
           })
         }
       },
