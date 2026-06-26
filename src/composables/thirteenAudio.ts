@@ -9,6 +9,8 @@ import { ref } from 'vue'
 export function useThirteenAudio() {
   const sfxOn = ref(localStorage.getItem('t13_sfx') !== 'off')
   const bgmOn = ref(localStorage.getItem('t13_bgm') !== 'off')
+  const savedVol = Number(localStorage.getItem('t13_vol'))
+  const bgmVolume = ref(Number.isFinite(savedVol) && savedVol >= 0 && savedVol <= 1 ? savedVol : 0.35)
 
   let ctx: AudioContext | null = null
   function audio(): AudioContext | null {
@@ -102,7 +104,6 @@ export function useThirteenAudio() {
 
   // ---- 背景音樂:迴圈播放 mp3(public/thirteen-bgm.mp3) ----
   const BGM_URL = '/thirteen-bgm.mp3'
-  const BGM_VOLUME = 0.35
   let bgm: HTMLAudioElement | null = null
 
   function startMusic() {
@@ -110,13 +111,19 @@ export function useThirteenAudio() {
     bgm = new Audio(BGM_URL)
     bgm.loop = true
     bgm.preload = 'auto'
-    bgm.volume = BGM_VOLUME
+    bgm.volume = bgmVolume.value
     void bgm.play().catch(() => { /* 還沒有使用者手勢時會被擋,下次點擊再播 */ })
   }
   function stopMusic() {
     if (bgm) {
       try { bgm.pause(); bgm.currentTime = 0 } catch { /* ignore */ }
     }
+  }
+  function setVolume(v: number) {
+    const vol = Math.min(1, Math.max(0, v))
+    bgmVolume.value = vol
+    localStorage.setItem('t13_vol', String(vol))
+    if (bgm) bgm.volume = vol
   }
 
   // 第一次使用者點擊後才能播音樂(瀏覽器自動播放限制)
@@ -153,7 +160,7 @@ export function useThirteenAudio() {
   }
 
   return {
-    sfxOn, bgmOn,
+    sfxOn, bgmOn, bgmVolume, setVolume,
     playDeal, playPlace, playSubmit, playReveal, playWin, playLose, playJackpot, playInvite,
     startMusic, stopMusic, armAutoStart, toggleSfx, toggleBgm, dispose,
   }
