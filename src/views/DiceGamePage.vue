@@ -819,8 +819,8 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 
       <div class="bet-summary">本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(state.myBalance) }}</div>
       <div class="cap-hint">
-        最小 {{ fmt(minBet) }} · 此注上限
-        <b :class="{ over: overCap }">{{ maxBetForCurrent === Infinity ? '不限' : fmt(maxBetForCurrent) }}</b>
+        最小 {{ fmt(minBet) }} · 單注上限 {{ fmt(config.maxBet) }} · 此注可下
+        <b :class="{ over: overCap }">{{ fmt(maxBetForCurrent) }}</b>
         · 莊家本局還可承受 {{ fmt(state.remainingCapacity) }} {{ state.currency }}
       </div>
       <button class="roll-btn" :disabled="!canBet" @click="placeBet">
