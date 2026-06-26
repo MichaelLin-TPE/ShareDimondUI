@@ -78,6 +78,7 @@ interface State {
   rematchByName?: string
   rematchRoundId?: number
   rematchRemainingMs?: number
+  rematchPlayers?: number
   myCards?: string[]
   myFront?: string[]
   myMiddle?: string[]
@@ -428,7 +429,6 @@ const showInvite = computed(() =>
 const inviteCountdown = computed(() =>
   Math.max(0, Math.ceil((localInviteDeadline.value - nowMs.value) / 1000)),
 )
-const rematch = () => post('/thirteen/rematch')
 function acceptInvite() {
   const rid = state.value?.rematchRoundId
   if (rid) joinRoom(rid)
@@ -436,7 +436,8 @@ function acceptInvite() {
 function declineInvite() {
   const rid = state.value?.rematchRoundId ?? null
   inviteDismissed.value = rid
-  // 通知後端我婉拒了 → 其他人不必等我,可立即開牌
+  forceLobby.value = true // 退出 → 回大廳
+  // 通知後端我退出了 → 其他人不必等我,可立即開牌
   fetch(`${API}/thirteen/decline`, { method: 'POST', headers: headers(), body: JSON.stringify({ roundId: rid }) }).catch(() => {})
 }
 
@@ -510,22 +511,6 @@ onUnmounted(() => {
             <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
           </div>
         </transition-group>
-      </div>
-    </transition>
-
-    <!-- 再來一局邀請 -->
-    <transition name="t13-cele">
-      <div v-if="showInvite" class="t13-invite-mask">
-        <div class="t13-invite">
-          <div class="t13-invite-emoji">🀄</div>
-          <div class="t13-invite-title">{{ state?.rematchByName || '有人' }} 邀請你再來一局！</div>
-          <div class="t13-invite-count">⏱ {{ inviteCountdown }} 秒內回應，沒按視同離開</div>
-          <div class="t13-invite-sub">同意就回座位續戰（凍結賭本 {{ fmt(escrowNeeded) }} {{ config.currency }}），不同意就略過。</div>
-          <div class="t13-invite-btns">
-            <button class="t13-btn primary" :disabled="busy" @click="acceptInvite">✅ 同意，再來一局</button>
-            <button class="t13-btn ghost" :disabled="busy" @click="declineInvite">✖ 不玩了</button>
-          </div>
-        </div>
       </div>
     </transition>
 
@@ -764,8 +749,21 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="t13-after-actions">
-            <button v-if="myResult" class="t13-btn primary" :disabled="busy" @click="rematch">🔁 再來一局（揪原班人馬，10秒）</button>
+          <!-- 系統自動詢問:再戰 / 退出(30秒考慮期,內嵌) -->
+          <div v-if="showInvite" class="t13-rematch-box">
+            <div class="t13-rematch-head">
+              <span>🔁 要再戰一次嗎？</span>
+              <span class="t13-rematch-count" :class="{ urgent: inviteCountdown <= 10 }">⏱ {{ inviteCountdown }}s</span>
+            </div>
+            <div class="t13-rematch-sub">
+              已有 <b>{{ state?.rematchPlayers ?? 0 }}</b> 人選擇再戰 · 再戰需凍結賭本 {{ fmt(escrowNeeded) }} {{ config.currency }}（時間到沒選視同退出）
+            </div>
+            <div class="t13-rematch-btns">
+              <button class="t13-btn primary" :disabled="busy" @click="acceptInvite">🔁 再戰</button>
+              <button class="t13-btn ghost" :disabled="busy" @click="declineInvite">🚪 退出房間</button>
+            </div>
+          </div>
+          <div v-else class="t13-after-actions">
             <button class="t13-btn ghost" :disabled="busy" @click="forceLobby = true">🏠 回大廳</button>
           </div>
         </div>
@@ -893,24 +891,24 @@ onUnmounted(() => {
 .t13-zone-label { font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .t13-zone-cap { color: #cbd5e1; }
 .t13-zone-type { margin-left: auto; color: var(--c-light); font-weight: 700; }
-.t13-zone-cards { display: flex; flex-wrap: wrap; gap: 6px; min-height: 52px; align-items: center; }
+.t13-zone-cards { display: flex; flex-wrap: wrap; gap: 6px; min-height: 70px; align-items: center; }
 .t13-zone-hint { font-size: 12px; color: #475569; }
 .t13-pool { border-top: 1px solid rgba(255,255,255,.08); padding-top: 10px; }
 .t13-card {
-  width: 40px; height: 54px; border-radius: 7px; background: #f8fafc; color: #0f172a;
+  width: 50px; height: 68px; border-radius: 8px; background: #f8fafc; color: #0f172a;
   border: 2px solid transparent; display: flex; flex-direction: column; align-items: center; justify-content: center;
   font-weight: 800; cursor: pointer; padding: 0; line-height: 1;
 }
-.t13-card .r { font-size: 16px; }
-.t13-card .s { font-size: 18px; font-weight: 900; line-height: 1; }
+.t13-card .r { font-size: 21px; }
+.t13-card .s { font-size: 22px; font-weight: 900; line-height: 1; }
 /* 四色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 — 黑桃梅花一眼分辨 */
 .t13-card.su-s { color: #0f172a; }
 .t13-card.su-h { color: #e11d48; }
 .t13-card.su-d { color: #2563eb; }
 .t13-card.su-c { color: #15a34a; }
-.t13-card.sm { width: 32px; height: 44px; }
-.t13-card.sm .r { font-size: 13px; }
-.t13-card.sm .s { font-size: 15px; }
+.t13-card.sm { width: 40px; height: 55px; }
+.t13-card.sm .r { font-size: 16px; }
+.t13-card.sm .s { font-size: 18px; }
 .t13-card:disabled { cursor: default; }
 .t13-result { display: flex; flex-direction: column; gap: 10px; }
 .t13-myresult { text-align: center; font-weight: 800; font-size: 16px; padding: 12px; border-radius: 12px; background: #131722; }
@@ -1017,6 +1015,15 @@ onUnmounted(() => {
 .t13-invite-btns .t13-btn { width: 100%; box-sizing: border-box; padding: 14px; font-size: 15px; }
 .t13-after-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .t13-after-actions .t13-btn { flex: 1 1 0; min-width: 140px; }
+/* 結算後內嵌再戰區 */
+.t13-rematch-box { background: rgba(var(--c-light-rgb), .08); border: 1px solid rgba(var(--c-light-rgb), .4); border-radius: 12px; padding: 12px; }
+.t13-rematch-head { display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 16px; }
+.t13-rematch-count { color: #fbbf24; font-variant-numeric: tabular-nums; }
+.t13-rematch-count.urgent { color: #f87171; }
+.t13-rematch-sub { font-size: 12px; color: #94a3b8; margin: 6px 0 10px; line-height: 1.6; }
+.t13-rematch-sub b { color: var(--c-light); }
+.t13-rematch-btns { display: flex; gap: 10px; }
+.t13-rematch-btns .t13-btn { flex: 1 1 0; }
 
 /* 智能理牌選項 */
 .t13-suggest-mask { position: fixed; inset: 0; z-index: 9997; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.72); padding: 16px; }
