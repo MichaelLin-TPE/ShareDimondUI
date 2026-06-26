@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
@@ -59,6 +59,7 @@ interface RoomSummary {
 interface State {
   thirteenEnabled: boolean
   inLobby: boolean
+  spectating?: boolean
   rooms?: RoomSummary[]
   status: string
   roundId: number | null
@@ -233,9 +234,14 @@ async function fetchRound() {
   if (fetching) return
   fetching = true
   try {
-    const res = await fetch(`${API}/thirteen/round`, { headers: headers() })
+    const url = spectateRoundId.value != null
+      ? `${API}/thirteen/spectate?roundId=${spectateRoundId.value}`
+      : `${API}/thirteen/round`
+    const res = await fetch(url, { headers: headers() })
     if (!res.ok) return
     const d: State = await res.json()
+    // 觀戰的房結束了(後端回大廳)→ 自動退出觀戰
+    if (spectateRoundId.value != null && (d.inLobby || !d.spectating)) spectateRoundId.value = null
     state.value = d
     // 進到真正的房間(或本來就在大廳)就解除「回大廳」暫時旗標
     if (d.inLobby || d.status === 'WAITING' || d.status === 'ARRANGING') forceLobby.value = false
@@ -292,6 +298,18 @@ async function post(path: string, body?: unknown) {
   } catch (e) {
     console.error(e); useAlert.error('連線失敗'); return false
   } finally { busy.value = false }
+}
+
+// ---- 觀戰 ----
+const spectateRoundId = ref<number | null>(null)
+async function spectate(roundId: number) {
+  spectateRoundId.value = roundId
+  forceLobby.value = false
+  await fetchRound()
+}
+async function leaveSpectate() {
+  spectateRoundId.value = null
+  await fetchRound()
 }
 
 async function createRoom() {
@@ -352,11 +370,18 @@ const chatOpen = ref(false)
 const chatMessages = ref<ChatMsg[]>([])
 const chatDraft = ref('')
 const chatSending = ref(false)
+const chatScroll = ref<HTMLElement | null>(null)
+const myName = authStore.member?.userName
+function scrollChatToBottom() {
+  const el = chatScroll.value
+  if (el) el.scrollTop = el.scrollHeight
+}
 async function loadChat() {
   try {
     const res = await fetch(`${API}/thirteen/chat`, { headers: headers() })
     if (!res.ok) return
     chatMessages.value = await res.json()
+    nextTick(scrollChatToBottom)
   } catch (e) { console.error(e) }
 }
 async function sendChat() {
@@ -553,6 +578,14 @@ onUnmounted(() => {
           🀄 十三支 <span class="t13-sub">玩家互賭 · 系統不抽頭只抽水進池</span>
           <span class="t13-audio">
             <button class="t13-audio-btn" :class="{ off: !audio.bgmOn.value }" @click="audio.toggleBgm()" :title="audio.bgmOn.value ? '關背景音樂' : '開背景音樂'">{{ audio.bgmOn.value ? '🎵' : '🔇' }}</button>
+            <input
+              v-if="audio.bgmOn.value"
+              class="t13-vol"
+              type="range" min="0" max="1" step="0.05"
+              :value="audio.bgmVolume.value"
+              @input="audio.setVolume(Number(($event.target as HTMLInputElement).value))"
+              title="音樂音量"
+            />
             <button class="t13-audio-btn" :class="{ off: !audio.sfxOn.value }" @click="audio.toggleSfx()" :title="audio.sfxOn.value ? '關音效' : '開音效'">{{ audio.sfxOn.value ? '🔊' : '🔈' }}</button>
           </span>
         </div>
@@ -590,18 +623,26 @@ onUnmounted(() => {
               <div class="t13-room-host">👑 {{ r.hostName }}<span v-if="r.rematch" class="t13-room-tag">再戰</span></div>
               <div class="t13-room-meta">底注 {{ fmt(r.baseBet) }} · {{ r.players }}/{{ r.maxPlayers }} 人 · {{ r.status === 'WAITING' ? '湊人中' : '對戰中' }}</div>
             </div>
-            <button
-              class="t13-btn primary mini"
-              :disabled="busy || r.status !== 'WAITING' || r.players >= r.maxPlayers"
-              @click="joinRoom(r.roundId)"
-            >
-              {{ r.status !== 'WAITING' ? '進行中' : r.players >= r.maxPlayers ? '已滿' : '加入' }}
-            </button>
+            <div class="t13-room-acts">
+              <button class="t13-btn ghost mini" :disabled="busy" @click="spectate(r.roundId)">👁 觀戰</button>
+              <button
+                v-if="r.status === 'WAITING'"
+                class="t13-btn primary mini"
+                :disabled="busy || r.players >= r.maxPlayers"
+                @click="joinRoom(r.roundId)"
+              >
+                {{ r.players >= r.maxPlayers ? '已滿' : '加入' }}
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 房間內 -->
         <template v-else>
+        <div v-if="state?.spectating" class="t13-spectate-bar">
+          👁 觀戰中（純看戲，不參與下注）
+          <button class="t13-btn ghost mini" :disabled="busy" @click="leaveSpectate">離開觀戰</button>
+        </div>
         <div class="t13-table">
           <div class="t13-table-head">
             <span v-if="state?.status === 'WAITING'">🪑 湊人中 {{ seatedCount }}/{{ state?.maxPlayers }}</span>
@@ -636,7 +677,7 @@ onUnmounted(() => {
           </div>
 
           <!-- 房主控制 / 離開 -->
-          <div class="t13-lobby-actions" v-if="state?.status === 'WAITING'">
+          <div class="t13-lobby-actions" v-if="state?.status === 'WAITING' && !state?.spectating">
             <button v-if="canStart" class="t13-btn primary" :disabled="busy" @click="startRoom">▶ 開始（{{ seatedCount }} 人）</button>
             <p v-else-if="state?.isHost" class="t13-note">等人到齊（至少 {{ config.minPlayers }} 人）就能按開始；滿 {{ state?.maxPlayers }} 人自動開始。</p>
             <p v-else class="t13-note">等房主開始；滿 {{ state?.maxPlayers }} 人自動開始。</p>
@@ -782,6 +823,9 @@ onUnmounted(() => {
               <button class="t13-btn ghost" :disabled="busy" @click="declineInvite">🚪 退出房間</button>
             </div>
           </div>
+          <div v-else-if="state?.spectating" class="t13-after-actions">
+            <button class="t13-btn ghost" :disabled="busy" @click="leaveSpectate">👁 離開觀戰</button>
+          </div>
           <div v-else class="t13-after-actions">
             <button class="t13-btn ghost" :disabled="busy" @click="forceLobby = true">🏠 回大廳</button>
           </div>
@@ -820,25 +864,6 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- 聊天室 -->
-        <div class="t13-panel">
-          <button class="t13-panel-toggle" @click="chatOpen = !chatOpen">
-            💬 賭桌聊天 <span>{{ chatOpen ? '▲' : '▼' }}</span>
-          </button>
-          <div v-if="chatOpen" class="t13-panel-body chat">
-            <div class="t13-chat-msgs">
-              <div v-if="chatMessages.length === 0" class="t13-board-empty">還沒人說話，來聊兩句 🗣️</div>
-              <div v-for="(m, i) in chatMessages" :key="i" class="t13-chat-msg">
-                <b>{{ m.userName }}</b><span>{{ m.text }}</span>
-              </div>
-            </div>
-            <div class="t13-chat-input">
-              <input v-model="chatDraft" maxlength="100" placeholder="說點什麼…" @keyup.enter="sendChat" />
-              <button :disabled="chatSending || !chatDraft.trim()" @click="sendChat">送</button>
-            </div>
-          </div>
-        </div>
-
         <!-- 特殊牌型說明 -->
         <details class="t13-rules">
           <summary>📜 規則 / 特殊牌型</summary>
@@ -847,19 +872,47 @@ onUnmounted(() => {
           <p>特殊牌型(整副報到)：一條龍 / 至尊清龍 / 三同花順 等可額外<b>獨得/均分彩金池</b>。</p>
         </details>
       </template>
-    </div>
+    </div><!-- /.t13-page -->
+
+    <!-- 聊天室(桌面右側 / 手機浮動抽屜) -->
+    <aside class="t13-chat" :class="{ open: chatOpen }">
+      <div class="t13-chat-head">
+        <span>💬 賭桌聊天</span>
+        <button class="t13-chat-x" @click="chatOpen = false" aria-label="關閉">✕</button>
+      </div>
+      <div ref="chatScroll" class="t13-chat-list">
+        <div v-if="!chatMessages.length" class="t13-chat-empty">還沒人說話，來聊兩句 🗣️</div>
+        <div
+          v-for="(m, i) in chatMessages"
+          :key="i"
+          class="t13-chat-row"
+          :class="{ mine: m.userName === myName }"
+        >
+          <span class="t13-chat-who">{{ m.userName === myName ? '我' : m.userName }}</span>
+          <span class="t13-chat-bubble">{{ m.text }}</span>
+        </div>
+      </div>
+      <form class="t13-chat-form" @submit.prevent="sendChat">
+        <input v-model="chatDraft" class="t13-chat-field" maxlength="100" placeholder="說點什麼…" />
+        <button type="submit" class="t13-chat-send" :disabled="chatSending || !chatDraft.trim()">送</button>
+      </form>
+    </aside>
+    <button class="t13-chat-fab" :class="{ active: chatOpen }" @click="chatOpen = !chatOpen" aria-label="聊天室">
+      {{ chatOpen ? '✕' : '💬' }}
+    </button>
   </div>
 </template>
 
 <style scoped>
-.t13-shell { padding: 12px; color: #e5e7eb; }
-.t13-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.t13-shell { display: flex; gap: 16px; align-items: flex-start; justify-content: center; max-width: 1100px; margin: 0 auto; padding: 12px; color: #e5e7eb; position: relative; }
+.t13-page { flex: 1 1 auto; min-width: 0; max-width: 760px; display: flex; flex-direction: column; gap: 12px; }
 .t13-head { display: flex; flex-direction: column; gap: 8px; }
 .t13-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .t13-sub { font-size: 12px; font-weight: 400; color: #94a3b8; margin-left: 6px; }
 .t13-audio { margin-left: auto; display: flex; gap: 6px; }
 .t13-audio-btn { background: rgba(var(--c-light-rgb), .12); border: 1px solid rgba(var(--c-light-rgb), .3); border-radius: 8px; width: 34px; height: 30px; cursor: pointer; font-size: 15px; padding: 0; }
 .t13-audio-btn.off { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); opacity: .6; }
+.t13-vol { width: 70px; accent-color: var(--c-light); cursor: pointer; }
 .t13-stats { display: flex; gap: 8px; flex-wrap: wrap; }
 .t13-stat { flex: 1 1 0; min-width: 110px; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
 .t13-stat span { display: block; font-size: 11px; color: #94a3b8; }
@@ -876,6 +929,10 @@ onUnmounted(() => {
 .t13-room-tag { font-size: 10px; background: rgba(var(--c-light-rgb),.2); color: var(--c-light); border-radius: 5px; padding: 1px 6px; }
 .t13-room-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
 .t13-room-bar { font-size: 12px; color: #cbd5e1; margin-bottom: 10px; }
+.t13-room-acts { display: flex; gap: 6px; flex: 0 0 auto; }
+.t13-spectate-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: rgba(var(--c-light-rgb), .1); border: 1px solid rgba(var(--c-light-rgb), .35);
+  border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 13px; color: var(--c-light); }
 .t13-kick { margin-left: 8px; border: none; background: rgba(248,113,113,.18); color: #fca5a5; border-radius: 6px; width: 20px; height: 20px; cursor: pointer; font-weight: 800; line-height: 1; padding: 0; }
 .t13-kick:hover { background: rgba(248,113,113,.32); }
 .t13-table { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
@@ -980,16 +1037,42 @@ onUnmounted(() => {
 .t13-hist-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.05); }
 .t13-hist-row .res { width: 56px; }
 .t13-hist-row .amt { margin-left: auto; }
-.t13-panel-body.chat { flex-direction: column; }
-.t13-chat-msgs { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
-.t13-chat-msg { font-size: 13px; line-height: 1.4; }
-.t13-chat-msg b { color: var(--c-light); margin-right: 6px; }
-.t13-chat-msg span { color: #cbd5e1; word-break: break-word; }
-.t13-chat-input { display: flex; gap: 8px; margin-top: 10px; }
-.t13-chat-input input { flex: 1 1 0; min-width: 0; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 9px 12px; color: #f1f5f9; outline: none; }
-.t13-chat-input input:focus { border-color: var(--c-light); }
-.t13-chat-input button { flex: 0 0 52px; height: 38px; align-self: center; border: none; border-radius: 8px; background: var(--c-light); color: var(--c-on); font-weight: 700; cursor: pointer; box-sizing: border-box; }
-.t13-chat-input button:disabled { background: #3a4356; color: #9ca3af; }
+/* === 聊天室(桌面右側 aside / 手機抽屜,仿骰寶) === */
+.t13-chat { flex: 0 0 300px; position: sticky; top: 12px; display: flex; flex-direction: column;
+  height: calc(100vh - 80px); max-height: 700px; background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 14px; overflow: hidden; }
+.t13-chat-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px;
+  font-weight: 800; font-size: .9rem; color: var(--c-light); border-bottom: 1px solid rgba(255,255,255,.08); }
+.t13-chat-x { display: none; background: none; border: none; color: #94a3b8; font-size: 1rem; cursor: pointer; }
+.t13-chat-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; scrollbar-width: thin; }
+.t13-chat-empty { color: #64748b; font-size: .8rem; text-align: center; margin: auto 0; }
+.t13-chat-row { display: flex; flex-direction: column; align-items: flex-start; max-width: 90%; }
+.t13-chat-row.mine { align-self: flex-end; align-items: flex-end; }
+.t13-chat-who { font-size: .66rem; color: #94a3b8; margin: 0 4px 1px; }
+.t13-chat-bubble { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); border-radius: 12px;
+  padding: 5px 10px; font-size: .85rem; color: #e2e8f0; word-break: break-word; line-height: 1.4; }
+.t13-chat-row.mine .t13-chat-bubble { background: rgba(var(--c-light-rgb), .18); border-color: rgba(var(--c-light-rgb), .4); color: var(--c-light); }
+.t13-chat-form { display: flex; align-items: center; gap: 8px; padding: 8px; border-top: 1px solid rgba(255,255,255,.08); }
+.t13-chat-field { flex: 1 1 0; min-width: 0; height: 40px; box-sizing: border-box; padding: 0 12px; margin: 0;
+  background: #0f172a; border: 1px solid #334155; border-radius: 9px; color: #fff; font-size: .88rem; }
+.t13-chat-field:focus { outline: none; border-color: var(--c-light); }
+.t13-chat-send { flex: 0 0 56px; width: 56px; height: 40px; align-self: center; margin: 0; padding: 0; box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 9px;
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); font-weight: 800; font-size: .9rem; cursor: pointer; }
+.t13-chat-send:disabled { opacity: .5; cursor: not-allowed; }
+.t13-chat-fab { display: none; }
+@media (max-width: 880px) {
+  .t13-shell { display: block; max-width: 760px; }
+  .t13-page { max-width: none; }
+  .t13-chat { position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: 62vh; max-height: none; flex: none;
+    background: #131722; border: 1px solid rgba(255,255,255,.1); border-bottom: none; border-radius: 16px 16px 0 0;
+    transform: translateY(105%); transition: transform .3s ease; z-index: 1500; box-shadow: 0 -8px 24px rgba(0,0,0,.6); }
+  .t13-chat.open { transform: translateY(0); }
+  .t13-chat-x { display: inline-flex; }
+  .t13-chat-fab { display: inline-flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: 16px;
+    width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+    color: var(--c-on); font-size: 1.4rem; cursor: pointer; z-index: 1600; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+}
 
 /* 尊榮中獎動畫 */
 .t13-celebrate { position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; cursor: pointer;
