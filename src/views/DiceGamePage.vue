@@ -12,7 +12,7 @@ const FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
 type BetType = 'BIG' | 'SMALL' | 'SUM' | 'SINGLE' | 'TRIPLE'
 
 const loading = ref(true)
-const config = ref({ currency: '', enabled: false, betAmount: 10, maxPayout: 1000000 })
+const config = ref({ currency: '', enabled: false, betAmount: 10, maxPayout: 1000000, maxBet: 2000000 })
 const betMultipliers = ref<number[]>([1, 2, 3, 5, 10])
 
 interface BetView {
@@ -286,10 +286,10 @@ const curMaxReturn = computed(() => {
   return row ? row.multiplier : 0
 })
 const curNet = computed(() => Math.max(0, curMaxReturn.value - 1))
-// 此注上限 = 本局莊家剩餘可承受 ÷ (賠率-1);豹子(net 0)莊家面不限
+// 此注上限 = min( 莊家剩餘可承受÷(賠率-1) , 單注硬上限 200萬 );豹子(net 0)莊家面不限,只受 200萬 限制
 const maxBetForCurrent = computed(() => {
-  if (curNet.value <= 0) return Infinity
-  return Math.floor(Number(state.value?.remainingCapacity ?? 0) / curNet.value)
+  const bankerCap = curNet.value <= 0 ? Infinity : Math.floor(Number(state.value?.remainingCapacity ?? 0) / curNet.value)
+  return Math.min(bankerCap, config.value.maxBet)
 })
 const overCap = computed(
   () => maxBetForCurrent.value !== Infinity && effectiveBet.value > maxBetForCurrent.value,
@@ -398,6 +398,7 @@ async function loadConfig() {
     enabled: !!d.enabled,
     betAmount: Number(d.betAmount),
     maxPayout: Number(d.maxPayout),
+    maxBet: Number(d.maxBet) || 2000000,
   }
   if (Array.isArray(d.betMultipliers) && d.betMultipliers.length) {
     betMultipliers.value = d.betMultipliers
