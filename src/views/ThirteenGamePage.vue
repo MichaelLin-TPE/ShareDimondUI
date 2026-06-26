@@ -5,6 +5,9 @@ import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
 import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
 import { evaluate, isFoul, cardSuit, cardRank } from '@/utils/thirteenEval'
+import { useThirteenAudio } from '@/composables/thirteenAudio'
+
+const audio = useThirteenAudio()
 
 // 依數字→花色由小到大排序(花色序 ♣♦♥♠)
 const SUIT_ORDER: Record<string, number> = { C: 0, D: 1, H: 2, S: 3 }
@@ -154,6 +157,7 @@ function addToActive(card: string) {
     return
   }
   removeFromAll(card)
+  audio.playPlace()
   arr.value = displayHand([...arr.value, card]) // 放進去就依牌型分組排好,方便看
   // 該區滿了 → 自動跳到下一個還沒滿的區(尾→中→頭)
   if (arr.value.length >= ZCAP[z]) {
@@ -232,6 +236,8 @@ async function fetchRound() {
     state.value = d
     // 進到真正的房間(或本來就在大廳)就解除「回大廳」暫時旗標
     if (d.inLobby || d.status === 'WAITING' || d.status === 'ARRANGING') forceLobby.value = false
+    if (d.rematchInvite && !prevInvite) audio.playInvite() // 被邀請叮一聲
+    prevInvite = !!d.rematchInvite
     localInviteDeadline.value = d.rematchInvite ? Date.now() + Number(d.rematchRemainingMs || 0) : 0
     localStartDeadline.value = d.status === 'WAITING' ? Date.now() + Number(d.startRemainingMs || 0) : 0
     localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
@@ -252,11 +258,14 @@ async function fetchRound() {
       arrangedForRound = null // 下一局重新理牌
       loadBoards()
       if (fresh) {
+        audio.playReveal()
         const me = d.seats?.find((x) => x.mine)
         if (me) {
-          if ((me.poolWin ?? 0) > 0) triggerCelebrate('pool', `🀄 ${me.specialZh ?? '特殊牌'} 中彩金池 +${fmt(me.poolWin)}！`)
-          else if (me.special) triggerCelebrate('special', `🀄 ${me.specialZh}！`)
-          else if ((me.netUnits ?? 0) >= 6) triggerCelebrate('win', `🎉 大贏 ${me.netUnits} 水！`)
+          if ((me.poolWin ?? 0) > 0) { triggerCelebrate('pool', `🀄 ${me.specialZh ?? '特殊牌'} 中彩金池 +${fmt(me.poolWin)}！`); audio.playJackpot() }
+          else if (me.special) { triggerCelebrate('special', `🀄 ${me.specialZh}！`); audio.playJackpot() }
+          else if ((me.netUnits ?? 0) >= 6) { triggerCelebrate('win', `🎉 大贏 ${me.netUnits} 水！`); audio.playWin() }
+          else if ((me.netUnits ?? 0) > 0) window.setTimeout(() => audio.playWin(), 500)
+          else if ((me.netUnits ?? 0) < 0 || me.foul) window.setTimeout(() => audio.playLose(), 500)
         }
       }
     }
@@ -303,7 +312,8 @@ async function submit() {
     const ok = await useAlert.confirm('目前是「倒水」(後墩<中墩 或 中墩<前墩),會直接輸給每一家！確定要這樣交牌?')
     if (!ok?.isConfirmed) return
   }
-  await post('/thirteen/submit', { front: front.value, middle: middle.value, back: back.value })
+  const ok = await post('/thirteen/submit', { front: front.value, middle: middle.value, back: back.value })
+  if (ok) audio.playSubmit()
 }
 
 interface SuggestOpt { front: string[]; middle: string[]; back: string[] }
@@ -391,9 +401,11 @@ const dealHand = ref<string[]>([])
 const dealPhase = ref<'deal' | 'sort'>('deal')
 let dealtAnimRound: number | null = null
 let prevStatus: string | null = null
+let prevInvite = false
 let dealTimer: number | undefined
 let sortTimer: number | undefined
 function startDealAnimation(cards: string[]) {
+  audio.playDeal()
   dealHand.value = [...cards] // 先按發牌順序攤出來
   dealPhase.value = 'deal'
   dealing.value = true
@@ -457,8 +469,10 @@ onMounted(async () => {
   }
   tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
   heartbeat = window.setInterval(fetchRound, 8000)
+  audio.armAutoStart() // 第一次點擊後自動播背景音樂
 })
 onUnmounted(() => {
+  audio.dispose()
   if (ws) ws.disconnect()
   if (tickTimer) clearInterval(tickTimer)
   if (heartbeat) clearInterval(heartbeat)
@@ -543,7 +557,13 @@ onUnmounted(() => {
     <div class="t13-page">
       <!-- 頁首 -->
       <div class="t13-head">
-        <div class="t13-title">🀄 十三支 <span class="t13-sub">玩家互賭 · 系統不抽頭只抽水進池</span></div>
+        <div class="t13-title">
+          🀄 十三支 <span class="t13-sub">玩家互賭 · 系統不抽頭只抽水進池</span>
+          <span class="t13-audio">
+            <button class="t13-audio-btn" :class="{ off: !audio.bgmOn.value }" @click="audio.toggleBgm()" :title="audio.bgmOn.value ? '關背景音樂' : '開背景音樂'">{{ audio.bgmOn.value ? '🎵' : '🔇' }}</button>
+            <button class="t13-audio-btn" :class="{ off: !audio.sfxOn.value }" @click="audio.toggleSfx()" :title="audio.sfxOn.value ? '關音效' : '開音效'">{{ audio.sfxOn.value ? '🔊' : '🔈' }}</button>
+          </span>
+        </div>
         <div class="t13-stats">
           <div class="t13-stat"><span>彩金池</span><b>{{ config.currency }} {{ fmt(state?.poolBalance) }}</b></div>
           <div class="t13-stat"><span>我的餘額</span><b>{{ config.currency }} {{ fmt(state?.myBalance) }}</b></div>
@@ -818,8 +838,11 @@ onUnmounted(() => {
 .t13-shell { padding: 12px; color: #e5e7eb; }
 .t13-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 .t13-head { display: flex; flex-direction: column; gap: 8px; }
-.t13-title { font-size: 20px; font-weight: 800; }
+.t13-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .t13-sub { font-size: 12px; font-weight: 400; color: #94a3b8; margin-left: 6px; }
+.t13-audio { margin-left: auto; display: flex; gap: 6px; }
+.t13-audio-btn { background: rgba(var(--c-light-rgb), .12); border: 1px solid rgba(var(--c-light-rgb), .3); border-radius: 8px; width: 34px; height: 30px; cursor: pointer; font-size: 15px; padding: 0; }
+.t13-audio-btn.off { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); opacity: .6; }
 .t13-stats { display: flex; gap: 8px; flex-wrap: wrap; }
 .t13-stat { flex: 1 1 0; min-width: 110px; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
 .t13-stat span { display: block; font-size: 11px; color: #94a3b8; }
