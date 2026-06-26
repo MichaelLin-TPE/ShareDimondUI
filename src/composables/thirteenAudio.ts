@@ -100,77 +100,70 @@ export function useThirteenAudio() {
     ;[784, 1047].forEach((f, i) => tone(c, t + i * 0.12, f, 0.3, 0.16, 'sine'))
   }
 
-  // ---- 背景音樂(慢和弦 pad + 輕琶音) ----
+  // ---- 背景音樂(柔情慢板:暖 pad + 低音根音 + 偶爾輕鈴) ----
   let musicGain: GainNode | null = null
   let chordTimer: number | undefined
-  let arpTimer: number | undefined
   let chordIdx = 0
-  // Cmaj7 / Am7 / Fmaj7 / G7 — 輕鬆 lounge 進行(Hz)
-  const CHORDS = [
-    [130.81, 164.81, 196.0, 246.94],
-    [110.0, 130.81, 164.81, 196.0],
-    [174.61, 130.81, 164.81, 196.0],
-    [196.0, 146.83, 174.61, 246.94],
+  const CHORD_MS = 7000
+  // Am – F – C – G 抒情進行。bass=低音根音,notes=和弦音(中音域)
+  interface Chord { bass: number; notes: number[]; top: number }
+  const CHORDS: Chord[] = [
+    { bass: 110.0, notes: [220.0, 261.63, 329.63], top: 659.25 },  // Am
+    { bass: 87.31, notes: [174.61, 220.0, 261.63], top: 523.25 },  // F
+    { bass: 130.81, notes: [261.63, 329.63, 392.0], top: 783.99 }, // C
+    { bass: 98.0, notes: [196.0, 246.94, 293.66], top: 587.33 },   // G
   ]
 
-  function playPad(notes: number[]) {
-    const c = audio(); if (!c || !musicGain) return
+  // 一個帶平滑淡入淡出的暖音(三角波),自動接到 musicGain
+  function voice(c: AudioContext, freq: number, type: OscillatorType, peak: number, attack: number, hold: number, release: number) {
+    if (!musicGain) return
     const t = c.currentTime
-    for (const f of notes) {
-      const o = c.createOscillator()
-      o.type = 'sine'
-      o.frequency.value = f
-      const g = c.createGain()
-      g.gain.setValueAtTime(0.0001, t)
-      g.gain.linearRampToValueAtTime(0.16, t + 1.2)   // 慢慢淡入
-      g.gain.linearRampToValueAtTime(0.13, t + 3.0)
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 4.4) // 淡出
-      o.connect(g); g.connect(musicGain)
-      o.start(t); o.stop(t + 4.5)
-    }
-  }
-  function playArp() {
-    const c = audio(); if (!c || !musicGain) return
-    const notes = CHORDS[chordIdx % CHORDS.length] ?? []
-    const f = notes[(Math.floor(c.currentTime / 0.55)) % notes.length] ?? 196
     const o = c.createOscillator()
-    o.type = 'triangle'
-    o.frequency.value = f * 2 // 高八度,像鐘琴
+    o.type = type
+    o.frequency.value = freq
     const g = c.createGain()
-    const t = c.currentTime
     g.gain.setValueAtTime(0.0001, t)
-    g.gain.linearRampToValueAtTime(0.05, t + 0.02)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5)
+    g.gain.linearRampToValueAtTime(peak, t + attack)
+    g.gain.setValueAtTime(peak, t + attack + hold)
+    g.gain.linearRampToValueAtTime(0.0001, t + attack + hold + release)
     o.connect(g); g.connect(musicGain)
-    o.start(t); o.stop(t + 0.5)
+    o.start(t); o.stop(t + attack + hold + release + 0.1)
+  }
+
+  function playChord(ch: Chord) {
+    const c = audio(); if (!c || !musicGain) return
+    voice(c, ch.bass, 'sine', 0.12, 2.0, 2.0, 2.8)          // 低音根音,溫暖
+    for (const f of ch.notes) voice(c, f, 'triangle', 0.07, 2.2, 1.8, 2.8) // 和弦 pad
+    // 偶爾一聲輕柔鈴音(高音頂音,慢慢消失)
+    voice(c, ch.top, 'sine', 0.045, 0.6, 0.2, 3.0)
   }
 
   function startMusic() {
     const c = audio(); if (!c || musicGain) return
     musicGain = c.createGain()
-    musicGain.gain.value = 0.0
+    musicGain.gain.value = 0.0001
     const lp = c.createBiquadFilter()
     lp.type = 'lowpass'
-    lp.frequency.value = 900
+    lp.frequency.value = 1500
+    lp.Q.value = 0.3
     musicGain.connect(lp)
     lp.connect(c.destination)
-    musicGain.gain.linearRampToValueAtTime(0.5, c.currentTime + 2) // 整體音量很輕
+    musicGain.gain.linearRampToValueAtTime(0.55, c.currentTime + 3) // 整體很輕,慢慢進來
     chordIdx = 0
-    playPad(CHORDS[0]!)
+    playChord(CHORDS[0]!)
     chordTimer = window.setInterval(() => {
       chordIdx = (chordIdx + 1) % CHORDS.length
-      playPad(CHORDS[chordIdx]!)
-    }, 4200)
-    arpTimer = window.setInterval(playArp, 560)
+      playChord(CHORDS[chordIdx]!)
+    }, CHORD_MS)
   }
   function stopMusic() {
     if (chordTimer) { clearInterval(chordTimer); chordTimer = undefined }
-    if (arpTimer) { clearInterval(arpTimer); arpTimer = undefined }
     if (musicGain && ctx) {
       try {
-        musicGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6)
+        musicGain.gain.cancelScheduledValues(ctx.currentTime)
+        musicGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 1.0)
         const g = musicGain
-        window.setTimeout(() => { try { g.disconnect() } catch { /* ignore */ } }, 800)
+        window.setTimeout(() => { try { g.disconnect() } catch { /* ignore */ } }, 1200)
       } catch { /* ignore */ }
       musicGain = null
     }
