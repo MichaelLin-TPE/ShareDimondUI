@@ -79,6 +79,8 @@ interface State {
   rematchRoundId?: number
   rematchRemainingMs?: number
   rematchPlayers?: number
+  rematchExpected?: number
+  rematchJoined?: boolean
   myCards?: string[]
   myFront?: string[]
   myMiddle?: string[]
@@ -239,7 +241,7 @@ async function fetchRound() {
     if (d.inLobby || d.status === 'WAITING' || d.status === 'ARRANGING') forceLobby.value = false
     if (d.rematchInvite && !prevInvite) audio.playInvite() // 被邀請叮一聲
     prevInvite = !!d.rematchInvite
-    localInviteDeadline.value = d.rematchInvite ? Date.now() + Number(d.rematchRemainingMs || 0) : 0
+    localInviteDeadline.value = (d.rematchInvite || d.rematchJoined) ? Date.now() + Number(d.rematchRemainingMs || 0) : 0
     localStartDeadline.value = d.status === 'WAITING' ? Date.now() + Number(d.startRemainingMs || 0) : 0
     localArrangeDeadline.value = d.status === 'ARRANGING' ? Date.now() + Number(d.arrangeRemainingMs || 0) : 0
     // 開局發牌特效:剛從非理牌狀態轉成理牌、且我有牌(現場開局,非重整)
@@ -439,6 +441,11 @@ function declineInvite() {
   forceLobby.value = true // 退出 → 回大廳
   // 通知後端我退出了 → 其他人不必等我,可立即開牌
   fetch(`${API}/thirteen/decline`, { method: 'POST', headers: headers(), body: JSON.stringify({ roundId: rid }) }).catch(() => {})
+}
+// 已選再戰後反悔:離開再戰房(退回賭本)→ 回大廳
+async function cancelRematch() {
+  await leaveRoom()
+  forceLobby.value = true
 }
 
 // ---- 衍生 ----
@@ -749,14 +756,26 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- 系統自動詢問:再戰 / 退出(30秒考慮期,內嵌) -->
-          <div v-if="showInvite" class="t13-rematch-box">
+          <!-- 系統自動詢問:再戰 / 退出(30秒考慮期,內嵌,所有人決定完才一起開) -->
+          <div v-if="state?.rematchJoined" class="t13-rematch-box joined">
+            <div class="t13-rematch-head">
+              <span>✅ 你已選再戰</span>
+              <span class="t13-rematch-count" :class="{ urgent: inviteCountdown <= 10 }">⏱ {{ inviteCountdown }}s</span>
+            </div>
+            <div class="t13-rematch-sub">
+              等其他人決定中…已 <b>{{ state?.rematchPlayers ?? 0 }}/{{ state?.rematchExpected ?? 0 }}</b> 人再戰。大家決定完或時間到就一起開打。
+            </div>
+            <div class="t13-rematch-btns">
+              <button class="t13-btn ghost" :disabled="busy" @click="cancelRematch">取消再戰並退出</button>
+            </div>
+          </div>
+          <div v-else-if="showInvite" class="t13-rematch-box">
             <div class="t13-rematch-head">
               <span>🔁 要再戰一次嗎？</span>
               <span class="t13-rematch-count" :class="{ urgent: inviteCountdown <= 10 }">⏱ {{ inviteCountdown }}s</span>
             </div>
             <div class="t13-rematch-sub">
-              已有 <b>{{ state?.rematchPlayers ?? 0 }}</b> 人選擇再戰 · 再戰需凍結賭本 {{ fmt(escrowNeeded) }} {{ config.currency }}（時間到沒選視同退出）
+              已 <b>{{ state?.rematchPlayers ?? 0 }}/{{ state?.rematchExpected ?? 0 }}</b> 人選擇再戰 · 再戰需凍結賭本 {{ fmt(escrowNeeded) }} {{ config.currency }}（時間到沒選視同退出；大家決定完才會一起開）
             </div>
             <div class="t13-rematch-btns">
               <button class="t13-btn primary" :disabled="busy" @click="acceptInvite">🔁 再戰</button>
