@@ -100,72 +100,22 @@ export function useThirteenAudio() {
     ;[784, 1047].forEach((f, i) => tone(c, t + i * 0.12, f, 0.3, 0.16, 'sine'))
   }
 
-  // ---- 背景音樂(柔情慢板:暖 pad + 低音根音 + 偶爾輕鈴) ----
-  let musicGain: GainNode | null = null
-  let chordTimer: number | undefined
-  let chordIdx = 0
-  const CHORD_MS = 7000
-  // Am – F – C – G 抒情進行。bass=低音根音,notes=和弦音(中音域)
-  interface Chord { bass: number; notes: number[]; top: number }
-  const CHORDS: Chord[] = [
-    { bass: 110.0, notes: [220.0, 261.63, 329.63], top: 659.25 },  // Am
-    { bass: 87.31, notes: [174.61, 220.0, 261.63], top: 523.25 },  // F
-    { bass: 130.81, notes: [261.63, 329.63, 392.0], top: 783.99 }, // C
-    { bass: 98.0, notes: [196.0, 246.94, 293.66], top: 587.33 },   // G
-  ]
-
-  // 一個帶平滑淡入淡出的暖音(三角波),自動接到 musicGain
-  function voice(c: AudioContext, freq: number, type: OscillatorType, peak: number, attack: number, hold: number, release: number) {
-    if (!musicGain) return
-    const t = c.currentTime
-    const o = c.createOscillator()
-    o.type = type
-    o.frequency.value = freq
-    const g = c.createGain()
-    g.gain.setValueAtTime(0.0001, t)
-    g.gain.linearRampToValueAtTime(peak, t + attack)
-    g.gain.setValueAtTime(peak, t + attack + hold)
-    g.gain.linearRampToValueAtTime(0.0001, t + attack + hold + release)
-    o.connect(g); g.connect(musicGain)
-    o.start(t); o.stop(t + attack + hold + release + 0.1)
-  }
-
-  function playChord(ch: Chord) {
-    const c = audio(); if (!c || !musicGain) return
-    voice(c, ch.bass, 'sine', 0.12, 2.0, 2.0, 2.8)          // 低音根音,溫暖
-    for (const f of ch.notes) voice(c, f, 'triangle', 0.07, 2.2, 1.8, 2.8) // 和弦 pad
-    // 偶爾一聲輕柔鈴音(高音頂音,慢慢消失)
-    voice(c, ch.top, 'sine', 0.045, 0.6, 0.2, 3.0)
-  }
+  // ---- 背景音樂:迴圈播放 mp3(public/thirteen-bgm.mp3) ----
+  const BGM_URL = '/thirteen-bgm.mp3'
+  const BGM_VOLUME = 0.35
+  let bgm: HTMLAudioElement | null = null
 
   function startMusic() {
-    const c = audio(); if (!c || musicGain) return
-    musicGain = c.createGain()
-    musicGain.gain.value = 0.0001
-    const lp = c.createBiquadFilter()
-    lp.type = 'lowpass'
-    lp.frequency.value = 1500
-    lp.Q.value = 0.3
-    musicGain.connect(lp)
-    lp.connect(c.destination)
-    musicGain.gain.linearRampToValueAtTime(0.55, c.currentTime + 3) // 整體很輕,慢慢進來
-    chordIdx = 0
-    playChord(CHORDS[0]!)
-    chordTimer = window.setInterval(() => {
-      chordIdx = (chordIdx + 1) % CHORDS.length
-      playChord(CHORDS[chordIdx]!)
-    }, CHORD_MS)
+    if (bgm) { void bgm.play().catch(() => {}); return }
+    bgm = new Audio(BGM_URL)
+    bgm.loop = true
+    bgm.preload = 'auto'
+    bgm.volume = BGM_VOLUME
+    void bgm.play().catch(() => { /* 還沒有使用者手勢時會被擋,下次點擊再播 */ })
   }
   function stopMusic() {
-    if (chordTimer) { clearInterval(chordTimer); chordTimer = undefined }
-    if (musicGain && ctx) {
-      try {
-        musicGain.gain.cancelScheduledValues(ctx.currentTime)
-        musicGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 1.0)
-        const g = musicGain
-        window.setTimeout(() => { try { g.disconnect() } catch { /* ignore */ } }, 1200)
-      } catch { /* ignore */ }
-      musicGain = null
+    if (bgm) {
+      try { bgm.pause(); bgm.currentTime = 0 } catch { /* ignore */ }
     }
   }
 
@@ -198,6 +148,7 @@ export function useThirteenAudio() {
 
   function dispose() {
     stopMusic()
+    bgm = null
     if (ctx) { ctx.close().catch(() => {}); ctx = null }
   }
 
