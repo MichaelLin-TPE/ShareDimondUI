@@ -286,10 +286,12 @@ const curMaxReturn = computed(() => {
   return row ? row.multiplier : 0
 })
 const curNet = computed(() => Math.max(0, curMaxReturn.value - 1))
-// 本局我已下注總額(每人本局累計上限用)
-const myBetsTotal = computed(() =>
-  (state.value?.bets ?? []).filter((b) => b.mine).reduce((sum, b) => sum + Number(b.amount), 0),
-)
+// 本局我已下注總額(每人本局累計上限用)。只算「進行中(BETTING)」這局;
+// 已結算/等待開局時歸 0,因為下一注會開新局(後端也是從 0 算),不可把上一局的注算進來。
+const myBetsTotal = computed(() => {
+  if (state.value?.status !== 'BETTING') return 0
+  return (state.value?.bets ?? []).filter((b) => b.mine).reduce((sum, b) => sum + Number(b.amount), 0)
+})
 // 本局還可下 = 每人本局上限(200萬) - 我已下
 const roundAllowance = computed(() => Math.max(0, config.value.maxBet - myBetsTotal.value))
 // 此注上限 = min( 莊家剩餘可承受÷(賠率-1) , 本局個人還可下的額度 )
