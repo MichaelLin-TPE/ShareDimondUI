@@ -481,23 +481,6 @@ function clearFilter() {
                 <span class="label">備註</span>
                 <span class="value-remark">{{ item.remark }}</span>
               </div>
-              <div class="info-row row-secondary">
-                <span class="label">確認存倉</span>
-                <div
-                  v-if="authStore.member?.role == 'LEADER' || authStore.member?.role == 'OFFICER'"
-                  class="value-action"
-                >
-                  <input
-                    type="checkbox"
-                    v-model="item.checkFromRepository"
-                    class="small-checkbox"
-                    @change="handleStorageChange(item)"
-                  />
-                </div>
-                <span v-else class="value-remark">{{
-                  item.checkFromRepository ? '確認存倉' : '尚未存倉'
-                }}</span>
-              </div>
             </div>
 
             <button class="expand-toggle" @click="toggleExpand(item.treasureCode)">
