@@ -286,10 +286,16 @@ const curMaxReturn = computed(() => {
   return row ? row.multiplier : 0
 })
 const curNet = computed(() => Math.max(0, curMaxReturn.value - 1))
-// 此注上限 = min( 莊家剩餘可承受÷(賠率-1) , 單注硬上限 200萬 );豹子(net 0)莊家面不限,只受 200萬 限制
+// 本局我已下注總額(每人本局累計上限用)
+const myBetsTotal = computed(() =>
+  (state.value?.bets ?? []).filter((b) => b.mine).reduce((sum, b) => sum + Number(b.amount), 0),
+)
+// 本局還可下 = 每人本局上限(200萬) - 我已下
+const roundAllowance = computed(() => Math.max(0, config.value.maxBet - myBetsTotal.value))
+// 此注上限 = min( 莊家剩餘可承受÷(賠率-1) , 本局個人還可下的額度 )
 const maxBetForCurrent = computed(() => {
   const bankerCap = curNet.value <= 0 ? Infinity : Math.floor(Number(state.value?.remainingCapacity ?? 0) / curNet.value)
-  return Math.min(bankerCap, config.value.maxBet)
+  return Math.min(bankerCap, roundAllowance.value)
 })
 const overCap = computed(
   () => maxBetForCurrent.value !== Infinity && effectiveBet.value > maxBetForCurrent.value,
@@ -358,10 +364,6 @@ function cantBetReason(): string {
   if (Number(s?.myBalance || 0) < effectiveBet.value) return '餘額不足'
   return ''
 }
-
-const myBetsTotal = computed(() =>
-  (state.value?.bets ?? []).filter((b) => b.mine).reduce((sum, b) => sum + Number(b.amount), 0),
-)
 
 // 同一人 + 同玩法 + 同點數的注疊加成一筆,避免一直下同樣的把清單拉太長
 const aggregatedBets = computed<(BetView & { key: string })[]>(() => {
@@ -819,7 +821,7 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 
       <div class="bet-summary">本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(state.myBalance) }}</div>
       <div class="cap-hint">
-        最小 {{ fmt(minBet) }} · 單注上限 {{ fmt(config.maxBet) }} · 此注可下
+        最小 {{ fmt(minBet) }} · 本局每人上限 {{ fmt(config.maxBet) }}（你已下 {{ fmt(myBetsTotal) }}）· 此注可下
         <b :class="{ over: overCap }">{{ fmt(maxBetForCurrent) }}</b>
         · 莊家本局還可承受 {{ fmt(state.remainingCapacity) }} {{ state.currency }}
       </div>
