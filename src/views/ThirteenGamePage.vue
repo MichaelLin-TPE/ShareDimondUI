@@ -624,14 +624,18 @@ onUnmounted(() => {
               <div class="t13-room-meta">底注 {{ fmt(r.baseBet) }} · {{ r.players }}/{{ r.maxPlayers }} 人 · {{ r.status === 'WAITING' ? '湊人中' : '對戰中' }}</div>
             </div>
             <div class="t13-room-acts">
-              <button class="t13-btn ghost mini" :disabled="busy" @click="spectate(r.roundId)">👁 觀戰</button>
+              <button class="t13-room-btn ghost" :disabled="busy" @click="spectate(r.roundId)" title="觀戰">
+                <span class="ico">👁</span><span class="txt">觀戰</span>
+              </button>
               <button
                 v-if="r.status === 'WAITING'"
-                class="t13-btn primary mini"
+                class="t13-room-btn primary"
                 :disabled="busy || r.players >= r.maxPlayers"
                 @click="joinRoom(r.roundId)"
+                :title="r.players >= r.maxPlayers ? '已滿' : '加入'"
               >
-                {{ r.players >= r.maxPlayers ? '已滿' : '加入' }}
+                <span class="ico">{{ r.players >= r.maxPlayers ? '🚫' : '➕' }}</span>
+                <span class="txt">{{ r.players >= r.maxPlayers ? '已滿' : '加入' }}</span>
               </button>
             </div>
           </div>
@@ -929,7 +933,16 @@ onUnmounted(() => {
 .t13-room-tag { font-size: 10px; background: rgba(var(--c-light-rgb),.2); color: var(--c-light); border-radius: 5px; padding: 1px 6px; }
 .t13-room-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
 .t13-room-bar { font-size: 12px; color: #cbd5e1; margin-bottom: 10px; }
-.t13-room-acts { display: flex; gap: 6px; flex: 0 0 auto; }
+.t13-room-acts { display: flex; gap: 6px; flex: 0 0 auto; align-items: center; }
+/* 正方形按鈕:上圖示下文字、置中、兩顆等大 */
+.t13-room-btn { width: 52px; height: 52px; flex: 0 0 52px; box-sizing: border-box; padding: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  border-radius: 11px; cursor: pointer; border: 1px solid transparent; line-height: 1; }
+.t13-room-btn .ico { font-size: 18px; line-height: 1; }
+.t13-room-btn .txt { font-size: 11px; font-weight: 800; line-height: 1; }
+.t13-room-btn.primary { background: var(--c-light); color: var(--c-on); }
+.t13-room-btn.ghost { background: rgba(255,255,255,.06); color: #cbd5e1; border-color: rgba(255,255,255,.12); }
+.t13-room-btn:disabled { opacity: .5; cursor: not-allowed; }
 .t13-spectate-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px;
   background: rgba(var(--c-light-rgb), .1); border: 1px solid rgba(var(--c-light-rgb), .35);
   border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 13px; color: var(--c-light); }
