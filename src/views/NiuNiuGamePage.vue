@@ -218,6 +218,45 @@ function playLose() { if (!sfxOn.value) return; const c = ensureAudio(); if (!c)
 function playJackpot() { if (!sfxOn.value) return; const c = ensureAudio(); if (!c) return; const t = c.currentTime;[523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => tone(t + i * 0.11, f, 0.3, 0.18, 'sawtooth')) }
 function toggleSfx() { sfxOn.value = !sfxOn.value; localStorage.setItem('niu_sfx', sfxOn.value ? 'on' : 'off'); if (sfxOn.value) playChip() }
 
+// ---- 背景音樂(public/niuniu-bgm.mp3 迴圈) ----
+const bgmOn = ref(localStorage.getItem('niu_bgm') !== 'off')
+const savedVol = Number(localStorage.getItem('niu_vol'))
+const bgmVolume = ref(Number.isFinite(savedVol) && savedVol >= 0 && savedVol <= 1 ? savedVol : 0.35)
+let bgm: HTMLAudioElement | null = null
+function startMusic() {
+  if (bgm) { void bgm.play().catch(() => {}); return }
+  bgm = new Audio('/niuniu-bgm.mp3')
+  bgm.loop = true
+  bgm.preload = 'auto'
+  bgm.volume = bgmVolume.value
+  void bgm.play().catch(() => {})
+}
+function stopMusic() { if (bgm) { try { bgm.pause(); bgm.currentTime = 0 } catch { /* ignore */ } } }
+function setBgmVolume(v: number | string) {
+  const vol = Math.min(1, Math.max(0, Number(v) || 0))
+  bgmVolume.value = vol
+  localStorage.setItem('niu_vol', String(vol))
+  if (bgm) bgm.volume = vol
+}
+function toggleBgm() {
+  bgmOn.value = !bgmOn.value
+  localStorage.setItem('niu_bgm', bgmOn.value ? 'on' : 'off')
+  if (bgmOn.value) startMusic(); else stopMusic()
+}
+let armed = false
+function armAutoStart() {
+  if (armed) return
+  armed = true
+  const handler = () => {
+    ensureAudio()
+    if (bgmOn.value) startMusic()
+    window.removeEventListener('pointerdown', handler)
+    window.removeEventListener('keydown', handler)
+  }
+  window.addEventListener('pointerdown', handler)
+  window.addEventListener('keydown', handler)
+}
+
 // ---- WS + 心跳 ----
 let ws: StompHandle | null = null
 let heartbeat: number | undefined
@@ -228,9 +267,11 @@ onMounted(async () => {
   if (clanId) ws = createReconnectingStomp(`/topic/niuniu/${clanId}`, (b) => { if (b === 'NIUNIU_UPDATED') fetchRound(); else if (b === 'NIUNIU_CHAT') loadChat() })
   tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
   heartbeat = window.setInterval(fetchRound, 8000)
+  armAutoStart()
 })
 onUnmounted(() => {
   if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer)
+  stopMusic(); bgm = null
   if (ctx) { ctx.close().catch(() => {}); ctx = null }
   fetch(`${API}/niuniu/leave`, { method: 'POST', headers: headers() }).catch(() => {})
 })
@@ -248,7 +289,20 @@ onUnmounted(() => {
     <div class="niu-page">
       <div class="niu-head">
         <div class="niu-title">🐮 妞妞 <span class="niu-sub">玩家坐莊 · 比牛大小</span>
-          <button class="niu-audio" @click="toggleSfx">{{ sfxOn ? '🔊' : '🔈' }}</button>
+          <div class="niu-audioctrl">
+            <button class="niu-audio" :title="bgmOn ? '關閉音樂' : '開啟音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
+            <input
+              v-if="bgmOn"
+              class="niu-vol"
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              :value="bgmVolume"
+              @input="setBgmVolume(($event.target as HTMLInputElement).value)"
+            />
+            <button class="niu-audio" :title="sfxOn ? '關閉音效' : '開啟音效'" @click="toggleSfx">{{ sfxOn ? '🔊' : '🔈' }}</button>
+          </div>
         </div>
         <div class="niu-stats">
           <div class="niu-stat"><span>彩金池</span><b>{{ config.currency }} {{ fmt(state?.poolBalance) }}</b></div>
@@ -383,8 +437,10 @@ onUnmounted(() => {
 .niu-head { display: flex; flex-direction: column; gap: 8px; }
 .niu-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
 .niu-sub { font-size: 12px; font-weight: 400; color: #94a3b8; }
-.niu-audio { margin-left: auto; background: #0f111a; border: 1px solid #2e3147; color: #cbd5e1; border-radius: 9px; width: 36px; height: 32px; cursor: pointer; font-size: 15px; transition: all .15s; }
+.niu-audioctrl { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+.niu-audio { background: #0f111a; border: 1px solid #2e3147; color: #cbd5e1; border-radius: 9px; width: 36px; height: 32px; cursor: pointer; font-size: 15px; transition: all .15s; }
 .niu-audio:hover { border-color: var(--c-light); }
+.niu-vol { width: 72px; height: 4px; cursor: pointer; accent-color: var(--c-light); }
 .niu-stats { display: flex; gap: 8px; }
 .niu-stat { flex: 1 1 0; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
 .niu-stat span { display: block; font-size: 11px; color: #94a3b8; }
