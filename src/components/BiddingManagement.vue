@@ -1041,27 +1041,34 @@ function clearFilter() {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 12px;
-  padding: 8px 14px 10px;
-  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  gap: 4px 10px;
+  padding: 8px 12px 4px;
 }
 .batch-settle-btn {
-  border: none;
-  border-radius: 10px;
-  padding: 9px 16px;
-  font-weight: 800;
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(var(--c-light-rgb), 0.5);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  line-height: 1;
   cursor: pointer;
-  color: #fff;
-  background: linear-gradient(135deg, #10b981, #059669);
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+  color: var(--c-on);
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+  box-shadow: 0 2px 6px rgba(var(--c-deep-rgb), 0.3);
+  transition: filter 0.15s;
+}
+.batch-settle-btn:hover {
+  filter: brightness(1.08);
 }
 .batch-settle-btn:active {
   transform: translateY(1px);
 }
 .batch-settle-hint {
-  font-size: 0.72rem;
-  color: #94a3b8;
+  font-size: 0.68rem;
+  color: rgba(var(--c-light-rgb), 0.75);
 }
 @media (prefers-reduced-motion: reduce) {
   .group-wrapper.is-urgent { animation: none; }
