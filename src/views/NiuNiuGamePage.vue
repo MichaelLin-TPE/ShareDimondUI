@@ -539,7 +539,8 @@ onUnmounted(() => {
         <div v-if="revealPhase" class="niu-reveal-bar">
           <span class="niu-reveal-main">🎴 開牌中 <b>{{ state?.revealedCount ?? 0 }}/{{ state?.revealTotal ?? 0 }}</b></span>
           <span class="niu-reveal-cd" :class="{ urgent: revealCountdown <= 5 }">⏱ {{ revealCountdown }}s</span>
-          <span class="niu-reveal-hint">{{ handOpened ? '你已開牌，等其他人…時間到系統代開' : '輪到你開牌！' }}</span>
+          <span class="niu-reveal-hint">{{ handOpened ? '你已開牌，等其他人…' : '輪到你開牌！' }}</span>
+          <label class="niu-reveal-auto"><input type="checkbox" :checked="autoOpen" @change="toggleAutoOpen" /> 自動開牌</label>
         </div>
 
         <!-- 下注區(非莊家,可開新局時) -->
@@ -679,7 +680,9 @@ onUnmounted(() => {
 .niu-reveal-main b { color: var(--c-light); }
 .niu-reveal-cd { color: #fbbf24; font-weight: 800; font-variant-numeric: tabular-nums; }
 .niu-reveal-cd.urgent { color: #f87171; }
-.niu-reveal-hint { margin-left: auto; font-size: 0.78rem; color: #94a3b8; }
+.niu-reveal-hint { font-size: 0.78rem; color: #94a3b8; }
+.niu-reveal-auto { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 0.76rem; color: #cbd5e1; cursor: pointer; white-space: nowrap; }
+.niu-reveal-auto input { flex: 0 0 auto; width: 15px; height: 15px; margin: 0; accent-color: var(--c-light); cursor: pointer; }
 .niu-betbox { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .niu-chips { display: flex; align-items: center; gap: 6px; }
 .niu-label { font-size: 0.8rem; color: #94a3b8; width: 36px; flex-shrink: 0; }
