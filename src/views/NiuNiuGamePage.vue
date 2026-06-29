@@ -12,6 +12,13 @@ const headers = (): Record<string, string> => {
   return { Authorization: `Bearer ${authStore.authToken}`, 'Content-Type': 'application/json', Sign: generateSignature(ts), TimeStamp: ts }
 }
 const fmt = (n: number | null | undefined) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
+// 籌碼用短標籤(萬/億),避免長數字塞爆按鈕
+const trimNum = (x: number) => Number(x.toFixed(2)).toString()
+const chipLabel = (n: number): string => {
+  if (n >= 1e8) return trimNum(n / 1e8) + '億'
+  if (n >= 1e4) return trimNum(n / 1e4) + '萬'
+  return n.toLocaleString('en-US')
+}
 const myName = authStore.member?.userName
 
 interface BetView {
@@ -382,7 +389,7 @@ onUnmounted(() => {
           <div class="niu-chips">
             <span class="niu-label">籌碼</span>
             <div class="niu-chip-grid">
-              <button v-for="c in config.chips" :key="c" class="niu-chip" @click="addChip(c)">+{{ fmt(c) }}</button>
+              <button v-for="c in config.chips" :key="c" class="niu-chip" @click="addChip(c)">+{{ chipLabel(c) }}</button>
               <button class="niu-chip clear" @click="clearBet">清空</button>
             </div>
           </div>
@@ -494,7 +501,7 @@ onUnmounted(() => {
 .niu-chips { display: flex; align-items: center; gap: 6px; }
 .niu-label { font-size: 0.8rem; color: #94a3b8; width: 36px; flex-shrink: 0; }
 .niu-chip-grid { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
-.niu-chip { height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 9px; border: 1px solid #2e3147; background: #0f111a; color: #cbd5e1; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all .15s; }
+.niu-chip { height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 9px; border: 1px solid #2e3147; background: #0f111a; color: #cbd5e1; font-weight: 800; font-size: 0.85rem; white-space: nowrap; overflow: hidden; cursor: pointer; transition: all .15s; }
 .niu-chip:hover { border-color: var(--c-light); color: var(--c-light); background: rgba(var(--c-light-rgb),.12); }
 .niu-chip.clear { color: #64748b; }
 .niu-chip.clear:hover { border-color: #475569; color: #94a3b8; background: #0f111a; }
