@@ -2,6 +2,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { parseRemark } from '@/composables/remarkOptions.ts'
 import { useBiddingTreasureStore } from '@/stores/biddingTreasure'
 import { useSharedListsStore } from '@/stores/sharedLists'
 
@@ -430,6 +431,77 @@ TimeStamp:currentTimeStamp
     if (result.isConfirmed) {
       // 執行您的 SQL 邏輯或 API 呼叫
       submitBidding()
+    }
+  }
+
+  // 可批次結帳的單 = 已有得標者、已繳交倉庫(已繳倉庫/已交付,非「在我身上」)、幹部可結、非競標/非待指定得標者
+  const batchSettleableTickets = (items: Treasure[]) =>
+    (items ?? []).filter(
+      (it) =>
+        !it.isBidding &&
+        !it.assignByLeader &&
+        it.canVerifyBiddingTicket &&
+        it.status !== 'PAID' &&
+        !!it.biddingName &&
+        it.biddingName !== '尚未有得標者' &&
+        it.biddingName !== '尚無出價者' &&
+        parseRemark(it.remark).choice !== 'onme',
+    )
+
+  // 批次結帳:把某個得標者所有「已繳交倉庫」的單一次結清。
+  // 規則:能從錢包扣款(hasEnoughMoneyToBuy)→ 從錢包扣(confirmType=1);
+  //       錢包餘額不足 → 直接分配獎金給參與人(confirmType=2,視同已收款)。
+  const handleBatchSettle = async (group: { title: string; items?: Treasure[] }) => {
+    const winner = (group.title || '').replace(/\s*得標的訂單\s*$/, '')
+    const tickets = batchSettleableTickets(group.items ?? [])
+    if (!tickets.length) {
+      useAlert.error('此人目前沒有可批次結帳的已繳倉庫訂單')
+      return
+    }
+    const walletCount = tickets.filter((t) => t.hasEnoughMoneyToBuy).length
+    const distributeCount = tickets.length - walletCount
+    const result = await useAlert.confirm(
+      `即將批次結帳「${winner}」的 ${tickets.length} 筆已繳倉庫訂單：` +
+        `能從錢包扣款的 ${walletCount} 筆會直接從錢包扣款；` +
+        `錢包餘額不足的 ${distributeCount} 筆會直接分配獎金給參與人(視同已收到帳款)。` +
+        `此操作無法復原，確定執行?`,
+      '批次結帳',
+    )
+    if (!result.isConfirmed) return
+
+    useAlert.loading(`批次結帳中… 0 / ${tickets.length}`, '請稍候')
+    let success = 0
+    let done = 0
+    const fails: string[] = []
+    for (const t of tickets) {
+      const confirmType = t.hasEnoughMoneyToBuy ? 1 : 2
+      try {
+        const ts = Math.floor(Date.now() / 1000).toString()
+        const res = await fetch('https://api.gameshare-system.com/confirm-ticket', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${authStore.authToken}`,
+            'Content-Type': 'application/json',
+            Sign: generateSignature(ts),
+            TimeStamp: ts,
+          },
+          body: JSON.stringify({ ticketCode: t.treasureCode, confirmType }),
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok) fails.push(`${t.itemName}：${data?.message ?? '結算失敗'}`)
+        else success++
+      } catch {
+        fails.push(`${t.itemName}：連線失敗`)
+      }
+      done++
+      useAlert.loading(`批次結帳中… ${done} / ${tickets.length}`, '請稍候')
+    }
+    useAlert.close()
+    await fetchOngoingTreasures()
+    if (!fails.length) {
+      useAlert.success(`批次結帳完成！成功結算 ${success} 筆`)
+    } else {
+      useAlert.error(`完成 ${success} 筆，失敗 ${fails.length} 筆：\n${fails.join('\n')}`)
     }
   }
 
@@ -945,6 +1017,8 @@ TimeStamp:currentTimeStamp
   return {
     authStore,
     groupedAuctionsList,
+    handleBatchSettle,
+    batchSettleableTickets,
     handleSubmitFromWallet,
     handleUpdateRemark,
     submitRemark,

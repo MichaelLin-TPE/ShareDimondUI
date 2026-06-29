@@ -22,6 +22,8 @@ const {
   formatTime,
   handleStatus,
   handleSubmit,
+  handleBatchSettle,
+  batchSettleableTickets,
   groupedAuctionsList,
   submitRemark,
   handleDeleteItem,
@@ -319,6 +321,17 @@ function clearFilter() {
           <div v-else class="group-summary urgent-summary">
             <span class="urgent-badge">⚠️ {{ (group.items ?? []).length }} 件等待審核</span>
           </div>
+        </div>
+
+        <!-- 幹部以上:一鍵批次結帳此人所有「已繳倉庫」單(錢包扣得到就扣、扣不到直接分配) -->
+        <div
+          v-if="isOfficer && isAssigned(group.title) && batchSettleableTickets(group.items ?? []).length"
+          class="batch-settle-bar"
+        >
+          <button class="batch-settle-btn" @click.stop="handleBatchSettle(group)">
+            🧾 批次結帳此人 {{ batchSettleableTickets(group.items ?? []).length }} 筆已繳倉庫單
+          </button>
+          <span class="batch-settle-hint">能從錢包扣就扣，扣不到直接分配給參與人</span>
         </div>
 
         <!-- 折疊容器 - 用 CSS grid-template-rows 0fr↔1fr trick 做絲滑 height 動畫 -->
@@ -1023,6 +1036,32 @@ function clearFilter() {
   font-weight: 800;
   letter-spacing: 0.5px;
   box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+.batch-settle-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 8px 14px 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+}
+.batch-settle-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+}
+.batch-settle-btn:active {
+  transform: translateY(1px);
+}
+.batch-settle-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
 }
 @media (prefers-reduced-motion: reduce) {
   .group-wrapper.is-urgent { animation: none; }
