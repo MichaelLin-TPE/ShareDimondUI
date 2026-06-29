@@ -74,16 +74,20 @@ const maxBetForCurrent = computed(() => {
 const belowMin = computed(() => effectiveBet.value > 0 && effectiveBet.value < minBet.value)
 const overCap = computed(() => effectiveBet.value > maxBetForCurrent.value)
 const revealing = ref(false)
+// 剛結算、正在展示結果的那一局(展示幾秒後自動清掉 → 回到可開新局狀態)
+const liveResultRound = ref<number | null>(null)
+const showResult = computed(() =>
+  state.value?.status === 'SETTLED' && state.value?.roundId != null && state.value?.roundId === liveResultRound.value)
 const canBet = computed(() =>
   !!state.value?.niuniuEnabled && hasBanker.value && !bankerIsMe.value && !closing.value && !revealing.value &&
-  state.value?.status !== 'SETTLED' && effectiveBet.value > 0 && !belowMin.value && !overCap.value)
+  !showResult.value && effectiveBet.value > 0 && !belowMin.value && !overCap.value)
 function cantBetReason(): string {
   const s = state.value
   if (!s?.niuniuEnabled) return '妞妞目前未開放'
   if (!hasBanker.value) return '目前沒有莊家，先坐莊或等人坐莊'
   if (bankerIsMe.value) return '你是莊家，不能玩自己的莊'
   if (closing.value) return '本局已封盤，等下一局再下注'
-  if (revealing.value || s?.status === 'SETTLED') return '開牌中，等下一局再下注'
+  if (revealing.value || showResult.value) return '本局結果顯示中，馬上就能開新局'
   if (effectiveBet.value <= 0) return '請輸入下注金額'
   if (belowMin.value) return `最小下注 ${fmt(minBet.value)} ${s?.currency ?? ''}`
   if (overCap.value) return `此注上限約 ${fmt(maxBetForCurrent.value)}，請降低金額`
@@ -107,6 +111,7 @@ async function loadConfig() {
 let fetching = false
 let initialized = false
 let lastSettledRound: number | null = null
+let resultClearTimer: number | undefined
 let busy = false
 async function fetchRound() {
   if (fetching) return
@@ -121,6 +126,9 @@ async function fetchRound() {
     if (!initialized) { initialized = true; if (d.status === 'SETTLED' && d.roundId) lastSettledRound = d.roundId }
     else if (d.status === 'SETTLED' && d.roundId && d.roundId !== lastSettledRound && prevStatus === 'BETTING') {
       lastSettledRound = d.roundId
+      liveResultRound.value = d.roundId
+      if (resultClearTimer) clearTimeout(resultClearTimer)
+      resultClearTimer = window.setTimeout(() => { liveResultRound.value = null }, 8000)
       await playReveal(d)
     }
   } catch (e) { console.error(e) } finally { fetching = false }
@@ -148,6 +156,8 @@ async function placeBet() {
     const res = await fetch(`${API}/niuniu/bet`, { method: 'POST', headers: headers(), body: JSON.stringify({ amount: effectiveBet.value }) })
     const d = await res.json().catch(() => null)
     if (!res.ok) { useAlert.error(d?.message ?? '下注失敗'); return }
+    liveResultRound.value = null // 開了新局,立刻清掉上一局結果
+    if (resultClearTimer) clearTimeout(resultClearTimer)
     playChip(); clearBet(); await fetchRound()
   } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy = false }
 }
@@ -270,7 +280,7 @@ onMounted(async () => {
   armAutoStart()
 })
 onUnmounted(() => {
-  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer)
+  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (resultClearTimer) clearTimeout(resultClearTimer)
   stopMusic(); bgm = null
   if (ctx) { ctx.close().catch(() => {}); ctx = null }
   fetch(`${API}/niuniu/leave`, { method: 'POST', headers: headers() }).catch(() => {})
@@ -339,40 +349,41 @@ onUnmounted(() => {
           <div class="niu-table-head">
             <span v-if="revealing">🃏 發牌中…</span>
             <span v-else-if="state?.status === 'BETTING'">🪙 下注中</span>
-            <span v-else-if="state?.status === 'SETTLED'">🏆 本局結果</span>
+            <span v-else-if="showResult">🏆 本局結果</span>
             <span v-else>等待開局 · 下第一注即開局</span>
             <span v-if="countdown > 0" class="niu-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
           </div>
 
-          <!-- 莊家牌(結算後) -->
-          <div v-if="state?.status === 'SETTLED' && state?.bankerCards" class="niu-hand banker" :class="{ flip: !revealing }">
+          <!-- 莊家牌(結算展示中) -->
+          <div v-if="showResult && state?.bankerCards" class="niu-hand banker" :class="{ flip: !revealing }">
             <span class="niu-hand-tag">👑 莊 · <b>{{ state?.bankerLabel }}</b></span>
             <span class="niu-cards">
               <span v-for="(c, i) in state.bankerCards" :key="i" class="niu-card" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
             </span>
           </div>
 
-          <!-- 玩家牌 / 下注列 -->
-          <div class="niu-players">
-            <div v-for="b in (state?.bets ?? [])" :key="b.memberId" class="niu-player" :class="{ mine: b.mine, win: b.settled && b.win, lose: b.settled && !b.win }">
+          <!-- 玩家牌 / 下注列(下注中或結算展示中才列出) -->
+          <div v-if="state?.status === 'BETTING' || showResult" class="niu-players">
+            <div v-for="b in (state?.bets ?? [])" :key="b.memberId" class="niu-player" :class="{ mine: b.mine, win: showResult && b.settled && b.win, lose: showResult && b.settled && !b.win }">
               <div class="niu-player-head">
                 <span class="niu-player-name">{{ b.userName }}<span v-if="b.mine"> (你)</span></span>
                 <span class="niu-player-bet">下 {{ fmt(b.amount) }}</span>
-                <span v-if="b.settled" class="niu-player-res" :class="{ pos: b.win, neg: !b.win }">
+                <span v-if="showResult && b.settled" class="niu-player-res" :class="{ pos: b.win, neg: !b.win }">
                   {{ b.label }} · {{ b.win ? '贏' : '輸' }} {{ fmt(Math.abs(Number(b.settleAmount))) }}
                   <span v-if="(b.poolWin ?? 0) > 0">🐮+{{ fmt(b.poolWin) }}</span>
                 </span>
               </div>
-              <span v-if="b.settled && b.cards" class="niu-cards small" :class="{ flip: !revealing }">
+              <span v-if="showResult && b.settled && b.cards" class="niu-cards small" :class="{ flip: !revealing }">
                 <span v-for="(c, i) in b.cards" :key="i" class="niu-card sm" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
               </span>
             </div>
             <div v-if="(state?.bets ?? []).length === 0" class="niu-noplayers">還沒人下注</div>
           </div>
+          <div v-else class="niu-noplayers">{{ hasBanker ? '下第一注即開局，比牛比大小！' : '等莊家就位後即可開局' }}</div>
         </div>
 
-        <!-- 下注區(非結算/非莊家) -->
-        <div v-if="!bankerIsMe && state?.status !== 'SETTLED'" class="niu-betbox">
+        <!-- 下注區(非莊家、非結算展示中) -->
+        <div v-if="!bankerIsMe && !showResult" class="niu-betbox">
           <div class="niu-chips">
             <span class="niu-label">籌碼</span>
             <button v-for="c in config.chips" :key="c" class="niu-chip" @click="addChip(c)">+{{ fmt(c) }}</button>
@@ -386,7 +397,7 @@ onUnmounted(() => {
             本注 <b>{{ fmt(effectiveBet) }}</b>（凍結 {{ fmt(escrowNeeded) }}，最多可輸）· 最小 {{ fmt(minBet) }} · 此注上限 <b :class="{ over: overCap }">{{ fmt(maxBetForCurrent) }}</b>
           </div>
           <button class="niu-roll" :disabled="!canBet || busy" @click="placeBet">
-            {{ closing ? '🔒 封盤中…' : revealing ? '開牌中…' : '🪙 下注' }}
+            {{ closing ? '🔒 封盤中…' : revealing ? '開牌中…' : state?.status === 'BETTING' ? '🪙 下注' : '🪙 下注開新局' }}
           </button>
           <p v-if="!canBet" class="niu-ineligible">{{ cantBetReason() }}</p>
         </div>
