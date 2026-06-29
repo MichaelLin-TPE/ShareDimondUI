@@ -89,13 +89,18 @@ const autoOpen = ref(localStorage.getItem('niu_autoopen') === 'on')
 const squeezeMode = ref(false)     // 進入「自己翻牌」模式
 const handOpened = ref(false)      // 我已開牌
 const myFlipped = ref<Set<number>>(new Set())
-// 只有伺服器「明確 false」才擋下一局;拿不到欄位(舊後端)一律視為可開,避免卡死
-const revealComplete = computed(() => state.value?.revealComplete !== false)
+const revealLocalDeadline = ref(0)
+// 完成判定:伺服器說完成 / 沒這欄位(舊後端) / 本地開牌倒數已過(+1.5s緩衝)→ 一律解鎖,絕不永久卡
+const revealComplete = computed(() => {
+  const s = state.value
+  if (!s || s.status !== 'SETTLED') return true
+  if (s.revealComplete !== false) return true
+  return revealLocalDeadline.value > 0 && nowMs.value > revealLocalDeadline.value + 1500
+})
 const revealPhase = computed(() => state.value?.status === 'SETTLED' && !revealComplete.value)
 const revealAll = computed(() => handOpened.value || revealComplete.value) // 是否揭曉莊家+全部結果
-const revealLocalDeadline = ref(0)
 const revealCountdown = computed(() => {
-  if (!revealPhase.value) return 0
+  if (state.value?.status !== 'SETTLED' || revealLocalDeadline.value <= 0) return 0
   return Math.max(0, Math.ceil((revealLocalDeadline.value - nowMs.value) / 1000))
 })
 const myBet = computed(() => state.value?.bets?.find((b) => b.mine) ?? null)
