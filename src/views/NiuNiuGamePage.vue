@@ -107,10 +107,12 @@ async function loadConfig() {
     const res = await fetch(`${API}/niuniu/config`, { headers: headers() })
     if (!res.ok) return
     const d = await res.json()
+    const maxBet = Number(d.maxBet) || 2000000
     config.value = {
-      enabled: !!d.enabled, betAmount: Number(d.betAmount), maxBet: Number(d.maxBet) || 2000000,
+      enabled: !!d.enabled, betAmount: Number(d.betAmount), maxBet,
       maxMult: Number(d.maxMult) || 5, currency: d.currency ?? '',
-      chips: Array.isArray(d.chips) ? d.chips.map(Number) : [], payTable: d.payTable ?? [],
+      chips: (Array.isArray(d.chips) ? d.chips.map(Number) : []).filter((c: number) => c > 0 && c <= maxBet),
+      payTable: d.payTable ?? [],
     }
   } catch (e) { console.error(e) }
 }
