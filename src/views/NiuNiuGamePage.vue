@@ -273,10 +273,10 @@ onUnmounted(() => {
           </div>
           <div class="niu-banker-act">
             <template v-if="hasBanker">
-              <button v-if="bankerIsMe" class="niu-btn ghost" @click="leaveBank">下莊</button>
-              <button v-else class="niu-btn ghost" @click="takeBank">搶莊</button>
+              <button v-if="bankerIsMe" class="niu-btn leave" @click="leaveBank">下莊</button>
+              <button v-else class="niu-btn take" @click="takeBank">搶莊</button>
             </template>
-            <button v-else class="niu-btn primary" @click="takeBank">我要坐莊</button>
+            <button v-else class="niu-btn take" @click="takeBank">我要坐莊</button>
           </div>
         </div>
 
@@ -383,7 +383,8 @@ onUnmounted(() => {
 .niu-head { display: flex; flex-direction: column; gap: 8px; }
 .niu-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
 .niu-sub { font-size: 12px; font-weight: 400; color: #94a3b8; }
-.niu-audio { margin-left: auto; background: rgba(var(--c-light-rgb),.12); border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 8px; width: 34px; height: 30px; cursor: pointer; font-size: 15px; }
+.niu-audio { margin-left: auto; background: #0f111a; border: 1px solid #2e3147; color: #cbd5e1; border-radius: 9px; width: 36px; height: 32px; cursor: pointer; font-size: 15px; transition: all .15s; }
+.niu-audio:hover { border-color: var(--c-light); }
 .niu-stats { display: flex; gap: 8px; }
 .niu-stat { flex: 1 1 0; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
 .niu-stat span { display: block; font-size: 11px; color: #94a3b8; }
@@ -395,9 +396,10 @@ onUnmounted(() => {
 .niu-banker-emoji { font-size: 24px; }
 .niu-banker-name { font-weight: 800; }
 .niu-banker-roll { font-size: 12px; color: #94a3b8; }
-.niu-btn { border: none; border-radius: 9px; padding: 8px 16px; font-weight: 700; cursor: pointer; font-size: 14px; }
-.niu-btn.primary { background: var(--c-light); color: var(--c-on); }
-.niu-btn.ghost { background: rgba(255,255,255,.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,.12); }
+.niu-btn { border: none; border-radius: 9px; padding: 6px 14px; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: filter .15s; }
+.niu-btn:hover { filter: brightness(1.08); }
+.niu-btn.take { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); }
+.niu-btn.leave { background: #334155; color: #f1f5f9; }
 .niu-table { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
 .niu-table-head { display: flex; justify-content: space-between; align-items: center; font-weight: 700; margin-bottom: 10px; }
 .niu-countdown { color: #fbbf24; font-variant-numeric: tabular-nums; }
@@ -428,17 +430,20 @@ onUnmounted(() => {
 .niu-betbox { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .niu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .niu-label { font-size: 12px; color: #94a3b8; flex: 0 0 auto; }
-.niu-chip { background: rgba(var(--c-light-rgb),.12); border: 1px solid rgba(var(--c-light-rgb),.3); color: var(--c-light); border-radius: 8px; padding: 7px 12px; font-weight: 800; cursor: pointer; font-size: 13px; }
-.niu-chip.clear { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12); color: #94a3b8; }
+.niu-chip { height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 9px; border: 1px solid #2e3147; background: #0f111a; color: #cbd5e1; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all .15s; }
+.niu-chip:hover { border-color: var(--c-light); color: var(--c-light); background: rgba(var(--c-light-rgb),.12); }
+.niu-chip.clear { color: #64748b; }
+.niu-chip.clear:hover { border-color: #475569; color: #94a3b8; background: #0f111a; }
 .niu-amount-row { display: flex; align-items: center; gap: 8px; }
-.niu-amount { flex: 1 1 0; min-width: 0; background: #0f172a; border: 1px solid #334155; border-radius: 9px; padding: 9px 12px; color: #fff; outline: none; }
+.niu-amount { flex: 1 1 auto; min-width: 0; height: 40px; box-sizing: border-box; padding: 0 12px; background: #0f172a; border: 1px solid #334155; border-radius: 9px; color: #fff; font-size: 1rem; font-weight: 700; outline: none; }
 .niu-amount.bad { border-color: #f87171; }
 .niu-amount:focus { border-color: var(--c-light); }
-.niu-bethint { font-size: 12px; color: #94a3b8; line-height: 1.6; }
-.niu-bethint b { color: #cbd5e1; } .niu-bethint .over { color: #f87171; }
-.niu-roll { border: none; border-radius: 10px; padding: 14px; font-weight: 800; font-size: 16px; cursor: pointer; background: var(--c-light); color: var(--c-on); }
-.niu-roll:disabled { background: #3a4356; color: #9ca3af; cursor: not-allowed; }
-.niu-ineligible { text-align: center; color: #fbbf24; font-size: 12px; margin: 0; }
+.niu-bethint { font-size: 0.76rem; color: #64748b; line-height: 1.6; }
+.niu-bethint b { color: #94a3b8; } .niu-bethint .over { color: #f87171; }
+.niu-roll { width: 100%; height: 52px; border: none; border-radius: 14px; padding: 0; font-weight: 900; font-size: 1.1rem; cursor: pointer; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); transition: filter .2s; }
+.niu-roll:not(:disabled):hover { filter: brightness(1.08); }
+.niu-roll:disabled { opacity: .5; cursor: not-allowed; }
+.niu-ineligible { text-align: center; color: #f59e0b; font-size: 0.8rem; margin: 0; }
 .niu-panel { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; }
 .niu-panel-toggle { width: 100%; background: transparent; border: none; color: #cbd5e1; font-weight: 700; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
 .niu-panel-body { padding: 0 12px 12px; }
@@ -469,7 +474,7 @@ onUnmounted(() => {
 .niu-chat-form { display: flex; align-items: center; gap: 8px; padding: 8px; border-top: 1px solid rgba(255,255,255,.08); }
 .niu-chat-field { flex: 1 1 0; min-width: 0; height: 40px; box-sizing: border-box; padding: 0 12px; background: #0f172a; border: 1px solid #334155; border-radius: 9px; color: #fff; }
 .niu-chat-field:focus { outline: none; border-color: var(--c-light); }
-.niu-chat-send { flex: 0 0 56px; height: 40px; border: none; border-radius: 9px; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); font-weight: 800; cursor: pointer; }
+.niu-chat-send { flex: 0 0 56px; width: 56px; height: 40px; align-self: center; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 9px; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); font-weight: 800; font-size: 0.9rem; line-height: 1; cursor: pointer; }
 .niu-chat-send:disabled { opacity: .5; cursor: not-allowed; }
 .niu-chat-fab { display: none; }
 @media (max-width: 880px) {
