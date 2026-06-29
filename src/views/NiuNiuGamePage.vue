@@ -424,6 +424,7 @@ onUnmounted(() => {
       <div class="niu-head">
         <div class="niu-title">🐮 妞妞 <span class="niu-sub">玩家坐莊 · 比牛大小</span>
           <div class="niu-audioctrl">
+            <button class="niu-audio" :class="{ off: !autoOpen }" :title="autoOpen ? '自動開牌中(點我改手動搓牌)' : '手動搓牌(點我改自動開牌)'" @click="toggleAutoOpen">{{ autoOpen ? '⚡' : '🎴' }}</button>
             <button class="niu-audio" :class="{ off: !bgmOn }" :title="bgmOn ? '關背景音樂' : '開背景音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
             <input
               v-if="bgmOn"
