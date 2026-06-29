@@ -89,7 +89,8 @@ const autoOpen = ref(localStorage.getItem('niu_autoopen') === 'on')
 const squeezeMode = ref(false)     // 進入「自己翻牌」模式
 const handOpened = ref(false)      // 我已開牌
 const myFlipped = ref<Set<number>>(new Set())
-const revealComplete = computed(() => !!state.value?.revealComplete) // 全部開完/到期(伺服器)
+// 只有伺服器「明確 false」才擋下一局;拿不到欄位(舊後端)一律視為可開,避免卡死
+const revealComplete = computed(() => state.value?.revealComplete !== false)
 const revealPhase = computed(() => state.value?.status === 'SETTLED' && !revealComplete.value)
 const revealAll = computed(() => handOpened.value || revealComplete.value) // 是否揭曉莊家+全部結果
 const revealLocalDeadline = ref(0)
