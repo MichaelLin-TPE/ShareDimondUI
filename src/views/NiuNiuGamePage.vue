@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
@@ -98,7 +98,10 @@ const revealComplete = computed(() => {
   return revealLocalDeadline.value > 0 && nowMs.value > revealLocalDeadline.value + 1500
 })
 const revealPhase = computed(() => state.value?.status === 'SETTLED' && !revealComplete.value)
-const revealAll = computed(() => handOpened.value || revealComplete.value) // 是否揭曉莊家+全部結果
+// 莊家的牌只有在莊家「真的開牌」後(或到期)才看得到;莊家自己開了也算
+const bankerShown = computed(() => (bankerIsMe.value && handOpened.value) || !!state.value?.bankerRevealed || revealComplete.value)
+// 某一注的牌是否已可見:自己看 handOpened,別人看他自己開了沒(或到期)
+function betCardsShown(b: BetView) { return b.mine ? handOpened.value : (!!b.revealed || revealComplete.value) }
 const revealCountdown = computed(() => {
   if (state.value?.status !== 'SETTLED' || revealLocalDeadline.value <= 0) return 0
   return Math.max(0, Math.ceil((revealLocalDeadline.value - nowMs.value) / 1000))
@@ -183,6 +186,7 @@ async function fetchRound() {
 function setupReveal(d: State, fresh: boolean) {
   handOpened.value = false
   myFlipped.value = new Set()
+  outcomePlayed = !fresh // 現場結算才播結果音;重新整理舊局不重播
   if (revealAutoTimer) clearTimeout(revealAutoTimer)
   if (d.revealComplete) { squeezeMode.value = false; handOpened.value = true; if (fresh) void playReveal(d); return }
   const mine = d.bets?.find((b) => b.mine)
@@ -212,12 +216,12 @@ function armRevealAutoOpen(remainingMs: number) {
 }
 function forceOpen(d: State) {
   if (revealAutoTimer) clearTimeout(revealAutoTimer)
-  const wasOpen = handOpened.value
   myFlipped.value = new Set([0, 1, 2, 3, 4])
   handOpened.value = true
   squeezeMode.value = false
-  if (!wasOpen) { revealOutcome(d); loadBoards() }
+  loadBoards() // 輸贏音效交給 bankerShown watcher
 }
+let outcomePlayed = false
 function revealOutcome(d: State) {
   if (bankerIsMe.value) {
     const net = (d.bets ?? []).reduce((s, b) => s - Number(b.settleAmount || 0), 0)
@@ -230,13 +234,16 @@ function revealOutcome(d: State) {
   else if (me.win) { playWin() } else { playLose() }
   if (celebrate.value) { if (celeTimer) clearTimeout(celeTimer); celeTimer = window.setTimeout(() => (celebrate.value = ''), 4000) }
 }
+// 結果(輸贏音效/慶祝)只在莊家真的亮牌後才揭曉,一局一次
+watch(bankerShown, (shown) => {
+  if (shown && showResult.value && !outcomePlayed && state.value) { outcomePlayed = true; revealOutcome(state.value) }
+})
 async function playReveal(d: State) {
   revealing.value = true
   playDealSound()
   await delay(1300)
   revealing.value = false
-  revealOutcome(d)
-  loadBoards()
+  loadBoards() // 輸贏音效交給 bankerShown watcher(等莊家亮牌)
 }
 // 翻自己的一張牌
 function flipCard(i: number) {
@@ -252,8 +259,7 @@ function openHand(notify = true) {
   myFlipped.value = new Set([0, 1, 2, 3, 4])
   handOpened.value = true
   squeezeMode.value = false
-  if (state.value) revealOutcome(state.value)
-  loadBoards()
+  loadBoards() // 輸贏音效交給 bankerShown watcher(等莊家亮牌)
   if (notify) notifyReveal()
 }
 async function notifyReveal() {
@@ -462,14 +468,15 @@ onUnmounted(() => {
           <div class="niu-table-head">
             <span v-if="revealing">🃏 發牌中…</span>
             <span v-else-if="state?.status === 'BETTING'">🪙 下注中</span>
-            <span v-else-if="showResult && !revealAll">🎴 {{ bankerIsMe ? '翻莊家的牌' : '翻你的牌' }}</span>
+            <span v-else-if="showResult && squeezeMode && !handOpened">🎴 {{ bankerIsMe ? '翻莊家的牌' : '翻你的牌' }}</span>
+            <span v-else-if="showResult && !bankerShown">⏳ 等莊家開牌</span>
             <span v-else-if="showResult">🏆 本局結果</span>
             <span v-else>等待開局 · 下第一注即開局</span>
             <span v-if="countdown > 0" class="niu-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
           </div>
 
           <!-- 搓牌:莊家翻莊家的牌、玩家翻自己的牌 -->
-          <div v-if="showResult && !revealAll" class="niu-squeeze">
+          <div v-if="showResult && squeezeMode && !handOpened" class="niu-squeeze">
             <div class="niu-squeeze-tip">
               {{ bankerIsMe ? '👑 你是莊家，翻開莊家的牌' : '翻開你的牌' }}——點牌或按「開牌」· 最後一張見真章 👀
               <span class="niu-squeeze-sub">時間到（{{ revealCountdown }}s）系統自動代開</span>
@@ -493,27 +500,34 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- 莊家牌(揭曉後) -->
-          <div v-if="showResult && revealAll && state?.bankerCards" class="niu-hand banker" :class="{ flip: !revealing }">
-            <span class="niu-hand-tag">👑 莊 · <b>{{ state?.bankerLabel }}</b></span>
-            <span class="niu-cards">
+          <!-- 莊家牌(我開牌後才顯示;莊家真的開了/到期才亮牌,否則蓋著) -->
+          <div v-if="showResult && handOpened && state?.bankerCards" class="niu-hand banker">
+            <span class="niu-hand-tag">👑 莊<template v-if="bankerShown"> · <b>{{ state?.bankerLabel }}</b></template><template v-else> · 待開牌…</template></span>
+            <span v-if="bankerShown" class="niu-cards" :class="{ flip: !revealing }">
               <span v-for="(c, i) in state.bankerCards" :key="i" class="niu-card" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
+            </span>
+            <span v-else class="niu-cards">
+              <span v-for="i in 5" :key="i" class="niu-card back nb">🐮</span>
             </span>
           </div>
 
-          <!-- 玩家牌 / 下注列(下注中,或揭曉後才列出) -->
-          <div v-if="state?.status === 'BETTING' || (showResult && revealAll)" class="niu-players">
-            <div v-for="b in (state?.bets ?? [])" :key="b.memberId" class="niu-player" :class="{ mine: b.mine, win: showResult && b.settled && b.win, lose: showResult && b.settled && !b.win }">
+          <!-- 玩家牌 / 下注列(下注中,或我開牌後列出) -->
+          <div v-if="state?.status === 'BETTING' || (showResult && handOpened)" class="niu-players">
+            <div v-for="b in (state?.bets ?? [])" :key="b.memberId" class="niu-player" :class="{ mine: b.mine, win: bankerShown && b.settled && b.win, lose: bankerShown && b.settled && !b.win }">
               <div class="niu-player-head">
                 <span class="niu-player-name">{{ b.userName }}<span v-if="b.mine"> (你)</span></span>
                 <span class="niu-player-bet">下 {{ fmt(b.amount) }}</span>
-                <span v-if="showResult && b.settled" class="niu-player-res" :class="{ pos: b.win, neg: !b.win }">
-                  {{ b.label }} · {{ b.win ? '贏' : '輸' }} {{ fmt(Math.abs(Number(b.settleAmount))) }}
-                  <span v-if="(b.poolWin ?? 0) > 0">🐮+{{ fmt(b.poolWin) }}</span>
+                <span v-if="b.settled && betCardsShown(b)" class="niu-player-res" :class="{ pos: bankerShown && b.win, neg: bankerShown && !b.win }">
+                  {{ b.label }}<template v-if="bankerShown"> · {{ b.win ? '贏' : '輸' }} {{ fmt(Math.abs(Number(b.settleAmount))) }}</template>
+                  <span v-if="bankerShown && (b.poolWin ?? 0) > 0">🐮+{{ fmt(b.poolWin) }}</span>
                 </span>
+                <span v-else-if="b.settled" class="niu-player-res waiting">未開牌…</span>
               </div>
-              <span v-if="showResult && b.settled && b.cards" class="niu-cards small" :class="{ flip: !revealing }">
+              <span v-if="b.settled && betCardsShown(b) && b.cards" class="niu-cards small" :class="{ flip: !revealing }">
                 <span v-for="(c, i) in b.cards" :key="i" class="niu-card sm" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
+              </span>
+              <span v-else-if="b.settled" class="niu-cards small">
+                <span v-for="i in 5" :key="i" class="niu-card sm back nb">🐮</span>
               </span>
             </div>
             <div v-if="(state?.bets ?? []).length === 0" class="niu-noplayers">還沒人下注</div>
@@ -637,7 +651,10 @@ onUnmounted(() => {
 .niu-card.big { width: 56px; height: 80px; }
 .niu-card.big .r { font-size: 21px; } .niu-card.big .s { font-size: 23px; }
 .niu-card.big:not(.back) { animation: niu-flip .35s ease both; }
-.niu-card.back { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: rgba(255,255,255,.55); border: 1px solid rgba(var(--c-light-rgb),.5); font-size: 26px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.niu-card.big.back { font-size: 28px; }
+.niu-card.back { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: rgba(255,255,255,.55); border: 1px solid rgba(var(--c-light-rgb),.5); cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.niu-card.back.nb { cursor: default; font-size: 18px; }
+.niu-card.sm.back { font-size: 14px; }
 .niu-card.big.back:hover { transform: translateY(-4px); box-shadow: 0 6px 14px rgba(var(--c-deep-rgb),.5); }
 .niu-squeeze-status { font-size: 13px; color: #cbd5e1; }
 .niu-squeeze-status b { color: var(--c-light); }
@@ -654,6 +671,7 @@ onUnmounted(() => {
 .niu-player-bet { color: #94a3b8; font-size: 12px; }
 .niu-player-res { margin-left: auto; font-weight: 700; }
 .niu-player-res.pos { color: #86efac; } .niu-player-res.neg { color: #fca5a5; }
+.niu-player-res.waiting { color: #64748b; font-weight: 400; }
 .niu-cards.small { margin-top: 6px; }
 .niu-noplayers { color: #64748b; font-size: 13px; text-align: center; padding: 10px; }
 .niu-reveal-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; background: rgba(var(--c-light-rgb),.08); border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 12px; padding: 12px 14px; font-size: 0.9rem; color: #e2e8f0; }
