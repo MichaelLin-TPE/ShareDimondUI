@@ -240,8 +240,11 @@ async function fetchRound() {
     const res = await fetch(url, { headers: headers() })
     if (!res.ok) return
     const d: State = await res.json()
-    // 觀戰的房結束了(後端回大廳)→ 自動退出觀戰
-    if (spectateRoundId.value != null && (d.inLobby || !d.spectating)) spectateRoundId.value = null
+    // 觀戰:桌散了(後端回大廳)→ 退出;否則跟著後端回傳的局自動跟桌(下一局開打就跟過去)
+    if (spectateRoundId.value != null) {
+      if (d.inLobby || !d.spectating) spectateRoundId.value = null
+      else if (d.roundId) spectateRoundId.value = d.roundId
+    }
     state.value = d
     // 進到真正的房間(或本來就在大廳)就解除「回大廳」暫時旗標
     if (d.inLobby || d.status === 'WAITING' || d.status === 'ARRANGING') forceLobby.value = false
