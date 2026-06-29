@@ -290,7 +290,7 @@ onUnmounted(() => {
       <div class="niu-head">
         <div class="niu-title">🐮 妞妞 <span class="niu-sub">玩家坐莊 · 比牛大小</span>
           <div class="niu-audioctrl">
-            <button class="niu-audio" :title="bgmOn ? '關閉音樂' : '開啟音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
+            <button class="niu-audio" :class="{ off: !bgmOn }" :title="bgmOn ? '關背景音樂' : '開背景音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
             <input
               v-if="bgmOn"
               class="niu-vol"
@@ -301,7 +301,7 @@ onUnmounted(() => {
               :value="bgmVolume"
               @input="setBgmVolume(($event.target as HTMLInputElement).value)"
             />
-            <button class="niu-audio" :title="sfxOn ? '關閉音效' : '開啟音效'" @click="toggleSfx">{{ sfxOn ? '🔊' : '🔈' }}</button>
+            <button class="niu-audio" :class="{ off: !sfxOn }" :title="sfxOn ? '關音效' : '開音效'" @click="toggleSfx">{{ sfxOn ? '🔊' : '🔈' }}</button>
           </div>
         </div>
         <div class="niu-stats">
@@ -437,10 +437,10 @@ onUnmounted(() => {
 .niu-head { display: flex; flex-direction: column; gap: 8px; }
 .niu-title { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 6px; }
 .niu-sub { font-size: 12px; font-weight: 400; color: #94a3b8; }
-.niu-audioctrl { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
-.niu-audio { background: #0f111a; border: 1px solid #2e3147; color: #cbd5e1; border-radius: 9px; width: 36px; height: 32px; cursor: pointer; font-size: 15px; transition: all .15s; }
-.niu-audio:hover { border-color: var(--c-light); }
-.niu-vol { width: 72px; height: 4px; cursor: pointer; accent-color: var(--c-light); }
+.niu-audioctrl { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.niu-audio { background: rgba(var(--c-light-rgb), .12); border: 1px solid rgba(var(--c-light-rgb), .3); border-radius: 8px; width: 34px; height: 30px; cursor: pointer; font-size: 15px; padding: 0; }
+.niu-audio.off { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); opacity: .6; }
+.niu-vol { width: 70px; accent-color: var(--c-light); cursor: pointer; }
 .niu-stats { display: flex; gap: 8px; }
 .niu-stat { flex: 1 1 0; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 12px; }
 .niu-stat span { display: block; font-size: 11px; color: #94a3b8; }
