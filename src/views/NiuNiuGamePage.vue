@@ -178,26 +178,31 @@ function setupReveal(d: State, fresh: boolean) {
   handOpened.value = false
   myFlipped.value = new Set()
   if (revealAutoTimer) clearTimeout(revealAutoTimer)
+  if (d.revealComplete) { squeezeMode.value = false; handOpened.value = true; if (fresh) void playReveal(d); return }
   const mine = d.bets?.find((b) => b.mine)
   const myHand = bankerIsMe.value
     ? (d.bankerCards && d.bankerCards.length === 5 ? d.bankerCards : null)
     : (mine && mine.cards && mine.cards.length === 5 ? mine.cards : null)
   const alreadyRevealed = bankerIsMe.value ? !!d.bankerRevealed : !!mine?.revealed
-  if (!myHand || d.revealComplete || alreadyRevealed || autoOpen.value) {
-    // 沒手牌(旁觀) / 已完成 / 已開過 / 秒開 → 直接揭曉
+  if (!myHand || alreadyRevealed || autoOpen.value) {
+    // 沒手牌(旁觀) / 已開過 / 秒開 → 直接揭曉(但不擋下一局,仍要等大家)
     squeezeMode.value = false
     handOpened.value = true
     if (fresh) { void playReveal(d); if (myHand && !alreadyRevealed) notifyReveal() }
-    return
+  } else {
+    // 進搓牌:自己翻,時間到系統代開
+    squeezeMode.value = true
+    if (fresh) { ensureAudio(); playDealSound() }
   }
-  // 進搓牌:自己翻,時間到系統代開
-  squeezeMode.value = true
-  if (fresh) { ensureAudio(); playDealSound() }
+  // 不管哪條路徑:在截止時間(+1秒緩衝)自動代開並重新拉狀態,確保解鎖下一局
   armRevealAutoOpen(Number(d.revealRemainingMs || 0))
 }
 function armRevealAutoOpen(remainingMs: number) {
   if (revealAutoTimer) clearTimeout(revealAutoTimer)
-  revealAutoTimer = window.setTimeout(() => { if (!handOpened.value) openHand(false) }, Math.max(0, remainingMs))
+  revealAutoTimer = window.setTimeout(() => {
+    if (!handOpened.value) openHand(false)
+    fetchRound() // deadline 已過,拉伺服器的 revealComplete 解鎖
+  }, Math.max(0, remainingMs) + 1000)
 }
 function forceOpen(d: State) {
   if (revealAutoTimer) clearTimeout(revealAutoTimer)
