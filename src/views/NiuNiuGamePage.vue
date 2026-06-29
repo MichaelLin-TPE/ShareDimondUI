@@ -658,8 +658,9 @@ onUnmounted(() => {
 .niu-card.big.back:hover { transform: translateY(-4px); box-shadow: 0 6px 14px rgba(var(--c-deep-rgb),.5); }
 .niu-squeeze-status { font-size: 13px; color: #cbd5e1; }
 .niu-squeeze-status b { color: var(--c-light); }
-.niu-squeeze-acts { display: flex; align-items: center; gap: 16px; }
-.niu-autoopen { font-size: 12px; color: #94a3b8; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.niu-squeeze-acts { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 340px; }
+.niu-squeeze-acts .niu-btn { flex: 1 1 0; min-width: 0; height: 42px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.niu-autoopen { flex: 1 1 0; min-width: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 10px; background: rgba(var(--c-light-rgb),.08); font-size: 0.82rem; color: #cbd5e1; cursor: pointer; }
 .niu-autoopen input { accent-color: var(--c-light); cursor: pointer; }
 .niu-players { display: flex; flex-direction: column; gap: 8px; }
 .niu-player { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 10px; }
