@@ -463,7 +463,7 @@ onUnmounted(() => {
 .niu-banker-emoji { font-size: 24px; }
 .niu-banker-name { font-weight: 800; }
 .niu-banker-roll { font-size: 12px; color: #94a3b8; }
-.niu-btn { border: none; border-radius: 9px; padding: 6px 14px; font-weight: 700; cursor: pointer; font-size: 0.85rem; transition: filter .15s; }
+.niu-btn { border: none; border-radius: 10px; padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: 0.95rem; line-height: 1; transition: filter .15s; }
 .niu-btn:hover { filter: brightness(1.08); }
 .niu-btn.take { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); }
 .niu-btn.leave { background: #334155; color: #f1f5f9; }
