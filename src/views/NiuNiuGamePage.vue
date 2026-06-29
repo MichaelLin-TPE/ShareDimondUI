@@ -24,7 +24,7 @@ const myName = authStore.member?.userName
 interface BetView {
   memberId: number; userName: string; amount: number; mine: boolean
   cards?: string[]; special?: string | null; label?: string; level?: number; mult?: number
-  win?: boolean; settleAmount?: number; poolWin?: number; settled?: boolean
+  win?: boolean; settleAmount?: number; poolWin?: number; settled?: boolean; revealed?: boolean
 }
 interface State {
   niuniuEnabled: boolean; status: string; roundId: number | null; deadlineEpochMs: number; remainingMs: number
@@ -32,6 +32,7 @@ interface State {
   bankerName: string | null; bankroll: number | null; remainingCapacity: number | null; maxMult: number
   bankerCards?: string[]; bankerLabel?: string; bankerSpecial?: string | null; bankerLevel?: number
   bets: BetView[]; serverSeed?: string; serverSeedHash?: string; clientSeed?: string; nonce?: number; poolWin?: number
+  revealComplete?: boolean; revealRemainingMs?: number; revealedCount?: number; revealTotal?: number; bankerRevealed?: boolean
 }
 const loading = ref(true)
 const state = ref<State | null>(null)
@@ -81,17 +82,21 @@ const maxBetForCurrent = computed(() => {
 const belowMin = computed(() => effectiveBet.value > 0 && effectiveBet.value < minBet.value)
 const overCap = computed(() => effectiveBet.value > maxBetForCurrent.value)
 const revealing = ref(false)
-// 剛結算、正在展示結果的那一局(展示幾秒後自動清掉 → 回到可開新局狀態)
-const liveResultRound = ref<number | null>(null)
-const showResult = computed(() =>
-  state.value?.status === 'SETTLED' && state.value?.roundId != null && state.value?.roundId === liveResultRound.value)
+const showResult = computed(() => state.value?.status === 'SETTLED')
 
-// ---- 搓牌/開牌(讓玩家自己一張張翻自己的牌) ----
+// ---- 開牌階段(伺服器驅動:限時開牌,全開或到期才可開新局) ----
 const autoOpen = ref(localStorage.getItem('niu_autoopen') === 'on')
-const squeezeMode = ref(false)     // 進入「自己翻牌」模式(我有下注且非秒開)
-const handOpened = ref(false)      // 我已開牌 → 揭曉莊家+結果
+const squeezeMode = ref(false)     // 進入「自己翻牌」模式
+const handOpened = ref(false)      // 我已開牌
 const myFlipped = ref<Set<number>>(new Set())
-const revealAll = computed(() => !squeezeMode.value || handOpened.value) // 是否揭曉莊家+全部結果
+const revealComplete = computed(() => !!state.value?.revealComplete) // 全部開完/到期(伺服器)
+const revealPhase = computed(() => state.value?.status === 'SETTLED' && !revealComplete.value)
+const revealAll = computed(() => handOpened.value || revealComplete.value) // 是否揭曉莊家+全部結果
+const revealLocalDeadline = ref(0)
+const revealCountdown = computed(() => {
+  if (!revealPhase.value) return 0
+  return Math.max(0, Math.ceil((revealLocalDeadline.value - nowMs.value) / 1000))
+})
 const myBet = computed(() => state.value?.bets?.find((b) => b.mine) ?? null)
 const myHandCards = computed<string[]>(() => (myBet.value?.cards as string[] | undefined) ?? [])
 // 我要搓的那手牌:莊家翻莊家的牌,玩家翻自己的牌
@@ -107,14 +112,15 @@ const flippedSum = computed(() =>
   squeezeHand.value.reduce((s, c, i) => (myFlipped.value.has(i) ? s + pointVal(c) : s), 0))
 const canBet = computed(() =>
   !!state.value?.niuniuEnabled && hasBanker.value && !bankerIsMe.value && !closing.value && !revealing.value &&
-  !showResult.value && effectiveBet.value > 0 && !belowMin.value && !overCap.value)
+  revealComplete.value && effectiveBet.value > 0 && !belowMin.value && !overCap.value)
 function cantBetReason(): string {
   const s = state.value
   if (!s?.niuniuEnabled) return '妞妞目前未開放'
   if (!hasBanker.value) return '目前沒有莊家，先坐莊或等人坐莊'
   if (bankerIsMe.value) return '你是莊家，不能玩自己的莊'
   if (closing.value) return '本局已封盤，等下一局再下注'
-  if (revealing.value || showResult.value) return '本局結果顯示中，馬上就能開新局'
+  if (revealing.value) return '發牌中…'
+  if (revealPhase.value) return `開牌中（${s?.revealedCount ?? 0}/${s?.revealTotal ?? 0}）等大家開完才能開新局`
   if (effectiveBet.value <= 0) return '請輸入下注金額'
   if (belowMin.value) return `最小下注 ${fmt(minBet.value)} ${s?.currency ?? ''}`
   if (overCap.value) return `此注上限約 ${fmt(maxBetForCurrent.value)}，請降低金額`
@@ -140,8 +146,7 @@ async function loadConfig() {
 let fetching = false
 let initialized = false
 let lastSettledRound: number | null = null
-let resultClearTimer: number | undefined
-let bankerAutoFlipTimer: number | undefined
+let revealAutoTimer: number | undefined
 let busy = false
 async function fetchRound() {
   if (fetching) return
@@ -153,39 +158,57 @@ async function fetchRound() {
     const prevStatus = state.value?.status
     state.value = d
     localDeadlineMs.value = d.status === 'BETTING' ? Date.now() + Number(d.remainingMs || 0) : 0
-    if (!initialized) { initialized = true; if (d.status === 'SETTLED' && d.roundId) lastSettledRound = d.roundId }
-    else if (d.status === 'SETTLED' && d.roundId && d.roundId !== lastSettledRound && prevStatus === 'BETTING') {
+    revealLocalDeadline.value = (d.status === 'SETTLED' && !d.revealComplete) ? Date.now() + Number(d.revealRemainingMs || 0) : 0
+
+    if (!initialized) {
+      initialized = true
+      if (d.status === 'SETTLED') { lastSettledRound = d.roundId; setupReveal(d, false) }
+    } else if (d.status === 'SETTLED' && d.roundId && d.roundId !== lastSettledRound && prevStatus === 'BETTING') {
       lastSettledRound = d.roundId
-      liveResultRound.value = d.roundId
-      handOpened.value = false
-      myFlipped.value = new Set()
-      const mine = d.bets?.find((b) => b.mine)
-      const myHand = bankerIsMe.value
-        ? (d.bankerCards && d.bankerCards.length === 5 ? d.bankerCards : null)
-        : (mine && mine.cards && mine.cards.length === 5 ? mine.cards : null)
-      if (myHand && !autoOpen.value) {
-        // 莊家翻莊家的牌、玩家翻自己的牌:先別揭曉其餘,也先不啟動清除倒數(等開牌)
-        squeezeMode.value = true
-        ensureAudio(); playDealSound()
-        if (bankerIsMe.value) startBankerAutoFlip() // 莊家沒翻 → 7 秒後系統代翻
-      } else {
-        // 秒開 / 我沒下注又不是莊家 → 自動揭曉
-        squeezeMode.value = false
-        await playReveal(d)
-        startResultClear()
-      }
+      setupReveal(d, true)
+    } else if (d.status === 'SETTLED' && d.revealComplete && !handOpened.value) {
+      forceOpen(d) // 全部開完/到期 → 系統幫還沒開的我揭曉
     }
-    if (d.status === 'BETTING') { squeezeMode.value = false; handOpened.value = false } // 新局重置
+    if (d.status === 'BETTING') { squeezeMode.value = false; handOpened.value = false; if (revealAutoTimer) clearTimeout(revealAutoTimer) }
   } catch (e) { console.error(e) } finally { fetching = false }
 }
 
-function startResultClear() {
-  if (resultClearTimer) clearTimeout(resultClearTimer)
-  resultClearTimer = window.setTimeout(() => { liveResultRound.value = null }, 8000)
+// 進入開牌階段:決定我要不要搓牌
+function setupReveal(d: State, fresh: boolean) {
+  handOpened.value = false
+  myFlipped.value = new Set()
+  if (revealAutoTimer) clearTimeout(revealAutoTimer)
+  const mine = d.bets?.find((b) => b.mine)
+  const myHand = bankerIsMe.value
+    ? (d.bankerCards && d.bankerCards.length === 5 ? d.bankerCards : null)
+    : (mine && mine.cards && mine.cards.length === 5 ? mine.cards : null)
+  const alreadyRevealed = bankerIsMe.value ? !!d.bankerRevealed : !!mine?.revealed
+  if (!myHand || d.revealComplete || alreadyRevealed || autoOpen.value) {
+    // 沒手牌(旁觀) / 已完成 / 已開過 / 秒開 → 直接揭曉
+    squeezeMode.value = false
+    handOpened.value = true
+    if (fresh) { void playReveal(d); if (myHand && !alreadyRevealed) notifyReveal() }
+    return
+  }
+  // 進搓牌:自己翻,時間到系統代開
+  squeezeMode.value = true
+  if (fresh) { ensureAudio(); playDealSound() }
+  armRevealAutoOpen(Number(d.revealRemainingMs || 0))
+}
+function armRevealAutoOpen(remainingMs: number) {
+  if (revealAutoTimer) clearTimeout(revealAutoTimer)
+  revealAutoTimer = window.setTimeout(() => { if (!handOpened.value) openHand(false) }, Math.max(0, remainingMs))
+}
+function forceOpen(d: State) {
+  if (revealAutoTimer) clearTimeout(revealAutoTimer)
+  const wasOpen = handOpened.value
+  myFlipped.value = new Set([0, 1, 2, 3, 4])
+  handOpened.value = true
+  squeezeMode.value = false
+  if (!wasOpen) { revealOutcome(d); loadBoards() }
 }
 function revealOutcome(d: State) {
   if (bankerIsMe.value) {
-    // 莊家:整局淨輸贏 = -Σ玩家淨輸贏
     const net = (d.bets ?? []).reduce((s, b) => s - Number(b.settleAmount || 0), 0)
     if (net > 0) playWin(); else if (net < 0) playLose()
     return
@@ -196,11 +219,6 @@ function revealOutcome(d: State) {
   else if (me.win) { playWin() } else { playLose() }
   if (celebrate.value) { if (celeTimer) clearTimeout(celeTimer); celeTimer = window.setTimeout(() => (celebrate.value = ''), 4000) }
 }
-// 莊家若閒置不翻,7 秒後系統代翻
-function startBankerAutoFlip() {
-  if (bankerAutoFlipTimer) clearTimeout(bankerAutoFlipTimer)
-  bankerAutoFlipTimer = window.setTimeout(() => { if (squeezeMode.value && !handOpened.value) openHand() }, 7000)
-}
 async function playReveal(d: State) {
   revealing.value = true
   playDealSound()
@@ -209,23 +227,26 @@ async function playReveal(d: State) {
   revealOutcome(d)
   loadBoards()
 }
-// 玩家翻自己的一張牌
+// 翻自己的一張牌
 function flipCard(i: number) {
   if (!squeezeMode.value || handOpened.value || myFlipped.value.has(i)) return
   const s = new Set(myFlipped.value); s.add(i); myFlipped.value = s
   ensureAudio(); playFlip(); vibrate(18)
-  if (s.size >= 5) openHand()
+  if (s.size >= 5) openHand(true)
 }
-// 開牌:揭曉莊家 + 結果
-function openHand() {
+// 開牌:揭曉自己手牌 + 結果,並通知伺服器(影響「全部開完」)
+function openHand(notify = true) {
   if (handOpened.value) return
-  if (bankerAutoFlipTimer) clearTimeout(bankerAutoFlipTimer)
+  if (revealAutoTimer) clearTimeout(revealAutoTimer)
   myFlipped.value = new Set([0, 1, 2, 3, 4])
   handOpened.value = true
   squeezeMode.value = false
   if (state.value) revealOutcome(state.value)
   loadBoards()
-  startResultClear()
+  if (notify) notifyReveal()
+}
+async function notifyReveal() {
+  try { await fetch(`${API}/niuniu/reveal`, { method: 'POST', headers: headers() }); await fetchRound() } catch (e) { console.error(e) }
 }
 function toggleAutoOpen() {
   autoOpen.value = !autoOpen.value
@@ -241,9 +262,8 @@ async function placeBet() {
     const res = await fetch(`${API}/niuniu/bet`, { method: 'POST', headers: headers(), body: JSON.stringify({ amount: effectiveBet.value }) })
     const d = await res.json().catch(() => null)
     if (!res.ok) { useAlert.error(d?.message ?? '下注失敗'); return }
-    liveResultRound.value = null // 開了新局,立刻清掉上一局結果
     squeezeMode.value = false; handOpened.value = false
-    if (resultClearTimer) clearTimeout(resultClearTimer)
+    if (revealAutoTimer) clearTimeout(revealAutoTimer)
     playChip(); clearBet(); await fetchRound()
   } catch (e) { console.error(e); useAlert.error('連線失敗') } finally { busy = false }
 }
@@ -367,7 +387,7 @@ onMounted(async () => {
   armAutoStart()
 })
 onUnmounted(() => {
-  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (resultClearTimer) clearTimeout(resultClearTimer); if (bankerAutoFlipTimer) clearTimeout(bankerAutoFlipTimer)
+  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (revealAutoTimer) clearTimeout(revealAutoTimer)
   stopMusic(); bgm = null
   if (ctx) { ctx.close().catch(() => {}); ctx = null }
   fetch(`${API}/niuniu/leave`, { method: 'POST', headers: headers() }).catch(() => {})
@@ -441,7 +461,7 @@ onUnmounted(() => {
           <div v-if="showResult && !revealAll" class="niu-squeeze">
             <div class="niu-squeeze-tip">
               {{ bankerIsMe ? '👑 你是莊家，翻開莊家的牌' : '翻開你的牌' }}——點牌或按「開牌」· 最後一張見真章 👀
-              <span v-if="bankerIsMe" class="niu-squeeze-sub">沒翻 7 秒後系統自動代翻</span>
+              <span class="niu-squeeze-sub">時間到（{{ revealCountdown }}s）系統自動代開</span>
             </div>
             <div class="niu-myhand">
               <span
@@ -457,7 +477,7 @@ onUnmounted(() => {
             </div>
             <div class="niu-squeeze-status">已翻 {{ myFlipped.size }}/5 · 目前合計 <b>{{ flippedSum }}</b> 點</div>
             <div class="niu-squeeze-acts">
-              <button class="niu-btn take" @click="openHand">🎴 開牌</button>
+              <button class="niu-btn take" @click="openHand(true)">🎴 開牌</button>
               <label class="niu-autoopen"><input type="checkbox" :checked="autoOpen" @change="toggleAutoOpen" /> 下次自動開牌</label>
             </div>
           </div>
@@ -490,8 +510,15 @@ onUnmounted(() => {
           <div v-else-if="!showResult" class="niu-noplayers">{{ hasBanker ? '下第一注即開局，比牛比大小！' : '等莊家就位後即可開局' }}</div>
         </div>
 
-        <!-- 下注區(非莊家、非結算展示中) -->
-        <div v-if="!bankerIsMe && !showResult" class="niu-betbox">
+        <!-- 開牌階段:進度 + 倒數(全部開完或時間到才可開新局) -->
+        <div v-if="revealPhase" class="niu-reveal-bar">
+          <span class="niu-reveal-main">🎴 開牌中 <b>{{ state?.revealedCount ?? 0 }}/{{ state?.revealTotal ?? 0 }}</b></span>
+          <span class="niu-reveal-cd" :class="{ urgent: revealCountdown <= 5 }">⏱ {{ revealCountdown }}s</span>
+          <span class="niu-reveal-hint">{{ handOpened ? '你已開牌，等其他人…時間到系統代開' : '輪到你開牌！' }}</span>
+        </div>
+
+        <!-- 下注區(非莊家,可開新局時) -->
+        <div v-else-if="!bankerIsMe" class="niu-betbox">
           <div class="niu-chips">
             <span class="niu-label">籌碼</span>
             <div class="niu-chip-grid">
@@ -618,6 +645,11 @@ onUnmounted(() => {
 .niu-player-res.pos { color: #86efac; } .niu-player-res.neg { color: #fca5a5; }
 .niu-cards.small { margin-top: 6px; }
 .niu-noplayers { color: #64748b; font-size: 13px; text-align: center; padding: 10px; }
+.niu-reveal-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; background: rgba(var(--c-light-rgb),.08); border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 12px; padding: 12px 14px; font-size: 0.9rem; color: #e2e8f0; }
+.niu-reveal-main b { color: var(--c-light); }
+.niu-reveal-cd { color: #fbbf24; font-weight: 800; font-variant-numeric: tabular-nums; }
+.niu-reveal-cd.urgent { color: #f87171; }
+.niu-reveal-hint { margin-left: auto; font-size: 0.78rem; color: #94a3b8; }
 .niu-betbox { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .niu-chips { display: flex; align-items: center; gap: 6px; }
 .niu-label { font-size: 0.8rem; color: #94a3b8; width: 36px; flex-shrink: 0; }
