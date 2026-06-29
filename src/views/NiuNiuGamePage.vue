@@ -102,6 +102,19 @@ const revealPhase = computed(() => state.value?.status === 'SETTLED' && !revealC
 const bankerShown = computed(() => (bankerIsMe.value && handOpened.value) || !!state.value?.bankerRevealed || revealComplete.value)
 // 某一注的牌是否已可見:自己看 handOpened,別人看他自己開了沒(或到期)
 function betCardsShown(b: BetView) { return b.mine ? handOpened.value : (!!b.revealed || revealComplete.value) }
+// 顯示用餘額:下注/開牌期間先當作沒被扣(加回本局凍結),等莊家亮牌(揭曉輸贏)才顯示真實餘額,避免從餘額偷看結果
+const heldOrig = ref<number | null>(null)
+const displayBalance = computed(() => {
+  const s = state.value
+  const real = Number(s?.myBalance ?? 0)
+  if (!s) return real
+  if (s.status === 'BETTING') {
+    const myAmt = Number(s.bets?.find((b) => b.mine)?.amount ?? 0)
+    return real + myAmt * maxMult.value // 加回凍結,看起來還沒被扣
+  }
+  if (s.status === 'SETTLED' && !bankerShown.value) return heldOrig.value != null ? heldOrig.value : real
+  return real
+})
 const revealCountdown = computed(() => {
   if (state.value?.status !== 'SETTLED' || revealLocalDeadline.value <= 0) return 0
   return Math.max(0, Math.ceil((revealLocalDeadline.value - nowMs.value) / 1000))
@@ -178,7 +191,12 @@ async function fetchRound() {
     } else if (d.status === 'SETTLED' && d.revealComplete && !handOpened.value) {
       forceOpen(d) // 全部開完/到期 → 系統幫還沒開的我揭曉
     }
-    if (d.status === 'BETTING') { squeezeMode.value = false; handOpened.value = false; if (revealAutoTimer) clearTimeout(revealAutoTimer) }
+    if (d.status === 'BETTING') {
+      squeezeMode.value = false; handOpened.value = false; if (revealAutoTimer) clearTimeout(revealAutoTimer)
+      // 記住本局「未結算前」的餘額(=真實餘額+本局凍結),結算後在莊家亮牌前都顯示這個值
+      const myAmt = Number(d.bets?.find((b) => b.mine)?.amount ?? 0)
+      heldOrig.value = Number(d.myBalance ?? 0) + myAmt * (Number(d.maxMult) || 5)
+    }
   } catch (e) { console.error(e) } finally { fetching = false }
 }
 
@@ -441,7 +459,7 @@ onUnmounted(() => {
         </div>
         <div class="niu-stats">
           <div class="niu-stat"><span>彩金池</span><b>{{ config.currency }} {{ fmt(state?.poolBalance) }}</b></div>
-          <div class="niu-stat"><span>我的餘額</span><b>{{ config.currency }} {{ fmt(state?.myBalance) }}</b></div>
+          <div class="niu-stat"><span>我的餘額</span><b>{{ config.currency }} {{ fmt(displayBalance) }}</b></div>
         </div>
       </div>
 
