@@ -323,17 +323,6 @@ function clearFilter() {
           </div>
         </div>
 
-        <!-- 幹部以上:一鍵批次結帳此人所有「已繳倉庫」單(錢包扣得到就扣、扣不到直接分配) -->
-        <div
-          v-if="isOfficer && isAssigned(group.title) && batchSettleableTickets(group.items ?? []).length"
-          class="batch-settle-bar"
-        >
-          <button class="batch-settle-btn" @click.stop="handleBatchSettle(group)">
-            🧾 批次結帳此人 {{ batchSettleableTickets(group.items ?? []).length }} 筆已繳倉庫單
-          </button>
-          <span class="batch-settle-hint">能從錢包扣就扣，扣不到直接分配給參與人</span>
-        </div>
-
         <!-- 折疊容器 - 用 CSS grid-template-rows 0fr↔1fr trick 做絲滑 height 動畫 -->
         <div class="collapse-wrap">
           <div class="collapse-inner">
@@ -368,6 +357,19 @@ function clearFilter() {
                   {{ entry.name }}<span v-if="entry.count > 1" class="item-chip-count">×{{ entry.count }}</span>
                 </span>
               </div>
+            </div>
+
+            <!-- 幹部以上:一鍵批次結帳此人所有「已繳倉庫」單(錢包扣得到就扣、扣不到直接分配)。在展開後才出現 -->
+            <div
+              v-if="isOfficer && isAssigned(group.title) && batchSettleableTickets(group.items ?? []).length"
+              class="batch-settle-bar"
+            >
+              <button class="batch-settle-btn" @click.stop="handleBatchSettle(group)">
+                <span class="batch-settle-ic">🧾</span>
+                <span class="batch-settle-main">批次結帳</span>
+                <span class="batch-settle-badge">{{ batchSettleableTickets(group.items ?? []).length }}</span>
+              </button>
+              <span class="batch-settle-hint">已繳倉庫單一次結清・能扣錢包就扣，扣不到直接分配</span>
             </div>
 
             <div class="auction-grid">
@@ -1041,34 +1043,67 @@ function clearFilter() {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 4px 10px;
-  padding: 8px 12px 4px;
+  gap: 8px 12px;
+  margin: 4px 2px 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(var(--c-light-rgb), 0.12);
 }
 .batch-settle-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  border: 1px solid rgba(var(--c-light-rgb), 0.5);
-  border-radius: 8px;
-  padding: 6px 12px;
+  gap: 8px;
+  border: 1.5px solid rgba(var(--c-light-rgb), 0.55);
+  border-radius: 999px;
+  padding: 7px 8px 7px 14px;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1;
   cursor: pointer;
-  color: var(--c-on);
-  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
-  box-shadow: 0 2px 6px rgba(var(--c-deep-rgb), 0.3);
-  transition: filter 0.15s;
+  color: var(--c-light);
+  background: rgba(var(--c-light-rgb), 0.08);
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s,
+    color 0.15s,
+    border-color 0.15s;
 }
 .batch-settle-btn:hover {
-  filter: brightness(1.08);
+  background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
+  color: var(--c-on);
+  border-color: transparent;
+  box-shadow: 0 3px 12px rgba(var(--c-deep-rgb), 0.4);
+}
+.batch-settle-btn:hover .batch-settle-badge {
+  background: var(--c-on);
+  color: var(--c-deep);
 }
 .batch-settle-btn:active {
   transform: translateY(1px);
 }
+.batch-settle-ic {
+  font-size: 0.95rem;
+}
+.batch-settle-main {
+  letter-spacing: 0.5px;
+}
+.batch-settle-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--c-light);
+  color: var(--c-on);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
 .batch-settle-hint {
-  font-size: 0.68rem;
-  color: rgba(var(--c-light-rgb), 0.75);
+  font-size: 0.7rem;
+  color: rgba(var(--c-light-rgb), 0.7);
 }
 @media (prefers-reduced-motion: reduce) {
   .group-wrapper.is-urgent { animation: none; }
