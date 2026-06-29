@@ -19,6 +19,10 @@ const {
   thirteenEnabled,
   thirteenSaving,
   saveThirteenConfig,
+  // 妞妞
+  niuniuEnabled,
+  niuniuSaving,
+  saveNiuNiuConfig,
   settings,
   selectedCurrency,
   clanCurrencies,
@@ -378,6 +382,42 @@ const rakePercent = computed<number>({
         <div class="cs-actions">
           <button class="cs-btn-primary" :disabled="thirteenSaving" @click="saveThirteenConfig">
             {{ thirteenSaving ? '儲存中…' : '💾 儲存十三支設定' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── 妞妞設定 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🐮</span>
+          <div>
+            <h3>妞妞設定</h3>
+            <p>玩家坐莊比牛。最小注沿用上方拉霸的下注額，抽水進彩金池、五小牛中池</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>開放妞妞</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: niuniuEnabled }"
+              @click="niuniuEnabled = !niuniuEnabled"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ niuniuEnabled ? '🐮 已開放' : '🚫 已關閉' }}
+              </span>
+            </div>
+            <p class="cs-hint">玩家坐莊/搶莊，倍率最大 ×5(下注凍結 5 倍)；五小牛中彩金池</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" :disabled="niuniuSaving" @click="saveNiuNiuConfig">
+            {{ niuniuSaving ? '儲存中…' : '💾 儲存妞妞設定' }}
           </button>
         </div>
       </section>

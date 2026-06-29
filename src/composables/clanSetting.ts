@@ -508,6 +508,46 @@ export function useAuction() {
     }
   }
 
+  // ───── 妞妞設定 (共用最小注/抽水/彩金池,只多一個開關) ─────
+  const niuniuEnabled = ref(false)
+  const niuniuSaving = ref(false)
+
+  const fetchNiuNiuConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/niuniu/config`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      niuniuEnabled.value = !!d.enabled
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveNiuNiuConfig = async () => {
+    if (niuniuSaving.value) return
+    niuniuSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/niuniu/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ enabled: niuniuEnabled.value }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(d.message ?? '妞妞設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      niuniuSaving.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
@@ -516,6 +556,7 @@ export function useAuction() {
     fetchSlotConfig()
     fetchDiceConfig()
     fetchThirteenConfig()
+    fetchNiuNiuConfig()
   })
 
   return {
@@ -531,6 +572,10 @@ export function useAuction() {
     thirteenEnabled,
     thirteenSaving,
     saveThirteenConfig,
+    // 妞妞
+    niuniuEnabled,
+    niuniuSaving,
+    saveNiuNiuConfig,
     settings,
     balance,
     selectedCurrency,
