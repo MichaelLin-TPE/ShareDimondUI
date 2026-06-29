@@ -661,7 +661,7 @@ onUnmounted(() => {
 .niu-squeeze-acts { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; max-width: 340px; }
 .niu-squeeze-acts .niu-btn { flex: 1 1 0; min-width: 0; height: 42px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
 .niu-autoopen { flex: 1 1 0; min-width: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 10px; background: rgba(var(--c-light-rgb),.08); font-size: 0.82rem; color: #cbd5e1; cursor: pointer; }
-.niu-autoopen input { accent-color: var(--c-light); cursor: pointer; }
+.niu-autoopen input { flex: 0 0 auto; width: 16px; height: 16px; margin: 0; accent-color: var(--c-light); cursor: pointer; }
 .niu-players { display: flex; flex-direction: column; gap: 8px; }
 .niu-player { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 8px 10px; }
 .niu-player.mine { border-color: var(--c-light); }
