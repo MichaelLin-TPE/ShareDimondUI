@@ -326,22 +326,17 @@ onUnmounted(() => {
       <template v-else>
         <div class="niu-online">🟢 在線 {{ state?.online?.length ?? 0 }} 人：{{ (state?.online ?? []).join('、') || '—' }}</div>
 
-        <!-- 莊家座位 -->
+        <!-- 莊家列 -->
         <div class="niu-banker">
-          <div class="niu-banker-left">
-            <span class="niu-banker-emoji">👑</span>
-            <div>
-              <div class="niu-banker-name">{{ hasBanker ? state?.bankerName : '目前無莊家' }}</div>
-              <div class="niu-banker-roll" v-if="hasBanker">本金 {{ config.currency }} {{ fmt(state?.bankroll) }}</div>
-            </div>
-          </div>
-          <div class="niu-banker-act">
-            <template v-if="hasBanker">
-              <button v-if="bankerIsMe" class="niu-btn leave" @click="leaveBank">下莊</button>
-              <button v-else class="niu-btn take" @click="takeBank">搶莊</button>
-            </template>
-            <button v-else class="niu-btn take" @click="takeBank">我要坐莊</button>
-          </div>
+          <template v-if="hasBanker">
+            <span class="niu-banker-info">👑 莊家 <b>{{ state?.bankerName }}</b> · 本金 {{ fmt(state?.bankroll) }} {{ config.currency }}</span>
+            <button v-if="bankerIsMe" class="niu-btn leave" @click="leaveBank">下莊</button>
+            <button v-else class="niu-btn take" @click="takeBank">搶莊</button>
+          </template>
+          <template v-else>
+            <span class="niu-banker-info muted">目前沒有莊家</span>
+            <button class="niu-btn take" @click="takeBank">我要坐莊</button>
+          </template>
         </div>
 
         <!-- 牌桌 -->
@@ -386,8 +381,10 @@ onUnmounted(() => {
         <div v-if="!bankerIsMe && !showResult" class="niu-betbox">
           <div class="niu-chips">
             <span class="niu-label">籌碼</span>
-            <button v-for="c in config.chips" :key="c" class="niu-chip" @click="addChip(c)">+{{ fmt(c) }}</button>
-            <button class="niu-chip clear" @click="clearBet">清</button>
+            <div class="niu-chip-grid">
+              <button v-for="c in config.chips" :key="c" class="niu-chip" @click="addChip(c)">+{{ fmt(c) }}</button>
+              <button class="niu-chip clear" @click="clearBet">清空</button>
+            </div>
           </div>
           <div class="niu-amount-row">
             <span class="niu-label">金額</span>
@@ -458,12 +455,11 @@ onUnmounted(() => {
 .niu-stat b { font-size: 16px; color: var(--c-light); }
 .niu-empty { text-align: center; color: #94a3b8; padding: 40px 12px; background: #131722; border-radius: 12px; line-height: 1.8; }
 .niu-online { font-size: 12px; color: #94a3b8; background: #131722; border-radius: 8px; padding: 6px 10px; }
-.niu-banker { display: flex; justify-content: space-between; align-items: center; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px 12px; }
-.niu-banker-left { display: flex; align-items: center; gap: 10px; }
-.niu-banker-emoji { font-size: 24px; }
-.niu-banker-name { font-weight: 800; }
-.niu-banker-roll { font-size: 12px; color: #94a3b8; }
-.niu-btn { border: none; border-radius: 10px; padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: 0.95rem; line-height: 1; transition: filter .15s; }
+.niu-banker { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; font-size: 0.85rem; }
+.niu-banker-info { color: #e2e8f0; min-width: 0; }
+.niu-banker-info b { color: var(--c-light); }
+.niu-banker-info.muted { color: #94a3b8; }
+.niu-btn { flex-shrink: 0; border: none; border-radius: 10px; padding: 10px 22px; font-weight: 700; cursor: pointer; font-size: 0.95rem; line-height: 1; transition: filter .15s; }
 .niu-btn:hover { filter: brightness(1.08); }
 .niu-btn.take { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); }
 .niu-btn.leave { background: #334155; color: #f1f5f9; }
@@ -495,8 +491,9 @@ onUnmounted(() => {
 .niu-cards.small { margin-top: 6px; }
 .niu-noplayers { color: #64748b; font-size: 13px; text-align: center; padding: 10px; }
 .niu-betbox { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.niu-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.niu-label { font-size: 12px; color: #94a3b8; flex: 0 0 auto; }
+.niu-chips { display: flex; align-items: center; gap: 6px; }
+.niu-label { font-size: 0.8rem; color: #94a3b8; width: 36px; flex-shrink: 0; }
+.niu-chip-grid { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
 .niu-chip { height: 38px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 9px; border: 1px solid #2e3147; background: #0f111a; color: #cbd5e1; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: all .15s; }
 .niu-chip:hover { border-color: var(--c-light); color: var(--c-light); background: rgba(var(--c-light-rgb),.12); }
 .niu-chip.clear { color: #64748b; }
