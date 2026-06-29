@@ -94,6 +94,9 @@ const myFlipped = ref<Set<number>>(new Set())
 const revealAll = computed(() => !squeezeMode.value || handOpened.value) // 是否揭曉莊家+全部結果
 const myBet = computed(() => state.value?.bets?.find((b) => b.mine) ?? null)
 const myHandCards = computed<string[]>(() => (myBet.value?.cards as string[] | undefined) ?? [])
+// 我要搓的那手牌:莊家翻莊家的牌,玩家翻自己的牌
+const squeezeHand = computed<string[]>(() =>
+  bankerIsMe.value ? ((state.value?.bankerCards as string[] | undefined) ?? []) : myHandCards.value)
 const pointVal = (code: string): number => {
   const r = rankLabel(code)
   if (r === 'A') return 1
@@ -101,7 +104,7 @@ const pointVal = (code: string): number => {
   return Number(r) || 0
 }
 const flippedSum = computed(() =>
-  myHandCards.value.reduce((s, c, i) => (myFlipped.value.has(i) ? s + pointVal(c) : s), 0))
+  squeezeHand.value.reduce((s, c, i) => (myFlipped.value.has(i) ? s + pointVal(c) : s), 0))
 const canBet = computed(() =>
   !!state.value?.niuniuEnabled && hasBanker.value && !bankerIsMe.value && !closing.value && !revealing.value &&
   !showResult.value && effectiveBet.value > 0 && !belowMin.value && !overCap.value)
@@ -138,6 +141,7 @@ let fetching = false
 let initialized = false
 let lastSettledRound: number | null = null
 let resultClearTimer: number | undefined
+let bankerAutoFlipTimer: number | undefined
 let busy = false
 async function fetchRound() {
   if (fetching) return
@@ -156,12 +160,16 @@ async function fetchRound() {
       handOpened.value = false
       myFlipped.value = new Set()
       const mine = d.bets?.find((b) => b.mine)
-      if (mine && mine.cards && mine.cards.length === 5 && !autoOpen.value && !bankerIsMe.value) {
-        // 我有下注 → 進入「自己翻牌」模式:先別揭曉莊家,也先不啟動清除倒數(等我開牌)
+      const myHand = bankerIsMe.value
+        ? (d.bankerCards && d.bankerCards.length === 5 ? d.bankerCards : null)
+        : (mine && mine.cards && mine.cards.length === 5 ? mine.cards : null)
+      if (myHand && !autoOpen.value) {
+        // 莊家翻莊家的牌、玩家翻自己的牌:先別揭曉其餘,也先不啟動清除倒數(等開牌)
         squeezeMode.value = true
         ensureAudio(); playDealSound()
+        if (bankerIsMe.value) startBankerAutoFlip() // 莊家沒翻 → 7 秒後系統代翻
       } else {
-        // 秒開 / 沒下注 / 我是莊家 → 自動揭曉
+        // 秒開 / 我沒下注又不是莊家 → 自動揭曉
         squeezeMode.value = false
         await playReveal(d)
         startResultClear()
@@ -176,11 +184,22 @@ function startResultClear() {
   resultClearTimer = window.setTimeout(() => { liveResultRound.value = null }, 8000)
 }
 function revealOutcome(d: State) {
+  if (bankerIsMe.value) {
+    // 莊家:整局淨輸贏 = -Σ玩家淨輸贏
+    const net = (d.bets ?? []).reduce((s, b) => s - Number(b.settleAmount || 0), 0)
+    if (net > 0) playWin(); else if (net < 0) playLose()
+    return
+  }
   const me = d.bets?.find((b) => b.mine)
   if (!me) return
   if ((me.poolWin ?? 0) > 0) { celebrate.value = `🐮 五小牛中彩金池 +${fmt(me.poolWin)}！`; playJackpot() }
   else if (me.win) { playWin() } else { playLose() }
   if (celebrate.value) { if (celeTimer) clearTimeout(celeTimer); celeTimer = window.setTimeout(() => (celebrate.value = ''), 4000) }
+}
+// 莊家若閒置不翻,7 秒後系統代翻
+function startBankerAutoFlip() {
+  if (bankerAutoFlipTimer) clearTimeout(bankerAutoFlipTimer)
+  bankerAutoFlipTimer = window.setTimeout(() => { if (squeezeMode.value && !handOpened.value) openHand() }, 7000)
 }
 async function playReveal(d: State) {
   revealing.value = true
@@ -200,6 +219,7 @@ function flipCard(i: number) {
 // 開牌:揭曉莊家 + 結果
 function openHand() {
   if (handOpened.value) return
+  if (bankerAutoFlipTimer) clearTimeout(bankerAutoFlipTimer)
   myFlipped.value = new Set([0, 1, 2, 3, 4])
   handOpened.value = true
   squeezeMode.value = false
@@ -347,7 +367,7 @@ onMounted(async () => {
   armAutoStart()
 })
 onUnmounted(() => {
-  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (resultClearTimer) clearTimeout(resultClearTimer)
+  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (resultClearTimer) clearTimeout(resultClearTimer); if (bankerAutoFlipTimer) clearTimeout(bankerAutoFlipTimer)
   stopMusic(); bgm = null
   if (ctx) { ctx.close().catch(() => {}); ctx = null }
   fetch(`${API}/niuniu/leave`, { method: 'POST', headers: headers() }).catch(() => {})
@@ -411,18 +431,21 @@ onUnmounted(() => {
           <div class="niu-table-head">
             <span v-if="revealing">🃏 發牌中…</span>
             <span v-else-if="state?.status === 'BETTING'">🪙 下注中</span>
-            <span v-else-if="showResult && !revealAll">🎴 翻你的牌</span>
+            <span v-else-if="showResult && !revealAll">🎴 {{ bankerIsMe ? '翻莊家的牌' : '翻你的牌' }}</span>
             <span v-else-if="showResult">🏆 本局結果</span>
             <span v-else>等待開局 · 下第一注即開局</span>
             <span v-if="countdown > 0" class="niu-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
           </div>
 
-          <!-- 搓牌:自己一張張翻自己的牌 -->
+          <!-- 搓牌:莊家翻莊家的牌、玩家翻自己的牌 -->
           <div v-if="showResult && !revealAll" class="niu-squeeze">
-            <div class="niu-squeeze-tip">點牌翻開，或按「開牌」一次掀 · 最後一張見真章 👀</div>
+            <div class="niu-squeeze-tip">
+              {{ bankerIsMe ? '👑 你是莊家，翻開莊家的牌' : '翻開你的牌' }}——點牌或按「開牌」· 最後一張見真章 👀
+              <span v-if="bankerIsMe" class="niu-squeeze-sub">沒翻 7 秒後系統自動代翻</span>
+            </div>
             <div class="niu-myhand">
               <span
-                v-for="(c, i) in myHandCards"
+                v-for="(c, i) in squeezeHand"
                 :key="i"
                 class="niu-card big"
                 :class="myFlipped.has(i) ? suitClass(c) : 'back'"
@@ -570,7 +593,8 @@ onUnmounted(() => {
 @keyframes niu-flip { from { opacity: 0; transform: rotateY(-90deg) translateY(8px); } to { opacity: 1; transform: rotateY(0) translateY(0); } }
 /* 搓牌:自己翻牌 */
 .niu-squeeze { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 14px 0 6px; }
-.niu-squeeze-tip { font-size: 13px; color: var(--c-light); font-weight: 700; text-align: center; }
+.niu-squeeze-tip { font-size: 13px; color: var(--c-light); font-weight: 700; text-align: center; line-height: 1.6; }
+.niu-squeeze-sub { display: block; font-size: 11px; color: #94a3b8; font-weight: 400; }
 .niu-myhand { display: flex; gap: 8px; }
 .niu-card.big { width: 56px; height: 80px; }
 .niu-card.big .r { font-size: 21px; } .niu-card.big .s { font-size: 23px; }
