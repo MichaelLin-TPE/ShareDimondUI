@@ -124,6 +124,41 @@ function toggleSound() {
   localStorage.setItem('dice_sound', soundOn.value ? 'on' : 'off')
   if (soundOn.value) ensureAudio()
 }
+// 背景音樂(public/dice-bgm.mp3 迴圈)
+const bgmOn = ref(localStorage.getItem('dice_bgm') !== 'off')
+const diceSavedVol = Number(localStorage.getItem('dice_vol'))
+const bgmVolume = ref(Number.isFinite(diceSavedVol) && diceSavedVol >= 0 && diceSavedVol <= 1 ? diceSavedVol : 0.35)
+let bgm: HTMLAudioElement | null = null
+function startMusic() {
+  if (bgm) { void bgm.play().catch(() => {}); return }
+  bgm = new Audio('/dice-bgm.mp3')
+  bgm.loop = true; bgm.preload = 'auto'; bgm.volume = bgmVolume.value
+  void bgm.play().catch(() => {})
+}
+function stopMusic() { if (bgm) { try { bgm.pause(); bgm.currentTime = 0 } catch { /* ignore */ } } }
+function setBgmVolume(v: number | string) {
+  const vol = Math.min(1, Math.max(0, Number(v) || 0))
+  bgmVolume.value = vol
+  localStorage.setItem('dice_vol', String(vol))
+  if (bgm) bgm.volume = vol
+}
+function toggleBgm() {
+  bgmOn.value = !bgmOn.value
+  localStorage.setItem('dice_bgm', bgmOn.value ? 'on' : 'off')
+  if (bgmOn.value) startMusic(); else stopMusic()
+}
+let bgmArmed = false
+function armAutoStart() {
+  if (bgmArmed) return
+  bgmArmed = true
+  const handler = () => {
+    if (bgmOn.value) startMusic()
+    window.removeEventListener('pointerdown', handler)
+    window.removeEventListener('keydown', handler)
+  }
+  window.addEventListener('pointerdown', handler)
+  window.addEventListener('keydown', handler)
+}
 let audioCtx: AudioContext | null = null
 function ensureAudio(): AudioContext | null {
   if (!soundOn.value) return null
@@ -631,6 +666,7 @@ onMounted(async () => {
   tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
   // 心跳(維持在線 + 兜底刷新,即使 WS 斷線)
   heartbeat = window.setInterval(fetchRound, 8000)
+  armAutoStart()
 })
 onUnmounted(() => {
   if (ws) ws.disconnect()
@@ -639,6 +675,7 @@ onUnmounted(() => {
   if (animTimer) clearInterval(animTimer)
   if (celeTimer) clearTimeout(celeTimer)
   if (resultClearTimer) clearTimeout(resultClearTimer)
+  stopMusic(); bgm = null
   if (audioCtx) {
     audioCtx.close().catch(() => {})
     audioCtx = null
@@ -661,9 +698,11 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
       <div class="topbar">
         <h2 class="title">
           🎲 骰寶賭桌
-          <button class="mute-btn" :title="soundOn ? '靜音' : '開聲音'" @click="toggleSound">
-            {{ soundOn ? '🔊' : '🔇' }}
-          </button>
+          <span class="dice-audioctrl">
+            <button class="mute-btn" :class="{ off: !bgmOn }" :title="bgmOn ? '關背景音樂' : '開背景音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
+            <input v-if="bgmOn" class="dice-vol" type="range" min="0" max="1" step="0.05" :value="bgmVolume" @input="setBgmVolume(($event.target as HTMLInputElement).value)" />
+            <button class="mute-btn" :class="{ off: !soundOn }" :title="soundOn ? '關音效' : '開音效'" @click="toggleSound">{{ soundOn ? '🔊' : '🔈' }}</button>
+          </span>
         </h2>
         <div class="pool">
           <span class="pool-label">💰 彩金池</span>
@@ -1771,6 +1810,18 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
 .fair code {
   color: #94a3b8;
 }
+.dice-audioctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  vertical-align: middle;
+}
+.dice-vol {
+  width: 64px;
+  accent-color: var(--c-light);
+  cursor: pointer;
+  vertical-align: middle;
+}
 .mute-btn {
   background: none;
   border: none;
@@ -1778,7 +1829,10 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   font-size: 1rem;
   padding: 2px 4px;
   vertical-align: middle;
-  opacity: 0.7;
+  opacity: 0.85;
+}
+.mute-btn.off {
+  opacity: 0.45;
 }
 .mute-btn:hover {
   opacity: 1;
