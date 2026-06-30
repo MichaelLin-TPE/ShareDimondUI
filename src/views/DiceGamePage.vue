@@ -131,7 +131,7 @@ const bgmVolume = ref(Number.isFinite(diceSavedVol) && diceSavedVol >= 0 && dice
 let bgm: HTMLAudioElement | null = null
 function startMusic() {
   if (bgm) { void bgm.play().catch(() => {}); return }
-  bgm = new Audio('/dice-bgm.mp3')
+  bgm = new Audio('/dice-bgm.mp3?v=full')
   bgm.loop = true; bgm.preload = 'auto'; bgm.volume = bgmVolume.value
   void bgm.play().catch(() => {})
 }
