@@ -60,7 +60,8 @@ export function evaluate(cards: string[]): Eval {
 function evaluate5(cards: string[]): Eval {
   const groups = rankGroups(cards)
   const c = rankCount(cards)
-  const flush = new Set(cards.map(cardSuit)).size === 1
+  // 第5索引(X)= 黑桃,算同花時視為黑桃(♠)
+  const flush = new Set(cards.map((c) => { const s = cardSuit(c); return s === 'X' ? 'S' : s })).size === 1
   const sh = straightHigh(cards)
   const straight = sh > 0
   let maxSame = 0, pairs = 0
