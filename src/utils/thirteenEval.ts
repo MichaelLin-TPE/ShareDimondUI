@@ -70,7 +70,7 @@ function evaluate5(cards: string[]): Eval {
   }
   const ranksDesc = cards.map(cardRank).sort((a, b) => b - a)
   if (straight && flush) return mk(8, [sh])
-  if (maxSame === 4) return mk(7, groups)
+  if (maxSame >= 4) return mk(7, groups) // 5色版:5張同點也算鐵支
   if (maxSame === 3 && pairs >= 1) return mk(6, groups)
   if (flush) return mk(5, ranksDesc)
   if (straight) return mk(4, [sh])
