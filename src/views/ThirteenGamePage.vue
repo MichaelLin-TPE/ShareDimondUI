@@ -10,7 +10,7 @@ import { useThirteenAudio } from '@/composables/thirteenAudio'
 const audio = useThirteenAudio()
 
 // 依數字→花色由小到大排序(花色序 ♣♦♥♠)
-const SUIT_ORDER: Record<string, number> = { C: 0, D: 1, H: 2, S: 3 }
+const SUIT_ORDER: Record<string, number> = { C: 0, D: 1, H: 2, S: 3, X: 4 }
 function sortCards(cards: string[]): string[] {
   return [...cards].sort((a, b) => (cardRank(a) - cardRank(b)) || ((SUIT_ORDER[cardSuit(a)] ?? 0) - (SUIT_ORDER[cardSuit(b)] ?? 0)))
 }
@@ -55,12 +55,17 @@ interface RoomSummary {
   baseBet: number
   status: string
   rematch: boolean
+  reservedCount?: number
 }
 interface State {
   thirteenEnabled: boolean
   inLobby: boolean
   spectating?: boolean
   rooms?: RoomSummary[]
+  myReserved?: boolean
+  canReserve?: boolean
+  viewerSeated?: boolean
+  reservedCount?: number
   status: string
   roundId: number | null
   baseBet: number
@@ -191,12 +196,12 @@ const allPlaced = computed(() => front.value.length === 3 && middle.value.length
 const foulNow = computed(() => allPlaced.value && isFoul(front.value, middle.value, back.value))
 
 // ---- 牌面顯示 ----
-const SUIT = { C: '♣', D: '♦', H: '♥', S: '♠' } as Record<string, string>
+const SUIT = { C: '♣', D: '♦', H: '♥', S: '♠', X: '★' } as Record<string, string>
 function suitSym(code: string) { return SUIT[cardSuit(code)] ?? '' }
 function rankLabel(code: string) { return code.slice(0, -1) }
-// 四色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 → 黑桃梅花一眼分得出
+// 五色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 / ★第5色金 → 一眼分得出
 function suitClass(code: string) {
-  return { C: 'su-c', D: 'su-d', H: 'su-h', S: 'su-s' }[cardSuit(code)] ?? 'su-s'
+  return { C: 'su-c', D: 'su-d', H: 'su-h', S: 'su-s', X: 'su-x' }[cardSuit(code)] ?? 'su-s'
 }
 // 結算顯示用:把同點數(對子/三條/鐵支)排在一起,再依張數→點數由大到小
 function displayHand(cards: string[]): string[] {
@@ -240,8 +245,9 @@ async function fetchRound() {
     const res = await fetch(url, { headers: headers() })
     if (!res.ok) return
     const d: State = await res.json()
-    // 觀戰:桌散了(後端回大廳)→ 退出;否則跟著後端回傳的局自動跟桌(下一局開打就跟過去)
+    // 觀戰:桌散了(後端回大廳)→ 退出;預約成真(已被自動入座)→ 退出觀戰切回房間視圖;否則跟桌
     if (spectateRoundId.value != null) {
+      if (d.viewerSeated) { spectateRoundId.value = null; fetching = false; await fetchRound(); return }
       if (d.inLobby || !d.spectating) spectateRoundId.value = null
       else if (d.roundId) spectateRoundId.value = d.roundId
     }
@@ -322,6 +328,11 @@ async function createRoom() {
   await post('/thirteen/room/create', { baseBet: bet })
 }
 const joinRoom = (roundId: number) => post('/thirteen/room/join', { roundId })
+// 中途加入:對戰中未滿的房,預約下一局(自動入座)
+async function reserveNext(roundId: number) {
+  if (await post('/thirteen/reserve', { roundId })) spectate(roundId) // 預約後跟著觀戰這桌
+}
+const cancelReserve = () => post('/thirteen/cancel-reserve')
 const leaveRoom = () => post('/thirteen/room/leave')
 const startRoom = () => post('/thirteen/room/start')
 async function kick(memberId: number, name: string) {
@@ -624,7 +635,7 @@ onUnmounted(() => {
           <div v-for="r in (state?.rooms ?? [])" :key="r.roundId" class="t13-room-row">
             <div class="t13-room-info">
               <div class="t13-room-host">👑 {{ r.hostName }}<span v-if="r.rematch" class="t13-room-tag">再戰</span></div>
-              <div class="t13-room-meta">底注 {{ fmt(r.baseBet) }} · {{ r.players }}/{{ r.maxPlayers }} 人 · {{ r.status === 'WAITING' ? '湊人中' : '對戰中' }}</div>
+              <div class="t13-room-meta">底注 {{ fmt(r.baseBet) }} · {{ r.players }}/{{ r.maxPlayers }} 人 · {{ r.status === 'WAITING' ? '湊人中' : '對戰中' }}<span v-if="(r.reservedCount ?? 0) > 0"> · 候補 {{ r.reservedCount }}</span></div>
             </div>
             <div class="t13-room-acts">
               <button class="t13-room-btn ghost" :disabled="busy" @click="spectate(r.roundId)" title="觀戰">
@@ -640,6 +651,16 @@ onUnmounted(() => {
                 <span class="ico">{{ r.players >= r.maxPlayers ? '🚫' : '➕' }}</span>
                 <span class="txt">{{ r.players >= r.maxPlayers ? '已滿' : '加入' }}</span>
               </button>
+              <button
+                v-else
+                class="t13-room-btn primary"
+                :disabled="busy || r.players >= r.maxPlayers"
+                @click="reserveNext(r.roundId)"
+                :title="r.players >= r.maxPlayers ? '已滿' : '加入下一局'"
+              >
+                <span class="ico">{{ r.players >= r.maxPlayers ? '🚫' : '➕' }}</span>
+                <span class="txt">{{ r.players >= r.maxPlayers ? '已滿' : '下一局' }}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -647,8 +668,15 @@ onUnmounted(() => {
         <!-- 房間內 -->
         <template v-else>
         <div v-if="state?.spectating" class="t13-spectate-bar">
-          👁 觀戰中（純看戲，不參與下注）
-          <button class="t13-btn ghost mini" :disabled="busy" @click="leaveSpectate">離開觀戰</button>
+          <template v-if="state?.myReserved">
+            ✅ 已預約下一局（這局結束就自動入座<span v-if="(state?.reservedCount ?? 0) > 1">，目前 {{ state?.reservedCount }} 人候補</span>）
+            <button class="t13-btn ghost mini" :disabled="busy" @click="cancelReserve">取消預約</button>
+          </template>
+          <template v-else>
+            👁 觀戰中（純看戲，不參與下注）
+            <button v-if="state?.canReserve" class="t13-btn primary mini" :disabled="busy" @click="reserveNext(state!.roundId!)">➕ 加入下一局</button>
+            <button class="t13-btn ghost mini" :disabled="busy" @click="leaveSpectate">離開觀戰</button>
+          </template>
         </div>
         <div class="t13-table">
           <div class="t13-table-head">
@@ -657,7 +685,7 @@ onUnmounted(() => {
             <span v-else-if="state?.status === 'SETTLED'">🏆 本局結果</span>
             <span v-if="countdown > 0" class="t13-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
           </div>
-          <div class="t13-room-bar">房主 👑 {{ state?.hostName }} · 底注 {{ fmt(state?.baseBet) }} {{ config.currency }}（凍結 {{ fmt(escrowNeeded) }}）</div>
+          <div class="t13-room-bar">房主 👑 {{ state?.hostName }} · 底注 {{ fmt(state?.baseBet) }} {{ config.currency }}（凍結 {{ fmt(escrowNeeded) }}）<span v-if="(state?.reservedCount ?? 0) > 0" class="t13-reserve-note">· 🙋 {{ state?.reservedCount }} 人候補下一局</span></div>
 
           <div class="t13-seats">
             <div
@@ -998,6 +1026,7 @@ onUnmounted(() => {
 .t13-card.su-h { color: #e11d48; }
 .t13-card.su-d { color: #2563eb; }
 .t13-card.su-c { color: #15a34a; }
+.t13-card.su-x { color: #d97706; } /* 第5花色 ★ 金色 */
 .t13-card.sm { width: 40px; height: 55px; }
 .t13-card.sm .r { font-size: 16px; }
 .t13-card.sm .s { font-size: 18px; }
