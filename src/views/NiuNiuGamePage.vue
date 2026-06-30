@@ -115,6 +115,14 @@ const displayBalance = computed(() => {
   if (s.status === 'SETTLED' && !bankerShown.value) return heldOrig.value != null ? heldOrig.value : real
   return real
 })
+// 顯示用莊家本金:同理,結算後在莊家亮牌前顯示開局前本金,避免莊家從本金偷看輸贏
+const heldBankroll = ref<number | null>(null)
+const displayBankroll = computed(() => {
+  const s = state.value
+  const real = Number(s?.bankroll ?? 0)
+  if (s?.status === 'SETTLED' && !bankerShown.value) return heldBankroll.value != null ? heldBankroll.value : real
+  return real
+})
 const revealCountdown = computed(() => {
   if (state.value?.status !== 'SETTLED' || revealLocalDeadline.value <= 0) return 0
   return Math.max(0, Math.ceil((revealLocalDeadline.value - nowMs.value) / 1000))
@@ -193,9 +201,10 @@ async function fetchRound() {
     }
     if (d.status === 'BETTING') {
       squeezeMode.value = false; handOpened.value = false; if (revealAutoTimer) clearTimeout(revealAutoTimer)
-      // 記住本局「未結算前」的餘額(=真實餘額+本局凍結),結算後在莊家亮牌前都顯示這個值
+      // 記住本局「未結算前」的餘額(=真實餘額+本局凍結)與莊家本金,結算後在莊家亮牌前都顯示這些值
       const myAmt = Number(d.bets?.find((b) => b.mine)?.amount ?? 0)
       heldOrig.value = Number(d.myBalance ?? 0) + myAmt * (Number(d.maxMult) || 5)
+      heldBankroll.value = d.bankroll != null ? Number(d.bankroll) : null
     }
   } catch (e) { console.error(e) } finally { fetching = false }
 }
@@ -472,7 +481,7 @@ onUnmounted(() => {
         <!-- 莊家列 -->
         <div class="niu-banker">
           <template v-if="hasBanker">
-            <span class="niu-banker-info">👑 莊家 <b>{{ state?.bankerName }}</b> · 本金 {{ fmt(state?.bankroll) }} {{ config.currency }}</span>
+            <span class="niu-banker-info">👑 莊家 <b>{{ state?.bankerName }}</b> · 本金 {{ fmt(displayBankroll) }} {{ config.currency }}</span>
             <button v-if="bankerIsMe" class="niu-btn leave" @click="leaveBank">下莊</button>
             <button v-else class="niu-btn take" @click="takeBank">搶莊</button>
           </template>
