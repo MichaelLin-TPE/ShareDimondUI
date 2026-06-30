@@ -598,7 +598,7 @@ onUnmounted(() => {
 
         <details class="niu-rules">
           <summary>📜 規則 / 賠率</summary>
-          <p>每人 5 張。任 3 張加總是 10 的倍數 = 有牛，剩 2 張總和個位數 = 牛幾（0=牛牛）；湊不出 = 沒牛。莊家對每位玩家比牛，牛大者贏，依<b>贏家的牛</b>給倍數。</p>
+          <p>每人 5 張。任 3 張加總是 10 的倍數 = 有牛，剩 2 張總和個位數 = 牛幾（0=牛牛）；湊不出 = 沒牛。莊家對每位玩家比牛，牛大者贏，依<b>贏家的牛</b>給倍數。<b>同牛同點時莊家通吃</b>（莊家優勢）。</p>
           <p>倍率：<span v-for="(p, i) in config.payTable" :key="i">{{ p.zh }} ×{{ p.mult }}<span v-if="i < config.payTable.length - 1">、</span></span></p>
           <p>下注 X 最多可能輸 {{ maxMult }}X（所以下注時凍結 {{ maxMult }}X），結算退回沒輸的部分。五小牛額外中共用彩金池。</p>
         </details>
