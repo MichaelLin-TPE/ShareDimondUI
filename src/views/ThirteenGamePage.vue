@@ -196,10 +196,10 @@ const allPlaced = computed(() => front.value.length === 3 && middle.value.length
 const foulNow = computed(() => allPlaced.value && isFoul(front.value, middle.value, back.value))
 
 // ---- 牌面顯示 ----
-const SUIT = { C: '♣', D: '♦', H: '♥', S: '♠', X: '★' } as Record<string, string>
+const SUIT = { C: '♣', D: '♦', H: '♥', S: '♠', X: '♠' } as Record<string, string>
 function suitSym(code: string) { return SUIT[cardSuit(code)] ?? '' }
 function rankLabel(code: string) { return code.slice(0, -1) }
-// 五色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 / ★第5色金 → 一眼分得出
+// 五色牌:黑桃黑 / 紅心紅 / 方塊藍 / 梅花綠 / 第5色=金色黑桃 → 一眼分得出
 function suitClass(code: string) {
   return { C: 'su-c', D: 'su-d', H: 'su-h', S: 'su-s', X: 'su-x' }[cardSuit(code)] ?? 'su-s'
 }
@@ -1026,7 +1026,7 @@ onUnmounted(() => {
 .t13-card.su-h { color: #e11d48; }
 .t13-card.su-d { color: #2563eb; }
 .t13-card.su-c { color: #15a34a; }
-.t13-card.su-x { color: #d97706; } /* 第5花色 ★ 金色 */
+.t13-card.su-x { color: #d97706; } /* 第5花色 = 金色黑桃 ♠ */
 .t13-card.sm { width: 40px; height: 55px; }
 .t13-card.sm .r { font-size: 16px; }
 .t13-card.sm .s { font-size: 18px; }
