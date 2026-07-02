@@ -63,9 +63,11 @@ const bankerIsMe = computed(() => hasBanker.value && state.value?.bankerName ===
 
 // ---- 位置(天地玄黃) ----
 const ZH = ['天', '地', '玄', '黃']
+// 本局結果顯示 5 秒後自動清空,回到乾淨的選位盤,給大家重新押 4 個閒家
+const resultsCleared = ref(false)
 const positions = computed<PositionView[]>(() => {
   const ps = state.value?.positions
-  if (ps && ps.length === 4) return ps
+  if (!resultsCleared.value && ps && ps.length === 4) return ps
   return [1, 2, 3, 4].map((i) => ({ index: i, zh: ZH[i - 1] ?? '', totalBet: 0, myBet: 0 }))
 })
 const selectedPos = ref<number>(0)
@@ -128,7 +130,18 @@ const revealComplete = computed(() => {
 const revealPhase = computed(() => state.value?.status === 'SETTLED' && !revealComplete.value)
 // 莊家亮牌後(莊家自己開了 / 已揭曉 / 到期)所有人才看到牌與輸贏
 const bankerShown = computed(() => (bankerIsMe.value && handOpened.value) || !!state.value?.bankerRevealed || revealComplete.value)
-const resultShown = computed(() => showResult.value && bankerShown.value)
+const resultShown = computed(() => showResult.value && bankerShown.value && !resultsCleared.value)
+// 是否顯示「本局結果盤面」(莊家牌 + 位置牌 + 輸贏);清空後回到乾淨選位盤
+const boardVisible = computed(() => showResult.value && !resultsCleared.value)
+let clearTimer: number | undefined
+function scheduleClearBoard() {
+  if (resultsCleared.value || clearTimer) return
+  clearTimer = window.setTimeout(() => { resultsCleared.value = true }, 5000)
+}
+function resetClearBoard() {
+  resultsCleared.value = false
+  if (clearTimer) { clearTimeout(clearTimer); clearTimer = undefined }
+}
 
 // 顯示用餘額:結算後在莊家亮牌前先當作沒被扣,避免從餘額偷看輸贏
 const heldOrig = ref<number | null>(null)
@@ -226,7 +239,7 @@ async function fetchRound() {
       forceOpen()
     }
     if (d.status === 'BETTING') {
-      squeezeMode.value = false; handOpened.value = false; if (revealAutoTimer) clearTimeout(revealAutoTimer)
+      squeezeMode.value = false; handOpened.value = false; resetClearBoard(); if (revealAutoTimer) clearTimeout(revealAutoTimer)
       heldOrig.value = Number(d.myBalance ?? 0) + myTotalOf(d) * (Number(d.maxMult) || 5)
       heldBankroll.value = d.bankroll != null ? Number(d.bankroll) : null
     }
@@ -238,8 +251,9 @@ function setupReveal(d: State, fresh: boolean) {
   handOpened.value = false
   myFlipped.value = new Set()
   outcomePlayed = !fresh
+  resetClearBoard() // 新的一局:先取消清空、顯示新結果
   if (revealAutoTimer) clearTimeout(revealAutoTimer)
-  if (d.revealComplete) { squeezeMode.value = false; handOpened.value = true; if (fresh) void playReveal(d); return }
+  if (d.revealComplete) { squeezeMode.value = false; handOpened.value = true; if (fresh) void playReveal(d); scheduleClearBoard(); return }
   if (bankerIsMe.value) {
     const hand = d.bankerCards && d.bankerCards.length === 5 ? d.bankerCards : null
     if (!hand || d.bankerRevealed || autoOpen.value) {
@@ -286,7 +300,10 @@ function revealOutcome(d: State) {
   if (celebrate.value) { if (celeTimer) clearTimeout(celeTimer); celeTimer = window.setTimeout(() => (celebrate.value = ''), 4000) }
 }
 watch(bankerShown, (shown) => {
-  if (shown && showResult.value && !outcomePlayed && state.value) { outcomePlayed = true; revealOutcome(state.value) }
+  if (shown && showResult.value) {
+    if (!outcomePlayed && state.value) { outcomePlayed = true; revealOutcome(state.value) }
+    scheduleClearBoard() // 結果亮出後 5 秒清空
+  }
 })
 async function playReveal(d: State) {
   revealing.value = true
@@ -454,7 +471,7 @@ onMounted(async () => {
   armAutoStart()
 })
 onUnmounted(() => {
-  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (revealAutoTimer) clearTimeout(revealAutoTimer)
+  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (revealAutoTimer) clearTimeout(revealAutoTimer); if (clearTimer) clearTimeout(clearTimer)
   stopMusic(); bgm = null
   if (ctx) { ctx.close().catch(() => {}); ctx = null }
   fetch(`${API}/niuniu/leave`, { method: 'POST', headers: headers() }).catch(() => {})
@@ -517,15 +534,15 @@ onUnmounted(() => {
           <div class="niu-table-head">
             <span v-if="revealing">🃏 發牌中…</span>
             <span v-else-if="state?.status === 'BETTING'">🪙 下注中 · 選位置押莊</span>
-            <span v-else-if="showResult && squeezeMode && !handOpened">🎴 莊家翻牌中</span>
-            <span v-else-if="showResult && !bankerShown">⏳ 等莊家開牌</span>
-            <span v-else-if="showResult">🏆 本局結果</span>
-            <span v-else>等待開局 · 選位置下第一注即開局</span>
+            <span v-else-if="boardVisible && squeezeMode && !handOpened">🎴 莊家翻牌中</span>
+            <span v-else-if="boardVisible && !bankerShown">⏳ 等莊家開牌</span>
+            <span v-else-if="boardVisible">🏆 本局結果</span>
+            <span v-else>🆕 選位置押莊 · 下注開新局</span>
             <span v-if="countdown > 0" class="niu-countdown" :class="{ urgent: countdown <= 10 }">⏱ {{ countdown }}s</span>
           </div>
 
-          <!-- 莊家座:結算後顯示莊家的牌 -->
-          <div v-if="showResult" class="niu-bankerhand">
+          <!-- 莊家座:結算後顯示莊家的牌(清空後隱藏) -->
+          <div v-if="boardVisible" class="niu-bankerhand">
             <!-- 莊家自己搓牌 -->
             <div v-if="squeezeMode && !handOpened && bankerIsMe" class="niu-squeeze">
               <div class="niu-squeeze-tip">
@@ -576,8 +593,8 @@ onUnmounted(() => {
                 <span v-if="resultShown && p.cards" class="niu-pos-badge" :class="p.won ? 'w' : 'l'">{{ p.won ? '贏莊' : '輸莊' }}</span>
                 <span v-else-if="selectedPos === p.index && canSelectPos" class="niu-pos-badge sel">已選</span>
               </div>
-              <!-- 結算後:牌 + 牛型 -->
-              <template v-if="showResult">
+              <!-- 結算後:牌 + 牛型(清空後回乾淨選位盤) -->
+              <template v-if="boardVisible">
                 <div v-if="resultShown && p.cards" class="niu-pos-cards">
                   <span v-for="(c, i) in p.cards" :key="i" class="niu-card sm" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
                 </div>
