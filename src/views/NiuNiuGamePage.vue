@@ -96,8 +96,11 @@ const maxMult = computed(() => Number(state.value?.maxMult || config.value.maxMu
 const escrowNeeded = computed(() => effectiveBet.value * maxMult.value)
 function addChip(v: number) { betAmountInput.value = (Number(betAmountInput.value) || 0) + v }
 function clearBet() { betAmountInput.value = null }
-// 本局我已下(所有位置加總)
-const myRoundTotal = computed(() => positions.value.reduce((s, p) => s + Number(p.myBet || 0), 0))
+// 本局我已下(所有位置加總)。非下注中(結算後要開新局)歸 0,否則上一局的注會把新局上限卡成 0
+const myRoundTotal = computed(() => {
+  if (state.value?.status !== 'BETTING') return 0
+  return positions.value.reduce((s, p) => s + Number(p.myBet || 0), 0)
+})
 // 還可下 = min( 莊家承受÷5 , 本局上限-已下 , 我餘額÷5 )
 const maxBetForCurrent = computed(() => {
   const byBanker = Math.floor(Number(state.value?.remainingCapacity ?? 0) / maxMult.value)
@@ -555,7 +558,7 @@ onUnmounted(() => {
 
           <!-- 4 位置(天地玄黃):下注/結果 -->
           <div class="niu-positions">
-            <button
+            <div
               v-for="p in positions"
               :key="p.index"
               class="niu-pos"
@@ -566,7 +569,6 @@ onUnmounted(() => {
                 win: resultShown && p.won,
                 lose: resultShown && p.cards && !p.won,
               }"
-              :disabled="!canSelectPos"
               @click="selectPos(p.index)"
             >
               <div class="niu-pos-head">
@@ -594,7 +596,7 @@ onUnmounted(() => {
                 {{ myRes(p.index).settle >= 0 ? '+' : '' }}{{ fmt(myRes(p.index).settle) }}
                 <span v-if="myRes(p.index).pool > 0">🐮+{{ fmt(myRes(p.index).pool) }}</span>
               </div>
-            </button>
+            </div>
           </div>
           <p v-if="!showResult && !hasBanker" class="niu-noplayers">等莊家就位後即可開局</p>
         </div>
@@ -740,7 +742,7 @@ onUnmounted(() => {
 .niu-autoopen input { flex: 0 0 auto; width: 16px; height: 16px; margin: 0; accent-color: var(--c-light); cursor: pointer; }
 /* 4 位置格 */
 .niu-positions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.niu-pos { display: flex; flex-direction: column; gap: 6px; text-align: left; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px; color: inherit; cursor: default; font: inherit; transition: border-color .15s, background .15s; }
+.niu-pos { box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px; color: inherit; cursor: default; font: inherit; transition: border-color .15s, background .15s; }
 .niu-pos.pick { cursor: pointer; }
 .niu-pos.pick:hover { border-color: rgba(var(--c-light-rgb),.6); }
 .niu-pos.sel { outline: 2px solid var(--c-light); outline-offset: -2px; background: rgba(var(--c-light-rgb),.12); }
