@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
 
@@ -80,7 +80,7 @@ TimeStamp:currentTimeStamp
     memberBalances.value = data
     activeCurrency.value = memberBalances.value[0]?.currencyCode || ''
   } catch (e) {
-    console.error('獲取個人歷史紀錄失敗:', e)
+    console.error('獲取累計金額失敗:', e)
   }
 }
 
@@ -93,10 +93,26 @@ onMounted(() => {
 //  3. 狀態篩選與搜尋控制
 // =========================================
 const searchQuery = ref('')
+const debouncedQuery = ref('')
 const selectedStatus = ref('ALL')
+
+// 分批渲染:一次只畫一批,避免上千筆紀錄一次塞進 DOM 造成卡頓
+const PAGE_SIZE = 60
+const visibleCount = ref(PAGE_SIZE)
+
+// 搜尋去抖:打字停 250ms 才真的過濾,不再每敲一個字就重繪整個清單
+let searchTimer: ReturnType<typeof setTimeout> | undefined
+watch(searchQuery, (v) => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    debouncedQuery.value = v
+    visibleCount.value = PAGE_SIZE // 換條件後回到第一批
+  }, 250)
+})
 
 const toggleStatus = (status: string) => {
   selectedStatus.value = status
+  visibleCount.value = PAGE_SIZE
 }
 
 const statusConfig: Record<string, { label: string; colorClass: string }> = {
@@ -112,9 +128,10 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
 }
 
 const filteredLogs = computed(() => {
+  const q = debouncedQuery.value.toLowerCase()
   return rawLogs.value.filter((log) => {
-    // 1. 搜尋關鍵字過濾
-    const matchSearch = log.eventDescription.toLowerCase().includes(searchQuery.value.toLowerCase())
+    // 1. 搜尋關鍵字過濾(空字串直接略過,省下每筆的 toLowerCase)
+    const matchSearch = !q || log.eventDescription.toLowerCase().includes(q)
 
     // 2. 狀態標籤過濾
     const matchStatus = selectedStatus.value === 'ALL' || log.status === selectedStatus.value
@@ -122,6 +139,13 @@ const filteredLogs = computed(() => {
     return matchSearch && matchStatus
   })
 })
+
+// 實際渲染的批次(只畫前 visibleCount 筆)
+const visibleLogs = computed(() => filteredLogs.value.slice(0, visibleCount.value))
+const hasMore = computed(() => filteredLogs.value.length > visibleCount.value)
+const loadMore = () => {
+  visibleCount.value += PAGE_SIZE
+}
 
 // =========================================
 //  4. 格式化工具 (時間與動態幣別)
@@ -213,8 +237,10 @@ const formatAmount = (value: number, currencyCode: string) => {
       </div>
     </div>
 
+    <div v-if="filteredLogs.length" class="results-count">共 {{ filteredLogs.length }} 筆紀錄</div>
+
     <div class="event-grid">
-      <div v-for="item in filteredLogs" :key="item.createdAt" class="event-card">
+      <div v-for="(item, idx) in visibleLogs" :key="item.createdAt + '-' + idx" class="event-card">
         <div class="event-role" :class="statusConfig[item.status]?.colorClass + '-text'">
           {{ statusConfig[item.status]?.label || '未知狀態' }}
         </div>
@@ -230,6 +256,12 @@ const formatAmount = (value: number, currencyCode: string) => {
         <div class="empty-icon">📂</div>
         找不到符合條件的紀錄
       </div>
+    </div>
+
+    <div v-if="hasMore" class="load-more-wrap">
+      <button class="load-more-btn" @click="loadMore">
+        顯示更多（還有 {{ filteredLogs.length - visibleCount }} 筆）
+      </button>
     </div>
   </div>
 </template>
@@ -460,10 +492,40 @@ const formatAmount = (value: number, currencyCode: string) => {
   box-shadow: 0 4px 10px rgba(155, 89, 182, 0.3);
 }
 
+.results-count {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
 .event-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+}
+
+.load-more-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.load-more-btn {
+  padding: 10px 28px;
+  border-radius: 10px;
+  background: #161822;
+  border: 1px solid #2e3147;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.load-more-btn:hover {
+  background: rgba(var(--c-light-rgb), 0.12);
+  border-color: rgba(var(--c-light-rgb), 0.5);
+  color: var(--c-light);
 }
 
 .event-card {
