@@ -89,6 +89,17 @@ const myResultByPos = computed<Record<number, { settle: number; pool: number; wi
   return map
 })
 const myRes = (i: number) => myResultByPos.value[i] ?? { settle: 0, pool: 0, win: false }
+// 每個位置有誰押、押多少(清空後不顯示)
+const betsByPosition = computed<Record<number, { memberId: number; userName: string; amount: number; mine: boolean }[]>>(() => {
+  const map: Record<number, { memberId: number; userName: string; amount: number; mine: boolean }[]> = { 1: [], 2: [], 3: [], 4: [] }
+  if (resultsCleared.value) return map
+  for (const b of state.value?.bets ?? []) {
+    const arr = map[b.position]
+    if (arr) arr.push({ memberId: b.memberId, userName: b.userName, amount: Number(b.amount || 0), mine: b.mine })
+  }
+  return map
+})
+const posBettors = (i: number) => betsByPosition.value[i] ?? []
 
 // ---- 下注 ----
 const minBet = computed(() => Number(config.value.betAmount || 0))
@@ -603,10 +614,13 @@ onUnmounted(() => {
                 </div>
                 <div class="niu-pos-label">{{ resultShown && p.cards ? p.label : '待開牌…' }}</div>
               </template>
-              <!-- 押注彙總 -->
+              <!-- 押注彙總 + 誰押多少 -->
               <div class="niu-pos-bet">
                 <span class="tot">押 {{ fmt(p.totalBet) }}</span>
-                <span v-if="p.myBet > 0" class="my">我 {{ fmt(p.myBet) }}</span>
+                <span class="cnt">{{ posBettors(p.index).length }} 人</span>
+              </div>
+              <div v-if="posBettors(p.index).length" class="niu-pos-players">
+                <span v-for="b in posBettors(p.index)" :key="b.memberId" class="niu-pp" :class="{ mine: b.mine }">{{ b.mine ? '我' : b.userName }} <b>{{ fmt(b.amount) }}</b></span>
               </div>
               <!-- 我在此位置的輸贏 -->
               <div v-if="resultShown && p.myBet > 0" class="niu-pos-my" :class="{ pos: myRes(p.index).settle > 0, neg: myRes(p.index).settle < 0 }">
@@ -781,8 +795,13 @@ onUnmounted(() => {
 .niu-pos-cards .niu-card.back.nb { font-size: 12px; }
 .niu-pos-label { font-size: 12px; font-weight: 700; color: #cbd5e1; }
 .niu-pos-bet { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.niu-pos-bet .tot { color: #94a3b8; }
-.niu-pos-bet .my { color: var(--c-light); font-weight: 700; }
+.niu-pos-bet .tot { color: #cbd5e1; font-weight: 700; }
+.niu-pos-bet .cnt { color: #64748b; margin-left: auto; }
+.niu-pos-players { display: flex; flex-wrap: wrap; gap: 4px; }
+.niu-pp { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #94a3b8; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; padding: 1px 6px; }
+.niu-pp b { color: #cbd5e1; font-weight: 700; }
+.niu-pp.mine { color: var(--c-light); border-color: rgba(var(--c-light-rgb),.4); background: rgba(var(--c-light-rgb),.1); }
+.niu-pp.mine b { color: var(--c-light); }
 .niu-pos-my { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .niu-pos-my.pos { color: #86efac; } .niu-pos-my.neg { color: #fca5a5; }
 .niu-noplayers { color: #64748b; font-size: 13px; text-align: center; padding: 10px; }
