@@ -149,7 +149,7 @@ interface PayRow {
 // 後端動態賠率表（含機率）；未載入前用靜態 fallback
 const paytable = ref<PayRow[]>([])
 const STATIC_PAYTABLE: PayRow[] = [
-  { reels: '💎 💎 💎', label: '獨得彩金池', mult: '🏆 整池', odds: '' },
+  { reels: '💎 💎 💎', label: '中彩金池', mult: '🏆 滿1萬拿整池', odds: '' },
   { reels: '7️⃣ 7️⃣ 7️⃣', label: '頭獎', mult: '×32', odds: '' },
   { reels: '⭐ ⭐ ⭐', label: '', mult: '×18', odds: '' },
   { reels: '🔔 🔔 🔔', label: '', mult: '×9', odds: '' },
