@@ -72,30 +72,17 @@ const positions = computed<PositionView[]>(() => {
 })
 const selectedPos = ref<number>(0)
 function selectPos(i: number) { if (canSelectPos.value) selectedPos.value = i }
-// 我在各位置的結果(結算後);1~4 都有值,避免模板存取到 undefined
-const myResultByPos = computed<Record<number, { settle: number; pool: number; win: boolean }>>(() => {
-  const map: Record<number, { settle: number; pool: number; win: boolean }> = {
-    1: { settle: 0, pool: 0, win: false }, 2: { settle: 0, pool: 0, win: false },
-    3: { settle: 0, pool: 0, win: false }, 4: { settle: 0, pool: 0, win: false },
-  }
-  for (const b of state.value?.bets ?? []) {
-    if (!b.mine || !b.settled) continue
-    const cur = map[b.position]
-    if (!cur) continue
-    cur.settle += Number(b.settleAmount || 0)
-    cur.pool += Number(b.poolWin || 0)
-    cur.win = !!b.win
-  }
-  return map
-})
-const myRes = (i: number) => myResultByPos.value[i] ?? { settle: 0, pool: 0, win: false }
-// 每個位置有誰押、押多少(清空後不顯示)
-const betsByPosition = computed<Record<number, { memberId: number; userName: string; amount: number; mine: boolean }[]>>(() => {
-  const map: Record<number, { memberId: number; userName: string; amount: number; mine: boolean }[]> = { 1: [], 2: [], 3: [], 4: [] }
+// 每個位置有誰押、押多少、揭曉後每人輸贏(清空後不顯示)
+interface PosBettor { memberId: number; userName: string; amount: number; mine: boolean; settle: number; pool: number; settled: boolean }
+const betsByPosition = computed<Record<number, PosBettor[]>>(() => {
+  const map: Record<number, PosBettor[]> = { 1: [], 2: [], 3: [], 4: [] }
   if (resultsCleared.value) return map
   for (const b of state.value?.bets ?? []) {
     const arr = map[b.position]
-    if (arr) arr.push({ memberId: b.memberId, userName: b.userName, amount: Number(b.amount || 0), mine: b.mine })
+    if (arr) arr.push({
+      memberId: b.memberId, userName: b.userName, amount: Number(b.amount || 0), mine: b.mine,
+      settle: Number(b.settleAmount || 0), pool: Number(b.poolWin || 0), settled: !!b.settled,
+    })
   }
   return map
 })
@@ -619,13 +606,17 @@ onUnmounted(() => {
                 <span class="tot">押 {{ fmt(p.totalBet) }}</span>
                 <span class="cnt">{{ posBettors(p.index).length }} 人</span>
               </div>
+              <!-- 誰押多少 + 揭曉後每人的輸贏 -->
               <div v-if="posBettors(p.index).length" class="niu-pos-players">
-                <span v-for="b in posBettors(p.index)" :key="b.memberId" class="niu-pp" :class="{ mine: b.mine }">{{ b.mine ? '我' : b.userName }} <b>{{ fmt(b.amount) }}</b></span>
-              </div>
-              <!-- 我在此位置的輸贏 -->
-              <div v-if="resultShown && p.myBet > 0" class="niu-pos-my" :class="{ pos: myRes(p.index).settle > 0, neg: myRes(p.index).settle < 0 }">
-                {{ myRes(p.index).settle >= 0 ? '+' : '' }}{{ fmt(myRes(p.index).settle) }}
-                <span v-if="myRes(p.index).pool > 0">🐮+{{ fmt(myRes(p.index).pool) }}</span>
+                <span
+                  v-for="b in posBettors(p.index)"
+                  :key="b.memberId"
+                  class="niu-pp"
+                  :class="{ mine: b.mine, win: resultShown && b.settled && b.settle > 0, lose: resultShown && b.settled && b.settle < 0 }"
+                >
+                  {{ b.mine ? '我' : b.userName }} <b>{{ fmt(b.amount) }}</b>
+                  <span v-if="resultShown && b.settled" class="rr">{{ b.settle >= 0 ? '+' : '' }}{{ fmt(b.settle) }}<template v-if="b.pool > 0"> 🐮+{{ fmt(b.pool) }}</template></span>
+                </span>
               </div>
             </div>
           </div>
@@ -800,10 +791,14 @@ onUnmounted(() => {
 .niu-pos-players { display: flex; flex-wrap: wrap; gap: 4px; }
 .niu-pp { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #94a3b8; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); border-radius: 6px; padding: 1px 6px; }
 .niu-pp b { color: #cbd5e1; font-weight: 700; }
-.niu-pp.mine { color: var(--c-light); border-color: rgba(var(--c-light-rgb),.4); background: rgba(var(--c-light-rgb),.1); }
+.niu-pp .rr { font-weight: 800; font-variant-numeric: tabular-nums; }
+.niu-pp.mine { border-color: rgba(var(--c-light-rgb),.5); }
 .niu-pp.mine b { color: var(--c-light); }
-.niu-pos-my { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.niu-pos-my.pos { color: #86efac; } .niu-pos-my.neg { color: #fca5a5; }
+/* 揭曉後每人輸贏:整顆染綠/紅 */
+.niu-pp.win { color: #86efac; border-color: rgba(34,197,94,.45); background: rgba(34,197,94,.1); }
+.niu-pp.win b, .niu-pp.win .rr { color: #86efac; }
+.niu-pp.lose { color: #fca5a5; border-color: rgba(248,113,113,.4); background: rgba(248,113,113,.08); }
+.niu-pp.lose b, .niu-pp.lose .rr { color: #fca5a5; }
 .niu-noplayers { color: #64748b; font-size: 13px; text-align: center; padding: 10px; }
 .niu-reveal-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; background: rgba(var(--c-light-rgb),.08); border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 12px; padding: 12px 14px; font-size: 0.9rem; color: #e2e8f0; }
 .niu-reveal-main { font-weight: 700; }
