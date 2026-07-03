@@ -617,6 +617,7 @@ onMounted(loadAll)
         <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(10)">⟳ 自動 10</button>
         <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(30)">⟳ 自動 30</button>
         <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(100)">⟳ 自動 100</button>
+        <button class="auto-btn" :disabled="!canSpin || loading" @click="startAuto(1000)">⟳ 自動 1000</button>
       </div>
       <div class="auto-running" v-else>
         <span class="auto-progress">自動轉中… {{ autoDone }} / {{ autoTotal }}</span>
@@ -1024,11 +1025,12 @@ onMounted(loadAll)
 /* 自動轉 */
 .auto-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 10px;
 }
 .auto-btn {
-  flex: 1 1 0;
+  flex: 1 1 70px;
   min-width: 0;
   height: 42px;
   border: 1px solid rgba(var(--c-light-rgb), 0.4);
