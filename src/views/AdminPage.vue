@@ -9,7 +9,7 @@ const { adminToken, tokenInput, authed, saveToken, clearToken, toasts } = useAdm
 // 加新 tab 的方式:
 //   1) 在 src/views/admin/ 建一個新的 TabXxx.vue (用 useAdminClient() 拿 callApi / showToast)
 //   2) 在這裡 import + 加進 tabs 陣列就完事 — AdminPage 殼不會再膨脹
-type TabKey = 'codes' | 'extend' | 'payments' | 'commissions' | 'broadcast'
+type TabKey = 'codes' | 'extend' | 'payments' | 'commissions' | 'broadcast' | 'niuodds'
 type TabDef = {
   key: TabKey
   label: string
@@ -47,6 +47,12 @@ const tabs: TabDef[] = [
     label: '群發信件',
     emoji: '📧',
     comp: defineAsyncComponent(() => import('./admin/BroadcastTab.vue')),
+  },
+  {
+    key: 'niuodds',
+    label: '牛牛機率',
+    emoji: '🎮',
+    comp: defineAsyncComponent(() => import('./admin/NiuNiuOddsTab.vue')),
   },
 ]
 
