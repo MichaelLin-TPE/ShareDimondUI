@@ -3,6 +3,13 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
+import logoUrl from '@/assets/share_diamond_logo.png'
+
+// 刮塗層要用的 LOGO(預先載入,setupScratch 時畫上去)
+const logoImg = new Image()
+let logoReady = false
+logoImg.onload = () => { logoReady = true }
+logoImg.src = logoUrl
 
 const API = 'https://api.gameshare-system.com'
 const authStore = useAuthStore()
@@ -70,6 +77,7 @@ async function pickTicket(i: number) {
     if (!res.ok) { useAlert.error(d?.message ?? '購買失敗'); pickedIndex.value = -1; return }
     result.value = d
     if (state.value) { state.value.myBalance = d.myBalance; state.value.poolBalance = d.poolBalance }
+    buildBoard()               // 依價位生成該玩法的牌面(在 nextTick 前,讓格子先渲染好再量 canvas)
     phase.value = 'scratch'
     revealed.value = false
     await nextTick(); setupScratch()
@@ -86,22 +94,82 @@ function again() { // 再刮一張(同價位)
 }
 function backToChoose() { phase.value = 'choose'; selectedTier.value = null; result.value = null; pickedIndex.value = -1; fetchState() }
 
-// ---- 刮開的牌面(依結果生成符號) ----
-const SYMS = ['🍒', '🔔', '⭐', '7️⃣', '💎', '🍋']
-const sym = (i: number) => SYMS[((i % SYMS.length) + SYMS.length) % SYMS.length] ?? '💎'
-const faceSymbols = computed<string[]>(() => {
-  const r = result.value
-  if (!r) return ['❔', '❔', '❔']
-  if (r.poolWin > 0) return ['🀄', '🀄', '🀄']
-  if (r.prizeMult > 0) { const s = sym(Number(r.nonce)); return [s, s, s] }
-  // 沒中:三個不同
-  const a = Number(r.nonce)
-  return [sym(a), sym(a + 2), sym(a + 4)]
-})
+// ---- 每個價位不同玩法(牌面依「後端已決定的結果」生成,機率完全不變,只是呈現方式不同) ----
+// 1000 幸運對獎 / 5000 對對碰 / 10000 三連金 / 100000 翻倍星
+type BoardType = 'lucky' | 'match3' | 'triple' | 'multi'
+interface BCell { big: string; small?: string; hit: boolean }
+interface Board { type: BoardType; title: string; rule: string; lucky: string[]; cells: BCell[] }
+const board = ref<Board | null>(null)
+
+function mkRnd(seed: number) { let s = (seed >>> 0) || 1; return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff } }
+function pick<T>(arr: T[], rnd: () => number): T { return arr[Math.floor(rnd() * arr.length)] as T }
+function shuffle<T>(a: T[], rnd: () => number) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j] as T, a[i] as T] } return a }
+
+function tierGame(price: number): string {
+  return price === 5000 ? '🎯 對對碰' : price === 10000 ? '💰 三連金' : price === 100000 ? '⭐ 翻倍星' : '🍀 幸運對獎'
+}
+
+function buildBoard() {
+  const r = result.value; if (!r) { board.value = null; return }
+  const price = Number(selectedTier.value?.price ?? 1000)
+  const rnd = mkRnd((Number(r.nonce) >>> 0) ^ price ^ r.ticketId)
+  board.value = price === 5000 ? genMatch3(r, rnd)
+    : price === 10000 ? genTriple(r, rnd)
+    : price === 100000 ? genMulti(r, rnd)
+    : genLucky(r, rnd)
+}
+
+function genLucky(r: BuyResult, rnd: () => number): Board {
+  const used = new Set<number>()
+  const rn = () => { let n = 0; do { n = 2 + Math.floor(rnd() * 98) } while (used.has(n)); used.add(n); return n }
+  const lucky: number[] = [rn(), rn(), rn()]
+  const decoy = [1, 2, 5, 10, 20]
+  const win = r.prizeMult > 0
+  const winIdx = win ? Math.floor(rnd() * 6) : -1
+  const cells: BCell[] = []
+  for (let i = 0; i < 6; i++) {
+    if (i === winIdx) cells.push({ big: String(pick(lucky, rnd)), small: '×' + r.prizeMult, hit: true })
+    else cells.push({ big: String(rn()), small: '×' + pick(decoy, rnd), hit: false }) // rn() 排除幸運號→不會誤中
+  }
+  return { type: 'lucky', title: '🍀 幸運對獎', rule: '號碼區出現你的幸運號 → 中該格的獎', lucky: lucky.map(String), cells }
+}
+
+function genMatch3(r: BuyResult, rnd: () => number): Board {
+  const syms = ['🍒', '🔔', '⭐', '💎', '🍋', '🐮']
+  let arr: string[]
+  if (r.prizeMult > 0) {
+    const w = pick(syms, rnd)
+    const fillers = shuffle(syms.filter((s) => s !== w).flatMap((s) => [s, s]), rnd).slice(0, 6)
+    arr = shuffle([w, w, w, ...fillers], rnd)
+  } else {
+    arr = shuffle(syms.flatMap((s) => [s, s]), rnd).slice(0, 9) // 每符號最多 2 個→不會三連
+  }
+  const cnt: Record<string, number> = {}; arr.forEach((s) => (cnt[s] = (cnt[s] || 0) + 1))
+  const winSym = Object.keys(cnt).find((s) => (cnt[s] ?? 0) >= 3)
+  return { type: 'match3', title: '🎯 對對碰', rule: r.prizeMult > 0 ? '刮出 3 個一樣 → 中 ×' + r.prizeMult : '刮出 3 個一樣就中',
+    lucky: [], cells: arr.map((s) => ({ big: s, hit: !!winSym && s === winSym })) }
+}
+
+function genTriple(r: BuyResult, rnd: () => number): Board {
+  let vals: number[]
+  if (r.prizeMult > 0) vals = [r.prizeMult, r.prizeMult, r.prizeMult]
+  else { const o = [1, 2, 5, 10, 20]; vals = [pick(o, rnd), pick(o, rnd), pick(o, rnd)]; if (vals[0] === vals[1] && vals[1] === vals[2]) vals[2] = vals[2] === 20 ? 10 : 20 }
+  const win = vals[0] === vals[1] && vals[1] === vals[2]
+  return { type: 'triple', title: '💰 三連金', rule: '三格相同 → 中該倍數', lucky: [], cells: vals.map((v) => ({ big: '×' + v, hit: win })) }
+}
+
+function genMulti(r: BuyResult, rnd: () => number): Board {
+  const o = [0, 1, 2, 5, 10, 20]
+  const star = Math.floor(rnd() * 6)
+  const cells: BCell[] = []
+  for (let i = 0; i < 6; i++) cells.push({ big: '×' + (i === star ? r.prizeMult : pick(o, rnd)), small: i === star ? '⭐你的' : '', hit: i === star && r.prizeMult > 0 })
+  return { type: 'multi', title: '⭐ 翻倍星', rule: '刮開 ⭐ 格,就是你的倍數', lucky: [], cells }
+}
+
 const resultText = computed(() => {
   const r = result.value
   if (!r) return ''
-  if (r.poolWin > 0) return `🀄 中彩金池 +${fmt(r.poolWin)}${r.prize > 0 ? `　（另中 ×${r.prizeMult} +${fmt(r.prize)}）` : ''}`
+  if (r.poolWin > 0) return `🀄 中彩金池 +${fmt(r.poolWin)}${r.prize > 0 ? `（另中 ×${r.prizeMult} +${fmt(r.prize)}）` : ''}`
   if (r.prizeMult > 0) return `🎉 中 ×${r.prizeMult} = ${fmt(r.prize)} ${state.value?.currency ?? ''}`
   return '銘謝惠顧，再接再厲'
 })
@@ -116,12 +184,21 @@ function setupScratch() {
   const rect = cv.getBoundingClientRect()
   cv.width = Math.max(1, Math.floor(rect.width))
   cv.height = Math.max(1, Math.floor(rect.height))
-  const g = ctx.createLinearGradient(0, 0, cv.width, cv.height)
-  g.addColorStop(0, '#8b95a6'); g.addColorStop(0.5, '#c7cfdb'); g.addColorStop(1, '#9aa4b2')
   ctx.globalCompositeOperation = 'source-over'
+  // 金屬銀底
+  const g = ctx.createLinearGradient(0, 0, cv.width, cv.height)
+  g.addColorStop(0, '#9aa4b4'); g.addColorStop(0.45, '#d5dbe6'); g.addColorStop(0.55, '#c2c9d6'); g.addColorStop(1, '#8b95a6')
   ctx.fillStyle = g; ctx.fillRect(0, 0, cv.width, cv.height)
-  ctx.fillStyle = 'rgba(30,41,59,.55)'; ctx.font = 'bold 18px sans-serif'; ctx.textAlign = 'center'
-  ctx.fillText('👆 刮開這裡', cv.width / 2, cv.height / 2 + 6)
+  // 斜向亮條紋(金屬感)
+  ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 6
+  for (let x = -cv.height; x < cv.width; x += 22) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + cv.height, cv.height); ctx.stroke() }
+  // 中央 LOGO 浮水印
+  if (logoReady && logoImg.width) {
+    const lw = Math.min(cv.width * 0.46, 150); const lh = lw * (logoImg.height / logoImg.width)
+    ctx.globalAlpha = 0.18; ctx.drawImage(logoImg, (cv.width - lw) / 2, (cv.height - lh) / 2 - 8, lw, lh); ctx.globalAlpha = 1
+  }
+  ctx.fillStyle = 'rgba(30,41,59,.6)'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'center'
+  ctx.fillText('✦ 刮開這裡 ✦', cv.width / 2, cv.height - 12)
 }
 function posOf(e: PointerEvent) {
   const cv = canvasRef.value!; const r = cv.getBoundingClientRect()
@@ -131,9 +208,10 @@ function scratchAt(x: number, y: number) {
   const cv = canvasRef.value; if (!cv || revealed.value) return
   const ctx = cv.getContext('2d'); if (!ctx) return
   ctx.globalCompositeOperation = 'destination-out'
-  ctx.beginPath(); ctx.arc(x, y, 20, 0, Math.PI * 2); ctx.fill()
+  ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fill()
 }
-function onDown(e: PointerEvent) { scratching = true; const p = posOf(e); scratchAt(p.x, p.y) }
+// setPointerCapture:即使手指/滑鼠移出卡片外,pointermove/up 仍持續送到 canvas,不會中斷刮除
+function onDown(e: PointerEvent) { try { canvasRef.value?.setPointerCapture(e.pointerId) } catch { /* ignore */ } scratching = true; const p = posOf(e); scratchAt(p.x, p.y) }
 function onMove(e: PointerEvent) { if (!scratching) return; const p = posOf(e); scratchAt(p.x, p.y) }
 function onUp() { if (!scratching) return; scratching = false; checkReveal() }
 function checkReveal() {
@@ -255,6 +333,7 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
             :class="{ off: !t.available || bankerIsMe }"
             @click="chooseTier(t)"
           >
+            <div class="scr-tier-game">{{ tierGame(t.price) }}</div>
             <div class="scr-tier-price">${{ fmt(t.price) }}</div>
             <div class="scr-tier-top">頂獎 ×20 = {{ fmt(t.price * 20) }}</div>
             <div class="scr-tier-pool">🀄 中池拿 {{ t.poolSharePct }}%</div>
@@ -268,32 +347,54 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
       <div v-else-if="phase === 'pick'" class="scr-pick">
         <div class="scr-section-title">
           <button class="scr-back" @click="backToChoose">‹ 換價位</button>
-          $ {{ fmt(selectedTier?.price) }} 彩票 · 挑一張你的幸運票 🍀
+          {{ tierGame(selectedTier?.price ?? 0) }} · ${{ fmt(selectedTier?.price) }} · 挑一張你的幸運票 🍀
         </div>
         <div class="scr-pick-grid">
           <button
             v-for="i in PICK_COUNT"
             :key="i"
-            class="scr-ticketback"
+            class="scr-ticket"
             :class="{ picked: pickedIndex === i - 1, dim: pickedIndex >= 0 && pickedIndex !== i - 1 }"
             :disabled="busy || pickedIndex >= 0"
             @click="pickTicket(i - 1)"
           >
-            <span class="scr-tb-emoji">🎫</span>
-            <span class="scr-tb-no">{{ i }}</span>
+            <span class="scr-ticket-shine"></span>
+            <img class="scr-ticket-logo" :src="logoUrl" alt="" />
+            <span class="scr-ticket-brand">SHARE DIAMOND</span>
+            <span class="scr-ticket-mid">
+              <span class="scr-ticket-star">✦</span>
+              <span class="scr-ticket-no">{{ i }}</span>
+              <span class="scr-ticket-star">✦</span>
+            </span>
+            <span class="scr-ticket-price">${{ fmt(selectedTier?.price) }}</span>
+            <span class="scr-ticket-foot">刮刮樂 · LOTTO</span>
           </button>
         </div>
+        <p class="scr-hint">賠率都一樣,挑哪張都行 — 只是個儀式感 ✨</p>
       </div>
 
       <!-- 刮開 -->
       <div v-else-if="phase === 'scratch'" class="scr-scratch">
-        <div class="scr-section-title">$ {{ fmt(selectedTier?.price) }} 彩票</div>
+        <div class="scr-section-title">{{ board?.title ?? '刮刮樂' }} · ${{ fmt(selectedTier?.price) }}</div>
+
+        <!-- 玩法說明 + 幸運號(永遠可見,不用刮) -->
+        <div class="scr-board-head">
+          <div v-if="board?.lucky.length" class="scr-lucky">
+            <span class="scr-lucky-label">幸運號</span>
+            <b v-for="(n, i) in board.lucky" :key="i" class="scr-lucky-num">{{ n }}</b>
+          </div>
+          <div class="scr-rule">{{ board?.rule }}</div>
+        </div>
+
         <div class="scr-card">
-          <div class="scr-card-face" :class="{ win: result?.win, pool: (result?.poolWin ?? 0) > 0 }">
-            <div class="scr-face-syms">
-              <span v-for="(s, i) in faceSymbols" :key="i" class="scr-sym">{{ s }}</span>
+          <div class="scr-card-face" :class="[board?.type, { win: revealed && result?.win, pool: revealed && (result?.poolWin ?? 0) > 0 }]">
+            <img class="scr-face-logo" :src="logoUrl" alt="" />
+            <div class="scr-grid" :class="board?.type">
+              <div v-for="(c, i) in (board?.cells ?? [])" :key="i" class="scr-cell" :class="{ hit: revealed && c.hit }">
+                <span class="scr-cell-big">{{ c.big }}</span>
+                <span v-if="c.small" class="scr-cell-small">{{ c.small }}</span>
+              </div>
             </div>
-            <div class="scr-face-text">{{ resultText }}</div>
           </div>
           <canvas
             v-show="!revealed"
@@ -302,10 +403,14 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
             @pointerdown="onDown"
             @pointermove="onMove"
             @pointerup="onUp"
-            @pointerleave="onUp"
             @pointercancel="onUp"
           ></canvas>
         </div>
+
+        <div class="scr-result-text" :class="{ win: result?.win, pool: (result?.poolWin ?? 0) > 0 }">
+          {{ revealed ? resultText : '刮開上面的塗層看看中了沒 👆' }}
+        </div>
+
         <div class="scr-scratch-acts">
           <button v-if="!revealed" class="scr-btn ghost" @click="revealFull">👀 直接開</button>
           <template v-else>
@@ -367,29 +472,53 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
 .scr-tier { box-sizing: border-box; min-width: 0; position: relative; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 14px; border-radius: 12px; border: 1px solid rgba(var(--c-light-rgb),.35); background: rgba(var(--c-light-rgb),.06); color: inherit; cursor: pointer; transition: all .15s; }
 .scr-tier:hover:not(.off) { border-color: var(--c-light); background: rgba(var(--c-light-rgb),.12); }
 .scr-tier.off { opacity: .55; cursor: not-allowed; border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.03); }
+.scr-tier-game { font-size: 0.72rem; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); padding: 2px 9px; border-radius: 999px; }
 .scr-tier-price { font-size: 1.3rem; font-weight: 900; color: var(--c-light); }
 .scr-tier-top { font-size: 0.78rem; color: #cbd5e1; }
 .scr-tier-pool { font-size: 0.78rem; color: #fbbf24; }
 .scr-tier-lock { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.72rem; color: #fca5a5; background: rgba(11,13,20,.7); border-radius: 12px; line-height: 1.5; }
 /* 挑票 */
 .scr-pick { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
-.scr-pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }
-.scr-ticketback { aspect-ratio: 3/4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 12px; border: 1px solid rgba(var(--c-light-rgb),.4); background: linear-gradient(160deg, var(--c-mid), var(--c-deep)); color: var(--c-on); cursor: pointer; transition: transform .15s, opacity .2s; }
-.scr-ticketback:hover:not(:disabled) { transform: translateY(-4px); }
-.scr-ticketback.picked { outline: 3px solid var(--c-light); outline-offset: 2px; transform: translateY(-4px); }
-.scr-ticketback.dim { opacity: .4; }
-.scr-tb-emoji { font-size: 30px; }
-.scr-tb-no { font-size: 12px; opacity: .8; }
+.scr-pick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 12px; }
+.scr-ticket { position: relative; overflow: hidden; aspect-ratio: 3/4.2; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px; padding: 10px 6px; border-radius: 12px; border: none; cursor: pointer; color: #fff2cf; background: linear-gradient(160deg, #2a1c3d 0%, #3b2a5a 42%, #241634 100%); box-shadow: 0 4px 12px rgba(0,0,0,.45), inset 0 0 0 1.5px rgba(217,180,110,.55); transition: transform .15s, opacity .2s, box-shadow .2s; }
+.scr-ticket::before { content: ''; position: absolute; inset: 4px; border-radius: 9px; border: 1px dashed rgba(217,180,110,.4); pointer-events: none; }
+.scr-ticket:hover:not(:disabled) { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,.5), inset 0 0 0 1.5px rgba(217,180,110,.85); }
+.scr-ticket.picked { transform: translateY(-5px); box-shadow: 0 0 0 3px var(--c-light), 0 10px 20px rgba(0,0,0,.5); }
+.scr-ticket.dim { opacity: .35; }
+.scr-ticket:disabled { cursor: default; }
+.scr-ticket-shine { position: absolute; top: -60%; left: -30%; width: 55%; height: 220%; background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent); transform: rotate(18deg); pointer-events: none; }
+.scr-ticket-logo { width: 44%; max-width: 46px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.5)); }
+.scr-ticket-brand { font-size: 7px; letter-spacing: 1.5px; color: rgba(217,180,110,.85); font-weight: 700; }
+.scr-ticket-mid { display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+.scr-ticket-star { color: #d9b46e; font-size: 11px; }
+.scr-ticket-no { font-size: 26px; font-weight: 900; color: #ffd98a; text-shadow: 0 1px 4px rgba(0,0,0,.5); line-height: 1; }
+.scr-ticket-price { font-size: 12px; font-weight: 800; color: #fff; margin-top: 1px; }
+.scr-ticket-foot { font-size: 7px; letter-spacing: 1px; color: rgba(255,255,255,.4); margin-top: auto; }
 /* 刮開 */
 .scr-scratch { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 14px; align-items: center; }
-.scr-card { position: relative; width: 100%; max-width: 340px; height: 190px; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
-.scr-card-face { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: linear-gradient(160deg, #1f2433, #0f131c); }
-.scr-card-face.win { background: linear-gradient(160deg, rgba(34,197,94,.22), #0f131c); }
+.scr-board-head { width: 100%; max-width: 340px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.scr-lucky { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.scr-lucky-label { font-size: 12px; color: #94a3b8; }
+.scr-lucky-num { min-width: 30px; padding: 3px 9px; border-radius: 8px; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: #fff; font-size: 16px; font-weight: 900; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+.scr-rule { font-size: 12px; color: #cbd5e1; text-align: center; }
+.scr-card { position: relative; width: 100%; max-width: 340px; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.scr-card-face { position: relative; display: flex; align-items: center; justify-content: center; padding: 16px; min-height: 150px; background: linear-gradient(160deg, #1f2433, #0f131c); border: 1px solid rgba(217,180,110,.22); box-sizing: border-box; }
+.scr-card-face.win { background: linear-gradient(160deg, rgba(34,197,94,.2), #0f131c); }
 .scr-card-face.pool { background: linear-gradient(160deg, rgba(217,151,6,.28), #0f131c); }
-.scr-face-syms { display: flex; gap: 10px; }
-.scr-sym { font-size: 42px; }
-.scr-face-text { font-size: 1rem; font-weight: 800; color: #f1f5f9; text-align: center; padding: 0 10px; }
+.scr-face-logo { position: absolute; width: 55%; max-width: 170px; opacity: .06; pointer-events: none; }
+.scr-grid { position: relative; display: grid; gap: 8px; width: 100%; }
+.scr-grid.lucky, .scr-grid.multi, .scr-grid.match3, .scr-grid.triple { grid-template-columns: repeat(3, 1fr); }
+.scr-grid.match3 { max-width: 246px; margin: 0 auto; }
+.scr-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; aspect-ratio: 1/1; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); transition: all .2s; }
+.scr-cell-big { font-size: 22px; font-weight: 800; color: #f1f5f9; line-height: 1.1; }
+.scr-cell-small { font-size: 10px; color: #94a3b8; }
+.scr-cell.hit { background: linear-gradient(160deg, rgba(217,151,6,.35), rgba(217,151,6,.12)); border-color: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,.5); transform: scale(1.04); }
+.scr-cell.hit .scr-cell-big { color: #fde68a; }
+.scr-cell.hit .scr-cell-small { color: #fcd34d; }
 .scr-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.scr-result-text { font-size: 15px; font-weight: 800; color: #cbd5e1; text-align: center; min-height: 20px; }
+.scr-result-text.win { color: #86efac; }
+.scr-result-text.pool { color: #fbbf24; }
 .scr-scratch-acts { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 /* 面板 */
 .scr-panel { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; }
