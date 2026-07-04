@@ -246,19 +246,20 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
       <!-- 選價位 -->
       <div v-if="phase === 'choose'" class="scr-tiers">
         <div class="scr-section-title">選擇彩票價位</div>
+        <p v-if="bankerIsMe" class="scr-hint">👑 你是莊家，不能買自己的票（要玩請先下莊）</p>
         <div class="scr-tier-grid">
-          <button
+          <div
             v-for="t in (state?.tiers ?? [])"
             :key="t.price"
             class="scr-tier"
-            :class="{ off: !t.available }"
+            :class="{ off: !t.available || bankerIsMe }"
             @click="chooseTier(t)"
           >
             <div class="scr-tier-price">${{ fmt(t.price) }}</div>
             <div class="scr-tier-top">頂獎 ×20 = {{ fmt(t.price * 20) }}</div>
             <div class="scr-tier-pool">🀄 中池拿 {{ t.poolSharePct }}%</div>
-            <div v-if="!t.available" class="scr-tier-lock">莊家本金不足<br />(需 ≥ {{ fmt(t.minBankroll) }})</div>
-          </button>
+            <div v-if="!t.available && !bankerIsMe" class="scr-tier-lock">莊家本金不足<br />(需 ≥ {{ fmt(t.minBankroll) }})</div>
+          </div>
         </div>
         <p v-if="!hasBanker" class="scr-hint">等有人坐莊後才能買票</p>
       </div>
@@ -363,7 +364,7 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
 /* 價位 */
 .scr-tiers { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .scr-tier-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.scr-tier { position: relative; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 14px; border-radius: 12px; border: 1px solid rgba(var(--c-light-rgb),.35); background: rgba(var(--c-light-rgb),.06); color: inherit; cursor: pointer; transition: all .15s; }
+.scr-tier { box-sizing: border-box; min-width: 0; position: relative; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 14px; border-radius: 12px; border: 1px solid rgba(var(--c-light-rgb),.35); background: rgba(var(--c-light-rgb),.06); color: inherit; cursor: pointer; transition: all .15s; }
 .scr-tier:hover:not(.off) { border-color: var(--c-light); background: rgba(var(--c-light-rgb),.12); }
 .scr-tier.off { opacity: .55; cursor: not-allowed; border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.03); }
 .scr-tier-price { font-size: 1.3rem; font-weight: 900; color: var(--c-light); }
