@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
 import { createReconnectingStomp, type StompHandle } from '@/utils/stompConnection'
-import { evaluate, isFoul, cardSuit, cardRank } from '@/utils/thirteenEval'
+import { evaluate, isFoul, compareEval, cardSuit, cardRank } from '@/utils/thirteenEval'
 import { useThirteenAudio } from '@/composables/thirteenAudio'
 
 const audio = useThirteenAudio()
@@ -503,6 +503,33 @@ const forceLobby = ref(false) // 結算後按「回大廳」先在前端回大�
 const showLobby = computed(() => !!state.value?.inLobby || forceLobby.value)
 const seatedCount = computed(() => state.value?.seats?.length ?? 0)
 const myResult = computed(() => state.value?.seats?.find((x) => x.mine))
+
+// 逐墩勝負:結算後,我的每一墩對「每一家」是贏/輸/平(對方倒水→我直接贏該墩),讓你看清楚贏在哪輸在哪
+interface DunVs { name: string; r: 'win' | 'lose' | 'tie'; foulOpp: boolean }
+interface DunBreak { zh: string; label: string; vs: DunVs[] }
+const myBreakdown = computed<DunBreak[] | null>(() => {
+  const s = state.value
+  if (!s || s.status !== 'SETTLED') return null
+  const me = s.seats?.find((x) => x.mine)
+  if (!me || me.foul) return null // 自己倒水:三墩皆輸,另外用文字說明
+  const others = (s.seats ?? []).filter((x) => !x.mine)
+  if (!others.length) return null
+  const g = s.goldenRank ?? null
+  const duns: { key: 'back' | 'middle' | 'front'; zh: string; mine: string[] }[] = [
+    { key: 'back', zh: '尾墩', mine: me.back ?? [] },
+    { key: 'middle', zh: '中墩', mine: me.middle ?? [] },
+    { key: 'front', zh: '頭墩', mine: me.front ?? [] },
+  ]
+  return duns.map((d) => {
+    const myEval = evaluate(d.mine, g)
+    const vs: DunVs[] = others.map((o) => {
+      if (o.foul) return { name: o.userName, r: 'win', foulOpp: true } // 對方倒水 → 我贏這墩
+      const cmp = compareEval(myEval, evaluate(o[d.key] ?? [], g))
+      return { name: o.userName, r: cmp > 0 ? 'win' : cmp < 0 ? 'lose' : 'tie', foulOpp: false }
+    })
+    return { zh: d.zh, label: myEval.label, vs }
+  })
+})
 // 凍結賭本 = 底注 × 22 ×(人數-1)= 66(彩金牌版單一對手最壞輸22水,對齊後端 MAX_LOSS_UNITS)
 const escrowNeeded = computed(() => Number(state.value?.baseBet ?? config.value.baseBet) * 22 * (config.value.maxPlayers - 1))
 const isWaiting = computed(() => state.value?.status === 'WAITING')
@@ -823,6 +850,23 @@ onUnmounted(() => {
             <span v-if="(myResult.poolWin ?? 0) > 0" class="t13-pool-hit">🀄 五枚中彩金池 +{{ fmt(myResult.poolWin) }}！</span>
           </div>
 
+          <!-- 逐墩勝負:你贏在哪、輸在哪 -->
+          <div v-if="myBreakdown" class="t13-breakdown">
+            <div class="t13-bd-title">📊 逐墩勝負（你 vs 各家）</div>
+            <div v-for="d in myBreakdown" :key="d.zh" class="t13-bd-row">
+              <span class="t13-bd-dun">{{ d.zh }}</span>
+              <span class="t13-bd-ty">{{ d.label }}</span>
+              <span class="t13-bd-vs">
+                <span
+                  v-for="v in d.vs"
+                  :key="v.name"
+                  class="t13-bd-res"
+                  :class="v.r"
+                >{{ v.name }}<b>{{ v.r === 'win' ? (v.foulOpp ? '贏(對方倒水)' : '贏') : v.r === 'lose' ? '輸' : '平' }}</b></span>
+              </span>
+            </div>
+          </div>
+
           <div class="t13-reveal">
             <div
               v-for="s in (state?.seats ?? [])"
@@ -1073,6 +1117,18 @@ onUnmounted(() => {
 .t13-myresult.win { background: rgba(34,197,94,.15); color: #86efac; }
 .t13-myresult.lose { background: rgba(248,113,113,.12); color: #fca5a5; }
 .t13-pool-hit { display: block; color: #fbbf24; font-size: 14px; margin-top: 4px; }
+/* 逐墩勝負 */
+.t13-breakdown { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; margin: 10px 0; }
+.t13-bd-title { font-size: 13px; font-weight: 800; color: #cbd5e1; margin-bottom: 8px; }
+.t13-bd-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,.05); }
+.t13-bd-dun { flex: 0 0 40px; font-weight: 800; color: #94a3b8; font-size: 13px; }
+.t13-bd-ty { flex: 0 0 auto; font-size: 12px; color: var(--c-light); font-weight: 700; min-width: 52px; }
+.t13-bd-vs { display: flex; flex-wrap: wrap; gap: 5px; }
+.t13-bd-res { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,.05); color: #94a3b8; white-space: nowrap; }
+.t13-bd-res b { margin-left: 3px; font-weight: 800; }
+.t13-bd-res.win { background: rgba(34,197,94,.14); color: #86efac; }
+.t13-bd-res.lose { background: rgba(248,113,113,.12); color: #fca5a5; }
+.t13-bd-res.tie { background: rgba(148,163,184,.15); color: #cbd5e1; }
 .t13-reveal { display: flex; flex-direction: column; gap: 8px; }
 .t13-reveal-seat { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 10px; }
 .t13-reveal-seat.mine { border-color: var(--c-light); }
