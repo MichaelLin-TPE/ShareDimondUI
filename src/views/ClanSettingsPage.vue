@@ -23,6 +23,10 @@ const {
   niuniuEnabled,
   niuniuSaving,
   saveNiuNiuConfig,
+  // 刮刮樂
+  scratchEnabled,
+  scratchSaving,
+  saveScratchConfig,
   settings,
   selectedCurrency,
   clanCurrencies,
@@ -418,6 +422,42 @@ const rakePercent = computed<number>({
         <div class="cs-actions">
           <button class="cs-btn-primary" :disabled="niuniuSaving" @click="saveNiuNiuConfig">
             {{ niuniuSaving ? '儲存中…' : '💾 儲存妞妞設定' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── 刮刮樂設定 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🎫</span>
+          <div>
+            <h3>刮刮樂設定</h3>
+            <p>玩家坐莊開賣彩票。四價位(1千/5千/1萬/10萬)，抽水進彩金池、刮中彩金池獎</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>開放刮刮樂</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: scratchEnabled }"
+              @click="scratchEnabled = !scratchEnabled"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ scratchEnabled ? '🎫 已開放' : '🚫 已關閉' }}
+              </span>
+            </div>
+            <p class="cs-hint">莊家本金要 ≥ 想賣價位×20 才賣得起該價位；彩金池獎由池付</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" :disabled="scratchSaving" @click="saveScratchConfig">
+            {{ scratchSaving ? '儲存中…' : '💾 儲存刮刮樂設定' }}
           </button>
         </div>
       </section>

@@ -548,6 +548,46 @@ export function useAuction() {
     }
   }
 
+  // ───── 刮刮樂設定 (共用抽水/彩金池,只多一個開關) ─────
+  const scratchEnabled = ref(false)
+  const scratchSaving = ref(false)
+
+  const fetchScratchConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/scratch/config`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      scratchEnabled.value = !!d.enabled
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveScratchConfig = async () => {
+    if (scratchSaving.value) return
+    scratchSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/scratch/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ enabled: scratchEnabled.value }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(d.message ?? '刮刮樂設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      scratchSaving.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
@@ -557,6 +597,7 @@ export function useAuction() {
     fetchDiceConfig()
     fetchThirteenConfig()
     fetchNiuNiuConfig()
+    fetchScratchConfig()
   })
 
   return {
@@ -576,6 +617,10 @@ export function useAuction() {
     niuniuEnabled,
     niuniuSaving,
     saveNiuNiuConfig,
+    // 刮刮樂
+    scratchEnabled,
+    scratchSaving,
+    saveScratchConfig,
     settings,
     balance,
     selectedCurrency,

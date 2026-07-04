@@ -32,6 +32,7 @@ import SlotMachinePage from '@/views/SlotMachinePage.vue'
 import DiceGamePage from '@/views/DiceGamePage.vue'
 import ThirteenGamePage from '@/views/ThirteenGamePage.vue'
 import NiuNiuGamePage from '@/views/NiuNiuGamePage.vue'
+import ScratchGamePage from '@/views/ScratchGamePage.vue'
 import DepositPage from '@/views/DepositPage.vue'
 import VerifyDepositPage from '@/views/VerifyDepositPage.vue'
 import FaqManagePage from '@/views/FaqManagePage.vue'
@@ -206,6 +207,10 @@ const router = createRouter({
         {
           path: 'niuniu',
           component: NiuNiuGamePage,
+        },
+        {
+          path: 'scratch',
+          component: ScratchGamePage,
         },
         {
           path: 'deposit',
