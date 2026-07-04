@@ -146,7 +146,7 @@ function genMatch3(r: BuyResult, rnd: () => number): Board {
   }
   const cnt: Record<string, number> = {}; arr.forEach((s) => (cnt[s] = (cnt[s] || 0) + 1))
   const winSym = Object.keys(cnt).find((s) => (cnt[s] ?? 0) >= 3)
-  return { type: 'match3', title: '🎯 對對碰', rule: r.prizeMult > 0 ? '刮出 3 個一樣 → 中 ×' + r.prizeMult : '刮出 3 個一樣就中',
+  return { type: 'match3', title: '🎯 對對碰', rule: '刮出 3 個一樣的符號就中獎',
     lucky: [], cells: arr.map((s) => ({ big: s, hit: !!winSym && s === winSym })) }
 }
 
@@ -407,7 +407,7 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
           ></canvas>
         </div>
 
-        <div class="scr-result-text" :class="{ win: result?.win, pool: (result?.poolWin ?? 0) > 0 }">
+        <div class="scr-result-text" :class="{ win: revealed && result?.win, pool: revealed && (result?.poolWin ?? 0) > 0 }">
           {{ revealed ? resultText : '刮開上面的塗層看看中了沒 👆' }}
         </div>
 
