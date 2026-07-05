@@ -1224,7 +1224,8 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1232,6 +1233,8 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   margin-bottom: 12px;
   font-size: 0.85rem;
 }
+.banker-info { flex: 1 1 auto; min-width: 0; } /* 本金完整顯示,手機不被搶莊鈕擠掉 */
+@media (max-width: 480px) { .banker-bar .btn { padding: 8px 13px; font-size: 0.85rem; } }
 .banker-info.muted {
   color: #94a3b8;
 }

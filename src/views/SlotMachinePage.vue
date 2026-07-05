@@ -846,13 +846,15 @@ onMounted(loadAll)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
   background: rgba(22, 24, 34, 0.85);
   border: 1px solid #24263a;
   border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 14px;
 }
+@media (max-width: 480px) { .bank-btn { padding: 8px 12px; font-size: 0.82rem; } }
 .banker-card.mine {
   border-color: rgba(var(--c-light-rgb), 0.5);
 }
@@ -861,6 +863,7 @@ onMounted(loadAll)
 }
 .banker-info {
   min-width: 0;
+  flex: 1 1 auto;
 }
 .banker-line {
   display: flex;

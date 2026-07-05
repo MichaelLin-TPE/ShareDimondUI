@@ -76,11 +76,13 @@ async function pickTicket(i: number) {
     const d = await res.json().catch(() => null)
     if (!res.ok) { useAlert.error(d?.message ?? '購買失敗'); pickedIndex.value = -1; return }
     result.value = d
-    if (state.value) { state.value.myBalance = d.myBalance; state.value.poolBalance = d.poolBalance }
+    // ⚠️ 刮開前不可先更新餘額/彩金池(會從數字變化看出輸贏)。只先扣掉「一定要付的票價」,
+    //    真正結算後的餘額(含中獎)留到 revealFull() 才套用。輪詢在 scratch 階段本來就不刷,不會蓋掉。
+    if (state.value) state.value.myBalance = Number(state.value.myBalance ?? 0) - price
     buildBoard()               // 依價位生成該玩法的牌面(在 nextTick 前,讓格子先渲染好再量 canvas)
     phase.value = 'scratch'
     revealed.value = false
-    await nextTick(); setupScratch()
+    await nextTick(); requestAnimationFrame(setupScratch) // rAF:等版面完整算好再量 canvas(手機 aspect-ratio 才不會量到 0/太小而蓋不滿)
     loadBoards()
   } catch (e) { console.error(e); useAlert.error('連線失敗，已為你刷新餘額，請確認是否已扣款再重買'); await fetchState(); pickedIndex.value = -1 } finally { busy.value = false }
 }
@@ -228,6 +230,8 @@ function revealFull() {
   const cv = canvasRef.value
   if (cv) { const ctx = cv.getContext('2d'); if (ctx) ctx.clearRect(0, 0, cv.width, cv.height) }
   const r = result.value
+  // 刮開這一刻才把真正結算後的餘額/彩金池套上(含中獎),之前只顯示扣掉票價
+  if (r && state.value) { state.value.myBalance = r.myBalance; state.value.poolBalance = r.poolBalance }
   if (r?.poolWin) { celebrate.value = `🀄 刮中彩金池 +${fmt(r.poolWin)}！`; playJackpot(); armCele() }
   else if (r?.win) playWin()
   else playLose()
@@ -453,8 +457,9 @@ onUnmounted(() => { if (poll) clearInterval(poll); if (celeTimer) clearTimeout(c
 .scr-stat span { display: block; font-size: 11px; color: #94a3b8; }
 .scr-stat b { font-size: 16px; color: var(--c-light); }
 .scr-empty { text-align: center; color: #94a3b8; padding: 40px 12px; background: #131722; border-radius: 12px; line-height: 1.8; }
-.scr-banker { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; font-size: 0.85rem; }
-.scr-banker-info { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scr-banker { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; font-size: 0.85rem; }
+.scr-banker-info { min-width: 0; flex: 1 1 auto; } /* 不再 nowrap/ellipsis:本金放最後,手機才不會被搶莊鈕擠掉看不到 */
+@media (max-width: 480px) { .scr-banker .scr-btn { padding: 7px 13px; font-size: 0.82rem; } }
 .scr-banker-info b { color: var(--c-light); }
 .scr-banker-info.muted { color: #94a3b8; }
 .scr-btn { flex-shrink: 0; border: none; border-radius: 10px; padding: 9px 18px; font-weight: 700; cursor: pointer; font-size: 0.9rem; line-height: 1; transition: filter .15s; }
