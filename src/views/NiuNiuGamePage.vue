@@ -396,6 +396,19 @@ async function loadBoards() {
   } catch (e) { console.error(e) }
 }
 
+// ---- 近期開牌紀錄(莊家+天地玄黃四家的牌) ----
+interface RecentPos { position: number; zh: string; cards: string[]; label: string; won: boolean }
+interface RecentRound { roundId: number; settledAt: string; bankerCards: string[]; bankerLabel: string; positions: RecentPos[] }
+const recentOpen = ref(false)
+const recent = ref<RecentRound[]>([])
+async function loadRecent() {
+  try {
+    const res = await fetch(`${API}/niuniu/recent?limit=30`, { headers: headers() })
+    if (res.ok) recent.value = await res.json()
+  } catch (e) { console.error(e) }
+}
+function toggleRecent() { recentOpen.value = !recentOpen.value; if (recentOpen.value) loadRecent() }
+
 // ---- 聊天 ----
 interface ChatMsg { userName: string; text: string }
 const chatOpen = ref(false)
@@ -480,7 +493,7 @@ onMounted(async () => {
   loading.value = true
   await loadConfig(); await fetchRound(); loadBoards(); loadChat(); fetchStats(); loading.value = false
   const clanId = authStore.member?.clanId
-  if (clanId) ws = createReconnectingStomp(`/topic/niuniu/${clanId}`, (b) => { if (b === 'NIUNIU_UPDATED') fetchRound(); else if (b === 'NIUNIU_CHAT') loadChat() })
+  if (clanId) ws = createReconnectingStomp(`/topic/niuniu/${clanId}`, (b) => { if (b === 'NIUNIU_UPDATED') { fetchRound(); if (recentOpen.value) loadRecent() } else if (b === 'NIUNIU_CHAT') loadChat() })
   tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
   heartbeat = window.setInterval(fetchRound, 8000)
   statsTimer = window.setInterval(fetchStats, 60000) // 近2日勝率變動慢,60秒刷新一次
@@ -694,6 +707,32 @@ onUnmounted(() => {
           </div>
         </div>
 
+        <!-- 近期開牌:莊家 + 天地玄黃四家的牌 -->
+        <div class="niu-panel">
+          <button class="niu-panel-toggle" @click="toggleRecent">🃏 近期開牌 <span>{{ recentOpen ? '▲' : '▼' }}</span></button>
+          <div v-if="recentOpen" class="niu-panel-body">
+            <div v-if="recent.length === 0" class="niu-board-empty">尚無開牌紀錄</div>
+            <div v-for="rd in recent" :key="rd.roundId" class="niu-rec-round">
+              <div class="niu-rec-when">🕐 {{ rd.settledAt }}</div>
+              <div class="niu-rec-line banker">
+                <span class="niu-rec-tag b">莊</span>
+                <span class="niu-rec-cards">
+                  <span v-for="(c, i) in rd.bankerCards" :key="i" class="niu-card xs" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
+                </span>
+                <span class="niu-rec-label">{{ rd.bankerLabel }}</span>
+              </div>
+              <div v-for="p in rd.positions" :key="p.position" class="niu-rec-line" :class="{ won: p.won }">
+                <span class="niu-rec-tag">{{ p.zh }}</span>
+                <span class="niu-rec-cards">
+                  <span v-for="(c, i) in p.cards" :key="i" class="niu-card xs" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
+                </span>
+                <span class="niu-rec-label">{{ p.label }}</span>
+                <span class="niu-rec-wl" :class="p.won ? 'w' : 'l'">{{ p.won ? '贏' : '輸' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <details class="niu-rules">
           <summary>📜 玩法 / 賠率</summary>
           <p>百人牛牛：1 位莊家對 <b>天地玄黃</b> 4 個位置。你押注哪個位置，就代表你賭「那個位置的牌」贏過莊家。4 個位置只跟莊家比，不互相比。</p>
@@ -855,6 +894,21 @@ onUnmounted(() => {
 .niu-panel-toggle { width: 100%; background: transparent; border: none; color: #cbd5e1; font-weight: 700; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
 .niu-panel-body { padding: 0 12px 12px; }
 .niu-board-empty { font-size: 12px; color: #64748b; padding: 8px 0; }
+/* 近期開牌 */
+.niu-card.xs { width: 20px; height: 28px; border-radius: 4px; }
+.niu-card.xs .r { font-size: 9px; } .niu-card.xs .s { font-size: 10px; }
+.niu-rec-round { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.niu-rec-round:last-child { border-bottom: none; }
+.niu-rec-when { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+.niu-rec-line { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.niu-rec-tag { flex: 0 0 auto; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 12px; font-weight: 800; background: rgba(255,255,255,.08); color: #cbd5e1; }
+.niu-rec-tag.b { background: rgba(var(--c-light-rgb),.25); color: var(--c-light); }
+.niu-rec-line.won .niu-rec-tag { background: rgba(34,197,94,.2); color: #86efac; }
+.niu-rec-cards { display: flex; gap: 3px; flex: 0 0 auto; }
+.niu-rec-label { font-size: 11px; color: #94a3b8; white-space: nowrap; }
+.niu-rec-wl { flex: 0 0 auto; margin-left: auto; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; }
+.niu-rec-wl.w { background: rgba(34,197,94,.2); color: #86efac; }
+.niu-rec-wl.l { background: rgba(148,163,184,.14); color: #94a3b8; }
 .niu-rank-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.05); }
 .niu-rank-row.me { color: #d8b4fe; font-weight: 700; }
 .niu-rank-row .rk { width: 18px; color: #94a3b8; } .niu-rank-row .nm { flex: 1 1 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
