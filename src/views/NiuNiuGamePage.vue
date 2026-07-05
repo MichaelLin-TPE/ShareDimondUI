@@ -88,6 +88,22 @@ const betsByPosition = computed<Record<number, PosBettor[]>>(() => {
 })
 const posBettors = (i: number) => betsByPosition.value[i] ?? []
 
+// ---- 近2日勝率(今天+昨天,各位置贏過莊家的比率;歷史牌面重算) ----
+interface PosStat { position: number; name: string; wins: number; total: number; winRate: number }
+interface StatsResp { fromDate: string; toDate: string; totalRounds: number; positions: PosStat[] }
+const stats = ref<StatsResp | null>(null)
+const posWinRate = computed<Record<number, PosStat>>(() => {
+  const m: Record<number, PosStat> = {}
+  for (const s of stats.value?.positions ?? []) m[s.position] = s
+  return m
+})
+async function fetchStats() {
+  try {
+    const res = await fetch(`${API}/niuniu/stats`, { headers: headers() })
+    if (res.ok) stats.value = await res.json()
+  } catch (e) { console.error(e) }
+}
+
 // ---- 下注 ----
 const minBet = computed(() => Number(config.value.betAmount || 0))
 const betAmountInput = ref<number | null>(null)
@@ -459,17 +475,19 @@ function armAutoStart() {
 // ---- WS + 心跳 ----
 let ws: StompHandle | null = null
 let heartbeat: number | undefined
+let statsTimer: number | undefined
 onMounted(async () => {
   loading.value = true
-  await loadConfig(); await fetchRound(); loadBoards(); loadChat(); loading.value = false
+  await loadConfig(); await fetchRound(); loadBoards(); loadChat(); fetchStats(); loading.value = false
   const clanId = authStore.member?.clanId
   if (clanId) ws = createReconnectingStomp(`/topic/niuniu/${clanId}`, (b) => { if (b === 'NIUNIU_UPDATED') fetchRound(); else if (b === 'NIUNIU_CHAT') loadChat() })
   tickTimer = window.setInterval(() => (nowMs.value = Date.now()), 250)
   heartbeat = window.setInterval(fetchRound, 8000)
+  statsTimer = window.setInterval(fetchStats, 60000) // 近2日勝率變動慢,60秒刷新一次
   armAutoStart()
 })
 onUnmounted(() => {
-  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (celeTimer) clearTimeout(celeTimer); if (revealAutoTimer) clearTimeout(revealAutoTimer); if (clearTimer) clearTimeout(clearTimer)
+  if (ws) ws.disconnect(); if (tickTimer) clearInterval(tickTimer); if (heartbeat) clearInterval(heartbeat); if (statsTimer) clearInterval(statsTimer); if (celeTimer) clearTimeout(celeTimer); if (revealAutoTimer) clearTimeout(revealAutoTimer); if (clearTimer) clearTimeout(clearTimer)
   stopMusic(); bgm = null
   if (ctx) { ctx.close().catch(() => {}); ctx = null }
   fetch(`${API}/niuniu/leave`, { method: 'POST', headers: headers() }).catch(() => {})
@@ -572,6 +590,9 @@ onUnmounted(() => {
           </div>
 
           <!-- 4 位置(天地玄黃):下注/結果 -->
+          <div v-if="!resultShown && (stats?.totalRounds ?? 0) > 0" class="niu-stats-cap">
+            📊 近2日戰績 {{ stats?.totalRounds }} 局 · 「勝 %」= 該位置贏過莊家的比率
+          </div>
           <div class="niu-positions">
             <div
               v-for="p in positions"
@@ -588,6 +609,9 @@ onUnmounted(() => {
             >
               <div class="niu-pos-head">
                 <span class="niu-pos-zh">{{ p.zh }}</span>
+                <span v-if="!resultShown && (posWinRate[p.index]?.total ?? 0) > 0" class="niu-pos-rate"
+                  :class="{ hot: (posWinRate[p.index]?.winRate ?? 0) >= 50 }"
+                  :title="`近2日：${posWinRate[p.index]?.wins}/${posWinRate[p.index]?.total} 局贏過莊家`">勝 {{ posWinRate[p.index]?.winRate }}%</span>
                 <span v-if="resultShown && p.cards" class="niu-pos-badge" :class="p.won ? 'w' : 'l'">{{ p.won ? '贏莊' : '輸莊' }}</span>
                 <span v-else-if="selectedPos === p.index && canSelectPos" class="niu-pos-badge sel">已選</span>
               </div>
@@ -718,8 +742,9 @@ onUnmounted(() => {
 .niu-locked-bank-info { font-size: 0.9rem; color: #cbd5e1; line-height: 1.6; }
 .niu-locked-bank-info b { color: var(--c-light); }
 .niu-online { font-size: 12px; color: #94a3b8; background: #131722; border-radius: 8px; padding: 6px 10px; }
-.niu-banker { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; font-size: 0.85rem; }
-.niu-banker-info { color: #e2e8f0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.niu-banker { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; font-size: 0.85rem; }
+.niu-banker-info { color: #e2e8f0; min-width: 0; flex: 1 1 auto; } /* 不再 nowrap/ellipsis:本金放最後,手機才不會被搶莊鈕擠掉看不到 */
+@media (max-width: 480px) { .niu-banker .niu-btn { padding: 8px 14px; font-size: 0.85rem; } }
 .niu-banker-info b { color: var(--c-light); }
 .niu-banker-info.muted { color: #94a3b8; }
 .niu-btn { flex-shrink: 0; border: none; border-radius: 10px; padding: 10px 22px; font-weight: 700; cursor: pointer; font-size: 0.95rem; line-height: 1; transition: filter .15s; }
@@ -763,6 +788,7 @@ onUnmounted(() => {
 .niu-autoopen { flex: 1 1 0; min-width: 0; height: 42px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 12px; border: 1px solid rgba(var(--c-light-rgb),.3); border-radius: 10px; background: rgba(var(--c-light-rgb),.08); font-size: 0.82rem; color: #cbd5e1; cursor: pointer; }
 .niu-autoopen input { flex: 0 0 auto; width: 16px; height: 16px; margin: 0; accent-color: var(--c-light); cursor: pointer; }
 /* 4 位置格 */
+.niu-stats-cap { font-size: 11px; color: #94a3b8; margin-bottom: 6px; text-align: center; }
 .niu-positions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .niu-pos { box-sizing: border-box; min-width: 0; display: flex; flex-direction: column; gap: 6px; text-align: left; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 10px; color: inherit; cursor: default; font: inherit; transition: border-color .15s, background .15s; }
 .niu-pos.pick { cursor: pointer; }
@@ -778,6 +804,8 @@ onUnmounted(() => {
 .niu-pos-badge.w { background: rgba(34,197,94,.2); color: #86efac; }
 .niu-pos-badge.l { background: rgba(248,113,113,.18); color: #fca5a5; }
 .niu-pos-badge.sel { background: rgba(var(--c-light-rgb),.25); color: var(--c-light); }
+.niu-pos-rate { margin-left: auto; font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,.08); color: #cbd5e1; white-space: nowrap; }
+.niu-pos-rate.hot { background: rgba(217,151,6,.2); color: #fbbf24; }
 .niu-pos-cards { display: flex; gap: 2px; }
 /* 位置格內 5 張牌縮小,避免 2 欄在窄手機上撐爆按鈕 (22×5+gap ≈ 118px,320px 也放得下) */
 .niu-pos-cards .niu-card { width: 22px; height: 31px; }
