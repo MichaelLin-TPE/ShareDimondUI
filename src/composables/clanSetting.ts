@@ -588,9 +588,13 @@ export function useAuction() {
     }
   }
 
-  // ───── 德州撲克設定 (共用抽水/彩金池,只多一個開關) ─────
+  // ───── 德州撲克設定 (共用抽水/彩金池;開關 + 盲注/買入) ─────
   const holdemEnabled = ref(false)
   const holdemSaving = ref(false)
+  const holdemSb = ref(10)
+  const holdemBb = ref(20)
+  const holdemMinBuyIn = ref(400)
+  const holdemMaxBuyIn = ref(4000)
 
   const fetchHoldemConfig = async () => {
     try {
@@ -599,6 +603,10 @@ export function useAuction() {
       if (!res.ok) return
       const d = await res.json()
       holdemEnabled.value = !!d.enabled
+      holdemSb.value = Number(d.smallBlind ?? 10)
+      holdemBb.value = Number(d.bigBlind ?? 20)
+      holdemMinBuyIn.value = Number(d.minBuyIn ?? 400)
+      holdemMaxBuyIn.value = Number(d.maxBuyIn ?? 4000)
     } catch (e) {
       console.error(e)
     }
@@ -606,13 +614,28 @@ export function useAuction() {
 
   const saveHoldemConfig = async () => {
     if (holdemSaving.value) return
+    // 前端先擋明顯不合理值(後端也會再驗一次)
+    if (holdemSb.value <= 0 || holdemBb.value <= 0 || holdemBb.value < holdemSb.value) {
+      useAlert.error('大盲需 ≥ 小盲,且都要大於 0')
+      return
+    }
+    if (holdemMinBuyIn.value <= 0 || holdemMaxBuyIn.value < holdemMinBuyIn.value) {
+      useAlert.error('最大買入不可小於最小買入')
+      return
+    }
     holdemSaving.value = true
     try {
       const ts = Math.floor(Date.now() / 1000).toString()
       const res = await fetch(`${API}/holdem/config`, {
         method: 'POST',
         headers: headers(ts),
-        body: JSON.stringify({ enabled: holdemEnabled.value }),
+        body: JSON.stringify({
+          enabled: holdemEnabled.value,
+          smallBlind: Math.floor(holdemSb.value),
+          bigBlind: Math.floor(holdemBb.value),
+          minBuyIn: Math.floor(holdemMinBuyIn.value),
+          maxBuyIn: Math.floor(holdemMaxBuyIn.value),
+        }),
       })
       const d = await res.json()
       if (!res.ok) {
@@ -620,6 +643,7 @@ export function useAuction() {
         return
       }
       useAlert.success(d.message ?? '德州撲克設定已儲存')
+      fetchHoldemConfig()
     } catch (e) {
       console.error(e)
       useAlert.error('連線失敗,請稍後再試')
@@ -665,6 +689,10 @@ export function useAuction() {
     // 德州撲克
     holdemEnabled,
     holdemSaving,
+    holdemSb,
+    holdemBb,
+    holdemMinBuyIn,
+    holdemMaxBuyIn,
     saveHoldemConfig,
     settings,
     balance,
