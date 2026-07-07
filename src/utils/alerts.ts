@@ -270,9 +270,10 @@ export const useAlert = {
     })
     return value as number | undefined
   },
-  inputDialog: async (placeholder = '請輸入內容', title = '系統輸入') => {
+  inputDialog: async (placeholder = '請輸入內容', title = '系統輸入', description = '') => {
     const { value: text } = await SwalApp.fire({
       title,
+      text: description || undefined,
       input: 'text',
       inputPlaceholder: placeholder,
       background: '#1e1e1e',

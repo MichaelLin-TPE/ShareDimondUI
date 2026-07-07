@@ -1295,8 +1295,30 @@ function isExpanded(code: string): boolean {
   display: flex !important;
   flex-direction: column !important;
   gap: 10px;
+  width: 100% !important;
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+.custom-swal-confirm,
+.custom-swal-cancel {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
 }
 .custom-swal-confirm {
   background: var(--c-mid) !important;
+}
+.custom-swal-cancel {
+  background: #475569 !important;
+}
+.custom-swal-input {
+  font-size: 15px !important;
+}
+.custom-swal-input::placeholder {
+  font-size: 13px !important;
+  color: #94a3b8 !important;
 }
 </style>

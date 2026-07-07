@@ -85,7 +85,7 @@ async function post(path: string, body?: unknown) {
 async function sit(seatNo: number) {
   const s = state.value; if (!s) return
   if (!s.enabled) { useAlert.error('本血盟尚未開放德州撲克'); return }
-  const v = await useAlert.inputDialog(`買入金額(${fmt(s.minBuyIn)} ~ ${fmt(s.maxBuyIn)},錢包 ${fmt(s.myWallet)})`, '坐下買入')
+  const v = await useAlert.inputDialog('輸入買入金額', '坐下買入', `範圍 ${fmt(s.minBuyIn)} ~ ${fmt(s.maxBuyIn)}　錢包 ${fmt(s.myWallet)}`)
   const buyIn = Math.floor(Number(v))
   if (!buyIn || buyIn <= 0) return
   if (buyIn < s.minBuyIn || buyIn > s.maxBuyIn) { useAlert.error(`買入需在 ${fmt(s.minBuyIn)} ~ ${fmt(s.maxBuyIn)} 之間`); return }
@@ -99,7 +99,7 @@ async function leaveTable() {
 }
 async function rebuy() {
   const s = state.value; if (!s) return
-  const v = await useAlert.inputDialog(`加碼金額(加碼後不超過 ${fmt(s.maxBuyIn)})`, '加碼')
+  const v = await useAlert.inputDialog('輸入加碼金額', '加碼', `加碼後不超過 ${fmt(s.maxBuyIn)}`)
   const amount = Math.floor(Number(v)); if (!amount || amount <= 0) return
   await post('/holdem/rebuy', { amount })
 }
@@ -226,32 +226,34 @@ onUnmounted(() => {
 
       <!-- 行動列 -->
       <div v-if="seated" class="hold-actions">
-        <template v-if="state.myTurn">
-          <span class="hold-actbar-timer" :class="{ urgent: actRemain <= 5 }">⏳ {{ actRemain }}s</span>
-          <button class="hold-btn fold" :disabled="busy" @click="act('FOLD')">棄牌</button>
-          <button v-if="state.canCheck" class="hold-btn check" :disabled="busy" @click="act('CHECK')">過牌</button>
-          <button v-else class="hold-btn call" :disabled="busy" @click="act('CALL')">跟注 {{ fmt(state.myToCall) }}</button>
-          <template v-if="canBetRaise">
-            <div class="hold-raise">
-              <input class="hold-raise-in" type="number" v-model.number="raiseTo" :min="state.myMinRaiseTo" :max="maxRaise" />
-              <button class="hold-size" @click="sizeHalf">½池</button>
-              <button class="hold-size" @click="sizePot">滿池</button>
-              <button class="hold-size" @click="raiseTo = maxRaise">全下</button>
-            </div>
-            <button class="hold-btn raise" :disabled="busy || !raiseValid" @click="doRaise">
-              {{ state.currentBet === 0 ? '下注' : '加注到' }} {{ fmt(raiseTo) }}
-            </button>
-          </template>
-          <button v-else class="hold-btn allin" :disabled="busy" @click="act('ALLIN')">全下 {{ fmt(state.myStack) }}</button>
-        </template>
-        <div v-else class="hold-wait">{{ waitMsg }}</div>
-        <div class="hold-mybar">
-          <button class="hold-btn ghost" :disabled="busy" @click="rebuy">加碼</button>
-          <button class="hold-btn ghost" :disabled="busy" @click="leaveTable">離桌</button>
+        <div class="hold-actbar-top">
+          <span v-if="state.myTurn" class="hold-actbar-timer" :class="{ urgent: actRemain <= 5 }">⏳ {{ actRemain }}s</span>
+          <span v-else class="hold-wait">{{ waitMsg }}</span>
+          <span class="hold-mybar">
+            <button class="hold-mini" :disabled="busy" @click="rebuy">加碼</button>
+            <button class="hold-mini" :disabled="busy" @click="leaveTable">離桌</button>
+          </span>
         </div>
+        <template v-if="state.myTurn">
+          <div v-if="canBetRaise" class="hold-raise-row">
+            <input class="hold-raise-in" type="number" v-model.number="raiseTo" :min="state.myMinRaiseTo" :max="maxRaise" />
+            <button class="hold-chip" @click="sizeHalf">½池</button>
+            <button class="hold-chip" @click="sizePot">滿池</button>
+            <button class="hold-chip" @click="raiseTo = maxRaise">全下</button>
+          </div>
+          <div class="hold-main-row">
+            <button class="hold-btn fold" :disabled="busy" @click="act('FOLD')">棄牌</button>
+            <button v-if="state.canCheck" class="hold-btn check" :disabled="busy" @click="act('CHECK')">過牌</button>
+            <button v-else class="hold-btn call" :disabled="busy" @click="act('CALL')">跟注 {{ fmt(state.myToCall) }}</button>
+            <button v-if="canBetRaise" class="hold-btn raise" :disabled="busy || !raiseValid" @click="doRaise">
+              {{ state.currentBet === 0 ? '下注' : '加注' }} {{ fmt(raiseTo) }}
+            </button>
+            <button v-else class="hold-btn allin" :disabled="busy" @click="act('ALLIN')">全下 {{ fmt(state.myStack) }}</button>
+          </div>
+        </template>
       </div>
       <div v-else class="hold-actions">
-        <div class="hold-wait">點空位坐下買入即可開玩(需 ≥2 人)</div>
+        <div class="hold-wait" style="text-align:center">點空位坐下買入即可開玩(需 ≥2 人)</div>
       </div>
 
       <details class="hold-rules">
@@ -317,18 +319,23 @@ onUnmounted(() => {
 .hold-card.back { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: rgba(255,255,255,.6); }
 .hold-card.su-s { color: #0f172a; } .hold-card.su-h { color: #e11d48; } .hold-card.su-d { color: #2563eb; } .hold-card.su-c { color: #15a34a; }
 
-/* 行動列 */
-.hold-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
-.hold-btn { border: none; border-radius: 10px; padding: 10px 16px; font-weight: 800; cursor: pointer; font-size: 14px; line-height: 1; color: #fff; }
+/* 行動列(統一高度、整齊對齊) */
+.hold-actions { display: flex; flex-direction: column; gap: 10px; background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 12px; }
+.hold-actbar-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.hold-actbar-timer { font-size: 13px; font-weight: 800; color: #cbd5e1; background: rgba(255,255,255,.06); border-radius: 999px; padding: 5px 12px; }
+.hold-actbar-timer.urgent { color: #fca5a5; background: rgba(239,68,68,.15); }
+.hold-wait { color: #94a3b8; font-size: 13px; }
+.hold-mybar { display: flex; gap: 8px; }
+.hold-mini { height: 32px; padding: 0 14px; border-radius: 8px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #cbd5e1; font-size: 13px; font-weight: 700; cursor: pointer; }
+.hold-mini:disabled { opacity: .5; cursor: not-allowed; }
+.hold-raise-row { display: flex; gap: 8px; }
+.hold-raise-in { flex: 1 1 auto; min-width: 0; height: 46px; box-sizing: border-box; background: #0b0d14; border: 1px solid rgba(255,255,255,.15); border-radius: 10px; color: #f1f5f9; padding: 0 12px; font-size: 16px; font-weight: 700; text-align: right; }
+.hold-chip { flex: 0 0 auto; height: 46px; padding: 0 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #cbd5e1; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.hold-main-row { display: flex; gap: 8px; }
+.hold-btn { flex: 1 1 0; min-width: 0; height: 50px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 15px; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0 8px; }
 .hold-btn:disabled { opacity: .5; cursor: not-allowed; }
 .hold-btn.fold { background: #475569; } .hold-btn.check { background: #2563eb; } .hold-btn.call { background: #2563eb; }
 .hold-btn.raise { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); } .hold-btn.allin { background: #dc2626; }
-.hold-btn.ghost { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: #cbd5e1; padding: 8px 12px; font-size: 12px; }
-.hold-raise { display: flex; align-items: center; gap: 4px; }
-.hold-raise-in { width: 90px; background: #0b0d14; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: #f1f5f9; padding: 8px; font-size: 14px; text-align: right; }
-.hold-size { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: #cbd5e1; border-radius: 8px; padding: 6px 8px; font-size: 11px; cursor: pointer; }
-.hold-wait { color: #94a3b8; font-size: 13px; padding: 6px; }
-.hold-mybar { display: flex; gap: 6px; margin-left: auto; }
 .hold-rules { background: #131722; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #94a3b8; margin-top: 12px; }
 .hold-rules summary { cursor: pointer; color: #cbd5e1; font-weight: 700; } .hold-rules p { line-height: 1.7; }
 </style>
