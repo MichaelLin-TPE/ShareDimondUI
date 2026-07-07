@@ -236,10 +236,13 @@ onUnmounted(() => {
         </div>
         <template v-if="state.myTurn">
           <div v-if="canBetRaise" class="hold-raise-row">
+            <span class="hold-raise-label">加注到</span>
             <input class="hold-raise-in" type="number" v-model.number="raiseTo" :min="state.myMinRaiseTo" :max="maxRaise" />
-            <button class="hold-chip" @click="sizeHalf">½池</button>
-            <button class="hold-chip" @click="sizePot">滿池</button>
-            <button class="hold-chip" @click="raiseTo = maxRaise">全下</button>
+            <div class="hold-chips">
+              <button class="hold-chip" @click="sizeHalf">½池</button>
+              <button class="hold-chip" @click="sizePot">滿池</button>
+              <button class="hold-chip" @click="raiseTo = maxRaise">全下</button>
+            </div>
           </div>
           <div class="hold-main-row">
             <button class="hold-btn fold" :disabled="busy" @click="act('FOLD')">棄牌</button>
@@ -328,9 +331,11 @@ onUnmounted(() => {
 .hold-mybar { display: flex; gap: 8px; }
 .hold-mini { height: 32px; padding: 0 14px; border-radius: 8px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: #cbd5e1; font-size: 13px; font-weight: 700; cursor: pointer; }
 .hold-mini:disabled { opacity: .5; cursor: not-allowed; }
-.hold-raise-row { display: flex; gap: 8px; }
-.hold-raise-in { flex: 1 1 auto; min-width: 0; height: 46px; box-sizing: border-box; background: #0b0d14; border: 1px solid rgba(255,255,255,.15); border-radius: 10px; color: #f1f5f9; padding: 0 12px; font-size: 16px; font-weight: 700; text-align: right; }
-.hold-chip { flex: 0 0 auto; height: 46px; padding: 0 14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #cbd5e1; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.hold-raise-row { display: flex; gap: 8px; align-items: center; }
+.hold-raise-label { flex: 0 0 auto; font-size: 13px; color: #94a3b8; }
+.hold-raise-in { flex: 1 1 auto; min-width: 60px; height: 44px; box-sizing: border-box; background: #0b0d14; border: 1px solid rgba(255,255,255,.15); border-radius: 10px; color: #f1f5f9; padding: 0 12px; font-size: 16px; font-weight: 700; text-align: right; }
+.hold-chips { flex: 0 0 auto; display: flex; gap: 6px; }
+.hold-chip { height: 44px; padding: 0 13px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #cbd5e1; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .hold-main-row { display: flex; gap: 8px; }
 .hold-btn { flex: 1 1 0; min-width: 0; height: 50px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 15px; color: #fff; display: flex; align-items: center; justify-content: center; padding: 0 8px; }
 .hold-btn:disabled { opacity: .5; cursor: not-allowed; }
