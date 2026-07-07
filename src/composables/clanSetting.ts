@@ -588,6 +588,46 @@ export function useAuction() {
     }
   }
 
+  // ───── 德州撲克設定 (共用抽水/彩金池,只多一個開關) ─────
+  const holdemEnabled = ref(false)
+  const holdemSaving = ref(false)
+
+  const fetchHoldemConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/holdem/state`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      holdemEnabled.value = !!d.enabled
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveHoldemConfig = async () => {
+    if (holdemSaving.value) return
+    holdemSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/holdem/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ enabled: holdemEnabled.value }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(d.message ?? '德州撲克設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      holdemSaving.value = false
+    }
+  }
+
   onMounted(() => {
     getBasicInfo()
     fetchBalance()
@@ -598,6 +638,7 @@ export function useAuction() {
     fetchThirteenConfig()
     fetchNiuNiuConfig()
     fetchScratchConfig()
+    fetchHoldemConfig()
   })
 
   return {
@@ -621,6 +662,10 @@ export function useAuction() {
     scratchEnabled,
     scratchSaving,
     saveScratchConfig,
+    // 德州撲克
+    holdemEnabled,
+    holdemSaving,
+    saveHoldemConfig,
     settings,
     balance,
     selectedCurrency,
