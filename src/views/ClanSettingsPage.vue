@@ -29,6 +29,10 @@ const {
   saveScratchConfig,
   holdemEnabled,
   holdemSaving,
+  holdemSb,
+  holdemBb,
+  holdemMinBuyIn,
+  holdemMaxBuyIn,
   saveHoldemConfig,
   settings,
   selectedCurrency,
@@ -490,7 +494,35 @@ const rakePercent = computed<number>({
                 {{ holdemEnabled ? '🃏 已開放' : '🚫 已關閉' }}
               </span>
             </div>
-            <p class="cs-hint">玩家從錢包買入籌碼上桌、離桌換回；盲注預設 10/20，可日後再開放調整</p>
+            <p class="cs-hint">玩家從錢包買入籌碼上桌、離桌換回；手牌進行中不能改盲注/買入</p>
+          </div>
+
+          <div class="cs-field">
+            <label>小盲注</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="holdemSb" type="number" class="cs-input" min="1" />
+            </div>
+          </div>
+          <div class="cs-field">
+            <label>大盲注</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="holdemBb" type="number" class="cs-input" min="1" />
+            </div>
+            <p class="cs-hint">大盲需 ≥ 小盲(建議 = 2 倍)</p>
+          </div>
+          <div class="cs-field">
+            <label>最小買入</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="holdemMinBuyIn" type="number" class="cs-input" min="1" />
+            </div>
+            <p class="cs-hint">建議 20~40 個大盲({{ holdemBb * 20 }} ~ {{ holdemBb * 40 }})</p>
+          </div>
+          <div class="cs-field">
+            <label>最大買入</label>
+            <div class="cs-input-wrap">
+              <input v-model.number="holdemMaxBuyIn" type="number" class="cs-input" min="1" />
+            </div>
+            <p class="cs-hint">建議 100~200 個大盲({{ holdemBb * 100 }} ~ {{ holdemBb * 200 }})</p>
           </div>
         </div>
 
