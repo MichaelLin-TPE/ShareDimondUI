@@ -27,6 +27,9 @@ const {
   scratchEnabled,
   scratchSaving,
   saveScratchConfig,
+  holdemEnabled,
+  holdemSaving,
+  saveHoldemConfig,
   settings,
   selectedCurrency,
   clanCurrencies,
@@ -458,6 +461,42 @@ const rakePercent = computed<number>({
         <div class="cs-actions">
           <button class="cs-btn-primary" :disabled="scratchSaving" @click="saveScratchConfig">
             {{ scratchSaving ? '儲存中…' : '💾 儲存刮刮樂設定' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- ─── 德州撲克設定 ─── -->
+      <section class="cs-card cs-card--full">
+        <div class="cs-card-head">
+          <span class="cs-card-icon">🃏</span>
+          <div>
+            <h3>德州撲克設定</h3>
+            <p>No-Limit 6 人現金桌，玩家互賭零和、無莊家，每手抽 1% 進彩金池(翻牌後才抽)</p>
+          </div>
+        </div>
+
+        <div class="cs-fields-2col">
+          <div class="cs-field">
+            <label>開放德州撲克</label>
+            <div
+              class="cs-toggle"
+              :class="{ active: holdemEnabled }"
+              @click="holdemEnabled = !holdemEnabled"
+            >
+              <div class="cs-toggle-track">
+                <div class="cs-toggle-handle"></div>
+              </div>
+              <span class="cs-toggle-text">
+                {{ holdemEnabled ? '🃏 已開放' : '🚫 已關閉' }}
+              </span>
+            </div>
+            <p class="cs-hint">玩家從錢包買入籌碼上桌、離桌換回；盲注預設 10/20，可日後再開放調整</p>
+          </div>
+        </div>
+
+        <div class="cs-actions">
+          <button class="cs-btn-primary" :disabled="holdemSaving" @click="saveHoldemConfig">
+            {{ holdemSaving ? '儲存中…' : '💾 儲存德州撲克設定' }}
           </button>
         </div>
       </section>
