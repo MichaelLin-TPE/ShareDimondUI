@@ -402,6 +402,6 @@ onUnmounted(() => {
 .hold-chat-msg span { color: #e2e8f0; }
 .hold-chat-input { display: flex; gap: 8px; margin-top: 8px; }
 .hold-chat-input input { flex: 1 1 auto; min-width: 0; height: 40px; box-sizing: border-box; background: #0b0d14; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: #f1f5f9; padding: 0 12px; font-size: 14px; }
-.hold-chat-input button { flex: 0 0 auto; height: 40px; padding: 0 18px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: #fff; font-weight: 800; cursor: pointer; }
+.hold-chat-input button { flex: 0 0 auto; width: auto; height: 40px; margin: 0; padding: 0 18px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: #fff; font-size: 14px; font-weight: 800; cursor: pointer; }
 .hold-chat-input button:disabled { opacity: .5; cursor: not-allowed; }
 </style>

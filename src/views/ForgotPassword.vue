@@ -73,7 +73,7 @@ TimeStamp:currentTimeStamp
   </div>
 </template>
 
-<style>
+<style scoped>
 /* ===== 錯誤 ===== */
 .error {
   margin-top: 10px;
