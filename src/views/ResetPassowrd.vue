@@ -134,7 +134,7 @@ const handleInvalidToken = () => {
   </div>
 </template>
 
-<style>
+<style scoped>
 /* ===== 錯誤 ===== */
 button:active:not(:disabled) {
   transform: translateY(0);
