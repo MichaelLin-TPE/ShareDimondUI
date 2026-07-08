@@ -22,7 +22,8 @@ interface State {
   enabled: boolean; currency: string; smallBlind: number; bigBlind: number; minBuyIn: number; maxBuyIn: number; capacity: number
   myWallet: number; poolBalance: number; mySeatNo: number | null; online: string[]
   handNo: number; handRunning: boolean; street: string | null; board: string[]; pot: number; currentBet: number
-  buttonSeat: number; actingSeat: number; actingDeadline: number | null; nextHandAt: number | null; summary: string
+  buttonSeat: number; actingSeat: number; actingDeadline: number | null; actingRemainingMs: number | null
+  nextHandAt: number | null; nextHandRemainingMs: number | null; summary: string
   myTurn: boolean; myToCall: number; myMinRaiseTo: number; myStack: number; canCheck: boolean
   seats: SeatView[]
 }
@@ -41,11 +42,10 @@ const suitClass = (c?: string) => (c ? { C: 'su-c', D: 'su-d', H: 'su-h', S: 'su
 // ---- 倒數 ----
 const nowMs = ref(Date.now())
 let tick: number | undefined
-const actRemain = computed(() => {
-  const d = state.value?.actingDeadline
-  if (!d || !state.value?.handRunning) return 0
-  return Math.max(0, Math.ceil((d - nowMs.value) / 1000))
-})
+// 用「伺服器回的剩餘毫秒 + 本機時鐘」算本機截止時間,避免前後端時鐘不同步導致倒數亂跳(只顯示3 2 1)
+const actEndsAt = ref(0)
+const nextEndsAt = ref(0)
+const actRemain = computed(() => (actEndsAt.value ? Math.max(0, Math.ceil((actEndsAt.value - nowMs.value) / 1000)) : 0))
 
 // ---- 座位排列:把自己轉到最下方 ----
 const anchor = computed(() => state.value?.mySeatNo ?? 0)
@@ -67,6 +67,9 @@ async function fetchState() {
     const rising = d.myTurn && !wasMyTurn   // 只在「剛輪到我」那一刻預設加注額,之後不覆蓋使用者輸入
     wasMyTurn = d.myTurn
     state.value = d
+    // 依伺服器剩餘毫秒重算本機截止時間(每次刷新都更新,前後端時鐘穩定)
+    actEndsAt.value = d.handRunning && d.actingRemainingMs != null ? Date.now() + d.actingRemainingMs : 0
+    nextEndsAt.value = !d.handRunning && d.nextHandRemainingMs != null ? Date.now() + d.nextHandRemainingMs : 0
     if (rising) raiseTo.value = Math.min(d.myMinRaiseTo, maxRaise.value)
   } catch (e) { console.error(e) }
 }
@@ -130,11 +133,7 @@ const canBetRaise = computed(() => {
   const s = state.value; if (!s || !s.myTurn) return false
   return maxRaise.value >= s.myMinRaiseTo // 能合法加注到至少 min-raise;否則(短碼)只剩全下,走 All-in 鈕
 })
-const nextRemain = computed(() => {
-  const n = state.value?.nextHandAt
-  if (!n || state.value?.handRunning) return 0
-  return Math.max(0, Math.ceil((n - nowMs.value) / 1000))
-})
+const nextRemain = computed(() => (nextEndsAt.value ? Math.max(0, Math.ceil((nextEndsAt.value - nowMs.value) / 1000)) : 0))
 // ---- 聊天室 ----
 interface ChatMsg { userName: string; text: string; ts: number }
 const messages = ref<ChatMsg[]>([])
