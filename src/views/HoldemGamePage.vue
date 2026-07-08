@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts'
 import { generateSignature } from '@/utils/SignTools'
@@ -20,7 +20,7 @@ interface SeatView {
 }
 interface State {
   enabled: boolean; currency: string; smallBlind: number; bigBlind: number; minBuyIn: number; maxBuyIn: number; capacity: number
-  myWallet: number; poolBalance: number; mySeatNo: number | null
+  myWallet: number; poolBalance: number; mySeatNo: number | null; online: string[]
   handNo: number; handRunning: boolean; street: string | null; board: string[]; pot: number; currentBet: number
   buttonSeat: number; actingSeat: number; actingDeadline: number | null; nextHandAt: number | null; summary: string
   myTurn: boolean; myToCall: number; myMinRaiseTo: number; myStack: number; canCheck: boolean
@@ -135,6 +135,31 @@ const nextRemain = computed(() => {
   if (!n || state.value?.handRunning) return 0
   return Math.max(0, Math.ceil((n - nowMs.value) / 1000))
 })
+// ---- 聊天室 ----
+interface ChatMsg { userName: string; text: string; ts: number }
+const messages = ref<ChatMsg[]>([])
+const chatText = ref('')
+const chatOpen = ref(true)
+const chatBox = ref<HTMLElement | null>(null)
+async function loadChat() {
+  try {
+    const res = await fetch(`${API}/holdem/chat`, { headers: headers() })
+    if (!res.ok) return
+    messages.value = await res.json()
+    nextTick(() => { if (chatBox.value) chatBox.value.scrollTop = chatBox.value.scrollHeight })
+  } catch (e) { console.error(e) }
+}
+async function sendChat() {
+  const text = chatText.value.trim()
+  if (!text) return
+  chatText.value = ''
+  try {
+    const res = await fetch(`${API}/holdem/chat`, { method: 'POST', headers: headers(), body: JSON.stringify({ text }) })
+    if (!res.ok) { const d = await res.json().catch(() => null); useAlert.error(d?.message ?? '傳送失敗'); return }
+    loadChat()
+  } catch (e) { console.error(e); useAlert.error('連線失敗') }
+}
+
 const waitMsg = computed(() => {
   const s = state.value
   if (!s) return ''
@@ -149,9 +174,10 @@ let poll: number | undefined
 onMounted(async () => {
   loading.value = true
   await fetchState()
+  loadChat()
   loading.value = false
   const clanId = authStore.member?.clanId
-  if (clanId) ws = createReconnectingStomp(`/topic/holdem/${clanId}`, (b) => { if (b === 'HOLDEM_UPDATED') fetchState() })
+  if (clanId) ws = createReconnectingStomp(`/topic/holdem/${clanId}`, (b) => { if (b === 'HOLDEM_UPDATED') fetchState(); else if (b === 'HOLDEM_CHAT') loadChat() })
   tick = window.setInterval(() => (nowMs.value = Date.now()), 250)
   poll = window.setInterval(() => { if (!document.hidden || seated.value) fetchState() }, 3000) // 在座就持續心跳(免被當離線換回錢包);純觀戰且分頁隱藏才停
 })
@@ -180,6 +206,11 @@ onUnmounted(() => {
         <span v-else>· 等待玩家…(≥2 人自動開局)</span>
       </div>
 
+      <div v-if="(state.online?.length ?? 0) > 0" class="hold-online">
+        🟢 在房間 {{ state.online.length }} 人：
+        <span v-for="(n, i) in state.online" :key="i" class="hold-online-name">{{ n }}</span>
+      </div>
+
       <!-- 牌桌 -->
       <div class="hold-felt">
         <div class="hold-center">
@@ -200,7 +231,7 @@ onUnmounted(() => {
           <template v-if="s.occupied">
             <div class="hold-seat-cards">
               <template v-if="s.hole && s.hole.length">
-                <span v-for="(c, i) in s.hole" :key="i" class="hold-card xs" :class="suitClass(c)"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
+                <span v-for="(c, i) in s.hole" :key="i" class="hold-card" :class="[suitClass(c), s.me ? 'mine' : 'xs']"><span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span></span>
               </template>
               <template v-else-if="s.inHand && !s.folded">
                 <span class="hold-card xs back">🂠</span><span class="hold-card xs back">🂠</span>
@@ -258,10 +289,25 @@ onUnmounted(() => {
         <div class="hold-wait" style="text-align:center">點空位坐下買入即可開玩(需 ≥2 人)</div>
       </div>
 
+      <!-- 賭桌聊天 -->
+      <div class="hold-chat">
+        <button class="hold-chat-toggle" @click="chatOpen = !chatOpen">💬 賭桌聊天 <span>{{ chatOpen ? '▲' : '▼' }}</span></button>
+        <div v-if="chatOpen" class="hold-chat-body">
+          <div ref="chatBox" class="hold-chat-msgs">
+            <div v-if="!messages.length" class="hold-chat-empty">還沒有人說話,來聊兩句 💬</div>
+            <div v-for="(m, i) in messages" :key="i" class="hold-chat-msg"><b>{{ m.userName }}</b><span>{{ m.text }}</span></div>
+          </div>
+          <div class="hold-chat-input">
+            <input v-model="chatText" maxlength="100" placeholder="說點什麼…(Enter 送出)" @keyup.enter="sendChat" />
+            <button :disabled="!chatText.trim()" @click="sendChat">送出</button>
+          </div>
+        </div>
+      </div>
+
       <details class="hold-rules">
         <summary>📜 玩法</summary>
         <p>每人 2 張底牌 + 5 張公共牌,湊最強 5 張比大小。四輪下注(翻牌前/翻牌/轉牌/河牌),可棄牌/過牌/跟注/加注/全下。玩家互賭、無莊家,系統每手抽 1% 進彩金池(翻牌後才抽)。</p>
-        <p>從錢包買入籌碼上桌,離桌把剩餘籌碼換回錢包。行動有限時,逾時自動過牌或棄牌。</p>
+        <p>從錢包買入籌碼上桌,離桌把剩餘籌碼換回錢包。行動有限時,逾時自動過牌或棄牌。每手結算會公布所有人的底牌。</p>
       </details>
     </template>
   </div>
@@ -278,6 +324,8 @@ onUnmounted(() => {
 .hold-empty { text-align: center; color: #94a3b8; padding: 40px 12px; background: #131722; border-radius: 12px; line-height: 1.8; }
 .hold-info { text-align: center; font-size: 12px; color: #cbd5e1; margin-bottom: 8px; }
 .hold-info span { margin: 0 3px; }
+.hold-online { text-align: center; font-size: 12px; color: #94a3b8; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+.hold-online-name { background: rgba(255,255,255,.06); border-radius: 999px; padding: 2px 9px; color: #cbd5e1; }
 
 /* 牌桌 */
 .hold-felt { position: relative; width: 100%; aspect-ratio: 16 / 11; max-height: 560px; margin: 0 auto 14px;
@@ -317,6 +365,7 @@ onUnmounted(() => {
 .hold-card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; border-radius: 5px; font-weight: 800; line-height: 1; }
 .hold-card.sm { width: 34px; height: 48px; } .hold-card.sm .r { font-size: 15px; } .hold-card.sm .s { font-size: 15px; }
 .hold-card.xs { width: 24px; height: 34px; } .hold-card.xs .r { font-size: 11px; } .hold-card.xs .s { font-size: 11px; }
+.hold-card.mine { width: 46px; height: 64px; border-radius: 7px; box-shadow: 0 3px 10px rgba(0,0,0,.5); } .hold-card.mine .r { font-size: 20px; } .hold-card.mine .s { font-size: 20px; }
 .hold-card.slot { background: rgba(255,255,255,.06); border: 1px dashed rgba(255,255,255,.15); }
 .hold-card.back { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: rgba(255,255,255,.6); }
 .hold-card.su-s { color: #0f172a; } .hold-card.su-h { color: #e11d48; } .hold-card.su-d { color: #2563eb; } .hold-card.su-c { color: #15a34a; }
@@ -342,4 +391,17 @@ onUnmounted(() => {
 .hold-btn.raise { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); } .hold-btn.allin { background: #dc2626; }
 .hold-rules { background: #131722; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #94a3b8; margin-top: 12px; }
 .hold-rules summary { cursor: pointer; color: #cbd5e1; font-weight: 700; } .hold-rules p { line-height: 1.7; }
+/* 聊天室 */
+.hold-chat { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; margin-top: 12px; overflow: hidden; }
+.hold-chat-toggle { width: 100%; background: transparent; border: none; color: #cbd5e1; font-weight: 700; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
+.hold-chat-body { padding: 0 10px 10px; }
+.hold-chat-msgs { height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #0b0d14; border-radius: 8px; }
+.hold-chat-empty { color: #64748b; font-size: 12px; text-align: center; margin: auto; }
+.hold-chat-msg { font-size: 13px; line-height: 1.4; word-break: break-word; }
+.hold-chat-msg b { color: var(--c-light); margin-right: 6px; }
+.hold-chat-msg span { color: #e2e8f0; }
+.hold-chat-input { display: flex; gap: 8px; margin-top: 8px; }
+.hold-chat-input input { flex: 1 1 auto; min-width: 0; height: 40px; box-sizing: border-box; background: #0b0d14; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: #f1f5f9; padding: 0 12px; font-size: 14px; }
+.hold-chat-input button { flex: 0 0 auto; height: 40px; padding: 0 18px; border: none; border-radius: 8px; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: #fff; font-weight: 800; cursor: pointer; }
+.hold-chat-input button:disabled { opacity: .5; cursor: not-allowed; }
 </style>
