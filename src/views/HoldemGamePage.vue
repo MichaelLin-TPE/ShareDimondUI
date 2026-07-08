@@ -362,7 +362,7 @@ onUnmounted(() => {
 
 /* 卡牌 */
 .hold-card { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; border-radius: 5px; font-weight: 800; line-height: 1; }
-.hold-card.sm { width: 34px; height: 48px; } .hold-card.sm .r { font-size: 15px; } .hold-card.sm .s { font-size: 15px; }
+.hold-card.sm { width: 44px; height: 62px; border-radius: 7px; } .hold-card.sm .r { font-size: 20px; } .hold-card.sm .s { font-size: 20px; }
 .hold-card.xs { width: 24px; height: 34px; } .hold-card.xs .r { font-size: 11px; } .hold-card.xs .s { font-size: 11px; }
 .hold-card.mine { width: 46px; height: 64px; border-radius: 7px; box-shadow: 0 3px 10px rgba(0,0,0,.5); } .hold-card.mine .r { font-size: 20px; } .hold-card.mine .s { font-size: 20px; }
 .hold-card.slot { background: rgba(255,255,255,.06); border: 1px dashed rgba(255,255,255,.15); }
