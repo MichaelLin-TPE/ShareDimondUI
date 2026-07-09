@@ -69,7 +69,8 @@ async function fetchState() {
     state.value = d
     // 依伺服器剩餘毫秒重算本機截止時間(每次刷新都更新,前後端時鐘穩定)
     actEndsAt.value = d.handRunning && d.actingRemainingMs != null ? Date.now() + d.actingRemainingMs : 0
-    nextEndsAt.value = !d.handRunning && d.nextHandRemainingMs != null ? Date.now() + d.nextHandRemainingMs : 0
+    // 只有真的還在倒數(>500ms)才顯示「下一手」;idle 時後端送 0,別讓它每次輪詢閃一下 1s 造成抖動
+    nextEndsAt.value = !d.handRunning && d.nextHandRemainingMs != null && d.nextHandRemainingMs > 500 ? Date.now() + d.nextHandRemainingMs : 0
     if (rising) raiseTo.value = Math.min(d.myMinRaiseTo, maxRaise.value)
   } catch (e) { console.error(e) }
 }
