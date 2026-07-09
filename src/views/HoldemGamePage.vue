@@ -169,6 +169,46 @@ const waitMsg = computed(() => {
 
 // ---- 生命週期 ----
 let ws: StompHandle | null = null
+// ---- 背景音樂 ----
+const bgmOn = ref(localStorage.getItem('holdem_bgm') !== 'off')
+const savedVol = Number(localStorage.getItem('holdem_vol'))
+const bgmVolume = ref(Number.isFinite(savedVol) && savedVol >= 0 && savedVol <= 1 ? savedVol : 0.35)
+let bgm: HTMLAudioElement | null = null
+function startMusic() {
+  if (bgm) { void bgm.play().catch(() => {}); return }
+  bgm = new Audio('/holdem-bgm.mp3')
+  bgm.loop = true
+  bgm.preload = 'auto'
+  bgm.volume = bgmVolume.value
+  void bgm.play().catch(() => {})
+}
+function stopMusic() { if (bgm) { try { bgm.pause(); bgm.currentTime = 0 } catch { /* ignore */ } } }
+function setBgmVolume(v: number | string) {
+  const vol = Math.min(1, Math.max(0, Number(v) || 0))
+  bgmVolume.value = vol
+  localStorage.setItem('holdem_vol', String(vol))
+  if (bgm) bgm.volume = vol
+}
+function toggleBgm() {
+  bgmOn.value = !bgmOn.value
+  localStorage.setItem('holdem_bgm', bgmOn.value ? 'on' : 'off')
+  if (bgmOn.value) startMusic(); else stopMusic()
+}
+// 瀏覽器擋自動播放:先試著直接播,失敗就在第一次點擊/按鍵時補播
+let armed = false
+function armAutoStart() {
+  if (bgmOn.value) startMusic()
+  if (armed) return
+  armed = true
+  const handler = () => {
+    if (bgmOn.value) startMusic()
+    window.removeEventListener('pointerdown', handler)
+    window.removeEventListener('keydown', handler)
+  }
+  window.addEventListener('pointerdown', handler)
+  window.addEventListener('keydown', handler)
+}
+
 let poll: number | undefined
 onMounted(async () => {
   loading.value = true
@@ -179,16 +219,23 @@ onMounted(async () => {
   if (clanId) ws = createReconnectingStomp(`/topic/holdem/${clanId}`, (b) => { if (b === 'HOLDEM_UPDATED') fetchState(); else if (b === 'HOLDEM_CHAT') loadChat() })
   tick = window.setInterval(() => (nowMs.value = Date.now()), 250)
   poll = window.setInterval(() => { if (!document.hidden || seated.value) fetchState() }, 3000) // 在座就持續心跳(免被當離線換回錢包);純觀戰且分頁隱藏才停
+  armAutoStart()
 })
 onUnmounted(() => {
   if (ws) ws.disconnect(); if (tick) clearInterval(tick); if (poll) clearInterval(poll)
+  stopMusic(); bgm = null
 })
 </script>
 
 <template>
   <div class="hold-page">
     <div class="hold-head">
-      <div class="hold-title">🃏 德州撲克 <span class="hold-sub">No-Limit · 6 人現金桌</span></div>
+      <div class="hold-title">🃏 德州撲克 <span class="hold-sub">No-Limit · 6 人現金桌</span>
+        <span class="hold-audioctrl">
+          <button class="hold-audio" :class="{ off: !bgmOn }" :title="bgmOn ? '關背景音樂' : '開背景音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
+          <input v-if="bgmOn" class="hold-vol" type="range" min="0" max="1" step="0.05" :value="bgmVolume" @input="setBgmVolume(($event.target as HTMLInputElement).value)" />
+        </span>
+      </div>
       <div class="hold-stats">
         <div class="hold-stat"><span>彩金池</span><b>{{ state?.currency }} {{ fmt(state?.poolBalance) }}</b></div>
         <div class="hold-stat"><span>錢包</span><b>{{ state?.currency }} {{ fmt(state?.myWallet) }}</b></div>
@@ -317,6 +364,10 @@ onUnmounted(() => {
 .hold-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .hold-title { font-size: 18px; font-weight: 900; color: var(--c-light); }
 .hold-sub { font-size: 12px; color: #94a3b8; font-weight: 600; margin-left: 6px; }
+.hold-audioctrl { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; vertical-align: middle; }
+.hold-audio { background: rgba(var(--c-light-rgb), .12); border: 1px solid rgba(var(--c-light-rgb), .3); border-radius: 8px; width: 34px; height: 30px; cursor: pointer; font-size: 15px; padding: 0; }
+.hold-audio.off { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); opacity: .6; }
+.hold-vol { width: 70px; accent-color: var(--c-light); cursor: pointer; }
 .hold-stats { display: flex; gap: 8px; }
 .hold-stat { background: #131722; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 6px 12px; text-align: right; }
 .hold-stat span { display: block; font-size: 10px; color: #94a3b8; } .hold-stat b { font-size: 14px; color: var(--c-light); }
