@@ -30,6 +30,7 @@ import AuditLogPage from '@/views/AuditLogPage.vue'
 import FaqAssistantPage from '@/views/FaqAssistantPage.vue'
 import SlotMachinePage from '@/views/SlotMachinePage.vue'
 import DiceGamePage from '@/views/DiceGamePage.vue'
+import RouletteGamePage from '@/views/RouletteGamePage.vue'
 import ThirteenGamePage from '@/views/ThirteenGamePage.vue'
 import NiuNiuGamePage from '@/views/NiuNiuGamePage.vue'
 import ScratchGamePage from '@/views/ScratchGamePage.vue'
@@ -200,6 +201,10 @@ const router = createRouter({
         {
           path: 'dice',
           component: DiceGamePage,
+        },
+        {
+          path: 'roulette',
+          component: RouletteGamePage,
         },
         {
           path: 'thirteen',

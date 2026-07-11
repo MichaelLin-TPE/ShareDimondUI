@@ -439,6 +439,32 @@ async function loadBoards() {
   } catch (e) { console.error(e) }
 }
 
+// ---- 最近 10 局全員攤牌(透明化戰績彈窗) ----
+interface RecentPlayer {
+  userName: string
+  front: string[]; middle: string[]; back: string[]
+  foul: boolean
+  special?: string | null; specialZh?: string | null
+  netUnits: number; settleAmount: number; poolWin: number
+}
+interface RecentRound {
+  roundId: number; settledAt: string; baseBet: number; goldenRank?: number | null
+  serverSeed?: string | null; nonce?: number
+  players: RecentPlayer[]
+}
+const recentOpen = ref(false)
+const recentLoading = ref(false)
+const recentRounds = ref<RecentRound[]>([])
+async function openRecent() {
+  recentOpen.value = true
+  recentLoading.value = true
+  try {
+    const res = await fetch(`${API}/thirteen/recent-rounds?limit=10`, { headers: headers() })
+    if (res.ok) recentRounds.value = await res.json()
+    else recentRounds.value = []
+  } catch (e) { console.error(e); recentRounds.value = [] } finally { recentLoading.value = false }
+}
+
 // ---- 尊榮中獎動畫 ----
 const celebrate = ref<{ type: string; text: string } | null>(null)
 let celeTimer: number | undefined
@@ -623,6 +649,56 @@ onUnmounted(() => {
       </div>
     </transition>
 
+    <!-- 最近 10 局全員攤牌(透明化戰績) -->
+    <transition name="t13-cele">
+      <div v-if="recentOpen" class="t13-recent-mask" @click.self="recentOpen = false">
+        <div class="t13-recent">
+          <div class="t13-recent-head">
+            <span>📜 最近 10 局戰績 · 全員攤牌</span>
+            <button class="t13-recent-x" @click="recentOpen = false" aria-label="關閉">✕</button>
+          </div>
+          <div class="t13-recent-body">
+            <div v-if="recentLoading" class="t13-recent-empty">載入中…</div>
+            <div v-else-if="!recentRounds.length" class="t13-recent-empty">目前還沒有已結算的對局</div>
+            <div v-else v-for="(rd, i) in recentRounds" :key="rd.roundId" class="t13-recent-round">
+              <div class="t13-recent-rhead">
+                <span class="t13-recent-no">最近第 {{ i + 1 }} 局</span>
+                <span class="t13-recent-time">{{ rd.settledAt }}</span>
+                <span class="t13-recent-bet">底注 {{ fmt(rd.baseBet) }}</span>
+              </div>
+              <div
+                v-for="p in rd.players"
+                :key="p.userName"
+                class="t13-recent-player"
+                :class="{ win: p.netUnits > 0, lose: p.netUnits < 0 || p.foul }"
+              >
+                <div class="t13-recent-pinfo">
+                  <span class="t13-recent-name">{{ p.userName }}</span>
+                  <span class="t13-recent-net" :class="p.netUnits > 0 ? 'up' : p.netUnits < 0 ? 'down' : ''">
+                    {{ p.foul ? '倒水' : (p.netUnits > 0 ? '+' + p.netUnits + ' 水' : p.netUnits + ' 水') }}
+                  </span>
+                  <span v-if="p.specialZh" class="t13-recent-sp">🀄 {{ p.specialZh }}</span>
+                  <span v-if="(p.poolWin ?? 0) > 0" class="t13-recent-sp pool">彩金池 +{{ fmt(p.poolWin) }}</span>
+                </div>
+                <div class="t13-recent-rows">
+                  <div v-for="(row, ri) in [p.front, p.middle, p.back]" :key="ri" class="t13-recent-row">
+                    <span class="rl">{{ ri === 0 ? '頭' : ri === 1 ? '中' : '尾' }}</span>
+                    <button v-for="c in displayHand(row ?? [])" :key="c" class="t13-card sm" :class="cardCls(c)" disabled>
+                      <span class="r">{{ rankLabel(c) }}</span><span class="s">{{ suitSym(c) }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div v-if="rd.serverSeed" class="t13-recent-fair">
+                🔒 可驗證 · serverSeed {{ rd.serverSeed.slice(0, 16) }}… · nonce {{ rd.nonce }}
+              </div>
+            </div>
+          </div>
+          <button class="t13-btn ghost t13-recent-close" @click="recentOpen = false">關閉</button>
+        </div>
+      </div>
+    </transition>
+
     <div class="t13-page">
       <!-- 頁首 -->
       <div class="t13-head">
@@ -640,6 +716,7 @@ onUnmounted(() => {
             />
             <button class="t13-audio-btn" :class="{ off: !audio.sfxOn.value }" @click="audio.toggleSfx()" :title="audio.sfxOn.value ? '關音效' : '開音效'">{{ audio.sfxOn.value ? '🔊' : '🔈' }}</button>
           </span>
+          <button class="t13-hist-btn" @click="openRecent" title="最近 10 局全員攤牌，公開透明可回看">📜 近10局戰績</button>
         </div>
         <div class="t13-stats">
           <div class="t13-stat"><span>彩金池</span><b>{{ config.currency }} {{ fmt(state?.poolBalance) }}</b></div>
@@ -1277,5 +1354,46 @@ onUnmounted(() => {
 .t13-suggest-row { display: flex; align-items: center; gap: 4px; margin-bottom: 5px; }
 .t13-suggest-row .rl { font-size: 11px; color: #94a3b8; width: 16px; flex: 0 0 auto; }
 .t13-suggest-row .ty { font-size: 12px; color: var(--c-light); margin-left: 6px; white-space: nowrap; }
+
+/* ===== 近10局戰績(透明化)按鈕 + 彈窗 ===== */
+.t13-hist-btn {
+  width: auto; margin: 0; margin-left: 8px; padding: 5px 11px;
+  background: rgba(var(--c-light-rgb), .12); border: 1px solid rgba(var(--c-light-rgb), .3);
+  border-radius: 8px; color: var(--c-light); font-weight: 700; font-size: 13px; cursor: pointer;
+  white-space: nowrap; line-height: 1.2;
+}
+.t13-hist-btn:hover { background: rgba(var(--c-light-rgb), .2); }
+.t13-recent-mask { position: fixed; inset: 0; z-index: 9998; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.75); padding: 14px; }
+.t13-recent { background: #1b2030; border: 1px solid rgba(var(--c-light-rgb),.4); border-radius: 16px;
+  width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.t13-recent-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08); font-weight: 800; font-size: 15px; color: #fff; }
+.t13-recent-x { width: 30px; height: 30px; margin: 0; padding: 0; flex: 0 0 auto; border: none; border-radius: 8px;
+  background: rgba(255,255,255,.08); color: #cbd5e1; font-size: 15px; cursor: pointer; }
+.t13-recent-body { overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; }
+.t13-recent-empty { text-align: center; color: #94a3b8; padding: 28px 0; font-size: 14px; }
+.t13-recent-round { border: 1px solid rgba(255,255,255,.09); border-radius: 12px; padding: 10px; background: rgba(255,255,255,.02); }
+.t13-recent-rhead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; color: #94a3b8; }
+.t13-recent-no { color: var(--c-light); font-weight: 700; }
+.t13-recent-bet { margin-left: auto; }
+.t13-recent-player { border-radius: 9px; padding: 7px 8px; margin-bottom: 6px; background: rgba(255,255,255,.03);
+  border-left: 3px solid transparent; }
+.t13-recent-player.win { border-left-color: #22c55e; background: rgba(34,197,94,.08); }
+.t13-recent-player.lose { border-left-color: #ef4444; background: rgba(239,68,68,.07); }
+.t13-recent-pinfo { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.t13-recent-name { font-weight: 800; color: #e2e8f0; font-size: 14px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t13-recent-net { font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; color: #94a3b8; }
+.t13-recent-net.up { color: #4ade80; }
+.t13-recent-net.down { color: #f87171; }
+.t13-recent-sp { font-size: 11px; font-weight: 700; color: var(--c-light); background: rgba(var(--c-light-rgb),.15); border-radius: 6px; padding: 1px 7px; }
+.t13-recent-sp.pool { color: #fbbf24; background: rgba(251,191,36,.15); }
+.t13-recent-rows { display: flex; flex-direction: column; gap: 4px; }
+.t13-recent-row { display: flex; align-items: center; gap: 3px; flex-wrap: wrap; }
+.t13-recent-row .rl { font-size: 11px; color: #64748b; width: 16px; flex: 0 0 auto; }
+.t13-recent .t13-card.sm { width: 33px; height: 45px; }
+.t13-recent .t13-card.sm .r { font-size: 13px; }
+.t13-recent .t13-card.sm .s { font-size: 15px; }
+.t13-recent-fair { margin-top: 6px; font-size: 10px; color: #64748b; word-break: break-all; line-height: 1.5; }
+.t13-recent-close { margin: 10px 14px 14px; }
 .t13-suggest-opt .t13-btn.primary { width: 100%; margin-top: 8px; padding: 10px; }
 </style>
