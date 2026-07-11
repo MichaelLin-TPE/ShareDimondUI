@@ -468,6 +468,46 @@ export function useAuction() {
     }
   }
 
+  // ───── 輪盤設定 (共用拉霸的 betAmount/rake/maxPayout,只多一個開關) ─────
+  const rouletteEnabled = ref(false)
+  const rouletteSaving = ref(false)
+
+  const fetchRouletteConfig = async () => {
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/roulette/config`, { headers: headers(ts) })
+      if (!res.ok) return
+      const d = await res.json()
+      rouletteEnabled.value = !!d.enabled
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const saveRouletteConfig = async () => {
+    if (rouletteSaving.value) return
+    rouletteSaving.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/roulette/config`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ enabled: rouletteEnabled.value }),
+      })
+      const d = await res.json()
+      if (!res.ok) {
+        useAlert.error(d.message ?? '儲存失敗')
+        return
+      }
+      useAlert.success(d.message ?? '輪盤設定已儲存')
+    } catch (e) {
+      console.error(e)
+      useAlert.error('連線失敗,請稍後再試')
+    } finally {
+      rouletteSaving.value = false
+    }
+  }
+
   // ───── 十三支設定 (共用底注/抽水/彩金池,只多一個開關) ─────
   const thirteenEnabled = ref(false)
   const thirteenSaving = ref(false)
@@ -659,6 +699,7 @@ export function useAuction() {
     fetchDiscordWebhook()
     fetchSlotConfig()
     fetchDiceConfig()
+    fetchRouletteConfig()
     fetchThirteenConfig()
     fetchNiuNiuConfig()
     fetchScratchConfig()
@@ -674,6 +715,10 @@ export function useAuction() {
     diceEnabled,
     diceSaving,
     saveDiceConfig,
+    // 輪盤
+    rouletteEnabled,
+    rouletteSaving,
+    saveRouletteConfig,
     // 十三支
     thirteenEnabled,
     thirteenSaving,
