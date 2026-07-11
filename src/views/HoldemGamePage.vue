@@ -391,9 +391,12 @@ onUnmounted(() => {
 .hold-actbar-timer.urgent { color: #fca5a5; background: rgba(239,68,68,.15); }
 
 /* 座位 */
-.hold-seat { position: absolute; width: 120px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.hold-seat.d0 { left: 50%; top: 87%; } .hold-seat.d1 { left: 11%; top: 78%; } .hold-seat.d2 { left: 6%; top: 36%; }
-.hold-seat.d3 { left: 50%; top: 12%; } .hold-seat.d4 { left: 94%; top: 36%; } .hold-seat.d5 { left: 89%; top: 78%; }
+.hold-seat { position: absolute; width: 104px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+/* 8 座環繞:d0 = 自己(最下),順時針一圈(mockup 實測不重疊、不出界) */
+.hold-seat.d0 { left: 50%; top: 90%; } .hold-seat.d1 { left: 20%; top: 84%; }
+.hold-seat.d2 { left: 9%;  top: 52%; } .hold-seat.d3 { left: 22%; top: 14%; }
+.hold-seat.d4 { left: 50%; top: 13%; } .hold-seat.d5 { left: 78%; top: 14%; }
+.hold-seat.d6 { left: 91%; top: 52%; } .hold-seat.d7 { left: 80%; top: 84%; }
 .hold-seat-cards { display: flex; gap: 3px; min-height: 30px; }
 .hold-seat-body { background: rgba(11,13,20,.85); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; padding: 5px 10px; text-align: center; min-width: 92px; }
 .hold-seat.acting .hold-seat-body { border-color: #fbbf24; box-shadow: 0 0 12px rgba(251,191,36,.6); }

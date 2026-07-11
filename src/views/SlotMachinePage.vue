@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useBalanceStore } from '@/stores/balanceTool'
 import { useAlert } from '@/utils/alerts'
@@ -499,13 +499,58 @@ function stopAuto() {
   autoStop = true
 }
 
-onMounted(loadAll)
+// ---- 背景音樂 ----
+const bgmOn = ref(localStorage.getItem('slot_bgm') !== 'off')
+const savedVol = Number(localStorage.getItem('slot_vol'))
+const bgmVolume = ref(Number.isFinite(savedVol) && savedVol >= 0 && savedVol <= 1 ? savedVol : 0.35)
+let bgm: HTMLAudioElement | null = null
+function startMusic() {
+  if (bgm) { void bgm.play().catch(() => {}); return }
+  bgm = new Audio('/slot-bgm.mp3')
+  bgm.loop = true
+  bgm.preload = 'auto'
+  bgm.volume = bgmVolume.value
+  void bgm.play().catch(() => {})
+}
+function stopMusic() { if (bgm) { try { bgm.pause(); bgm.currentTime = 0 } catch { /* ignore */ } } }
+function setBgmVolume(v: number | string) {
+  const vol = Math.min(1, Math.max(0, Number(v) || 0))
+  bgmVolume.value = vol
+  localStorage.setItem('slot_vol', String(vol))
+  if (bgm) bgm.volume = vol
+}
+function toggleBgm() {
+  bgmOn.value = !bgmOn.value
+  localStorage.setItem('slot_bgm', bgmOn.value ? 'on' : 'off')
+  if (bgmOn.value) startMusic(); else stopMusic()
+}
+let armed = false
+function armAutoStart() {
+  if (bgmOn.value) startMusic()
+  if (armed) return
+  armed = true
+  const handler = () => {
+    if (bgmOn.value) startMusic()
+    window.removeEventListener('pointerdown', handler)
+    window.removeEventListener('keydown', handler)
+  }
+  window.addEventListener('pointerdown', handler)
+  window.addEventListener('keydown', handler)
+}
+
+onMounted(() => { loadAll(); armAutoStart() })
+onUnmounted(() => { stopMusic(); bgm = null })
 </script>
 
 <template>
   <div class="slot-container">
     <div class="title-wrap">
-      <h2 class="title">🎰 拉霸機</h2>
+      <h2 class="title">🎰 拉霸機
+        <span class="slot-audioctrl">
+          <button class="slot-audio" :class="{ off: !bgmOn }" :title="bgmOn ? '關背景音樂' : '開背景音樂'" @click="toggleBgm">{{ bgmOn ? '🎵' : '🔇' }}</button>
+          <input v-if="bgmOn" class="slot-vol" type="range" min="0" max="1" step="0.05" :value="bgmVolume" @input="setBgmVolume(($event.target as HTMLInputElement).value)" />
+        </span>
+      </h2>
       <p class="subtitle">用 {{ config.currency || '基準幣' }} 試手氣 · 玩家當莊，你跟莊家對賭</p>
     </div>
 
@@ -800,6 +845,10 @@ onMounted(loadAll)
   color: var(--c-light);
   text-shadow: 0 0 6px rgba(var(--c-light-rgb), 0.45), 0 0 16px rgba(var(--c-deep-rgb), 0.35);
 }
+.slot-audioctrl { display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; vertical-align: middle; }
+.slot-audio { background: rgba(var(--c-light-rgb), .12); border: 1px solid rgba(var(--c-light-rgb), .3); border-radius: 8px; width: 34px; height: 30px; cursor: pointer; font-size: 15px; padding: 0; }
+.slot-audio.off { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); opacity: .6; }
+.slot-vol { width: 70px; accent-color: var(--c-light); cursor: pointer; vertical-align: middle; }
 .subtitle {
   margin: 0;
   font-size: 0.85rem;
