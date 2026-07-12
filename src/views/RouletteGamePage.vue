@@ -151,6 +151,8 @@ const ballRotation = ref(0)
 const spinning = ref(false)
 let lastSettledRoundId = -1
 const liveResultRoundId = ref<number | null>(null)
+// 開獎揭曉快照:結算當下把結果+下注拍下來,揭曉期間都用它顯示,不怕 state 被下一局覆蓋
+const resultSnap = ref<{ pocket: number; color: string | null; bets: BetView[] } | null>(null)
 let initialized = false
 let resultClearTimer: number | undefined
 let spinTimer: number | undefined
@@ -303,7 +305,7 @@ function closeCelebration() {
   if (celebration.value) celebration.value.show = false
 }
 function showMyResult() {
-  const myBets = (state.value?.bets ?? []).filter((b) => b.mine && b.settled)
+  const myBets = (resultSnap.value?.bets ?? state.value?.bets ?? []).filter((b) => b.mine && b.settled)
   if (!myBets.length) return
   const ret = myBets.reduce((s, b) => s + Number(b.payout || 0), 0)
   const stake = myBets.reduce((s, b) => s + Number(b.amount || 0), 0)
@@ -319,7 +321,13 @@ function showMyResult() {
     vibrate([0, 130])
     closeMs = 1800
   } else {
-    return
+    // 打平(例如紅黑對押):有中的注就給個回本提示,別靜悄悄
+    if (myBets.some((b) => b.win)) {
+      celebration.value = { show: true, tier: 'win', amount: 0, title: '回本～對押打平' }
+      playWin()
+    } else {
+      return
+    }
   }
   if (celeTimer) clearTimeout(celeTimer)
   celeTimer = window.setTimeout(closeCelebration, closeMs)
@@ -409,10 +417,10 @@ const bankerIsMe = computed(
 const hasBanker = computed(() => !!state.value?.bankerName)
 
 const phase = computed<'betting' | 'result' | 'waiting'>(() => {
+  if (liveResultRoundId.value != null) return 'result' // 揭曉期間固定 result,不受下一局覆蓋 state 影響
   const s = state.value
   if (!s) return 'waiting'
   if (s.status === 'BETTING') return 'betting'
-  if (s.status === 'SETTLED' && s.roundId != null && s.roundId === liveResultRoundId.value) return 'result'
   return 'waiting'
 })
 const revealLocked = computed(() => spinning.value || phase.value === 'result')
@@ -455,7 +463,7 @@ function cantBetReason(): string {
 // 同一人 + 同玩法 + 同注碼疊加成一筆
 const aggregatedBets = computed<(BetView & { key: string })[]>(() => {
   const map = new Map<string, BetView & { key: string }>()
-  for (const b of state.value?.bets ?? []) {
+  for (const b of resultSnap.value?.bets ?? state.value?.bets ?? []) {
     const key = `${b.memberId}|${b.betType}|${b.pick}`
     const ex = map.get(key)
     if (ex) {
@@ -471,7 +479,9 @@ const aggregatedBets = computed<(BetView & { key: string })[]>(() => {
 })
 
 // 顯示結果
-const resultPocketShown = computed(() => (phase.value === 'result' ? state.value?.resultPocket ?? null : null))
+const resultPocketShown = computed(() =>
+  phase.value === 'result' ? resultSnap.value?.pocket ?? state.value?.resultPocket ?? null : null,
+)
 const resultColorZh = (c: string | null | undefined) =>
   c === 'red' ? '紅' : c === 'black' ? '黑' : c === 'green' ? '綠' : ''
 
@@ -595,9 +605,12 @@ async function fetchRound() {
     ) {
       lastSettledRoundId = d.roundId
       liveResultRoundId.value = d.roundId
+      // 拍下這局結果+下注,揭曉/中獎提示都用快照,不怕接下來 state 換成下一局
+      resultSnap.value = { pocket: d.resultPocket, color: d.resultColor ?? null, bets: (d.bets ?? []).map((b) => ({ ...b })) }
       if (resultClearTimer) clearTimeout(resultClearTimer)
       resultClearTimer = window.setTimeout(() => {
         liveResultRoundId.value = null
+        resultSnap.value = null
       }, 7000)
       void animateSpin(d.resultPocket)
       loadBoards()
@@ -896,7 +909,7 @@ onUnmounted(() => {
         <div v-if="phase === 'result' && !spinning && resultPocketShown != null" class="rl-result-row">
           <span class="rl-result-num" :class="pocketColor(resultPocketShown)">{{ resultPocketShown }}</span>
           <span class="rl-result-tag" :class="pocketColor(resultPocketShown)">
-            {{ resultColorZh(state.resultColor) }}
+            {{ resultColorZh(resultSnap?.color ?? pocketColor(resultPocketShown ?? 0)) }}
           </span>
         </div>
 
@@ -1677,24 +1690,31 @@ onUnmounted(() => {
   font-weight: 700;
 }
 .rl-out-btn.red {
-  background: rgba(200, 16, 46, 0.22);
-  border-color: rgba(200, 16, 46, 0.5);
+  background: rgba(200, 16, 46, 0.14);
+  border-color: rgba(200, 16, 46, 0.35);
   color: #fca5a5;
 }
 .rl-out-btn.black {
-  background: rgba(22, 22, 22, 0.6);
-  border-color: #3a3f5c;
-  color: #e2e8f0;
+  background: rgba(22, 22, 22, 0.45);
+  border-color: #2e3350;
+  color: #cbd5e1;
 }
 .rl-out-btn.active {
   border-color: var(--c-light);
   background: rgba(var(--c-light-rgb), 0.15);
   color: var(--c-light);
 }
+/* 選中:實心亮底 + 光環,一眼看得出被選 */
 .rl-out-btn.red.active {
+  background: #c8102e;
+  border-color: var(--c-light);
+  color: #fff;
   box-shadow: 0 0 0 2px var(--c-light);
 }
 .rl-out-btn.black.active {
+  background: #161616;
+  border-color: var(--c-light);
+  color: #fff;
   box-shadow: 0 0 0 2px var(--c-light);
 }
 
