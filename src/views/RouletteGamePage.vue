@@ -152,7 +152,7 @@ const spinning = ref(false)
 let lastSettledRoundId = -1
 const liveResultRoundId = ref<number | null>(null)
 // 開獎揭曉快照:結算當下把結果+下注拍下來,揭曉期間都用它顯示,不怕 state 被下一局覆蓋
-const resultSnap = ref<{ pocket: number; color: string | null; bets: BetView[] } | null>(null)
+const resultSnap = ref<{ pocket: number; color: string | null; bets: BetView[]; myPayout: number } | null>(null)
 let initialized = false
 let resultClearTimer: number | undefined
 let spinTimer: number | undefined
@@ -424,6 +424,12 @@ const phase = computed<'betting' | 'result' | 'waiting'>(() => {
   return 'waiting'
 })
 const revealLocked = computed(() => spinning.value || phase.value === 'result')
+const revealed = computed(() => phase.value === 'result' && !spinning.value) // 輪盤停了才揭曉輸贏
+const displayBalance = computed(() => {
+  const bal = Number(state.value?.myBalance ?? 0)
+  // 轉輪中先不顯示中獎入帳,等塵埃落定(停)才顯示真實餘額
+  return spinning.value && resultSnap.value ? bal - resultSnap.value.myPayout : bal
+})
 
 const phaseText = computed(() => {
   const s = state.value
@@ -606,7 +612,14 @@ async function fetchRound() {
       lastSettledRoundId = d.roundId
       liveResultRoundId.value = d.roundId
       // 拍下這局結果+下注,揭曉/中獎提示都用快照,不怕接下來 state 換成下一局
-      resultSnap.value = { pocket: d.resultPocket, color: d.resultColor ?? null, bets: (d.bets ?? []).map((b) => ({ ...b })) }
+      resultSnap.value = {
+        pocket: d.resultPocket,
+        color: d.resultColor ?? null,
+        bets: (d.bets ?? []).map((b) => ({ ...b })),
+        myPayout: (d.bets ?? [])
+          .filter((b) => b.mine && b.settled)
+          .reduce((s, b) => s + Number(b.payout || 0), 0),
+      }
       if (resultClearTimer) clearTimeout(resultClearTimer)
       resultClearTimer = window.setTimeout(() => {
         liveResultRoundId.value = null
@@ -936,7 +949,7 @@ onUnmounted(() => {
           </template>
           <template v-else>
             <div class="rl-bets-head">
-              {{ phase === 'result' ? '本局結果' : '本局下注' }}（{{ aggregatedBets.length }}）<span
+              {{ spinning ? '🎡 開獎中…' : phase === 'result' ? '本局結果' : '本局下注' }}（{{ aggregatedBets.length }}）<span
                 v-if="myBetsTotal > 0"
                 class="rl-my-total"
                 >· 我押 {{ fmt(myBetsTotal) }}</span
@@ -948,12 +961,12 @@ onUnmounted(() => {
                 v-for="b in aggregatedBets"
                 :key="b.key"
                 class="rl-bet-chip"
-                :class="{ mine: b.mine, won: b.settled && b.win, lost: b.settled && !b.win }"
+                :class="{ mine: b.mine, won: revealed && b.settled && b.win, lost: revealed && b.settled && !b.win }"
               >
                 <span class="rl-bet-who">{{ b.mine ? '你' : b.userName }}</span>
                 <span class="rl-bet-what">{{ betTypeLabel(b.betType) }}{{ betDetail(b) }}</span>
                 <span class="rl-bet-amt">{{ fmt(b.amount) }}</span>
-                <span v-if="b.settled" class="rl-bet-res">{{ b.win ? '+' + fmt(b.payout) : '✕' }}</span>
+                <span v-if="revealed && b.settled" class="rl-bet-res">{{ b.win ? '+' + fmt(b.payout) : '✕' }}</span>
               </div>
             </div>
           </template>
@@ -1074,7 +1087,7 @@ onUnmounted(() => {
         </div>
 
         <div class="rl-bet-summary">
-          本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(state.myBalance) }}
+          本注 <b>{{ fmt(effectiveBet) }}</b> {{ state.currency }} · 餘額 {{ fmt(displayBalance) }}
         </div>
         <div class="rl-cap-hint">
           最小 {{ fmt(minBet) }} · 本局每人上限 {{ fmt(config.maxBet) }}（你已下 {{ fmt(myBetsTotal) }}）· 此注可下
