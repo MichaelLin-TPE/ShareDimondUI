@@ -385,14 +385,25 @@ async function leaveBank() {
   } catch (e) { console.error(e); useAlert.error('連線失敗') }
 }
 
-// ---- 排行榜 ----
+// ---- 排行榜(賺錢 / 輸錢 / 莊家) ----
 interface RankRow { rank: number; userName: string; net: number; spins: number; me: boolean }
 const boardsOpen = ref(false)
+const boardTab = ref<'win' | 'lose' | 'banker'>('win')
 const leaderboard = ref<RankRow[]>([])
+const losers = ref<RankRow[]>([])
+const bankerStats = ref<RankRow[]>([])
+const boardRows = computed(() =>
+  boardTab.value === 'win' ? leaderboard.value : boardTab.value === 'lose' ? losers.value : bankerStats.value)
 async function loadBoards() {
   try {
-    const res = await fetch(`${API}/niuniu/leaderboard?limit=10`, { headers: headers() })
-    if (res.ok) leaderboard.value = await res.json()
+    const [a, b, c] = await Promise.all([
+      fetch(`${API}/niuniu/leaderboard?limit=10`, { headers: headers() }),
+      fetch(`${API}/niuniu/losers?limit=10`, { headers: headers() }),
+      fetch(`${API}/niuniu/banker-stats?limit=10`, { headers: headers() }),
+    ])
+    if (a.ok) leaderboard.value = await a.json()
+    if (b.ok) losers.value = await b.json()
+    if (c.ok) bankerStats.value = await c.json()
   } catch (e) { console.error(e) }
 }
 
@@ -695,13 +706,19 @@ onUnmounted(() => {
           <span class="niu-reveal-hint">你是莊家 · 等玩家下注即開新局</span>
         </div>
 
-        <!-- 排行榜 -->
+        <!-- 排行榜:賺錢 / 輸錢 / 莊家 -->
         <div class="niu-panel">
-          <button class="niu-panel-toggle" @click="boardsOpen = !boardsOpen">🏆 賺錢排行榜 <span>{{ boardsOpen ? '▲' : '▼' }}</span></button>
+          <button class="niu-panel-toggle" @click="boardsOpen = !boardsOpen">🏆 排行榜 <span>{{ boardsOpen ? '▲' : '▼' }}</span></button>
           <div v-if="boardsOpen" class="niu-panel-body">
-            <div v-if="leaderboard.length === 0" class="niu-board-empty">尚無戰績</div>
-            <div v-for="r in leaderboard" :key="r.rank" class="niu-rank-row" :class="{ me: r.me }">
-              <span class="rk">{{ r.rank }}</span><span class="nm">{{ r.userName }}</span><span class="games">{{ r.spins }} 局</span>
+            <div class="niu-board-tabs">
+              <button :class="{ on: boardTab === 'win' }" @click="boardTab = 'win'">💰 賺錢</button>
+              <button :class="{ on: boardTab === 'lose' }" @click="boardTab = 'lose'">💸 輸錢</button>
+              <button :class="{ on: boardTab === 'banker' }" @click="boardTab = 'banker'">🎩 莊家</button>
+            </div>
+            <div v-if="boardRows.length === 0" class="niu-board-empty">尚無戰績</div>
+            <div v-for="r in boardRows" :key="r.rank" class="niu-rank-row" :class="{ me: r.me }">
+              <span class="rk">{{ r.rank }}</span><span class="nm">{{ r.userName }}</span>
+              <span class="games">{{ boardTab === 'banker' ? '莊 ' + r.spins + ' 局' : r.spins + ' 局' }}</span>
               <span class="net" :class="{ pos: r.net > 0, neg: r.net < 0 }">{{ r.net > 0 ? '+' : '' }}{{ fmt(r.net) }}</span>
             </div>
           </div>
@@ -894,6 +911,9 @@ onUnmounted(() => {
 .niu-panel-toggle { width: 100%; background: transparent; border: none; color: #cbd5e1; font-weight: 700; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; font-size: 14px; }
 .niu-panel-body { padding: 0 12px 12px; }
 .niu-board-empty { font-size: 12px; color: #64748b; padding: 8px 0; }
+.niu-board-tabs { display: flex; gap: 4px; padding: 8px 0 6px; }
+.niu-board-tabs button { flex: 1 1 0; height: 32px; box-sizing: border-box; padding: 0; border: 1px solid rgba(var(--c-light-rgb), .3); border-radius: 8px; background: rgba(var(--c-light-rgb), .06); color: #cbd5e1; font-size: 0.8rem; font-weight: 700; cursor: pointer; line-height: 1; }
+.niu-board-tabs button.on { background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); border-color: transparent; }
 /* 近期開牌 */
 .niu-card.xs { width: 20px; height: 28px; border-radius: 4px; }
 .niu-card.xs .r { font-size: 9px; } .niu-card.xs .s { font-size: 10px; }
