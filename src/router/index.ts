@@ -25,6 +25,7 @@ import LootTrackerPage from '@/views/LootTrackerPage.vue'
 import ItemPriceTrendPage from '@/views/ItemPriceTrendPage.vue'
 import SettingsPage from '@/views/SettingsPage.vue'
 import AdminPage from '@/views/AdminPage.vue'
+import BotMonitorPage from '@/views/BotMonitorPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
 import FaqAssistantPage from '@/views/FaqAssistantPage.vue'
@@ -82,6 +83,14 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: AdminPage,
+      meta: {
+        fullscreen: true,
+      },
+    },
+    {
+      path: '/bot-monitor',
+      name: 'bot-monitor',
+      component: BotMonitorPage,
       meta: {
         fullscreen: true,
       },
