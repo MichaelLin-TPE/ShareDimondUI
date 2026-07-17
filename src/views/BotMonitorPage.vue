@@ -25,6 +25,8 @@ const bindName = ref('')
 const binding = ref(false)
 const bindMsg = ref('')
 const expanded = ref<Record<string, boolean>>({})
+const showFrame = ref<Record<string, boolean>>({})
+const frames = ref<Record<string, { url: string; ageMs: number }>>({})
 
 const numKeys = [
   { k: 'gridCell', label: '格子大小(px)' },
@@ -51,7 +53,25 @@ async function loadBots() {
     if (!res.ok) { lastErr.value = 'HTTP ' + res.status; return }
     bots.value = await res.json()
     lastErr.value = ''
+    // 只為「顯示畫面」開著且在線的機器人抓即時圖(省流量)
+    for (const b of bots.value) {
+      if (showFrame.value[b.token] && b.online) loadFrame(b.token)
+    }
   } catch (e: any) { lastErr.value = String(e) }
+}
+
+async function loadFrame(token: string) {
+  try {
+    const res = await fetch(`${API}/bot/frame?token=${encodeURIComponent(token)}`, { headers: headers() })
+    if (!res.ok) return
+    const d = await res.json()
+    if (d.frame) frames.value[token] = { url: `data:image/jpeg;base64,${d.frame}`, ageMs: d.ageMs }
+  } catch { /* ignore */ }
+}
+
+function toggleFrame(token: string) {
+  showFrame.value[token] = !showFrame.value[token]
+  if (showFrame.value[token]) loadFrame(token)
 }
 
 async function doBind() {
@@ -153,6 +173,17 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
           <button class="btn param" @click="toggle(b.token)">{{ expanded[b.token] ? '收合參數' : '參數調整' }}</button>
         </div>
 
+        <div class="frame-wrap">
+          <button class="btn-frame" @click="toggleFrame(b.token)" :disabled="!b.online">
+            {{ showFrame[b.token] ? '🔽 隱藏即時畫面' : '📺 顯示即時畫面' }}
+          </button>
+          <div v-if="showFrame[b.token]" class="frame-box">
+            <img v-if="frames[b.token]" :src="frames[b.token]?.url" class="frame-img" alt="即時偵測畫面">
+            <div v-else class="frame-load">等待畫面…（機器人每 3 秒上傳一張）</div>
+            <div v-if="frames[b.token]" class="frame-age">{{ Math.max(0, Math.round((frames[b.token]?.ageMs ?? 0) / 1000)) }}s 前</div>
+          </div>
+        </div>
+
         <div v-if="expanded[b.token]" class="params">
           <label class="prow tog" v-for="p in boolKeys" :key="p.k">
             <span class="pk">{{ p.label }}</span>
@@ -225,6 +256,13 @@ h3 { font-size: 1rem; margin: 0 0 8px; color: #cbd5e1; }
 .btn.start { background: linear-gradient(135deg, #16a34a, #15803d); }
 .btn.stop { background: linear-gradient(135deg, #dc2626, #991b1b); }
 .btn.param { background: #232c3d; border: 1px solid #33415a; }
+.frame-wrap { margin-top: 12px; }
+.btn-frame { width: 100%; height: 38px; background: #1a2230; border: 1px solid #33415a; color: #cbd5e1; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.btn-frame:disabled { opacity: .4; cursor: not-allowed; }
+.frame-box { position: relative; margin-top: 10px; background: #000; border: 1px solid #2b3648; border-radius: 10px; overflow: hidden; text-align: center; }
+.frame-img { display: block; width: 100%; height: auto; }
+.frame-load { padding: 40px 10px; color: #64748b; font-size: .85rem; }
+.frame-age { position: absolute; right: 8px; bottom: 6px; background: rgba(0,0,0,.55); color: #cbd5e1; font-size: .72rem; padding: 2px 7px; border-radius: 6px; }
 .params { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; margin-top: 14px; }
 .prow { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #161d29; border: 1px solid #2b3648; border-radius: 10px; padding: 8px 12px; }
 .prow.tog { cursor: pointer; }
