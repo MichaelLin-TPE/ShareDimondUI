@@ -13,7 +13,9 @@ export function useAuction() {
   ]
   const totalAmount = ref(0)
   const loading = ref(false)
+  const submitting = ref(false)   // 審核中:防止重複點擊(重送會撞到「已審過」而白噴錯誤)
   const handleAction = (code: string, type: 'approve' | 'reject') => {
+    if (submitting.value) return
     const actionText = type === 'approve' ? '核准' : '駁回'
     if (actionText == '核准') {
       confirmWithdraw(code)
@@ -22,6 +24,7 @@ export function useAuction() {
     }
   }
   const rejectWithdraw = async (code: string) => {
+    submitting.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
 const res= await fetch('https://api.gameshare-system.com/reject-withdraw', {
@@ -46,9 +49,12 @@ TimeStamp:currentTimeStamp
     } catch (e) {
       console.error(e)
       useAlert.error('操作失敗,請稍後再試')
+    } finally {
+      submitting.value = false
     }
   }
   const confirmWithdraw = async (code: string) => {
+    submitting.value = true
     try {
       const currentTimeStamp = Math.floor(Date.now() / 1000).toString()
 const res= await fetch('https://api.gameshare-system.com/confirm-withdraw', {
@@ -73,6 +79,8 @@ TimeStamp:currentTimeStamp
     } catch (e) {
       console.error(e)
       useAlert.error('操作失敗,請稍後再試')
+    } finally {
+      submitting.value = false
     }
   }
 
@@ -167,5 +175,6 @@ TimeStamp:currentTimeStamp
     withdrawHistoryList,
     handleWithdraw,
     loading,
+    submitting,
   }
 }

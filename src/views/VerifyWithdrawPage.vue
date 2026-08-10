@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/withdraw_verify.ts'
 
-const { totalAmount, withdrawHistoryList, handleAction, loading } = useAuction()
+const { totalAmount, withdrawHistoryList, handleAction, loading, submitting } = useAuction()
 </script>
 
 <template>
@@ -56,11 +56,11 @@ const { totalAmount, withdrawHistoryList, handleAction, loading } = useAuction()
         </div>
 
         <div class="actions">
-          <button class="btn-reject" @click="handleAction(req.ticketCode, 'reject')">
+          <button class="btn-reject" :disabled="submitting" @click="handleAction(req.ticketCode, 'reject')">
             拒絕
           </button>
-          <button class="btn-approve" @click="handleAction(req.ticketCode, 'approve')">
-            核准撥款
+          <button class="btn-approve" :disabled="submitting" @click="handleAction(req.ticketCode, 'approve')">
+            {{ submitting ? '處理中…' : '核准撥款' }}
           </button>
         </div>
       </div>
@@ -302,6 +302,13 @@ const { totalAmount, withdrawHistoryList, handleAction, loading } = useAuction()
   cursor: pointer;
   border: none;
   transition: all 0.18s;
+}
+.btn-reject:disabled,
+.btn-approve:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 .btn-reject {
   flex: 1;

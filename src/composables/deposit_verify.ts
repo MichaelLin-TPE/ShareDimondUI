@@ -8,9 +8,11 @@ const API = 'https://api.gameshare-system.com'
 export function useAuction() {
   const totalAmount = ref(0)
   const loading = ref(false)
+  const submitting = ref(false)   // 審核中:防止重複點擊(重送會撞到「已審過」而白噴錯誤)
   const authStore = useAuthStore()
 
   const handleAction = (code: string, type: 'approve' | 'reject') => {
+    if (submitting.value) return
     if (type === 'approve') {
       confirmDeposit(code)
     } else {
@@ -19,6 +21,7 @@ export function useAuction() {
   }
 
   const rejectDeposit = async (code: string) => {
+    submitting.value = true
     try {
       const ts = Math.floor(Date.now() / 1000).toString()
       const res = await fetch(`${API}/reject-deposit`, {
@@ -41,10 +44,13 @@ export function useAuction() {
     } catch (e) {
       console.error(e)
       useAlert.error('操作失敗,請稍後再試')
+    } finally {
+      submitting.value = false
     }
   }
 
   const confirmDeposit = async (code: string) => {
+    submitting.value = true
     try {
       const ts = Math.floor(Date.now() / 1000).toString()
       const res = await fetch(`${API}/confirm-deposit`, {
@@ -67,6 +73,8 @@ export function useAuction() {
     } catch (e) {
       console.error(e)
       useAlert.error('操作失敗,請稍後再試')
+    } finally {
+      submitting.value = false
     }
   }
 
@@ -137,5 +145,6 @@ export function useAuction() {
     handleAction,
     depositHistoryList,
     loading,
+    submitting,
   }
 }
