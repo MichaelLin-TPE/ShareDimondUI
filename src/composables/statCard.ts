@@ -30,6 +30,8 @@ export function useAuction() {
   const showPeopleList = ref(false)
   const selectPeopleItem = ref<Treasure>()
   const showCurrencyModal = ref(false)
+  const batchMode = ref(false)              // 幣別彈窗是「全部競標」在用(true)還是單張購買(false)
+  const batchItems = ref<Treasure[]>([])    // 全部競標要處理的固定金額單
   const handlePeopleCount = (item: Treasure) => {
     showPeopleList.value = true
     selectPeopleItem.value = item
@@ -375,6 +377,7 @@ TimeStamp:currentTimeStamp
         submitBidding(item.currency)
       }
     } else {
+      batchMode.value = false   // 單張購買,確保不是批次模式
       showCurrencyModal.value = true
     }
   }
@@ -382,12 +385,20 @@ TimeStamp:currentTimeStamp
   // 如果你的 composable 還沒有 openCurrencyModal，可以在這補上，或者寫在 composable 裡
   const openCurrencyModal = (item: Treasure) => {
     currentBuyItem.value = item
+    batchMode.value = false
     showCurrencyModal.value = true
   }
 
   // 點擊確認購買
   const handleConfirmBuy = () => {
     if (!selectedBuyCurrency.value || !currentBuyItem.value) return
+    if (batchMode.value) {   // 全部競標:用選好的幣別對整批出價
+      showCurrencyModal.value = false
+      const cur = selectedBuyCurrency.value
+      batchMode.value = false
+      runBatchBid(cur)
+      return
+    }
     confirmBuy(currentBuyItem.value, selectedBuyCurrency.value)
     showCurrencyModal.value = false
   }
@@ -493,8 +504,8 @@ TimeStamp:currentTimeStamp
     }
   }
 
-  // 全部競標:對傳入清單裡「固定金額(非 BID)」的單一次全部參與登記(各用底價、各單幣別)。
-  // 競標單(BID)是價高者得,不能這樣批次,會被略過。已登記過的單後端會擋,計入失敗但不影響其他。
+  // 全部競標(第1步):對傳入清單裡「固定金額(非 BID)」的單,確認張數後跳出幣別選擇彈窗(同道具幣別一致)。
+  // 競標單(BID)是價高者得,不能這樣批次,會被略過。
   const bidAllFixedPrice = async (items: Treasure[]) => {
     const buyable = (items ?? []).filter((it) => it.treasureType !== 'BID')
     if (!buyable.length) {
@@ -502,10 +513,21 @@ TimeStamp:currentTimeStamp
       return
     }
     const result = await useAlert.confirm(
-      `即將對「${buyable[0]?.itemName ?? ''}」的 ${buyable.length} 張固定金額單一次全部參與競標(各以其底價、各單幣別)。已登記過的會自動略過。確定?`,
+      `即將全部競標「${buyable[0]?.itemName ?? ''}」的 ${buyable.length} 張固定金額單,接著請選擇付款幣別。已登記過的會自動略過。`,
       '全部競標',
     )
     if (!result.isConfirmed) return
+    batchItems.value = buyable
+    currentBuyItem.value = buyable[0]        // 幣別彈窗用第一張的幣別清單(同道具幣別相同)
+    selectedBuyCurrency.value = ''
+    batchMode.value = true
+    showCurrencyModal.value = true
+  }
+
+  // 全部競標(第2步):幣別選好後,對整批固定金額單各用「底價 + 選定幣別」呼叫 /add-bidding。已登記過的計入失敗但不影響其他。
+  const runBatchBid = async (currency: string) => {
+    const buyable = batchItems.value
+    if (!buyable.length) return
     useAlert.loading(`全部競標中… 0 / ${buyable.length}`, '請稍候')
     let success = 0
     let done = 0
@@ -524,7 +546,7 @@ TimeStamp:currentTimeStamp
           body: JSON.stringify({
             treasureCode: t.treasureCode,
             biddingPrice: t.lowestPrice,
-            currency: t.currency,
+            currency: currency,
           }),
         })
         const data = await res.json().catch(() => null)
@@ -537,6 +559,7 @@ TimeStamp:currentTimeStamp
       useAlert.loading(`全部競標中… ${done} / ${buyable.length}`, '請稍候')
     }
     useAlert.close()
+    batchItems.value = []
     await fetchOngoingTreasures()
     if (!fails.length) {
       useAlert.success(`全部競標完成!成功參與 ${success} 筆`)
