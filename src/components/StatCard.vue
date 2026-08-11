@@ -33,6 +33,7 @@ const {
   handleConfirmBuy,
   openCurrencyModal,
   currentBuyItem, // 👉 需要在 composable 中新增這個 ref 來記錄當前點擊的物品
+  bidAllFixedPrice,
 } = useAuction()
 
 // 幹部以上(會長/幹部)才可修改競標中單的底價/掛單價
@@ -187,6 +188,15 @@ function isExpanded(code: string): boolean {
         @click="clearItemFilter"
       >
         ✕
+      </button>
+      <button
+        v-if="filterItem"
+        type="button"
+        class="sc-bidall-btn"
+        title="把這個道具的所有固定金額單一次全部競標(競標單不含)"
+        @click="bidAllFixedPrice(filteredAuctions)"
+      >
+        🔨 全部競標
       </button>
     </div>
 
@@ -722,6 +732,30 @@ function isExpanded(code: string): boolean {
   border-color: #3a3f5c;
   color: #fff;
   background: #14171f;
+}
+.sc-bidall-btn {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 14px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #d4a537, #b8860b);
+  border: 1px solid #d4a537;
+  border-radius: 9px;
+  color: #1a1205;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+.sc-bidall-btn:hover {
+  filter: brightness(1.08);
 }
 .sc-empty {
   padding: 24px;

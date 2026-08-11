@@ -493,6 +493,58 @@ TimeStamp:currentTimeStamp
     }
   }
 
+  // 全部競標:對傳入清單裡「固定金額(非 BID)」的單一次全部參與登記(各用底價、各單幣別)。
+  // 競標單(BID)是價高者得,不能這樣批次,會被略過。已登記過的單後端會擋,計入失敗但不影響其他。
+  const bidAllFixedPrice = async (items: Treasure[]) => {
+    const buyable = (items ?? []).filter((it) => it.treasureType !== 'BID')
+    if (!buyable.length) {
+      useAlert.error('這個道具沒有「固定金額」的單可以全部競標(競標單需逐張出價)')
+      return
+    }
+    const result = await useAlert.confirm(
+      `即將對「${buyable[0]?.itemName ?? ''}」的 ${buyable.length} 張固定金額單一次全部參與競標(各以其底價、各單幣別)。已登記過的會自動略過。確定?`,
+      '全部競標',
+    )
+    if (!result.isConfirmed) return
+    useAlert.loading(`全部競標中… 0 / ${buyable.length}`, '請稍候')
+    let success = 0
+    let done = 0
+    const fails: string[] = []
+    for (const t of buyable) {
+      try {
+        const ts = Math.floor(Date.now() / 1000).toString()
+        const res = await fetch('https://api.gameshare-system.com/add-bidding', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${authStore.authToken}`,
+            'Content-Type': 'application/json',
+            Sign: generateSignature(ts),
+            TimeStamp: ts,
+          },
+          body: JSON.stringify({
+            treasureCode: t.treasureCode,
+            biddingPrice: t.lowestPrice,
+            currency: t.currency,
+          }),
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok) fails.push(data?.message ?? '失敗')
+        else success++
+      } catch {
+        fails.push('連線失敗')
+      }
+      done++
+      useAlert.loading(`全部競標中… ${done} / ${buyable.length}`, '請稍候')
+    }
+    useAlert.close()
+    await fetchOngoingTreasures()
+    if (!fails.length) {
+      useAlert.success(`全部競標完成!成功參與 ${success} 筆`)
+    } else {
+      useAlert.error(`成功 ${success} 筆,失敗 ${fails.length} 筆:\n${fails.join('\n')}`)
+    }
+  }
+
   const addTreasure = async () => {
     if (!addItemName.value) {
       error.value = '請輸入道具名稱'
@@ -914,6 +966,7 @@ TimeStamp:currentTimeStamp
     handleReduce,
     handlePlus,
     handleStatus,
+    bidAllFixedPrice,
     auctions,
     formatTime,
     showModal,
