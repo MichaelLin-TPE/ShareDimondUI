@@ -11,6 +11,7 @@ export interface ClanCurrency {
   currencyCode: string
   enabled: boolean
   baseCurrency: boolean
+  exchangeRate?: number | null // 對基準幣的匯率;null=未設定(回退血盟共用匯率)
 }
 
 export function useAuction() {
@@ -174,6 +175,35 @@ export function useAuction() {
       console.error(e)
     } finally {
       addingCurrency.value = false
+    }
+  }
+
+  const savingRate = ref<string | null>(null) // 正在存哪個幣別的匯率
+  const updateCurrencyRate = async (item: ClanCurrency) => {
+    const rate = Number(item.exchangeRate)
+    if (!rate || rate <= 0) {
+      useAlert.error('匯率必須大於 0')
+      return
+    }
+    savingRate.value = item.currencyName
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/update-currency-rate`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ currencyName: item.currencyName, rate }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      await fetchClanCurrencies()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      savingRate.value = null
     }
   }
 
@@ -784,6 +814,8 @@ export function useAuction() {
     newCurrencyName,
     addingCurrency,
     addCurrency,
+    savingRate,
+    updateCurrencyRate,
     // 公積金調整
     balanceAction,
     balanceAmount,

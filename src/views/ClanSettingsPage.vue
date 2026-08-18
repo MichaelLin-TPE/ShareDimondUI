@@ -45,6 +45,8 @@ const {
   newCurrencyName,
   addingCurrency,
   addCurrency,
+  savingRate,
+  updateCurrencyRate,
   balance,
   balanceAction,
   balanceAmount,
@@ -614,21 +616,44 @@ const rakePercent = computed<number>({
             class="cs-currency-item"
             :class="{ disabled: !item.enabled, base: item.baseCurrency }"
           >
-            <div class="cs-currency-left">
-              <span class="cs-currency-name">{{ item.currencyName }}</span>
-              <span v-if="item.baseCurrency" class="cs-currency-badge base">基準</span>
-              <span v-else-if="!item.enabled" class="cs-currency-badge off">已關閉</span>
-              <span v-else class="cs-currency-badge on">啟用中</span>
+            <div class="cs-currency-row">
+              <div class="cs-currency-left">
+                <span class="cs-currency-name">{{ item.currencyName }}</span>
+                <span v-if="item.baseCurrency" class="cs-currency-badge base">基準</span>
+                <span v-else-if="!item.enabled" class="cs-currency-badge off">已關閉</span>
+                <span v-else class="cs-currency-badge on">啟用中</span>
+              </div>
+              <button
+                class="cs-toggle-btn"
+                :class="{ on: item.enabled, off: !item.enabled }"
+                :disabled="item.baseCurrency"
+                :title="item.baseCurrency ? '基準幣無法關閉，請先變更基準幣' : ''"
+                @click="toggleCurrency(item)"
+              >
+                <span class="cs-toggle-dot"></span>
+              </button>
             </div>
-            <button
-              class="cs-toggle-btn"
-              :class="{ on: item.enabled, off: !item.enabled }"
-              :disabled="item.baseCurrency"
-              :title="item.baseCurrency ? '基準幣無法關閉，請先變更基準幣' : ''"
-              @click="toggleCurrency(item)"
-            >
-              <span class="cs-toggle-dot"></span>
-            </button>
+            <!-- 匯率(以基準幣為 1) -->
+            <div v-if="!item.baseCurrency" class="cs-currency-rate">
+              <span class="cs-rate-label">1 {{ settings.baseCurrency || '基準' }} =</span>
+              <input
+                class="cs-rate-input"
+                type="number"
+                min="0"
+                step="any"
+                v-model.number="item.exchangeRate"
+                :placeholder="settings.exchangeRate ? String(settings.exchangeRate) : '匯率'"
+              />
+              <span class="cs-rate-unit">{{ item.currencyName }}</span>
+              <button
+                class="cs-rate-save"
+                :disabled="savingRate === item.currencyName"
+                @click="updateCurrencyRate(item)"
+              >
+                {{ savingRate === item.currencyName ? '…' : '設定' }}
+              </button>
+            </div>
+            <span v-else class="cs-currency-rate cs-rate-base">匯率 1（基準幣固定）</span>
           </div>
 
           <div v-if="clanCurrencies.length === 0" class="cs-empty">
@@ -1123,13 +1148,19 @@ select.cs-input {
 }
 .cs-currency-item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 12px 16px;
   background: #0f111a;
   border: 1px solid #2e3147;
   border-radius: 12px;
   transition: all 0.15s;
+}
+.cs-currency-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .cs-currency-item.base {
   border-color: rgba(var(--c-light-rgb), 0.4);
@@ -1143,6 +1174,70 @@ select.cs-input {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 0 0 auto;
+}
+/* 每幣別匯率(自成一行,在名稱下方) */
+.cs-currency-rate {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed #2a2f45;
+}
+.cs-rate-label {
+  font-size: 0.82rem;
+  color: #8b93a7;
+  white-space: nowrap;
+}
+.cs-rate-input {
+  width: 84px;
+  height: 34px;
+  background: #0a0c14;
+  border: 1px solid #2e3147;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+  text-align: right;
+  font-family: inherit;
+}
+.cs-rate-input:focus {
+  border-color: var(--c-light);
+}
+.cs-rate-unit {
+  font-size: 0.82rem;
+  color: #cbd2e0;
+  white-space: nowrap;
+}
+.cs-rate-save {
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.cs-rate-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.cs-rate-base {
+  padding-top: 8px;
+  border-top: 1px dashed #2a2f45;
+  font-size: 0.82rem;
+  color: #8b93a7;
+}
+.cs-rate-save {
+  margin-left: auto;
 }
 .cs-currency-name {
   font-size: 1rem;
