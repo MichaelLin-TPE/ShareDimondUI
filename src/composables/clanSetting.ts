@@ -207,21 +207,31 @@ export function useAuction() {
     }
   }
 
-  const settingBase = ref<string | null>(null)
-  const setBaseCurrency = async (item: ClanCurrency) => {
-    if (item.baseCurrency) return
+  // 基準幣別下拉的選擇值(與目前 settings.baseCurrency 分開，避免選了沒存就污染顯示)
+  const pendingBase = ref('')
+  const savingBase = ref(false)
+  const saveBaseCurrency = async () => {
+    const base = pendingBase.value
+    if (!base) {
+      useAlert.error('請先選擇基準幣別')
+      return
+    }
+    if (base === settings.value.baseCurrency) {
+      useAlert.error(`「${base}」已經是基準幣了`)
+      return
+    }
     const result = await useAlert.confirm(
-      `確定要把「${item.currencyName}」設為基準幣嗎？\n基準幣是所有匯率的計價基準(=1)。改動後其他幣別的匯率是相對「新基準幣」計算，建議改完重新確認各幣匯率。`,
+      `確定要把基準幣設為「${base}」嗎？\n基準幣是所有匯率的計價基準(=1)。改動後其他幣別的匯率是相對「新基準幣」計算，建議改完重新確認各幣匯率。`,
     )
     if (!result?.isConfirmed) return
-    settingBase.value = item.currencyName
+    savingBase.value = true
     try {
       const ts = Math.floor(Date.now() / 1000).toString()
       const res = await fetch(`${API}/updateClanBaseCurrencyAndRate`, {
         method: 'POST',
         headers: headers(ts),
         body: JSON.stringify({
-          baseCurrency: item.currencyName,
+          baseCurrency: base,
           exchangeRate: settings.value.exchangeRate || 1, // 沿用現有回退匯率
         }),
       })
@@ -231,12 +241,12 @@ export function useAuction() {
         return
       }
       useAlert.success(data.message)
-      settings.value.baseCurrency = item.currencyName
+      settings.value.baseCurrency = base
       await fetchClanCurrencies()
     } catch (e) {
       console.error(e)
     } finally {
-      settingBase.value = null
+      savingBase.value = false
     }
   }
 
@@ -293,6 +303,7 @@ export function useAuction() {
     settings.value.participationMinutes = data.joinMins
     settings.value.baseCurrency = data.baseCurrency
     settings.value.exchangeRate = data.exchangeRate
+    pendingBase.value = data.baseCurrency // 下拉預設 = 目前基準幣
   }
 
   // 從 /getBalance 同步 store，避免直接重新整理本頁時 store 為空
@@ -849,8 +860,9 @@ export function useAuction() {
     addCurrency,
     savingRate,
     updateCurrencyRate,
-    settingBase,
-    setBaseCurrency,
+    pendingBase,
+    savingBase,
+    saveBaseCurrency,
     // 公積金調整
     balanceAction,
     balanceAmount,

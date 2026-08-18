@@ -46,8 +46,9 @@ const {
   addCurrency,
   savingRate,
   updateCurrencyRate,
-  settingBase,
-  setBaseCurrency,
+  pendingBase,
+  savingBase,
+  saveBaseCurrency,
   balance,
   balanceAction,
   balanceAmount,
@@ -624,25 +625,15 @@ const rakePercent = computed<number>({
                 <span v-else-if="!item.enabled" class="cs-currency-badge off">已關閉</span>
                 <span v-else class="cs-currency-badge on">啟用中</span>
               </div>
-              <div class="cs-currency-actions">
-                <button
-                  v-if="!item.baseCurrency && item.enabled"
-                  class="cs-set-base"
-                  :disabled="settingBase === item.currencyName"
-                  @click="setBaseCurrency(item)"
-                >
-                  {{ settingBase === item.currencyName ? '設定中…' : '設為基準' }}
-                </button>
-                <button
-                  class="cs-toggle-btn"
+              <button
+                class="cs-toggle-btn"
                 :class="{ on: item.enabled, off: !item.enabled }"
                 :disabled="item.baseCurrency"
                 :title="item.baseCurrency ? '基準幣無法關閉，請先變更基準幣' : ''"
                 @click="toggleCurrency(item)"
               >
                 <span class="cs-toggle-dot"></span>
-                </button>
-              </div>
+              </button>
             </div>
             <!-- 匯率(以基準幣為 1) -->
             <div v-if="!item.baseCurrency" class="cs-currency-rate">
@@ -672,6 +663,29 @@ const rakePercent = computed<number>({
           </div>
         </div>
 
+        <div class="cs-divider"></div>
+
+        <!-- 基準幣別 -->
+        <div class="cs-field">
+          <label>基準幣別</label>
+          <div class="cs-base-row">
+            <select v-model="pendingBase" class="cs-input">
+              <option v-for="c in enabledCurrencies" :key="c.currencyName" :value="c.currencyName">
+                {{ c.currencyName }}
+              </option>
+            </select>
+            <button
+              class="cs-btn-add cs-base-save"
+              :disabled="savingBase || pendingBase === settings.baseCurrency"
+              @click="saveBaseCurrency"
+            >
+              {{ savingBase ? '儲存中…' : '設為基準' }}
+            </button>
+          </div>
+          <p class="cs-hint">
+            所有匯率的計價基準(=1)。目前:<b>{{ settings.baseCurrency || '未設定' }}</b>。改動後其他幣別匯率是相對新基準幣，建議改完重看各幣匯率。
+          </p>
+        </div>
       </section>
 
       <!-- ─── 金庫調整 ─── -->
@@ -1139,31 +1153,16 @@ select.cs-input {
   align-items: center;
   justify-content: space-between;
 }
-.cs-currency-actions {
+.cs-base-row {
   display: flex;
-  align-items: center;
   gap: 10px;
+  align-items: stretch;
 }
-.cs-set-base {
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid rgba(var(--c-light-rgb), 0.5);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--c-light);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-  font-family: inherit;
+.cs-base-row .cs-input {
+  flex: 1 1 auto;
 }
-.cs-set-base:hover:not(:disabled) {
-  background: rgba(var(--c-light-rgb), 0.12);
-}
-.cs-set-base:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.cs-base-save {
+  flex: 0 0 auto;
 }
 .cs-currency-item.base {
   border-color: rgba(var(--c-light-rgb), 0.4);
