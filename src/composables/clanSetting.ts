@@ -207,6 +207,39 @@ export function useAuction() {
     }
   }
 
+  const settingBase = ref<string | null>(null)
+  const setBaseCurrency = async (item: ClanCurrency) => {
+    if (item.baseCurrency) return
+    const result = await useAlert.confirm(
+      `確定要把「${item.currencyName}」設為基準幣嗎？\n基準幣是所有匯率的計價基準(=1)。改動後其他幣別的匯率是相對「新基準幣」計算，建議改完重新確認各幣匯率。`,
+    )
+    if (!result?.isConfirmed) return
+    settingBase.value = item.currencyName
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/updateClanBaseCurrencyAndRate`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({
+          baseCurrency: item.currencyName,
+          exchangeRate: settings.value.exchangeRate || 1, // 沿用現有回退匯率
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      settings.value.baseCurrency = item.currencyName
+      await fetchClanCurrencies()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      settingBase.value = null
+    }
+  }
+
   // ───── 公積金調整 ─────
   const handleUpdateBalance = async () => {
     if (!selectedCurrency.value) return useAlert.error('請選擇幣別')
@@ -816,6 +849,8 @@ export function useAuction() {
     addCurrency,
     savingRate,
     updateCurrencyRate,
+    settingBase,
+    setBaseCurrency,
     // 公積金調整
     balanceAction,
     balanceAmount,
