@@ -39,6 +39,9 @@ export function useAuction() {
 
   // 幣別列表
   const clanCurrencies = ref<ClanCurrency[]>([])
+  // 新增幣別
+  const newCurrencyName = ref('')
+  const addingCurrency = ref(false)
 
   const headers = (ts: string) => ({
     Authorization: `Bearer ${authStore.authToken}`,
@@ -142,6 +145,35 @@ export function useAuction() {
       item.enabled = willEnable
     } catch (e) {
       console.error(e)
+    }
+  }
+
+  const addCurrency = async () => {
+    const name = newCurrencyName.value.trim()
+    if (!name) {
+      useAlert.error('請輸入幣別名稱')
+      return
+    }
+    addingCurrency.value = true
+    try {
+      const ts = Math.floor(Date.now() / 1000).toString()
+      const res = await fetch(`${API}/add-currency`, {
+        method: 'POST',
+        headers: headers(ts),
+        body: JSON.stringify({ currencyName: name }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        useAlert.error(data.message)
+        return
+      }
+      useAlert.success(data.message)
+      newCurrencyName.value = ''
+      await fetchClanCurrencies() // 重拉,enabled / baseCurrency 交給後端決定
+    } catch (e) {
+      console.error(e)
+    } finally {
+      addingCurrency.value = false
     }
   }
 
@@ -749,6 +781,9 @@ export function useAuction() {
     clanCurrencies,
     fetchClanCurrencies,
     toggleCurrency,
+    newCurrencyName,
+    addingCurrency,
+    addCurrency,
     // 公積金調整
     balanceAction,
     balanceAmount,

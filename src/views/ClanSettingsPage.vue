@@ -42,6 +42,9 @@ const {
   selectedCurrency,
   clanCurrencies,
   toggleCurrency,
+  newCurrencyName,
+  addingCurrency,
+  addCurrency,
   balance,
   balanceAction,
   balanceAmount,
@@ -583,6 +586,26 @@ const rakePercent = computed<number>({
           </div>
         </div>
 
+        <!-- 新增幣別 -->
+        <div class="cs-currency-add">
+          <input
+            v-model="newCurrencyName"
+            class="cs-input"
+            type="text"
+            placeholder="輸入新幣別名稱後按「新增」"
+            maxlength="20"
+            :disabled="addingCurrency"
+            @keydown.enter="addCurrency"
+          />
+          <button
+            class="cs-btn-add"
+            :disabled="addingCurrency || !newCurrencyName.trim()"
+            @click="addCurrency"
+          >
+            {{ addingCurrency ? '新增中…' : '＋ 新增' }}
+          </button>
+        </div>
+
         <!-- 幣別列表 -->
         <div class="cs-currency-list">
           <div
@@ -1053,6 +1076,42 @@ select.cs-input {
   color: #e2e8f0;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* Add currency */
+.cs-currency-add {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-bottom: 14px;
+}
+.cs-currency-add .cs-input {
+  flex: 1 1 auto;
+}
+.cs-btn-add {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--c-light), var(--c-deep));
+  color: var(--c-on);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(var(--c-deep-rgb), 0.3);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.cs-btn-add:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.cs-btn-add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Currency list */
