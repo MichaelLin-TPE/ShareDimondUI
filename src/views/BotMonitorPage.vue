@@ -53,8 +53,9 @@ async function loadBots() {
     if (!res.ok) { lastErr.value = 'HTTP ' + res.status; return }
     bots.value = await res.json()
     lastErr.value = ''
-    // 只為「顯示畫面」開著且在線的機器人抓即時圖(省流量)
     for (const b of bots.value) {
+      // 在線的機器人「預設自動顯示」即時畫面(使用者仍可手動隱藏)
+      if (b.online && showFrame.value[b.token] === undefined) showFrame.value[b.token] = true
       if (showFrame.value[b.token] && b.online) loadFrame(b.token)
     }
   } catch (e: any) { lastErr.value = String(e) }
@@ -179,7 +180,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
           </button>
           <div v-if="showFrame[b.token]" class="frame-box">
             <img v-if="frames[b.token]" :src="frames[b.token]?.url" class="frame-img" alt="即時偵測畫面">
-            <div v-else class="frame-load">等待畫面…（機器人每 3 秒上傳一張）</div>
+            <div v-else class="frame-load">等待畫面…（機器人每 2 秒上傳一張）</div>
             <div v-if="frames[b.token]" class="frame-age">{{ Math.max(0, Math.round((frames[b.token]?.ageMs ?? 0) / 1000)) }}s 前</div>
           </div>
         </div>
