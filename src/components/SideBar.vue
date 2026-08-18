@@ -54,8 +54,6 @@ const legacyLabelToRoute: Record<string, string> = {
   '📈 道具走勢': '/clan/itemPriceTrend',
   '📊 出席率': '/clan/attendance',
   '🛡️ 操作日誌': '/clan/auditLog',
-  '📚 FAQ 管理': '/clan/faqManage',
-  '🤖 AI 助手': '/clan/aiAssistant',
   '⚙️ 設置': '/clan/settings',
 }
 

@@ -28,7 +28,6 @@ import AdminPage from '@/views/AdminPage.vue'
 import BotMonitorPage from '@/views/BotMonitorPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
-import FaqAssistantPage from '@/views/FaqAssistantPage.vue'
 import SlotMachinePage from '@/views/SlotMachinePage.vue'
 import DiceGamePage from '@/views/DiceGamePage.vue'
 import RouletteGamePage from '@/views/RouletteGamePage.vue'
@@ -38,7 +37,6 @@ import ScratchGamePage from '@/views/ScratchGamePage.vue'
 import HoldemGamePage from '@/views/HoldemGamePage.vue'
 import DepositPage from '@/views/DepositPage.vue'
 import VerifyDepositPage from '@/views/VerifyDepositPage.vue'
-import FaqManagePage from '@/views/FaqManagePage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -190,14 +188,6 @@ const router = createRouter({
         {
           path: 'auditLog',
           component: AuditLogPage,
-        },
-        {
-          path: 'faqManage',
-          component: FaqManagePage,
-        },
-        {
-          path: 'aiAssistant',
-          component: FaqAssistantPage,
         },
         {
           path: 'settings',

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import SideBar from '@/components/SideBar.vue'
 import NotifierHub from '@/components/NotifierHub.vue'
-import FloatingAiAssistant from '@/components/FloatingAiAssistant.vue'
 </script>
 
 <template>
@@ -11,7 +10,6 @@ import FloatingAiAssistant from '@/components/FloatingAiAssistant.vue'
       <router-view />
     </main>
     <NotifierHub />
-    <FloatingAiAssistant />
   </div>
 </template>
 

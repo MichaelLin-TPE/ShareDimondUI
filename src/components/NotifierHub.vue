@@ -2,32 +2,27 @@
 import { useNotifications } from '@/composables/notifications.ts'
 
 /**
- * 右下角通知 FAB — 極簡版
- * - 沒未讀通知 → 整個 FAB 消失
- * - 有未讀 → 出現 + 持續呼吸 pulse
- * - 點擊 → 直接開抽屜 (沒中間 stack)
- *
- * 之前的功能去向:
- * - 🏪 市場掛單 / 💰 賣單待付款 → 由通知中心 LISTING_OPENED / LISTING_SOLD 事件涵蓋
- * - 🙋 申請審核 → 暫拿掉 (側邊欄「🙋‍♂️ 人員審核」menu 仍可進入,等後端有 apply endpoint 後可加 MEMBER_APPLIED 通知)
+ * 右下角通知 FAB — 常駐版
+ * - 永遠顯示 (常駐),方便隨時翻通知紀錄
+ * - 有未讀 → 紅點 badge + 持續呼吸 pulse 吸睛
+ * - 沒未讀 → 靜態鈴鐺 (不 pulse、無 badge)
+ * - 點擊 → 直接開抽屜
  */
 const { unreadCount, openDrawer } = useNotifications()
 </script>
 
 <template>
-  <Transition name="hub-fade">
-    <button
-      v-if="unreadCount > 0"
-      type="button"
-      class="hub-main has-unread"
-      :title="`${unreadCount} 則新通知,點擊查看`"
-      aria-label="未讀通知"
-      @click="openDrawer"
-    >
-      <span class="main-icon">🔔</span>
-      <span class="main-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-    </button>
-  </Transition>
+  <button
+    type="button"
+    class="hub-main"
+    :class="{ 'has-unread': unreadCount > 0 }"
+    :title="unreadCount > 0 ? `${unreadCount} 則新通知,點擊查看` : '通知中心'"
+    aria-label="通知中心"
+    @click="openDrawer"
+  >
+    <span class="main-icon">🔔</span>
+    <span v-if="unreadCount > 0" class="main-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+  </button>
 </template>
 
 <style scoped>
