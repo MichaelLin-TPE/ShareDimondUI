@@ -37,6 +37,7 @@ import ScratchGamePage from '@/views/ScratchGamePage.vue'
 import HoldemGamePage from '@/views/HoldemGamePage.vue'
 import DepositPage from '@/views/DepositPage.vue'
 import VerifyDepositPage from '@/views/VerifyDepositPage.vue'
+import MhPromoPage from '@/views/MhPromoPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -81,6 +82,15 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: AdminPage,
+      meta: {
+        fullscreen: true,
+      },
+    },
+    {
+      // MH 推廣頁(公開,不需登入;仿 admin 的獨立頂層 fullscreen 節點)
+      path: '/mh',
+      name: 'mh',
+      component: MhPromoPage,
       meta: {
         fullscreen: true,
       },
