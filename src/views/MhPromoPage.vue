@@ -158,16 +158,22 @@ onUnmounted(() => {
           <div>
             <div class="idx">02 // 自動化整合</div>
             <h2 style="margin-top: 12px">掛上就走,細節它顧。</h2>
-            <p>瞬移、補血、選視窗、熱鍵——把掛機真正需要的自動化,一次做齊。</p>
+            <p>巡場、瞬移、補血、選視窗、熱鍵——把掛機真正需要的自動化,一次做齊。</p>
           </div>
           <span class="tag amber">AUTOMATION</span>
         </div>
         <div class="modules grid-4 reveal">
+          <div class="card span2">
+            <div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 3.5V8h-4.5" /><circle cx="12" cy="12" r="2.4" /></svg></div>
+            <div class="ci">// PATROL · 巡場練功</div>
+            <h3>祝瞬自動巡場練功</h3>
+            <p>掛機後自動開快速移動清單、雙擊你設定的定點<span class="k">祝瞬瞬移</span>過去開打;某點清完或卡住超時,自動換下一點,<span class="k">多定點循環巡場</span>——一張圖多點自動輪流刷,人不用顧。</p>
+          </div>
           <div class="card">
             <div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></div>
             <div class="ci">// BLINK</div>
-            <h3>ICON 偵測瞬移</h3>
-            <p>偵測到頭上 ICON(如祝瞬)自動按 F5 瞬移;<span class="k">祝瞬自動巡場循環</span>,卡住還有保底強制換點,不會呆在原地。</p>
+            <h3>ICON 偵測瞬移(逃跑)</h3>
+            <p>先學角色頭上的 ICON,掛機中畫面一出現學過的 ICON 就<span class="k">自動 F5 瞬移閃人</span>(防 PK/危險),瞬移後續掛,有冷卻防連飛。</p>
           </div>
           <div class="card">
             <div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9-9.5C1.4 7.6 3.8 4.5 7 4.5c2 0 3.3 1.2 5 3 1.7-1.8 3-3 5-3 3.2 0 5.6 3.1 4 7C19 16.4 12 21 12 21z" /></svg></div>
@@ -404,6 +410,7 @@ section { padding: 78px 0; position: relative; }
 .modules { display: grid; gap: 16px; }
 .grid-5 { grid-template-columns: repeat(6, 1fr); }
 .grid-4 { grid-template-columns: repeat(2, 1fr); }
+.grid-4 .card.span2 { grid-column: 1 / -1; }
 .card { position: relative; background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid var(--line); border-radius: 4px; padding: 26px 24px; overflow: hidden; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
 .card::after { content: ""; position: absolute; top: 0; left: 0; width: 22px; height: 22px; border-top: 2px solid var(--scan); border-left: 2px solid var(--scan); opacity: 0; transition: 0.3s; }
 .card:hover { border-color: var(--line-strong); transform: translateY(-3px); box-shadow: 0 20px 44px -26px rgba(0, 0, 0, 0.9); }
