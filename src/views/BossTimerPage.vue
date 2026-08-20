@@ -52,6 +52,29 @@ const sortedBossList = computed(() => {
   })
 })
 
+// ─── 搜尋:可打字即時篩選,或從建議清單自己選 ───
+const searchQuery = ref('')
+const searchFocused = ref(false)
+const filteredBossList = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return sortedBossList.value
+  return sortedBossList.value.filter((b) => b.bossName.toLowerCase().includes(q))
+})
+// 建議清單(去重、依名稱排,最多 8 筆);focus 且有字才顯示
+const nameSuggestions = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  const names = [...new Set(bossList.value.map((b) => b.bossName))].sort((a, b) => a.localeCompare(b))
+  return (q ? names.filter((n) => n.toLowerCase().includes(q)) : names).slice(0, 8)
+})
+function pickSuggestion(name: string) {
+  searchQuery.value = name
+  searchFocused.value = false
+}
+function onSearchBlur() {
+  // 延遲關閉,讓建議項目的 click 先觸發
+  setTimeout(() => (searchFocused.value = false), 120)
+}
+
 const statsTotal = computed(() => bossList.value.length)
 const statsAlive = computed(() => bossList.value.filter((b) => b.status === 'ALIVE').length)
 const statsDead = computed(() => bossList.value.filter((b) => b.status === 'DEAD').length)
@@ -270,6 +293,32 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- ─── Search ───────────────────────────────────── -->
+    <div v-if="bossList.length > 0" class="search-bar">
+      <span class="search-ico">🔍</span>
+      <input
+        class="search-input"
+        v-model="searchQuery"
+        type="text"
+        placeholder="搜尋首領名稱…（可打字或從清單挑選）"
+        autocomplete="off"
+        @focus="searchFocused = true"
+        @blur="onSearchBlur"
+      />
+      <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''" aria-label="清除搜尋">✕</button>
+      <div v-if="searchFocused && nameSuggestions.length" class="search-dd">
+        <button
+          v-for="n in nameSuggestions"
+          :key="n"
+          type="button"
+          class="search-opt"
+          @mousedown.prevent="pickSuggestion(n)"
+        >
+          <span class="search-opt-ico">⚔️</span>{{ n }}
+        </button>
+      </div>
+    </div>
+
     <!-- ─── Boss List ───────────────────────────────── -->
     <div v-if="loading && bossList.length === 0" class="empty-state">
       <div class="spinner"></div>
@@ -282,9 +331,15 @@ onUnmounted(() => {
       <button class="btn-add" @click="showAddModal = true">新增第一隻首領</button>
     </div>
 
+    <div v-else-if="filteredBossList.length === 0" class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <p>找不到符合「{{ searchQuery }}」的首領</p>
+      <button class="btn-add" @click="searchQuery = ''">清除搜尋</button>
+    </div>
+
     <div v-else class="boss-grid">
       <div
-        v-for="boss in sortedBossList"
+        v-for="boss in filteredBossList"
         :key="boss.timerId"
         class="boss-card"
         :class="boss.status.toLowerCase()"
@@ -449,6 +504,82 @@ onUnmounted(() => {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.5; }
 }
+
+/* ─── Search ─────────────────────────────────── */
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 14px;
+  margin-bottom: 24px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-bar:focus-within {
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
+}
+.search-ico { flex: 0 0 auto; font-size: 1rem; opacity: 0.7; }
+.search-input {
+  flex: 1 1 auto;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 0.95rem;
+}
+.search-input::placeholder { color: #64748b; }
+.search-clear {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: #232842;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.search-clear:hover { background: var(--c-deep); color: #fff; }
+.search-dd {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 6px;
+  background: #12141d;
+  border: 1px solid #2e3147;
+  border-radius: 12px;
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.85);
+  max-height: 280px;
+  overflow-y: auto;
+}
+.search-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.search-opt:hover { background: rgba(var(--c-light-rgb), 0.12); color: #fff; }
+.search-opt-ico { font-size: 0.9rem; opacity: 0.8; }
 
 /* ─── Page ─────────────────────────────────────── */
 .boss-page {
