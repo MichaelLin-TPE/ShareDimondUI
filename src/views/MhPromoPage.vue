@@ -104,14 +104,14 @@ onUnmounted(() => {
 
     <header class="hero">
       <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-      <div class="hud h-tr"><span class="k">MODE</span> <span class="v">GRID RADAR</span><br /><span class="k">SWEEP</span> <span class="v">ACTIVE</span></div>
+      <div class="hud h-tr"><span class="k">MODE</span> <span class="v">AUTO-HUNT</span><br /><span class="k">SWEEP</span> <span class="v">ACTIVE</span></div>
       <div class="hud h-bl"><span class="k">STATUS</span> <span class="v g">HUNTING</span></div>
       <div class="hud h-br"><span class="k">LOCKED</span> <span class="v a" ref="lockEl">03</span> <span class="k">/ TARGETS</span></div>
       <div class="wrap">
         <div class="hero-inner">
           <div class="eyebrow"><span class="dot"></span>AUTO-HUNT SYSTEM // LINEAGE</div>
-          <h1>螢幕上<span class="hl">會動的</span>,<br />它替你獵。</h1>
-          <p class="lead">靠畫面<b style="color: var(--ink)">動作偵測</b>自動鎖怪、開打——<span class="kbd">不讀記憶體</span>,天生繞過 GameGuard。理論上<b style="color: var(--ink)">適用任一版本的天堂</b>,掛上就走。</p>
+          <h1>掛上就走,<br />它<span class="hl">替你打</span>。</h1>
+          <p class="lead">自動鎖怪、自動開打、自動補血——你人不用顧。<b style="color: var(--ink)">不碰遊戲本體、天生避開反作弊偵測</b>,理論上<b style="color: var(--ink)">適用任一版本的天堂</b>,放心掛、安心刷。</p>
           <div class="cta-row">
             <a class="btn btn-primary" href="#" @click.prevent="scrollToId('contact')">有興趣?聯絡客服 →</a>
             <a class="btn btn-ghost" href="#" @click.prevent="scrollToId('combat')">看它會什麼 ↓</a>
@@ -127,8 +127,8 @@ onUnmounted(() => {
       <div class="wrap">
         <div class="demo-cap reveal">
           <span class="tag">LIVE DEMO // 01</span>
-          <h3>偵測 → 鎖定 → 擊殺</h3>
-          <p>準星自動掃出畫面上會動的目標,鎖定後出手——琥珀環一亮就是命中。你只是在旁邊看它工作。</p>
+          <h3>鎖定 → 出手 → 清怪</h3>
+          <p>自動鎖住周圍的怪,一隻接一隻清掉——琥珀環一亮就是命中。你只要在旁邊看它幫你打。</p>
         </div>
         <div class="demo-cap right reveal">
           <span class="tag amber">PATROL // 02</span>
@@ -141,10 +141,10 @@ onUnmounted(() => {
     <div class="page-body">
       <div class="telemetry reveal">
         <div class="wrap">
-          <div class="tcell"><div class="num">0<span class="u"> 讀取</span></div><div class="cap">純畫面偵測,不碰記憶體 · 繞過反作弊</div></div>
-          <div class="tcell"><div class="num">1<span class="u"> 鍵</span></div><div class="cap">全域熱鍵,遊戲前景即開即停</div></div>
-          <div class="tcell"><div class="num">24/7</div><div class="cap">手機遠端監控 · 即時畫面預覽</div></div>
-          <div class="tcell"><div class="num">Auto</div><div class="cap">一鍵自動更新,設定與游標全保留</div></div>
+          <div class="tcell"><div class="num">0<span class="u"> 偵測</span></div><div class="cap">天生避開反作弊,安心掛機不擔心</div></div>
+          <div class="tcell"><div class="num">1<span class="u"> 鍵</span></div><div class="cap">開好就掛,一鍵開始 / 暫停</div></div>
+          <div class="tcell"><div class="num">24/7</div><div class="cap">手機隨處遠端看狀態 · 看即時畫面</div></div>
+          <div class="tcell"><div class="num">Auto</div><div class="cap">打怪、補血、巡場全自動,人不用顧</div></div>
         </div>
       </div>
 
@@ -153,8 +153,8 @@ onUnmounted(() => {
           <div class="sec-head reveal">
             <div>
               <div class="idx">01 // 核心獵殺</div>
-              <h2 style="margin-top: 12px">看得見,就打得到。</h2>
-              <p>不靠腳本座標、不讀封包。MotionHunter 直接讀畫面上的動作與亮度,像雷達一樣鎖定會動的怪。</p>
+              <h2 style="margin-top: 12px">上線,就開始打。</h2>
+              <p>自動鎖定周圍的怪、一隻接一隻清——你只要顧著吃經驗、看背包變滿。</p>
             </div>
             <span class="tag">COMBAT · CORE</span>
           </div>
@@ -163,15 +163,15 @@ onUnmounted(() => {
               <div>
                 <div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3.4" /><path d="M12 1v3M12 20v3M1 12h3M20 12h3" /></svg></div>
                 <div class="ci">// PRIMARY</div>
-                <h3>動作偵測打怪</h3>
-                <p>偵測畫面「動作變化」自動鎖定並攻擊怪物。不讀記憶體、不改封包,天生閃過 GameGuard 反作弊——這是 MH 最硬的底層優勢。</p>
+                <h3>自動鎖怪 · 自動開打</h3>
+                <p>上線就自動鎖住周圍的怪、一隻接一隻清,你人不用守著。<b style="color: var(--ink)">不碰遊戲本體、天生避開反作弊偵測</b>——掛得安心,是 MH 最讓人放心的底氣。</p>
               </div>
-              <div class="big-num">// FRAME-DIFF TARGETING · NO MEMORY READ</div>
+              <div class="big-num">// AUTO-LOCK · 安心不被抓</div>
             </div>
-            <div class="card"><div class="ci">// RADAR</div><h3>格子雷達模式</h3><p>把畫面切成網格算活躍度,自動挑<span class="k">最近的亮格</span>下手,目標選擇更聰明、不亂點。</p></div>
-            <div class="card"><div class="ci">// WALL-CHECK</div><h3>小地圖判牆</h3><p>讀右下小地圖分辨牆與可走區,<span class="k">不打牆上打不到的怪</span>,不空砍浪費輸出。</p></div>
-            <div class="card"><div class="ci">// SAFE-ZONE</div><h3>禁點框 + 排除半徑</h3><p>圈出自身與指定區域自動排除,避免誤點角色、避開安全區。</p></div>
-            <div class="card"><div class="ci">// FILTER</div><h3>近身反擊 · 忽略死怪</h3><p>白血條死怪自動略過、近身怪優先反擊,每一次攻擊都不浪費。</p></div>
+            <div class="card"><div class="ci">// RADAR</div><h3>聰明選怪</h3><p>自動挑<span class="k">最近、最密</span>的怪先打,不亂跑、不空砍,清得又快又順。</p></div>
+            <div class="card"><div class="ci">// SAFE</div><h3>牆後的怪自動略過</h3><p>會避開<span class="k">打不到的怪</span>,不對著空氣猛砍、不浪費時間掛乾等。</p></div>
+            <div class="card"><div class="ci">// ZONE</div><h3>不誤點自己</h3><p>可框出自己和安全區自動避開,不會誤點到角色,安穩掛不出包。</p></div>
+            <div class="card"><div class="ci">// FILTER</div><h3>近身反擊 · 略過死怪</h3><p>死掉的怪自動略過、被貼身就先反擊,每一下都打在刀口上。</p></div>
           </div>
         </div>
       </section>
@@ -182,7 +182,7 @@ onUnmounted(() => {
             <div>
               <div class="idx">02 // 自動化整合</div>
               <h2 style="margin-top: 12px">掛上就走,細節它顧。</h2>
-              <p>巡場、瞬移、補血、選視窗、熱鍵——把掛機真正需要的自動化,一次做齊。</p>
+              <p>巡場練功、補血補魔、危險自動閃——掛機真正需要的,一次幫你顧好。</p>
             </div>
             <span class="tag amber">AUTOMATION</span>
           </div>
@@ -191,12 +191,12 @@ onUnmounted(() => {
               <div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 3.5V8h-4.5" /><circle cx="12" cy="12" r="2.4" /></svg></div>
               <div class="ci">// PATROL · 巡場練功</div>
               <h3>祝瞬自動巡場練功</h3>
-              <p>掛機後自動開快速移動清單、雙擊你設定的定點<span class="k">祝瞬瞬移</span>過去開打;某點清完或卡住超時,自動換下一點,<span class="k">多定點循環巡場</span>——一張圖多點自動輪流刷,人不用顧。</p>
+              <p>設好幾個定點,清完一點就<span class="k">自動祝瞬到下一點</span>,多點循環巡場——一張圖自己輪流刷。<span class="k">掛整晚,回來滿背包</span>,人完全不用顧。</p>
             </div>
-            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></div><div class="ci">// BLINK</div><h3>ICON 偵測瞬移(逃跑)</h3><p>先學角色頭上的 ICON,掛機中畫面一出現學過的 ICON 就<span class="k">自動 F5 瞬移閃人</span>(防 PK/危險),瞬移後續掛。</p></div>
-            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9-9.5C1.4 7.6 3.8 4.5 7 4.5c2 0 3.3 1.2 5 3 1.7-1.8 3-3 5-3 3.2 0 5.6 3.1 4 7C19 16.4 12 21 12 21z" /></svg></div><div class="ci">// SUPPLY</div><h3>血魔自動補給</h3><p>用血/魔條<span class="k">顏色邊界</span>精準讀百分比,低於門檻自動補。不靠 OCR、不誤判、反應快。</p></div>
-            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="1.5" /><path d="M8 21h8M12 18v3M7 9l2.5 2.5M7 9h3M7 9v3" /></svg></div><div class="ci">// HOTKEY</div><h3>全域熱鍵</h3><p>遊戲在前景時一鍵開關,不用切視窗、不用找按鈕,節奏你掌握。</p></div>
-            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="1.5" /><path d="M3 8h18M7 12h6" /></svg></div><div class="ci">// AUTO-BIND</div><h3>自動選視窗</h3><p>靠 exe → class → 標題自動鎖定遊戲視窗,<span class="k">標題隨機也免每次重選</span>,開了就認得。</p></div>
+            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></div><div class="ci">// ESCAPE</div><h3>危險自動瞬移閃人</h3><p>遇到危險就<span class="k">自動瞬移閃走</span>(防 PK、防紅名接近),保命第一,閃完繼續掛。</p></div>
+            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9-9.5C1.4 7.6 3.8 4.5 7 4.5c2 0 3.3 1.2 5 3 1.7-1.8 3-3 5-3 3.2 0 5.6 3.1 4 7C19 16.4 12 21 12 21z" /></svg></div><div class="ci">// SUPPLY</div><h3>血魔自動補給</h3><p>血、魔一低就<span class="k">自動補</span>,設好門檻就不用一直盯,反應快、不漏補、不暴斃。</p></div>
+            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="1.5" /><path d="M8 21h8M12 18v3M7 9l2.5 2.5M7 9h3M7 9v3" /></svg></div><div class="ci">// HOTKEY</div><h3>一鍵開關</h3><p>遊戲畫面在前景時一鍵開始 / 暫停,不用切視窗、不用找按鈕,節奏你掌握。</p></div>
+            <div class="card"><div class="icon" style="color: var(--lock)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="1.5" /><path d="M3 8h18M7 12h6" /></svg></div><div class="ci">// AUTO-BIND</div><h3>自動認遊戲視窗</h3><p><span class="k">多開也不會選錯</span>,自動認出你要掛的那個視窗,開了就開打,免每次重選。</p></div>
           </div>
         </div>
       </section>
@@ -214,16 +214,16 @@ onUnmounted(() => {
           <div class="remote-grid reveal">
             <div>
               <ul>
-                <li><span class="b">01</span><div><b>多用戶 Token 綁定</b><br /><span>MH 自產 token,綁到你的帳號。多台機器人各自獨立,一個網頁全看齊。</span></div></li>
-                <li><span class="b">02</span><div><b>即時偵測畫面預覽</b><br /><span>遠端直接看機器人「當下畫面」——在線自動顯示、每 2 秒更新、心跳穩定不閃斷。</span></div></li>
-                <li><span class="b">03</span><div><b>遠端開關 · 改參數</b><br /><span>靈敏度、攻擊距離、模式切換,手機上按一下即時生效,不用回電腦。</span></div></li>
+                <li><span class="b">01</span><div><b>綁定你的帳號</b><br /><span>綁定後,多台各自獨立,一個網頁全部看齊——在公司、在外面都能顧。</span></div></li>
+                <li><span class="b">02</span><div><b>看它現在打到哪</b><br /><span>人在外面也能看它「當下畫面」,即時自動顯示、連線穩不閃斷,掛得安心。</span></div></li>
+                <li><span class="b">03</span><div><b>手機直接遙控</b><br /><span>開關、改設定手機按一下即時生效,不用跑回電腦前,隨手就能調。</span></div></li>
               </ul>
             </div>
             <div class="phone" aria-hidden="true">
               <div class="notch"></div>
               <div class="screen">
                 <div class="sh"><span class="st"></span><b>主帳 · 練功中</b><span class="on">● ONLINE</span></div>
-                <div class="cam"><div class="sl"></div><div class="rt"><i></i><i></i><i></i><i></i></div><div class="tag2">LIVE · GRID RADAR</div></div>
+                <div class="cam"><div class="sl"></div><div class="rt"><i></i><i></i><i></i><i></i></div><div class="tag2">LIVE · 即時畫面</div></div>
                 <div class="rows"><div class="r"><b>運行</b><span class="v">運行中</span></div><div class="r"><b>鎖定目標</b><span class="v">3</span></div><div class="r"><b>HP / MP</b><span class="v">87% / 62%</span></div></div>
                 <div class="ctrls"><span class="go">▶ 開始</span><span class="stp">■ 暫停</span></div>
               </div>
@@ -239,11 +239,11 @@ onUnmounted(() => {
             <span class="tag amber">RELIABILITY</span>
           </div>
           <div class="qual reveal">
-            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M8 8h8v8H8z" /></svg></div><h3>深色電競 GUI</h3><p>FlatLaf 深色主題,好看好操作,長時間看不累。</p></div>
-            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" /><circle cx="15" cy="12" r="2" /><circle cx="7" cy="18" r="2" /></svg></div><h3>高度可調</h3><p>靈敏度、攻擊距離、冷卻、每目標時間,全可微調。</p></div>
-            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5" /></svg></div><h3>穩定掛機</h3><p>長時間不閃退,單一執行緒出錯也不會全死。</p></div>
-            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></div><h3>回歸測試把關</h3><p>每版發布前自動測試全過才出貨,不帶病更新。</p></div>
-            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg></div><h3>輕量免安裝</h3><p>單一 exe + 內建執行環境,解壓即用,一鍵更新。</p></div>
+            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M8 8h8v8H8z" /></svg></div><h3>順手的深色介面</h3><p>深色電競風,設定清楚好調,長時間看也不累眼。</p></div>
+            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /><circle cx="9" cy="6" r="2" /><circle cx="15" cy="12" r="2" /><circle cx="7" cy="18" r="2" /></svg></div><h3>依你打法微調</h3><p>靈敏度、範圍、速度都能調,依你的版本和習慣調到順手。</p></div>
+            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5" /></svg></div><h3>掛整晚不出事</h3><p>長時間掛不閃退、不卡死,穩穩幫你刷經驗、賺裝。</p></div>
+            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></svg></div><h3>更新前先測過</h3><p>每次更新都嚴格測過才發布,不會越更新越難用。</p></div>
+            <div class="qcard"><div class="qi"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg></div><h3>免安裝即用</h3><p>解壓就能用、免安裝,一鍵自動更新,你的設定還會保留。</p></div>
           </div>
         </div>
       </section>
@@ -274,7 +274,7 @@ onUnmounted(() => {
       <footer>
         <div class="wrap">
           <div class="brand"><span class="glyph"></span><b>MotionHunter</b></div>
-          <div class="meta">動作偵測打怪輔助 · 適用各版本天堂 Lineage &nbsp;//&nbsp; 由 <a class="gh" href="https://gameshare-system.com" target="_blank" rel="noopener">分寶 GameShare</a> 提供<br />自動化工具 · 使用請遵守遊戲條款並自負風險</div>
+          <div class="meta">自動打怪掛機輔助 · 適用各版本天堂 Lineage &nbsp;//&nbsp; 由 <a class="gh" href="https://gameshare-system.com" target="_blank" rel="noopener">分寶 GameShare</a> 提供<br />自動化工具 · 使用請遵守遊戲條款並自負風險</div>
         </div>
       </footer>
     </div>
