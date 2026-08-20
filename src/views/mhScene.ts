@@ -126,13 +126,48 @@ export function initMhScene(canvas: HTMLCanvasElement): () => void {
   let running = true, tt = 0, rafId = 0
   const timers = []
   const P = fgeo.attributes.position.array, MA = motes.geometry.attributes.position.array, MP = mgeo.attributes.position.array
+
+  // click interaction: radar ping ring + terrain ripple + insta-hunt nearby
+  const raycaster = new THREE.Raycaster()
+  const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -arena.position.y)
+  const hitV = new THREE.Vector3()
+  const ringC = ringTex('#2FE0CE')
+  const pings = []
+  for (let i = 0; i < 6; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringC, transparent: true, opacity: 0, depthTest: false })); sp.visible = false; arena.add(sp); pings.push({ sp, life: 0 }) }
+  const ripples = []
+  const RAMP = 0.6, RSPEED = 7, RLIFE = 1.5
+  function spawnPing(lx, lz) { for (let i = 0; i < pings.length; i++) { if (pings[i].life <= 0) { pings[i].life = 1; pings[i].sp.position.set(lx, ty(lx, lz, tt) + 0.06, lz); pings[i].sp.visible = true; return } } }
+  const onClick = (e) => {
+    const t = e.target
+    if (t && t.closest && t.closest('a,button,input,textarea,select,.card,.qcard,.demo-cap,.phone,.price,.qr,.nav-cta,.btn,.topbar,.screen')) return
+    const ndcx = (e.clientX / window.innerWidth) * 2 - 1
+    const ndcy = -(e.clientY / window.innerHeight) * 2 + 1
+    raycaster.setFromCamera({ x: ndcx, y: ndcy }, camera)
+    if (!raycaster.ray.intersectPlane(groundPlane, hitV)) return
+    const lx = hitV.x - arena.position.x, lz = hitV.z - arena.position.z
+    if (!isFinite(lx) || !isFinite(lz) || Math.abs(lx) > 70 || Math.abs(lz) > 100) return
+    ripples.push({ x: lx, z: lz, t0: tt }); if (ripples.length > 6) ripples.shift()
+    spawnPing(lx, lz)
+    for (let m = 0; m < M; m++) { if (mons[m].hp <= 0) continue; const d = Math.sqrt((mons[m].x - lx) * (mons[m].x - lx) + (mons[m].z - lz) * (mons[m].z - lz)); if (d < 3.2) { strikeAt(mons[m].x, ty(mons[m].x, mons[m].z, tt) + 0.12, mons[m].z); mons[m].hp = 0; timers.push(setTimeout(((oo) => () => spawnMon(oo))(mons[m]), 600 + Math.random() * 900)) } }
+  }
+  window.addEventListener('pointerdown', onClick)
+
   const onVis = () => { running = !document.hidden; if (running) loop() }
   document.addEventListener('visibilitychange', onVis)
 
   function loop() {
     if (!running) return
     const dt = 0.016; tt += dt
-    for (let a = 0; a < N; a++) { P[a * 3 + 1] = ty(base[a * 3], base[a * 3 + 2], tt) }
+    while (ripples.length && tt - ripples[0].t0 >= RLIFE) ripples.shift()
+    for (let a = 0; a < N; a++) {
+      const bx = base[a * 3], bz = base[a * 3 + 2]
+      let yv = ty(bx, bz, tt)
+      for (let rp = 0; rp < ripples.length; rp++) {
+        const Rp = ripples[rp], age = tt - Rp.t0
+        if (age > 0) { const front = Math.sqrt((bx - Rp.x) * (bx - Rp.x) + (bz - Rp.z) * (bz - Rp.z)) - age * RSPEED; yv += RAMP * (1 - age / RLIFE) * Math.exp(-front * front * 1.6) }
+      }
+      P[a * 3 + 1] = yv
+    }
     fgeo.attributes.position.needsUpdate = true
     for (let m = 0; m < M; m++) {
       const o = mons[m]; o.a += (Math.random() - 0.5) * 0.35; o.x += Math.cos(o.a) * o.sp; o.z += Math.sin(o.a) * o.sp
@@ -160,6 +195,7 @@ export function initMhScene(canvas: HTMLCanvasElement): () => void {
     }
     for (let s = 0; s < strikes.length; s++) { const S0 = strikes[s]; if (S0.life > 0) { S0.life -= dt * 2.2; const e = 1 - S0.life; S0.sp.scale.set(0.3 + e * 1.7, 0.3 + e * 1.7, 1); S0.sp.material.opacity = Math.max(0, S0.life); if (S0.life <= 0) S0.sp.visible = false } }
     for (let s = 0; s < gstrikes.length; s++) { const G0 = gstrikes[s]; if (G0.life > 0) { G0.life -= dt * 2.4; const e = 1 - G0.life; G0.sp.scale.set(0.4 + e * 1.8, 0.4 + e * 1.8, 1); G0.sp.material.opacity = Math.max(0, G0.life); if (G0.life <= 0) G0.sp.visible = false } }
+    for (let s = 0; s < pings.length; s++) { const Pg = pings[s]; if (Pg.life > 0) { Pg.life -= dt * 1.1; const e = 1 - Pg.life; Pg.sp.scale.set(0.3 + e * 3.4, 0.3 + e * 3.4, 1); Pg.sp.material.opacity = Math.max(0, Pg.life * 0.9); if (Pg.life <= 0) Pg.sp.visible = false } }
     teleT += dt; player.material.opacity = 0.7 + Math.sin(tt * 4) * 0.24
     if (teleT > 3.4) { teleT = 0; strikeGreen(player.position.x, player.position.z); wi = (wi + 1) % WP.length; player.position.set(WP[wi][0], ty(WP[wi][0], WP[wi][1], tt) + 0.42, WP[wi][1]); strikeGreen(WP[wi][0], WP[wi][1]) }
     else { player.position.y = ty(player.position.x, player.position.z, tt) + 0.42 }
@@ -188,6 +224,7 @@ export function initMhScene(canvas: HTMLCanvasElement): () => void {
     window.removeEventListener('resize', resize)
     window.removeEventListener('pointermove', onPointer)
     window.removeEventListener('scroll', onScroll)
+    window.removeEventListener('pointerdown', onClick)
     document.removeEventListener('visibilitychange', onVis)
     timers.forEach((t) => clearTimeout(t))
     scene.traverse((o) => {

@@ -4,10 +4,12 @@ import { onMounted, onUnmounted, ref } from 'vue'
 const rootEl = ref<HTMLElement | null>(null)
 const glCanvas = ref<HTMLCanvasElement | null>(null)
 const lockEl = ref<HTMLElement | null>(null)
+const hintEl = ref<HTMLElement | null>(null)
 
 let sceneCleanup: (() => void) | null = null
 let revealIo: IntersectionObserver | null = null
 let lockTimer: ReturnType<typeof setInterval> | null = null
+let hideHint: (() => void) | null = null
 let disposed = false
 
 function scrollToId(id: string) {
@@ -62,6 +64,10 @@ onMounted(() => {
     }, 640)
   }
 
+  // 首次點擊後淡出「點擊提示」
+  hideHint = () => { if (hintEl.value) hintEl.value.classList.add('gone') }
+  window.addEventListener('pointerdown', hideHint, { once: true })
+
   // WebGL scene — dynamically imported so three.js only loads on /mh
   if (glCanvas.value) {
     import('./mhScene')
@@ -80,6 +86,7 @@ onUnmounted(() => {
   if (sceneCleanup) sceneCleanup()
   if (revealIo) revealIo.disconnect()
   if (lockTimer) clearInterval(lockTimer)
+  if (hideHint) window.removeEventListener('pointerdown', hideHint)
 })
 </script>
 
@@ -110,6 +117,7 @@ onUnmounted(() => {
             <a class="btn btn-ghost" href="#" @click.prevent="scrollToId('combat')">看它會什麼 ↓</a>
           </div>
           <div class="hero-note">// 適用各版本天堂 Lineage · 月租制 NT$2,000／月 · 專人協助設定</div>
+          <div class="click-hint" ref="hintEl">◎ 試著點一下戰場 — 發送雷達脈衝</div>
         </div>
       </div>
       <div class="scrolldn">SCROLL<span class="bar"></span></div>
@@ -333,6 +341,11 @@ h1, h2, h3 { margin: 0; font-family: var(--f-disp); font-weight: 700; text-wrap:
 .btn-ghost { background: rgba(12, 17, 28, 0.5); border-color: var(--line-strong); color: var(--ink); backdrop-filter: blur(4px); }
 .btn-ghost:hover { border-color: var(--scan); color: var(--scan); }
 .hero-note { margin-top: 18px; font-family: var(--f-mono); font-size: 0.74rem; color: var(--ink-dim); letter-spacing: 0.04em; }
+.click-hint { margin-top: 14px; font-family: var(--f-mono); font-size: 0.74rem; letter-spacing: 0.1em; color: var(--scan); opacity: 0.85; animation: mh-hintpulse 2.2s ease-in-out infinite; transition: opacity 0.5s; }
+.click-hint.gone { opacity: 0; }
+@keyframes mh-hintpulse { 50% { opacity: 0.32; } }
+.hero, .demo3d { cursor: crosshair; }
+.hero a, .hero .btn { cursor: pointer; }
 .hud { position: absolute; font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.08em; color: var(--ink-2); z-index: 3; }
 .hud .k { color: var(--ink-dim); } .hud .v { color: var(--scan); } .hud .v.g { color: var(--online); } .hud .v.a { color: var(--lock); }
 .hud.h-tr { top: 92px; right: 34px; text-align: right; } .hud.h-br { bottom: 34px; right: 34px; text-align: right; } .hud.h-bl { bottom: 34px; left: 34px; }
@@ -348,9 +361,10 @@ h1, h2, h3 { margin: 0; font-family: var(--f-disp); font-weight: 700; text-wrap:
 .demo-cap h3 { font-size: 1.6rem; font-family: var(--f-disp); margin-bottom: 8px; }
 .demo-cap p { margin: 0; color: var(--ink-2); font-size: 0.96rem; }
 
-.page-body { position: relative; z-index: 2; background: rgba(7, 10, 17, 0.86); backdrop-filter: blur(8px); border-top: 1px solid var(--line); }
+/* 淡薄霧,讓 3D 戰場清楚透出來、文字仍讀得清(內容自己是玻璃卡) */
+.page-body { position: relative; z-index: 2; background: linear-gradient(180deg, rgba(7, 10, 17, 0.32), rgba(7, 10, 17, 0.46)); backdrop-filter: blur(2px); border-top: 1px solid var(--line); }
 
-.telemetry { border-bottom: 1px solid var(--line); }
+.telemetry { border-bottom: 1px solid var(--line); background: rgba(7, 10, 17, 0.3); backdrop-filter: blur(3px); }
 .telemetry .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
 .tcell { padding: 26px 20px; border-left: 1px solid var(--line); }
 .tcell:first-child { border-left: 0; }
@@ -363,12 +377,13 @@ section { padding: 82px 0; position: relative; }
 .sec-head h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); line-height: 1.1; }
 .sec-head .idx { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.16em; color: var(--ink-dim); }
 .sec-head p { margin: 10px 0 0; color: var(--ink-2); max-width: 46ch; }
+.sec-head h2, .sec-head p, .sec-head .idx { text-shadow: 0 2px 18px rgba(7, 10, 17, 0.85); }
 
 .modules { display: grid; gap: 16px; }
 .grid-5 { grid-template-columns: repeat(6, 1fr); }
 .grid-4 { grid-template-columns: repeat(2, 1fr); }
 .grid-4 .card.span2 { grid-column: 1 / -1; }
-.card { position: relative; background: linear-gradient(180deg, rgba(17, 24, 39, 0.7), rgba(12, 17, 28, 0.7)); border: 1px solid var(--line); border-radius: 4px; padding: 26px 24px; overflow: hidden; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
+.card { position: relative; background: linear-gradient(180deg, rgba(17, 24, 39, 0.78), rgba(12, 17, 28, 0.78)); backdrop-filter: blur(7px); border: 1px solid var(--line); border-radius: 4px; padding: 26px 24px; overflow: hidden; transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s; }
 .card::after { content: ""; position: absolute; top: 0; left: 0; width: 22px; height: 22px; border-top: 2px solid var(--scan); border-left: 2px solid var(--scan); opacity: 0; transition: 0.3s; }
 .card:hover { border-color: var(--line-strong); transform: translateY(-3px); box-shadow: 0 20px 44px -26px rgba(0, 0, 0, 0.9); }
 .card:hover::after { opacity: 0.85; }
@@ -416,7 +431,7 @@ section { padding: 82px 0; position: relative; }
 .screen .ctrls .stp { border: 1px solid var(--line-strong); color: var(--ink-2); }
 
 .qual { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
-.qcard { border: 1px solid var(--line); border-radius: 4px; padding: 22px 18px; background: rgba(12, 17, 28, 0.6); }
+.qcard { border: 1px solid var(--line); border-radius: 4px; padding: 22px 18px; background: rgba(12, 17, 28, 0.72); backdrop-filter: blur(7px); }
 .qcard .qi { width: 30px; height: 30px; color: var(--lock); margin-bottom: 14px; }
 .qcard .qi svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.6; }
 .qcard h3 { font-size: 1rem; font-family: var(--f-body); font-weight: 700; margin-bottom: 7px; }
