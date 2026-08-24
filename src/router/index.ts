@@ -28,6 +28,7 @@ import AdminPage from '@/views/AdminPage.vue'
 import BotMonitorPage from '@/views/BotMonitorPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
+import FeaturePermissionPage from '@/views/FeaturePermissionPage.vue'
 import SlotMachinePage from '@/views/SlotMachinePage.vue'
 import DiceGamePage from '@/views/DiceGamePage.vue'
 import RouletteGamePage from '@/views/RouletteGamePage.vue'
@@ -198,6 +199,10 @@ const router = createRouter({
         {
           path: 'auditLog',
           component: AuditLogPage,
+        },
+        {
+          path: 'featurePermission',
+          component: FeaturePermissionPage,
         },
         {
           path: 'settings',
