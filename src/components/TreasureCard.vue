@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useAuction } from '@/composables/treasureCare.ts'
 import SearchableSelect from '@/components/SearchableSelect.vue'
 import RemarkPickerModal from '@/components/RemarkPickerModal.vue'
 import { useSharedListsStore } from '@/stores/sharedLists.ts'
 import { useAuthStore } from '@/stores/auth.ts'
+import { useFeatureStore } from '@/stores/features.ts'
+
+const featureStore = useFeatureStore()
+onMounted(() => featureStore.load())
 import {
   REMARK_WAREHOUSE,
   REMARK_ON_ME,
@@ -229,8 +233,8 @@ const closeManageDialog = () => {
         <span class="live-dot" :class="{ 'is-pulsing': liveTick > 0 }" :key="liveTick" title="即時連線中" aria-hidden="true"></span>
       </h3>
       <div class="header-btns">
-        <button class="btn-top open" @click="openTicket">開單</button>
-        <button class="btn-top" @click="openQuickTicket" title="從最近的開單紀錄一鍵重送">快速</button>
+        <button v-if="featureStore.enabled('openTicket')" class="btn-top open" @click="openTicket">開單</button>
+        <button v-if="featureStore.enabled('openTicket')" class="btn-top" @click="openQuickTicket" title="從最近的開單紀錄一鍵重送">快速</button>
         <button class="btn-top add" @click="openAddTreasureDialog">道具</button>
         <button class="btn-top add" @click="openAddBossDialog">首領</button>
       </div>
