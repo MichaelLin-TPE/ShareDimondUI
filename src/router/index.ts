@@ -29,6 +29,7 @@ import BotMonitorPage from '@/views/BotMonitorPage.vue'
 import AttendancePage from '@/views/AttendancePage.vue'
 import AuditLogPage from '@/views/AuditLogPage.vue'
 import FeaturePermissionPage from '@/views/FeaturePermissionPage.vue'
+import JackpotDistributePage from '@/views/JackpotDistributePage.vue'
 import SlotMachinePage from '@/views/SlotMachinePage.vue'
 import DiceGamePage from '@/views/DiceGamePage.vue'
 import RouletteGamePage from '@/views/RouletteGamePage.vue'
@@ -203,6 +204,10 @@ const router = createRouter({
         {
           path: 'featurePermission',
           component: FeaturePermissionPage,
+        },
+        {
+          path: 'jackpotDistribute',
+          component: JackpotDistributePage,
         },
         {
           path: 'settings',
