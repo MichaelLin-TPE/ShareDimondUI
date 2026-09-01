@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useBiddingTreasureStore } from '@/stores/biddingTreasure.ts'
 import { useAuthStore } from '@/stores/auth.ts'
 import { REMARK_WAREHOUSE } from '@/composables/remarkOptions.ts'
@@ -33,6 +33,14 @@ const stocks = computed<StockItem[]>(() => {
 const totalPieces = computed(() => stocks.value.reduce((s, i) => s + i.count, 0))
 const totalKinds = computed(() => stocks.value.length)
 
+// 道具太多不好找:依物品名即時過濾(大小寫不拘)
+const keyword = ref('')
+const filteredStocks = computed<StockItem[]>(() => {
+  const k = keyword.value.trim().toLowerCase()
+  if (!k) return stocks.value
+  return stocks.value.filter((s) => s.itemName.toLowerCase().includes(k))
+})
+
 onMounted(() => {
   biddingStore.refresh()
   const clanId = authStore?.member?.clanId
@@ -57,13 +65,28 @@ onUnmounted(() => {
       統計所有已繳交至倉庫(備註「已繳倉庫」)的道具,依物品彙總目前持有件數。此區僅幹部以上可見。
     </p>
 
+    <div v-if="stocks.length > 0" class="search-bar">
+      <input
+        v-model="keyword"
+        type="text"
+        placeholder="🔍 搜尋道具名稱..."
+        class="search-input"
+      />
+      <span v-if="keyword.trim()" class="inv-search-count">符合 {{ filteredStocks.length }} 種</span>
+    </div>
+
     <div v-if="stocks.length === 0" class="inv-empty">
       <span class="inv-empty-icon">📭</span>
       <p>目前倉庫沒有任何已入庫的道具。</p>
     </div>
 
+    <div v-else-if="filteredStocks.length === 0" class="inv-empty">
+      <span class="inv-empty-icon">🔍</span>
+      <p>找不到符合「{{ keyword.trim() }}」的道具。</p>
+    </div>
+
     <div v-else class="inv-grid">
-      <div v-for="s in stocks" :key="s.itemName" class="inv-tile">
+      <div v-for="s in filteredStocks" :key="s.itemName" class="inv-tile">
         <span class="inv-item-name">{{ s.itemName }}</span>
         <span class="inv-item-count">×{{ s.count }}</span>
       </div>
@@ -107,6 +130,38 @@ onUnmounted(() => {
   font-size: 0.82rem;
   color: #64748b;
   line-height: 1.5;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-input {
+  flex: 1;
+  height: 42px;
+  padding: 0 14px;
+  background: #0f111a;
+  border: 1px solid #2e3147;
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.search-input:focus {
+  border-color: var(--c-light);
+  box-shadow: 0 0 0 3px rgba(var(--c-light-rgb), 0.15);
+}
+.search-input::placeholder {
+  color: #475569;
+}
+.inv-search-count {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-light);
+  white-space: nowrap;
 }
 
 .inv-empty {

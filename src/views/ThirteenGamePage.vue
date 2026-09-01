@@ -1284,6 +1284,7 @@ onUnmounted(() => {
     transform: translateY(105%); transition: transform .3s ease; z-index: 1500; box-shadow: 0 -8px 24px rgba(0,0,0,.6); }
   .t13-chat.open { transform: translateY(0); }
   .t13-chat-x { display: inline-flex; }
+  .t13-chat-fab.active { display: none; }   /* 聊天開啟時隱藏 FAB,避免 ✕ 疊到送出鈕(關閉用 sheet 內 ✕) */
   .t13-chat-fab { display: inline-flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: 16px;
     width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--c-mid), var(--c-deep));
     color: var(--c-on); font-size: 1.4rem; cursor: pointer; z-index: 1600; box-shadow: 0 4px 14px rgba(0,0,0,.4); }

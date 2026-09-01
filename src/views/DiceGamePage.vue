@@ -1142,6 +1142,7 @@ const isTriple = computed(() => displayDice.value[0] === displayDice.value[1] &&
   .chat-x {
     display: inline-flex;
   }
+  .chat-fab.active { display: none; }   /* 聊天開啟時隱藏 FAB,避免 ✕ 疊到送出鈕(關閉用 sheet 內 ✕) */
   .chat-fab {
     display: inline-flex;
     align-items: center;

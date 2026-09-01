@@ -4,9 +4,12 @@ import { RouterView, useRoute } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
 import ErrorOverlay from './components/ErrorOverlay.vue'
 import NotificationDrawer from './components/NotificationDrawer.vue'
+import MhPromo from './components/MhPromo.vue'
 import { useNotifications } from './composables/notifications.ts'
 
 const route = useRoute()
+// MH 廣告總開關:暫時隱藏(使用者要求)。說可開放再改 true 並重新部署。
+const showMhPromo = false
 // 新增：控制收費方式彈窗顯示狀態的變數
 const showPricingModal = ref(false)
 // 控制圖片彈窗顯示狀態的變數
@@ -150,6 +153,8 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
 
 <template>
   <ErrorOverlay />
+  <!-- MotionHunter 專屬廣告 (全站浮層:開站彈出→縮成右下常駐卡) — 暫時隱藏,待使用者說可開放,改 showMhPromo=true 再重新部署 -->
+  <MhPromo v-if="showMhPromo" />
   <!-- 通知抽屜 (全域，任何 component openDrawer() 都能滑出) -->
   <NotificationDrawer :open="notifDrawerOpen" @close="notifCloseDrawer" />
 

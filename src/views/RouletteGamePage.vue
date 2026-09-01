@@ -2124,6 +2124,7 @@ onUnmounted(() => {
   .rl-chat-x {
     display: inline-flex;
   }
+  .rl-chat-fab.active { display: none; }   /* 聊天開啟時隱藏 FAB,避免 ✕ 疊到送出鈕(關閉用 sheet 內 ✕) */
   .rl-chat-fab {
     width: 52px;
     height: 52px;

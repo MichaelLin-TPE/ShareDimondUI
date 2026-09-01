@@ -257,6 +257,11 @@ onUnmounted(() => {
             <p>適用各版本天堂 Lineage。專人協助設定,綁定帳號即可隨處遠端監控。</p>
             <div class="offer">
               <div class="price">
+                <div class="pk" style="color: var(--lock)">// 7 天體驗</div>
+                <div class="pv"><span class="cur">NT$</span>500<span class="per"> / 7 天</span></div>
+                <div class="pn">先玩一週,全功能不限制 · 專人協助設定</div>
+              </div>
+              <div class="price">
                 <div class="pk">// 月租方案</div>
                 <div class="pv"><span class="cur">NT$</span>2,000<span class="per"> / 月</span></div>
                 <div class="pn">專人協助設定 · 遠端監控 · 持續更新維護</div>

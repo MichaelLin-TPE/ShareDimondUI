@@ -775,7 +775,7 @@ onUnmounted(() => {
         <button type="submit" class="niu-chat-send" :disabled="chatSending || !chatDraft.trim()">送</button>
       </form>
     </aside>
-    <button class="niu-chat-fab" @click="chatOpen = !chatOpen">{{ chatOpen ? '✕' : '💬' }}</button>
+    <button class="niu-chat-fab" :class="{ active: chatOpen }" @click="chatOpen = !chatOpen">{{ chatOpen ? '✕' : '💬' }}</button>
   </div>
 </template>
 
@@ -965,6 +965,7 @@ onUnmounted(() => {
   .niu-chat { position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: 62vh; max-height: none; flex: none; background: #131722; border-radius: 16px 16px 0 0; transform: translateY(105%); transition: transform .3s; z-index: 1500; }
   .niu-chat.open { transform: translateY(0); }
   .niu-chat-x { display: inline-flex; }
+  .niu-chat-fab.active { display: none; }   /* 聊天開啟時隱藏 FAB,避免 ✕ 疊到送出鈕(關閉用 sheet 內 ✕) */
   .niu-chat-fab { display: inline-flex; align-items: center; justify-content: center; position: fixed; right: 16px; bottom: 16px; width: 52px; height: 52px; border-radius: 50%; border: none; background: linear-gradient(135deg, var(--c-mid), var(--c-deep)); color: var(--c-on); font-size: 1.4rem; cursor: pointer; z-index: 1600; }
 }
 </style>
