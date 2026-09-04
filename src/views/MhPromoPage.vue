@@ -248,6 +248,25 @@ onUnmounted(() => {
         </div>
       </section>
 
+      <section>
+        <div class="wrap">
+          <div class="sec-head reveal">
+            <div><div class="idx">05 // 常見問題</div><h2 style="margin-top: 12px">用之前想問的</h2></div>
+            <span class="tag">Q &amp; A</span>
+          </div>
+          <div class="qa-list reveal">
+            <div class="qa-item">
+              <div class="qa-q">目前適合哪些職業?</div>
+              <div class="qa-a">目前 <b>妖精</b>、<b>法師</b> 最合適——遠程 / 範圍攻擊,自動索敵、清怪表現最順。</div>
+            </div>
+            <div class="qa-item">
+              <div class="qa-q">近戰職業能用嗎?</div>
+              <div class="qa-a">可以掛,但目前效果還<b>不盡理想</b>;我們會<b>持續優化</b>近戰體驗,之後會更好。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="finale" id="contact">
         <div class="wrap">
           <div class="frame reveal">
@@ -441,6 +460,13 @@ section { padding: 82px 0; position: relative; }
 .qcard .qi svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.6; }
 .qcard h3 { font-size: 1rem; font-family: var(--f-body); font-weight: 700; margin-bottom: 7px; }
 .qcard p { margin: 0; color: var(--ink-dim); font-size: 0.84rem; line-height: 1.6; }
+
+.qa-list { display: flex; flex-direction: column; gap: 12px; max-width: 760px; }
+.qa-item { border: 1px solid var(--line); border-left: 2px solid var(--scan); border-radius: 4px; padding: 16px 20px; background: rgba(12, 17, 28, 0.72); backdrop-filter: blur(7px); }
+.qa-q { font-family: var(--f-body); font-weight: 700; font-size: 1.02rem; color: var(--ink); margin-bottom: 6px; }
+.qa-q::before { content: "Q "; font-family: var(--f-mono); color: var(--scan); font-weight: 700; }
+.qa-a { color: var(--ink-2); font-size: 0.9rem; line-height: 1.7; }
+.qa-a b { color: var(--ink); }
 
 .finale { text-align: center; padding: 100px 0; }
 .finale .frame { position: relative; border: 1px solid var(--line-strong); border-radius: 6px; padding: 64px 32px; background: radial-gradient(600px 300px at 50% 0%, rgba(47, 224, 206, 0.09), transparent 70%), linear-gradient(180deg, rgba(17, 24, 39, 0.82), rgba(12, 17, 28, 0.82)); }
