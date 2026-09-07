@@ -98,6 +98,25 @@ const router = createRouter({
       },
     },
     {
+      // 神盾天堂官網(公開,不需登入;獨立頂層 fullscreen 節點,整包懶載)
+      // 加入口:src/views/aegis/nav.ts 加一行 + 這裡加一個 child + 建 view
+      path: '/aegis',
+      component: () => import('@/views/aegis/AegisLayout.vue'),
+      meta: { fullscreen: true },
+      children: [
+        { path: '', name: 'aegis', component: () => import('@/views/aegis/HomePage.vue') },
+        { path: 'play', component: () => import('@/views/aegis/PlayPage.vue') },
+        { path: 'news', component: () => import('@/views/aegis/NewsPage.vue') },
+        { path: 'classes', component: () => import('@/views/aegis/ClassesPage.vue') },
+        { path: 'features', component: () => import('@/views/aegis/FeaturesPage.vue') },
+        { path: 'server', component: () => import('@/views/aegis/ServerPage.vue') },
+        { path: 'skills', component: () => import('@/views/aegis/SkillsPage.vue') },
+        { path: 'items', component: () => import('@/views/aegis/ItemsPage.vue') },
+        { path: 'market', component: () => import('@/views/aegis/MarketPage.vue') },
+        { path: 'contact', component: () => import('@/views/aegis/ContactPage.vue') },
+      ],
+    },
+    {
       path: '/bot-monitor',
       name: 'bot-monitor',
       component: BotMonitorPage,
