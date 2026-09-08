@@ -4,6 +4,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { AG_SITE } from './nav'
 import { AG_NEWS } from '@/data/aegis/news'
 import { AG_FEATURES } from '@/data/aegis/features'
+import FocusText from './ui/FocusText.vue'
 
 // ?v= 是快取版本號:換影片檔就 +1,否則回訪的瀏覽器會一直用舊檔
 const videoSrc = `${import.meta.env.BASE_URL}aegis/hero.mp4?v=4`.replace('//aegis', '/aegis')
@@ -65,7 +66,7 @@ onUnmounted(() => { if (io) io.disconnect() })
 
       <div class="hero-body">
         <h1 class="ag-h ag-anim" style="--d: 0.15s; --y: 30px">
-          <span class="l1">踏進來,重新開始你的天堂。</span>
+          <span class="l1"><FocusText :words="['踏進來,', '重新開始', '你的', '天堂。']" /></span>
           <span class="thin">{{ AG_SITE.name }} {{ AG_SITE.latin }} · {{ AG_SITE.tagline }}</span>
         </h1>
         <div class="ag-line ag-anim grow hr" style="--d: 0.4s"></div>
