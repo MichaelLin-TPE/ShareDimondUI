@@ -5,7 +5,7 @@ export interface AgKv { k: string; v: string; note?: string }
 export const AG_SERVER_BASIC: AgKv[] = [
   { k: '版本', v: '3.81' },
   { k: '等級上限', v: '100' },
-  { k: '職業', v: '7 職', note: '君主 / 騎士 / 妖精 / 法師 / 黑妖 / 龍騎士 / 幻術師' },
+  { k: '職業', v: '5 職', note: '君主 / 騎士 / 妖精 / 法師 / 黑妖' },
   { k: '同 IP 多開', v: '3 隻' },
   { k: '每日重置', v: '00:00', note: '簽到 / 媽祖 / 副本 / 限購' },
   { k: '51 級後加點上限', v: '每圍 35' },

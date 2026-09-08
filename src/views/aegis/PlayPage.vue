@@ -4,13 +4,13 @@ import { AG_SITE } from './nav'
 
 const steps = [
   { n: '01', t: '下載 AEGIS 登入器', d: '從下方按鈕取得最新版壓縮檔,約 0.3 MB。' },
-  { n: '02', t: '解壓到客戶端資料夾', d: '放在天堂客戶端(Login.exe 所在)同一層。客戶端取得方式請洽客服。' },
+  { n: '02', t: '解壓到客戶端資料夾', d: '解壓到你的天堂資料夾(跟 Login.exe 同一層)。沒有客戶端?找客服拿。' },
   { n: '03', t: '執行 MyLauncher.exe', d: '啟動時自動檢查更新,更新完直接進登入畫面。第一次請以系統管理員身分開啟。' },
 ]
 </script>
 
 <template>
-  <AgPage eyebrow="PLAY // 進場" title="門開著。" sub="三步驟,回到天堂。" lead="登入器與神盾輔助都由啟動器自動更新,不用另外裝任何東西。">
+  <AgPage eyebrow="PLAY // 進場" title="門開著。" sub="三步驟,回到天堂。" lead="登入器自己會更新,常用輔助都內建,不用再裝一堆外掛。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="ag-grid c3">

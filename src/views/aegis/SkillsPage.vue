@@ -12,7 +12,7 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <AgPage eyebrow="SKILLS // 技能介紹" title="技能表。" sub="等級、耗魔、冷卻、效果。" lead="目前為佔位資料,正式版直接由伺服器技能表匯出。">
+  <AgPage eyebrow="SKILLS // 技能介紹" title="技能表。" sub="等級、耗魔、冷卻、效果。" lead="技能資料陸續整理中,先放常用的。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="bar">

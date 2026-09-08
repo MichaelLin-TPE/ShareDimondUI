@@ -80,6 +80,7 @@
 
 /* 卡片:直角、hairline、hover 上緣餘燼線 */
 .ag-grid { display: grid; gap: 1px; background: var(--ag-line-soft); border: 1px solid var(--ag-line-soft); }
+.ag-grid.c1 { grid-template-columns: 1fr; }
 .ag-grid.c2 { grid-template-columns: repeat(2, 1fr); }
 .ag-grid.c3 { grid-template-columns: repeat(3, 1fr); }
 .ag-grid.c4 { grid-template-columns: repeat(4, 1fr); }

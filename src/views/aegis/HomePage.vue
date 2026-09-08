@@ -10,12 +10,13 @@ const videoSrc = `${import.meta.env.BASE_URL}aegis/hero.mp4?v=4`.replace('//aegi
 const rootEl = ref<HTMLElement | null>(null)
 const latest = AG_NEWS.slice(0, 3)
 const feats = AG_FEATURES.slice(0, 4)
+const artBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/aegis/art`
 
 // 數字帶:進視窗才跳數
 const stats = [
   { n: 100, suffix: '', cap: '等級上限' },
   { n: 3, suffix: '', cap: '同 IP 多開' },
-  { n: 7, suffix: '', cap: '職業' },
+  { n: 5, suffix: '', cap: '職業' },
   { n: 13, suffix: '', cap: '收藏品 · 永久加屬性' },
 ]
 const shown = ref(stats.map(() => 0))
@@ -69,10 +70,10 @@ onUnmounted(() => { if (io) io.disconnect() })
         </h1>
         <div class="ag-line ag-anim grow hr" style="--d: 0.4s"></div>
         <div class="ag-row2 ag-anim" style="--d: 0.5s">
-          <p class="ag-cap l">自製系統 · 公開機率 · 每日 00:00 重置<br />在原始碼上親手加的,不是換皮。</p>
+          <p class="ag-cap l">經典 3.81 · 衝裝機率公開 · 每日 00:00 重置<br />老玩家的天堂,該有的都在。</p>
           <div class="r">
-            <p class="ag-body">釣魚與收藏、公開的衝裝機率表、王族光環、媽祖祝福。每一項都是在伺服器原始碼上加的,能查得到、也改得動。</p>
-            <p class="ag-body">等級上限 100、同 IP 三開、每日午夜排程重置。所有數值都在伺服器設置頁公開。</p>
+            <p class="ag-body">釣魚釣到變強、衝裝機率攤開給你看、王族光環、媽祖祝福,想玩的都幫你準備好了。</p>
+            <p class="ag-body">練到 100 等、一台電腦開三隻、每天午夜準時重置。倍率、機率全部公開,不用私訊問。</p>
             <div class="cta">
               <RouterLink class="ag-btn primary" to="/aegis/play">點我玩遊戲 <span class="arr">→</span></RouterLink>
               <RouterLink class="ag-btn" to="/aegis/features">遊戲特色</RouterLink>
@@ -120,11 +121,13 @@ onUnmounted(() => { if (io) io.disconnect() })
           <div><div class="idx">02 // FEATURES</div><h2>遊戲特色</h2></div>
           <RouterLink to="/aegis/features" class="ag-cap more">看全部 →</RouterLink>
         </div>
-        <div class="ag-grid c4">
-          <RouterLink v-for="f in feats" :key="f.id" :to="`/aegis/features#${f.id}`" class="ag-card">
+        <div class="ag-grid" :class="feats.length >= 4 ? 'c4' : feats.length >= 2 ? 'c2' : 'c1'">
+          <RouterLink v-for="f in feats" :key="f.id" :to="`/aegis/features#${f.id}`" class="ag-card" :class="{ wide: feats.length <= 2 }">
             <div class="ci">// {{ f.idx }}</div>
             <h3>{{ f.title }}</h3>
             <p>{{ f.short }}</p>
+            <p v-if="feats.length <= 2" class="more-pts">{{ f.points[0] }}</p>
+            <img v-if="feats.length <= 2 && f.art" class="card-art" :src="`${artBase}/${f.art}`" :alt="f.title" />
           </RouterLink>
         </div>
       </div>
@@ -139,7 +142,7 @@ onUnmounted(() => { if (io) io.disconnect() })
             <h2 class="ag-h">門開著。<span class="thin">下載 AEGIS,三步驟進場。</span></h2>
           </div>
           <div class="r">
-            <p class="ag-body">解壓到客戶端資料夾,執行登入器,它會自己檢查更新。客戶端取得方式請洽客服。</p>
+            <p class="ag-body">下載登入器、解壓、點兩下,更新自己跑完就能進遊戲。沒有客戶端?找客服拿。</p>
             <div class="cta">
               <RouterLink class="ag-btn primary" to="/aegis/play">點我玩遊戲 <span class="arr">→</span></RouterLink>
               <RouterLink class="ag-btn" to="/aegis/contact">聯絡客服</RouterLink>
@@ -181,6 +184,18 @@ onUnmounted(() => { if (io) io.disconnect() })
 .stat .n { font-size: clamp(1.8rem, 3.4vw, 2.6rem); font-weight: 200; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
 .stat .n .u { font-size: 0.5em; color: var(--ag-ember); }
 
+.ag-card.wide { padding: 34px 32px; min-height: 260px; }
+.ag-card.wide .card-art { position: absolute; right: 0; top: 0; height: 100%; width: 52%; object-fit: cover; object-position: 62% 50%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%); pointer-events: none; }
+.ag-card.wide .ci, .ag-card.wide h3, .ag-card.wide p { position: relative; z-index: 1; max-width: 50%; }
+/* 兩張並排時卡片較窄:圖收窄一點、文字多留一點 */
+.ag-grid.c2 .ag-card.wide .card-art { width: 46%; object-position: 55% 50%; }
+.ag-grid.c2 .ag-card.wide .ci, .ag-grid.c2 .ag-card.wide h3, .ag-grid.c2 .ag-card.wide p { max-width: 58%; }
+.ag-grid.c2 .ag-card.wide h3 { font-size: 1.3rem; }
+@media (max-width: 800px) { .ag-card.wide .card-art { display: none; } .ag-card.wide .ci, .ag-card.wide h3, .ag-card.wide p { max-width: none; } }
+.ag-card.wide h3 { font-size: 1.5rem; font-family: var(--ag-font); }
+.ag-card.wide p { font-size: 15px; max-width: 60ch; }
+.ag-card.wide .more-pts { margin-top: 12px; color: var(--ag-ink-50); font-size: 13px; }
 .more { color: var(--ag-ink-50); }
 .more:hover { color: var(--ag-ink); }
 .news-list { border-top: 1px solid var(--ag-line); }

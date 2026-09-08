@@ -29,12 +29,12 @@ function startEmbers(canvas: HTMLCanvasElement): () => void {
   let w = 0, h = 0, raf = 0, last = performance.now()
   type P = { x: number; y: number; r: number; vy: number; sway: number; ph: number; a: number; life: number; max: number }
   let ps: P[] = []
-  const count = () => (w < 700 ? 26 : 60)
+  const count = () => (w < 700 ? 34 : 80)
   const spawn = (fromBottom: boolean): P => ({
     x: Math.random() * w, y: fromBottom ? h + 10 : Math.random() * h,
-    r: 0.8 + Math.random() * 2.2, vy: 10 + Math.random() * 24,
+    r: 1 + Math.random() * 2.4, vy: 12 + Math.random() * 26,
     sway: 6 + Math.random() * 14, ph: Math.random() * Math.PI * 2,
-    a: 0.4 + Math.random() * 0.55, life: 0, max: 9 + Math.random() * 10,
+    a: 0.6 + Math.random() * 0.4, life: 0, max: 9 + Math.random() * 10,
   })
   const resize = () => {
     w = window.innerWidth; h = window.innerHeight
@@ -53,12 +53,16 @@ function startEmbers(canvas: HTMLCanvasElement): () => void {
       const k = p.life / p.max, fade = k < 0.15 ? k / 0.15 : k > 0.75 ? (1 - k) / 0.25 : 1
       if (p.y < -10 || k >= 1) { ps[i] = spawn(true); continue }
       const a = p.a * Math.max(0, fade)
-      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4)
-      g.addColorStop(0, `rgba(255, 190, 110, ${a})`)
-      g.addColorStop(0.4, `rgba(232, 132, 42, ${a * 0.5})`)
+      // 光暈(柔)
+      const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5)
+      g.addColorStop(0, `rgba(255, 170, 80, ${a * 0.55})`)
+      g.addColorStop(0.45, `rgba(232, 132, 42, ${a * 0.25})`)
       g.addColorStop(1, 'rgba(232, 132, 42, 0)')
       ctx.fillStyle = g
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2); ctx.fill()
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 5, 0, Math.PI * 2); ctx.fill()
+      // 亮核心(清晰的一點)
+      ctx.fillStyle = `rgba(255, 226, 170, ${a})`
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill()
     }
     raf = requestAnimationFrame(tick)
   }
@@ -200,11 +204,15 @@ watch(menuOpen, (v) => {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 /* 整頁氛圍層:固定在最底;格線用暗角遮罩只露中間一點點 */
 .ag-amb { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
-.ag-amb .grid { position: absolute; inset: 0; opacity: 0.5;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 96px 96px;
-  -webkit-mask-image: radial-gradient(75% 70% at 50% 60%, #000 0%, transparent 100%);
-  mask-image: radial-gradient(75% 70% at 50% 60%, #000 0%, transparent 100%); }
+.ag-amb .grid { position: absolute; inset: 0; opacity: 0.9;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.11) 1px, transparent 1px),
+    linear-gradient(rgba(232, 132, 42, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 132, 42, 0.16) 1px, transparent 1px);
+  background-size: 96px 96px, 96px 96px, 480px 480px, 480px 480px;
+  -webkit-mask-image: radial-gradient(90% 85% at 50% 55%, #000 0%, rgba(0, 0, 0, 0.6) 55%, transparent 100%);
+  mask-image: radial-gradient(90% 85% at 50% 55%, #000 0%, rgba(0, 0, 0, 0.6) 55%, transparent 100%); }
 .ag-amb .embers { position: absolute; inset: 0; display: block; }
 /* 頁尾底圖:貼在頁面最底,從黑溶出山林 */
 .ag-bg-foot { position: absolute; left: 0; right: 0; bottom: 0; height: 60vh; min-height: 420px; z-index: 0; overflow: hidden; pointer-events: none; }

@@ -10,7 +10,7 @@ const trendMark = { up: '▲', down: '▼', flat: '—' } as const
 </script>
 
 <template>
-  <AgPage eyebrow="MARKET // 交易區" title="參考物價。" sub="玩家間成交的參考價,不是官方商店。" lead="目前為佔位資料。之後可擴充為玩家自行貼買賣單。">
+  <AgPage eyebrow="MARKET // 交易區" title="參考物價。" sub="玩家間成交的參考價,不是官方商店。" lead="依玩家成交行情整理,買賣前先看一眼,不會被坑。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="ag-tabs">

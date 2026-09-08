@@ -1,5 +1,5 @@
 // 技能介紹(假資料佔位)。之後直接從伺服器 DB skills 表匯出蓋掉,欄位對齊即可。
-export type AgClassKey = 'all' | 'royal' | 'knight' | 'elf' | 'wizard' | 'darkelf' | 'dragon' | 'illusion'
+export type AgClassKey = 'all' | 'royal' | 'knight' | 'elf' | 'wizard' | 'darkelf'
 
 export interface AgSkill {
   name: string
@@ -18,8 +18,6 @@ export const AG_SKILL_TABS: { key: AgClassKey; label: string }[] = [
   { key: 'elf', label: '妖精' },
   { key: 'wizard', label: '法師' },
   { key: 'darkelf', label: '黑妖' },
-  { key: 'dragon', label: '龍騎士' },
-  { key: 'illusion', label: '幻術師' },
 ]
 
 export const AG_SKILLS: AgSkill[] = [
@@ -35,6 +33,4 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '火球術', cls: 'wizard', level: 24, mp: 20, cooldown: '—', type: '攻擊', effect: '範圍火屬性傷害' },
   { name: '冰矛圍籬', cls: 'wizard', level: 32, mp: 25, cooldown: '—', type: '攻擊', effect: '範圍冰屬性傷害並減速' },
   { name: '燃燒的火焰', cls: 'darkelf', level: 30, mp: 15, cooldown: '—', type: '輔助', effect: '雙刀傷害 +3' },
-  { name: '龍之守護', cls: 'dragon', level: 30, mp: 20, cooldown: '—', type: '輔助', effect: '減傷 +10%,持續 300 秒' },
-  { name: '立方體:火焰', cls: 'illusion', level: 40, mp: 30, cooldown: '60 秒', type: '攻擊', effect: '召喚火焰立方體持續傷害' },
 ]

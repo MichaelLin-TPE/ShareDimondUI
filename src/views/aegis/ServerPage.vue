@@ -28,7 +28,7 @@ import { AG_SERVER_BASIC, AG_SERVER_RATES, AG_ENCHANT } from '@/data/aegis/serve
           </div>
         </div>
 
-        <div class="ag-sec-head enc"><div><div class="idx">03 // ENCHANT</div><h2>衝裝機率表</h2></div><span class="ag-cap">資料校對中</span></div>
+        <div class="ag-sec-head enc"><div><div class="idx">03 // ENCHANT</div><h2>衝裝機率表</h2></div><span class="ag-cap">以遊戲內實際為準</span></div>
         <div class="ag-table-wrap">
           <table class="ag-table">
             <thead><tr><th>階段</th><th>成功率</th><th>失敗</th></tr></thead>

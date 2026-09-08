@@ -12,7 +12,7 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <AgPage eyebrow="ITEMS // 武器防具" title="裝備表。" sub="攻擊、防禦、安全值、職業限制。" lead="目前為佔位資料,正式版直接由伺服器裝備表匯出。">
+  <AgPage eyebrow="ITEMS // 武器防具" title="裝備表。" sub="攻擊、防禦、安全值、職業限制。" lead="裝備資料陸續整理中,先放常見的。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="bar">
