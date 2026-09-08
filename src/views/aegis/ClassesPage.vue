@@ -125,7 +125,7 @@ const statRows = [
 
 <style scoped>
 .stage { position: relative; user-select: none; touch-action: pan-y; }
-.ring { position: relative; height: 540px; perspective: 1300px; perspective-origin: 50% 38%; overflow: visible; transform-style: preserve-3d; }
+.ring { position: relative; height: 540px; perspective: 1300px; perspective-origin: 50% 38%; overflow: visible; }  /* ⚠️ 不能 preserve-3d:旁邊的卡 translateZ 為負會落到容器平面後方,點擊會被容器接走 */
 .card {
   all: unset; cursor: pointer; position: absolute; left: 50%; top: 24px; width: 300px; height: 460px; margin-left: -150px;
   /* 金屬感邊框:外框斜向漸層細線;卡身本體在 .clip,這層不裁切,子層才能浮出來(preserve-3d) */
