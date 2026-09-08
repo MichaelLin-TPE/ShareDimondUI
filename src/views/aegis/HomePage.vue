@@ -5,7 +5,8 @@ import { AG_SITE } from './nav'
 import { AG_NEWS } from '@/data/aegis/news'
 import { AG_FEATURES } from '@/data/aegis/features'
 
-const videoSrc = `${import.meta.env.BASE_URL}aegis/hero.mp4`.replace('//aegis', '/aegis')
+// ?v= 是快取版本號:換影片檔就 +1,否則回訪的瀏覽器會一直用舊檔
+const videoSrc = `${import.meta.env.BASE_URL}aegis/hero.mp4?v=4`.replace('//aegis', '/aegis')
 const rootEl = ref<HTMLElement | null>(null)
 const latest = AG_NEWS.slice(0, 3)
 const feats = AG_FEATURES.slice(0, 4)
@@ -59,6 +60,7 @@ onUnmounted(() => { if (io) io.disconnect() })
       <div class="ov a"></div>
       <div class="ov b"></div>
       <div class="ov c"></div>
+      <div class="ov d"></div>
 
       <div class="hero-body">
         <h1 class="ag-h ag-anim" style="--d: 0.15s; --y: 30px">
@@ -154,16 +156,22 @@ onUnmounted(() => { if (io) io.disconnect() })
 .vid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* Dune 的三層覆蓋:整體 13% 暗、上下漸層、頂部一點暖光 */
 .ov { position: absolute; pointer-events: none; }
-.ov.a { inset: 0; background: rgba(0, 0, 0, 0.13); }
-.ov.b { inset: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.17) 0%, transparent 22%, transparent 55%, rgba(0, 0, 0, 0.25) 100%); }
+.ov.a { inset: 0; background: rgba(0, 0, 0, 0.05); }
+.ov.b { inset: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.17) 0%, transparent 22%, transparent 48%, rgba(0, 0, 0, 0.42) 72%, rgba(0, 0, 0, 0.72) 100%); }
+/* 內容區再壓一層暗幕,字才站得住(Dune 原版底部只有 25%,中文細字看不清) */
+.ov.d { left: 0; right: 0; bottom: 0; height: 42%; background: linear-gradient(to top, rgba(0, 0, 0, 0.48), rgba(0, 0, 0, 0)); }
 .ov.c { top: -14%; left: 50%; transform: translateX(-50%); width: 1000px; height: 720px; background: radial-gradient(ellipse at 50% 30%, rgba(180, 83, 9, 0.05) 0%, transparent 68%); }
 
 .hero-body { position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; padding: 0 var(--ag-gutter) 48px; display: flex; flex-direction: column; }
-.hero-body h1 { text-shadow: 0 2px 40px rgba(0, 0, 0, 0.45); }
+.hero-body h1 { text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 2px 40px rgba(0, 0, 0, 0.7); }
+.hero-body h1 .thin { color: rgba(255, 255, 255, 0.78); }
 .hero-body .l1 { display: block; white-space: nowrap; }
 .hero-body .thin { white-space: nowrap; }
 .hero-body .hr { margin: 28px 0 22px; }
-.hero-body .ag-cap, .hero-body .ag-body { text-shadow: 0 1px 16px rgba(0, 0, 0, 0.4); }
+.hero-body .ag-cap, .hero-body .ag-body { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65), 0 1px 16px rgba(0, 0, 0, 0.6); }
+.hero-body .ag-cap { color: rgba(255, 255, 255, 0.8); }
+.hero-body .ag-body { color: rgba(255, 255, 255, 0.9); font-weight: 400; }
+.hero-body .ag-line { background: rgba(255, 255, 255, 0.34); }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
 
 .stats { padding: 0; }

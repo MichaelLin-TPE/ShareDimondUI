@@ -67,6 +67,8 @@
 
 /* 子頁頂部帶(標題區) */
 .ag-band { padding: 150px 0 40px; }
+/* 子頁標題壓在頂部底圖上,加影子 */
+.ag-band .ag-h, .ag-band .ag-cap, .ag-band .ag-lead { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7), 0 2px 24px rgba(0, 0, 0, 0.6); }
 .ag-band .ag-cap { margin-bottom: 14px; }
 .ag-band .ag-lead { margin-top: 18px; max-width: 520px; }
 .ag-band .ag-line { margin-top: 34px; }
@@ -81,9 +83,10 @@
 .ag-grid.c2 { grid-template-columns: repeat(2, 1fr); }
 .ag-grid.c3 { grid-template-columns: repeat(3, 1fr); }
 .ag-grid.c4 { grid-template-columns: repeat(4, 1fr); }
-.ag-card { position: relative; background: var(--ag-bg); padding: 26px 24px; min-height: 150px; transition: background 0.25s; }
+/* 子頁有影片背景,卡片改半透明玻璃;首頁純黑底看起來一樣 */
+.ag-card { position: relative; background: rgba(4, 4, 4, 0.58); backdrop-filter: blur(8px); padding: 26px 24px; min-height: 150px; transition: background 0.25s; }
 .ag-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: var(--ag-ember); transform: scaleX(0); transform-origin: left; transition: transform 0.35s ease; }
-.ag-card:hover { background: #060606; }
+.ag-card:hover { background: rgba(14, 12, 10, 0.66); }
 .ag-card:hover::before { transform: scaleX(1); }
 .ag-card .ci { font-size: 10px; letter-spacing: 0.18em; color: var(--ag-ink-35); margin-bottom: 18px; }
 .ag-card h3 { font-size: 15px; font-weight: 500; letter-spacing: 0.01em; margin-bottom: 8px; }
@@ -123,7 +126,7 @@
 
 /* 圖片佔位(截圖待補) */
 .ag-shot { position: relative; aspect-ratio: 16 / 9; border: 1px solid var(--ag-line-soft); background:
-  linear-gradient(135deg, rgba(255,255,255,0.03), transparent 60%), #030303; display: flex; align-items: flex-end; padding: 14px; }
+  linear-gradient(135deg, rgba(255,255,255,0.03), transparent 60%), rgba(3, 3, 3, 0.6); backdrop-filter: blur(6px); display: flex; align-items: flex-end; padding: 14px; }
 .ag-shot::before { content: ''; position: absolute; inset: 10px; border: 1px dashed var(--ag-line-soft); }
 .ag-shot .ag-cap { position: relative; color: var(--ag-ink-35); }
 
