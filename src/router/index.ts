@@ -109,12 +109,21 @@ const router = createRouter({
         { path: 'news', component: () => import('@/views/aegis/NewsPage.vue') },
         { path: 'classes', component: () => import('@/views/aegis/ClassesPage.vue') },
         { path: 'features', component: () => import('@/views/aegis/FeaturesPage.vue') },
+        { path: 'drops', component: () => import('@/views/aegis/DropsPage.vue') },
         { path: 'server', component: () => import('@/views/aegis/ServerPage.vue') },
         { path: 'skills', component: () => import('@/views/aegis/SkillsPage.vue') },
         { path: 'items', component: () => import('@/views/aegis/ItemsPage.vue') },
         { path: 'market', component: () => import('@/views/aegis/MarketPage.vue') },
         { path: 'contact', component: () => import('@/views/aegis/ContactPage.vue') },
       ],
+    },
+    {
+      path: '/bot-fleet',
+      name: 'bot-fleet',
+      component: () => import('@/views/BotFleetPage.vue'),
+      meta: {
+        fullscreen: true,
+      },
     },
     {
       path: '/bot-monitor',

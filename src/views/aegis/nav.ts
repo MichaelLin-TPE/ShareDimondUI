@@ -13,6 +13,7 @@ export const AG_NAV: AgNavItem[] = [
   { label: '最新消息', to: '/aegis/news', side: 'left' },
   { label: '職業介紹', to: '/aegis/classes', side: 'left' },
   { label: '遊戲特色', to: '/aegis/features', side: 'left' },
+  { label: '打寶查詢', to: '/aegis/drops', side: 'left' },
   { label: '伺服器設置', to: '/aegis/server', side: 'left' },
   { label: '技能介紹', to: '/aegis/skills', side: 'right' },
   { label: '武器防具', to: '/aegis/items', side: 'right' },
