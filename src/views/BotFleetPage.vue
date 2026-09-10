@@ -66,6 +66,7 @@ const loadError = ref('')
 
 async function load() {
   if (demo.value || !authStore.isLogin) return
+  if (document.visibilityState === 'hidden') return   // 分頁沒在看就不打 API,切回來時立刻補一次(見 onVisible)
   try {
     const res = await fetch(`${API}/bot/bindings`, { headers: headers() })
     const body: unknown = await res.json()
@@ -130,12 +131,17 @@ async function unbind(token: string, name: string) {
 }
 
 let timer: number | undefined
+const onVisible = () => {
+  if (document.visibilityState === 'visible') load()
+}
 onMounted(() => {
   load()
   timer = window.setInterval(load, POLL_MS)
+  document.addEventListener('visibilitychange', onVisible)
 })
 onUnmounted(() => {
   if (timer) window.clearInterval(timer)
+  document.removeEventListener('visibilitychange', onVisible)
 })
 
 // ── 顯示用 ──
