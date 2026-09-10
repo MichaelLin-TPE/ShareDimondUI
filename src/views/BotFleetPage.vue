@@ -3,6 +3,8 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { generateSignature } from '@/utils/SignTools'
+import { resetSession } from '@/utils/session'
+import { useAlert } from '@/utils/alerts'
 
 // 假人監控:神盾天堂伺服器內 AI 假人的即時狀態。
 // 資料流:L1Server com.add.bot.BotWebReport 每 5 秒 POST /bot/heartbeat(X-Bot-Token)
@@ -46,6 +48,18 @@ const headers = (): Record<string, string> => {
   return { Authorization: `Bearer ${authStore.authToken}`, 'Content-Type': 'application/json', Sign: generateSignature(ts), TimeStamp: ts }
 }
 
+/** 後端登入逾時回 HTTP 400 + {status:-999},全站攔截器只接 401,這裡自己接:清 session 回登入頁 */
+function expired(d: unknown): boolean {
+  const o = d as { status?: unknown; message?: unknown } | null
+  const hit = !!o && (o.status === -999 || (typeof o.message === 'string' && o.message.includes('expired token')))
+  if (hit) {
+    useAlert.error('登入逾時,請重新登入')
+    resetSession()
+    router.replace('/login')
+  }
+  return hit
+}
+
 const bindings = ref<Binding[]>([])
 const loaded = ref(false)
 const loadError = ref('')
@@ -54,8 +68,10 @@ async function load() {
   if (demo.value || !authStore.isLogin) return
   try {
     const res = await fetch(`${API}/bot/bindings`, { headers: headers() })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    bindings.value = (await res.json()) as Binding[]
+    const body: unknown = await res.json()
+    if (expired(body)) return
+    if (!res.ok || !Array.isArray(body)) throw new Error(`HTTP ${res.status}`)
+    bindings.value = body as Binding[]
     loadError.value = ''
   } catch {
     loadError.value = '讀取失敗,5 秒後自動重試'
@@ -91,6 +107,7 @@ async function doBind() {
   try {
     const res = await fetch(`${API}/bot/bind`, { method: 'POST', headers: headers(), body: JSON.stringify({ token, name: bindName.value.trim() }) })
     const d = (await res.json().catch(() => ({}))) as { success?: boolean; message?: string; msg?: string }
+    if (expired(d)) return
     bindOk.value = res.ok && d.success !== false
     bindMsg.value = bindOk.value ? '綁定成功,伺服器回報後就會出現' : (d.message || d.msg || `綁定失敗(HTTP ${res.status})`)
     if (bindOk.value) {
