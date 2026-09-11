@@ -174,6 +174,17 @@ function totals(f: Fleet) {
     fighting: bots.filter((b) => !!b.target && !b.dead).length,
   }
 }
+/** 頂部等級一覽:等級高到低、同級照名字排 */
+function levelSummary(f: Fleet) {
+  const sorted = [...f.data.bots].sort((a, b) => b.lv - a.lv || a.name.localeCompare(b.name, 'zh-TW', { numeric: true }))
+  const lvs = sorted.map((b) => b.lv)
+  return {
+    sorted,
+    max: lvs.length ? Math.max(...lvs) : 0,
+    min: lvs.length ? Math.min(...lvs) : 0,
+    avg: lvs.length ? (lvs.reduce((s, v) => s + v, 0) / lvs.length).toFixed(1) : '0',
+  }
+}
 
 // ── 示範資料(?demo=1)──
 function demoBot(p: Partial<BotSnap>): BotSnap {
@@ -215,7 +226,8 @@ const DEMO_FLEET: Fleet = {
 
 <template>
   <div class="fleet">
-    <header class="top">
+    <!-- 不用 <header>:全站樣式在 ≤768px 會把所有 header 藏起來(那是網站頂欄用的),手機上標題跟假人名字會消失 -->
+    <div class="top">
       <div>
         <div class="eyebrow">神盾天堂 · 伺服器</div>
         <h1>假人監控</h1>
@@ -225,7 +237,7 @@ const DEMO_FLEET: Fleet = {
         <span v-if="demo" class="pill demo">示範資料</span>
         <button v-if="authStore.isLogin" type="button" class="btn ghost" @click="router.push('/clan')">回主頁</button>
       </div>
-    </header>
+    </div>
 
     <div v-if="!demo && !authStore.isLogin" class="gate">
       <p class="gate-title">請先登入</p>
@@ -273,6 +285,19 @@ const DEMO_FLEET: Fleet = {
           <button v-if="!demo" type="button" class="link" @click="unbind(f.token, f.name)">解除綁定</button>
         </div>
 
+        <div v-if="f.data.bots.length" class="levels">
+          <div class="levels-head">
+            <h3>等級一覽</h3>
+            <span>最高 Lv{{ levelSummary(f).max }} · 最低 Lv{{ levelSummary(f).min }} · 平均 {{ levelSummary(f).avg }}</span>
+          </div>
+          <ul class="level-list">
+            <li v-for="b in levelSummary(f).sorted" :key="b.name" class="lvchip" :class="{ dead: b.dead }">
+              <span class="lvname">{{ b.name }}</span>
+              <b>Lv{{ b.lv }}</b>
+            </li>
+          </ul>
+        </div>
+
         <div class="stats">
           <div class="stat"><label>假人</label><b>{{ f.data.bots.length }}</b><span>{{ totals(f).fighting }} 隻戰鬥中</span></div>
           <div class="stat"><label>真人在線</label><b>{{ f.data.realPlayers }}</b><span>{{ f.data.running ? '假人運作中' : '假人已停止' }}</span></div>
@@ -284,13 +309,13 @@ const DEMO_FLEET: Fleet = {
 
         <div class="grid">
           <article v-for="b in f.data.bots" :key="b.name" class="bot" :class="{ dead: b.dead }">
-            <header class="bot-head">
+            <div class="bot-head">
               <div class="who">
                 <span class="cls">{{ b.cls }}</span>
                 <h3>{{ b.name }}</h3>
               </div>
               <span class="state" :class="state(b).tone">{{ state(b).text }}</span>
-            </header>
+            </div>
 
             <div class="lvline">
               <span class="lv">Lv <b>{{ b.lv }}</b></span>
@@ -445,6 +470,17 @@ const DEMO_FLEET: Fleet = {
 .dot.on { background: var(--good); box-shadow: 0 0 10px rgba(61, 220, 151, 0.6); }
 .waiting .dot { background: var(--warn); }
 
+.levels { margin-bottom: 14px; padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 10px; }
+.levels-head { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 12px; flex-wrap: wrap; }
+.levels-head h3 { font-size: 14px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.06em; }
+.levels-head span { font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.level-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.lvchip { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 34px; padding: 6px 10px; border-radius: 8px; background: rgba(var(--c-light-rgb), 0.07); border: 1px solid rgba(var(--c-light-rgb), 0.16); font-size: 13.5px; line-height: 1.3; }
+.lvname { color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.lvchip b { flex: none; color: var(--c-light); font-weight: 700; font-variant-numeric: tabular-nums; }
+.lvchip.dead { border-color: rgba(255, 107, 122, 0.4); }
+.lvchip.dead b { color: var(--bad); }
+
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
 .stat { padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 2px; }
 .stat label { font-size: 12px; color: var(--ink-3); letter-spacing: 0.06em; }
@@ -520,6 +556,7 @@ const DEMO_FLEET: Fleet = {
   .top { flex-direction: column; }
   .grid { grid-template-columns: 1fr; }
   .lists { grid-template-columns: 1fr; }
+  .level-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .btn.primary { width: 100%; }
 }
 </style>
