@@ -63,14 +63,21 @@ const cardStyle = (i: number) => {
 }
 
 // 滑動切換只給手機(觸控);PC 用點的或方向鍵
-let sx = 0, dragging = false
-const onDown = (e: PointerEvent) => { if (e.pointerType !== 'touch') return; sx = e.clientX; dragging = true }
+let sx = 0, dragging = false, swiped = false
+const onDown = (e: PointerEvent) => { if (e.pointerType !== 'touch') return; sx = e.clientX; dragging = true; swiped = false }
 const onUp = (e: PointerEvent) => {
   if (!dragging) return
   dragging = false
   const dx = e.clientX - sx
-  if (dx < -40) next()
-  else if (dx > 40) prev()
+  if (dx < -40) { swiped = true; next() }
+  else if (dx > 40) { swiped = true; prev() }
+}
+
+// 點卡片:旁邊的先轉到中間,中間那張(已經選好的)直接開詳細規則。剛滑過的那下不算點擊。
+const onCardClick = (i: number) => {
+  if (swiped) { swiped = false; return }
+  if (i === active.value) openModal(AG_FEATURES[i]!)
+  else go(i)
 }
 
 // 索引列(手機是一排可左右滑):選中的那顆自動捲到中間
@@ -131,7 +138,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <AgPage eyebrow="FEATURES // 遊戲特色" title="這裡才有的玩法。" :sub="`共 ${n} 項特色,點哪張就看哪個。`">
+  <AgPage eyebrow="FEATURES // 遊戲特色" title="這裡才有的玩法。" :sub="`共 ${n} 項特色,點旁邊的卡切換,點中間那張看完整規則。`">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="stage" @pointerdown="onDown" @pointerup="onUp" @pointercancel="dragging = false" @pointerleave="dragging = false">
@@ -139,8 +146,8 @@ onUnmounted(() => {
             <button
               v-for="(f, i) in AG_FEATURES" :key="f.id" type="button" class="card"
               :class="{ on: i === active, tilt: i === active && tilt.on }" :style="cardStyle(i)"
-              :aria-pressed="i === active" :aria-label="`${f.idx} ${f.title}`"
-              @click="go(i)"
+              :aria-pressed="i === active" :aria-label="f.idx + ' ' + f.title + (i === active ? ' · 看詳細規則' : '')"
+              @click="onCardClick(i)"
             >
               <span class="clip">
                 <span class="art">
@@ -154,6 +161,7 @@ onUnmounted(() => {
                 <em class="ag-cap ember">// {{ f.idx }}</em>
                 <b>{{ f.title }}</b>
                 <i>{{ f.short }}</i>
+                <u class="more">點卡片看詳細規則 <span class="arr">→</span></u>
               </span>
             </button>
           </div>
@@ -268,6 +276,12 @@ onUnmounted(() => {
 .cap em { font-style: normal; }
 .cap b { font-size: 22px; font-weight: 500; letter-spacing: 0.04em; color: var(--ag-ink); text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); }
 .cap i { font-style: normal; font-size: 13px; line-height: 1.6; letter-spacing: 0.04em; color: var(--ag-ink-60); }
+/* 只有聚焦那張才提示「點我看詳細」(旁邊的卡點了是轉到中間) */
+.cap .more { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; text-decoration: none; font-size: 12px; font-weight: 500; letter-spacing: 0.12em; color: var(--ag-ember);
+  opacity: 0; transform: translateY(6px); transition: opacity 0.35s ease 0.1s, transform 0.35s ease 0.1s; }
+.cap .more .arr { transition: transform 0.25s; }
+.card.on .cap .more { opacity: 1; transform: none; }
+.card.on:hover .cap .more .arr { transform: translateX(4px); }
 
 /* 索引列:一眼看到全部特色 */
 .index { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
