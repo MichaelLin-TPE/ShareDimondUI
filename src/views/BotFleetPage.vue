@@ -78,6 +78,7 @@ async function load() {
     if (!res.ok || !Array.isArray(body)) throw new Error(`HTTP ${res.status}`)
     bindings.value = body as Binding[]
     loadError.value = ''
+    updateLedgerStreaks()   // 每次輪詢更新「連續對不起來」的次數(跨日重置那一瞬間的假警報要靠它濾掉)
   } catch {
     loadError.value = '讀取失敗,5 秒後自動重試'
   } finally {
@@ -178,7 +179,7 @@ function totals(f: Fleet) {
     fighting: bots.filter((b) => !!b.target && !b.dead).length,
     // ⚠️ clanChest 是全隊共用的倉庫餘額,每隻假人都送同一個數字 → 只能取一次,不可以累加
     chest: bots.length ? n0(bots[0]!.clanChest) : 0,
-    offBooks: bots.filter((b) => ledgerDiff(b) !== 0).length,
+    offBooks: bots.filter((b) => showOffBooks(f, b)).length,
   }
 }
 /** 伺服器還沒重啟時舊心跳沒有這些欄位,一律補 0,不要讓畫面出現 NaN */
@@ -191,6 +192,29 @@ const n0 = (v: number | undefined) => (typeof v === 'number' ? v : 0)
  */
 function ledgerDiff(b: BotSnap) {
   return b.net - (b.gained + b.sold - b.spent - n0(b.aidOut) + n0(b.aidIn) - n0(b.clanOut) + n0(b.clanIn))
+}
+
+/**
+ * 跨日重置有一瞬間的時序空窗,會讓等式短暫不成立,所以要連續兩次才亮警示:
+ * 伺服器 resetDaily() 先把流量歸零(BotPlayer.java:2475-2482),最後一行才更新 adenaAtDayStart(:2485);
+ * 心跳是另一條執行緒讀快照、兩邊沒有共用鎖,剛好卡在中間的那一次會拿到「流量 0、日初還是昨天的值」。
+ * 不能改用 dayMin 判斷:_dayStart 在 :2483 就更新了,比 adenaAtDayStart 早,卡在 2482~2483 的快照 dayMin 還是舊值。
+ */
+const ledgerStreak = ref<Record<string, number>>({})
+const ledgerKey = (f: Fleet, b: BotSnap) => `${f.token}/${b.name}`
+function updateLedgerStreaks() {
+  const next: Record<string, number> = {}
+  for (const f of fleets.value)
+    for (const b of f.data.bots) {
+      const k = ledgerKey(f, b)
+      next[k] = ledgerDiff(b) !== 0 ? (ledgerStreak.value[k] ?? 0) + 1 : 0
+    }
+  ledgerStreak.value = next   // 重建而不是累加:假人消失了對應的計數也跟著清掉
+}
+/** 連續兩次都對不起來才算真的有問題(示範資料沒有輪詢,不做防抖) */
+function showOffBooks(f: Fleet, b: BotSnap) {
+  if (demo.value) return ledgerDiff(b) !== 0
+  return (ledgerStreak.value[ledgerKey(f, b)] ?? 0) >= 2
 }
 
 /** 血盟倉庫只認這些階級(伺服器 BotRules.canUseClanWarehouse);其他階級拿不到倉庫互助,標黃提醒 */
@@ -345,6 +369,7 @@ const DEMO_FLEET: Fleet = {
           <div class="stat"><label>今日擊殺</label><b>{{ fmt(totals(f).kills) }}</b><span>死亡 {{ totals(f).deaths }} 次</span></div>
         </div>
 
+        <p v-if="totals(f).offBooks" class="notice bad">{{ totals(f).offBooks }} 隻假人的金流對不起來(連續兩次),代表有沒被記錄到的天幣進出。</p>
         <p v-if="!f.data.bots.length" class="notice">伺服器在線,但目前沒有假人在跑。</p>
 
         <div class="grid">
@@ -416,7 +441,7 @@ const DEMO_FLEET: Fleet = {
                 <span>存倉庫 <b>{{ fmt(n0(b.clanOut)) }}</b></span>
                 <span>領倉庫 <b>{{ fmt(n0(b.clanIn)) }}</b></span>
               </div>
-              <p v-if="ledgerDiff(b) !== 0" class="offbooks">帳目差 {{ signed(ledgerDiff(b)) }}:有沒被記錄到的金流</p>
+              <p v-if="showOffBooks(f, b)" class="offbooks">帳目差 {{ signed(ledgerDiff(b)) }}:有沒被記錄到的金流</p>
             </div>
 
             <div class="lists">
