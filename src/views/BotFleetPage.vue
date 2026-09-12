@@ -29,6 +29,8 @@ interface BotSnap {
   target: { name: string; lv: number; hpPct: number } | null
   buffs: Buff[]
   adena: number; adenaDay: number; net: number; gained: number; sold: number; spent: number
+  // 以下欄位舊版伺服器(還沒重啟的)不會送,一律當可選處理,讀取走 n0()
+  aidIn?: number; aidOut?: number; clanIn?: number; clanOut?: number; clanChest?: number
   deaths: number; attacks: number; hits: number; kills: number; dayMin: number; bornMin: number
   topKills: Named[]; topLoot: Named[]
 }
@@ -174,16 +176,31 @@ function totals(f: Fleet) {
     kills: bots.reduce((s, b) => s + b.kills, 0),
     deaths: bots.reduce((s, b) => s + b.deaths, 0),
     fighting: bots.filter((b) => !!b.target && !b.dead).length,
+    // ⚠️ clanChest 是全隊共用的倉庫餘額,每隻假人都送同一個數字 → 只能取一次,不可以累加
+    chest: bots.length ? n0(bots[0]!.clanChest) : 0,
+    offBooks: bots.filter((b) => ledgerDiff(b) !== 0).length,
   }
 }
+/** 伺服器還沒重啟時舊心跳沒有這些欄位,一律補 0,不要讓畫面出現 NaN */
+const n0 = (v: number | undefined) => (typeof v === 'number' ? v : 0)
+
+/**
+ * 伺服器端的對帳等式(BotRules.netFromFlows):
+ *   net = 撿到 + 賣雜物 − 花掉 − 給隊友 + 收到 − 存倉庫 + 領倉庫
+ * 對不起來就是又出現沒被記錄的金流 —— 這頁的用途之一就是把它抓出來,所以直接顯示差額。
+ */
+function ledgerDiff(b: BotSnap) {
+  return b.net - (b.gained + b.sold - b.spent - n0(b.aidOut) + n0(b.aidIn) - n0(b.clanOut) + n0(b.clanIn))
+}
+
 /** 血盟倉庫只認這些階級(伺服器 BotRules.canUseClanWarehouse);其他階級拿不到倉庫互助,標黃提醒 */
 const WAREHOUSE_RANKS = ['聯盟副君主', '聯盟君主', '聯盟修習騎士', '聯盟守護騎士', '修習騎士', '守護騎士', '君主']
 /** 基本素質:六圍 + AC/MR(含裝備後的實際值) */
 function attrs(b: BotSnap) {
   return [
-    { k: 'STR', v: b.str }, { k: 'DEX', v: b.dex }, { k: 'CON', v: b.con },
-    { k: 'INT', v: b.intel }, { k: 'WIS', v: b.wis }, { k: 'CHA', v: b.cha },
-    { k: 'AC', v: b.ac }, { k: 'MR', v: b.mr },
+    { k: 'STR', v: n0(b.str) }, { k: 'DEX', v: n0(b.dex) }, { k: 'CON', v: n0(b.con) },
+    { k: 'INT', v: n0(b.intel) }, { k: 'WIS', v: n0(b.wis) }, { k: 'CHA', v: n0(b.cha) },
+    { k: 'AC', v: n0(b.ac) }, { k: 'MR', v: n0(b.mr) },
   ]
 }
 
@@ -205,6 +222,8 @@ function demoBot(p: Partial<BotSnap>): BotSnap {
     name: 'AI騎士', cls: '騎士', lv: 18, lvDay: 16, expPct: 42, hp: 210, maxHp: 260, mp: 12, maxMp: 20,
     clan: '神盾AI', clanRank: '守護騎士',
     str: 16, dex: 12, con: 14, intel: 8, wis: 11, cha: 10, ac: -18, mr: 12,
+    // 這四筆金流要讓 ledgerDiff 等於 0(跟伺服器 BotRules.netFromFlows 同一條等式);clanChest 是全隊共用值
+    aidIn: 0, aidOut: 2000, clanIn: 8000, clanOut: 6000, clanChest: 128400,
     map: '說話之島', x: 32600, y: 32920, dead: false, goal: '攻擊 楊果里恩', haste: true, brave: true,
     target: { name: '楊果里恩', lv: 18, hpPct: 55 }, buffs: [],
     adena: 48200, adenaDay: 31000, net: 17200, gained: 21500, sold: 3100, spent: 7400,
@@ -223,6 +242,7 @@ const DEMO_FLEET: Fleet = {
       demoBot({
         name: 'AI法師', cls: '法師', lv: 21, lvDay: 19, expPct: 77, hp: 96, maxHp: 150, mp: 64, maxMp: 180, brave: false,
         str: 8, dex: 10, con: 9, intel: 18, wis: 15, cha: 12, ac: -6, mr: 28,
+        aidIn: 1500, aidOut: 0, clanIn: 0, clanOut: 1500,
         map: '海音地監 2樓', goal: '攻擊 受詛咒的 鼠人', target: { name: '受詛咒的 鼠人', lv: 28, hpPct: 18 },
         buffs: [{ name: '通暢氣脈術', sec: 214 }, { name: '加速魔力回復', sec: 95 }],
         adena: 36900, adenaDay: 29000, net: 7900, gained: 12800, sold: 900, spent: 5800, deaths: 3, attacks: 610, hits: 455, kills: 133,
@@ -233,6 +253,7 @@ const DEMO_FLEET: Fleet = {
         name: 'AI妖精', cls: '妖精', lv: 15, lvDay: 15, expPct: 8, hp: 0, maxHp: 170, mp: 30, maxMp: 70, dead: true, haste: false, brave: false,
         clan: '', clanRank: '',   // 還沒入盟:用不到血盟倉庫互助
         str: 11, dex: 16, con: 10, intel: 12, wis: 12, cha: 14, ac: -9, mr: 15,
+        aidIn: 0, aidOut: 0, clanIn: 0, clanOut: 0,   // 未入盟:沒有倉庫金流
         map: '古魯丁地監 3樓', goal: '死亡,等待回村', target: null, buffs: [],
         adena: 9100, adenaDay: 12600, net: -3500, gained: 2100, sold: 0, spent: 5600, deaths: 5, attacks: 280, hits: 190, kills: 41,
         topKills: [{ name: '骷髏弓箭手', n: 22 }, { name: '食屍鬼', n: 19 }], topLoot: [],
@@ -319,7 +340,8 @@ const DEMO_FLEET: Fleet = {
         <div class="stats">
           <div class="stat"><label>假人</label><b>{{ f.data.bots.length }}</b><span>{{ totals(f).fighting }} 隻戰鬥中</span></div>
           <div class="stat"><label>真人在線</label><b>{{ f.data.realPlayers }}</b><span>{{ f.data.running ? '假人運作中' : '假人已停止' }}</span></div>
-          <div class="stat"><label>今日淨收益</label><b :class="{ neg: totals(f).net < 0 }">{{ signed(totals(f).net) }}</b><span>全部假人加總</span></div>
+          <div class="stat"><label>今日淨收益</label><b :class="{ neg: totals(f).net < 0 }">{{ signed(totals(f).net) }}</b><span>全部假人加總(不含血盟倉庫)</span></div>
+          <div class="stat"><label>血盟倉庫</label><b>{{ fmt(totals(f).chest) }}</b><span>全隊共用金庫,存進去的錢不算在淨收益裡</span></div>
           <div class="stat"><label>今日擊殺</label><b>{{ fmt(totals(f).kills) }}</b><span>死亡 {{ totals(f).deaths }} 次</span></div>
         </div>
 
@@ -389,7 +411,12 @@ const DEMO_FLEET: Fleet = {
                 <span>打怪撿到 <b>{{ fmt(b.gained) }}</b></span>
                 <span>賣雜物 <b>{{ fmt(b.sold) }}</b></span>
                 <span>花掉 <b>{{ fmt(b.spent) }}</b></span>
+                <span>給隊友 <b>{{ fmt(n0(b.aidOut)) }}</b></span>
+                <span>收到 <b>{{ fmt(n0(b.aidIn)) }}</b></span>
+                <span>存倉庫 <b>{{ fmt(n0(b.clanOut)) }}</b></span>
+                <span>領倉庫 <b>{{ fmt(n0(b.clanIn)) }}</b></span>
               </div>
+              <p v-if="ledgerDiff(b) !== 0" class="offbooks">帳目差 {{ signed(ledgerDiff(b)) }}:有沒被記錄到的金流</p>
             </div>
 
             <div class="lists">
@@ -508,7 +535,7 @@ const DEMO_FLEET: Fleet = {
 .lvchip.dead { border-color: rgba(255, 107, 122, 0.4); }
 .lvchip.dead b { color: var(--bad); }
 
-.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .stat { padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 2px; }
 .stat label { font-size: 12px; color: var(--ink-3); letter-spacing: 0.06em; }
 .stat b { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink); }
@@ -579,6 +606,7 @@ const DEMO_FLEET: Fleet = {
 .net b.neg { color: var(--bad); }
 .flows { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 13px; color: var(--ink-3); }
 .flows b { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+.offbooks { font-size: 12.5px; color: var(--warn); padding-top: 6px; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 
 .lists { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .lists ol { list-style: none; padding: 0; display: grid; gap: 4px; }
