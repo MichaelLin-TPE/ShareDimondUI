@@ -22,6 +22,8 @@ interface Named { name: string; n: number }
 interface Buff { name: string; sec: number }
 interface BotSnap {
   name: string; cls: string; lv: number; lvDay: number; expPct: number
+  clan: string; clanRank: string
+  str: number; dex: number; con: number; intel: number; wis: number; cha: number; ac: number; mr: number
   hp: number; maxHp: number; mp: number; maxMp: number
   map: string; x: number; y: number; dead: boolean; goal: string; haste: boolean; brave: boolean
   target: { name: string; lv: number; hpPct: number } | null
@@ -174,6 +176,17 @@ function totals(f: Fleet) {
     fighting: bots.filter((b) => !!b.target && !b.dead).length,
   }
 }
+/** 血盟倉庫只認這些階級(伺服器 BotRules.canUseClanWarehouse);其他階級拿不到倉庫互助,標黃提醒 */
+const WAREHOUSE_RANKS = ['聯盟副君主', '聯盟君主', '聯盟修習騎士', '聯盟守護騎士', '修習騎士', '守護騎士', '君主']
+/** 基本素質:六圍 + AC/MR(含裝備後的實際值) */
+function attrs(b: BotSnap) {
+  return [
+    { k: 'STR', v: b.str }, { k: 'DEX', v: b.dex }, { k: 'CON', v: b.con },
+    { k: 'INT', v: b.intel }, { k: 'WIS', v: b.wis }, { k: 'CHA', v: b.cha },
+    { k: 'AC', v: b.ac }, { k: 'MR', v: b.mr },
+  ]
+}
+
 /** 頂部等級一覽:等級高到低、同級照名字排 */
 function levelSummary(f: Fleet) {
   const sorted = [...f.data.bots].sort((a, b) => b.lv - a.lv || a.name.localeCompare(b.name, 'zh-TW', { numeric: true }))
@@ -190,6 +203,8 @@ function levelSummary(f: Fleet) {
 function demoBot(p: Partial<BotSnap>): BotSnap {
   return {
     name: 'AI騎士', cls: '騎士', lv: 18, lvDay: 16, expPct: 42, hp: 210, maxHp: 260, mp: 12, maxMp: 20,
+    clan: '神盾AI', clanRank: '守護騎士',
+    str: 16, dex: 12, con: 14, intel: 8, wis: 11, cha: 10, ac: -18, mr: 12,
     map: '說話之島', x: 32600, y: 32920, dead: false, goal: '攻擊 楊果里恩', haste: true, brave: true,
     target: { name: '楊果里恩', lv: 18, hpPct: 55 }, buffs: [],
     adena: 48200, adenaDay: 31000, net: 17200, gained: 21500, sold: 3100, spent: 7400,
@@ -207,6 +222,7 @@ const DEMO_FLEET: Fleet = {
       demoBot({}),
       demoBot({
         name: 'AI法師', cls: '法師', lv: 21, lvDay: 19, expPct: 77, hp: 96, maxHp: 150, mp: 64, maxMp: 180, brave: false,
+        str: 8, dex: 10, con: 9, intel: 18, wis: 15, cha: 12, ac: -6, mr: 28,
         map: '海音地監 2樓', goal: '攻擊 受詛咒的 鼠人', target: { name: '受詛咒的 鼠人', lv: 28, hpPct: 18 },
         buffs: [{ name: '通暢氣脈術', sec: 214 }, { name: '加速魔力回復', sec: 95 }],
         adena: 36900, adenaDay: 29000, net: 7900, gained: 12800, sold: 900, spent: 5800, deaths: 3, attacks: 610, hits: 455, kills: 133,
@@ -215,6 +231,8 @@ const DEMO_FLEET: Fleet = {
       }),
       demoBot({
         name: 'AI妖精', cls: '妖精', lv: 15, lvDay: 15, expPct: 8, hp: 0, maxHp: 170, mp: 30, maxMp: 70, dead: true, haste: false, brave: false,
+        clan: '', clanRank: '',   // 還沒入盟:用不到血盟倉庫互助
+        str: 11, dex: 16, con: 10, intel: 12, wis: 12, cha: 14, ac: -9, mr: 15,
         map: '古魯丁地監 3樓', goal: '死亡,等待回村', target: null, buffs: [],
         adena: 9100, adenaDay: 12600, net: -3500, gained: 2100, sold: 0, spent: 5600, deaths: 5, attacks: 280, hits: 190, kills: 41,
         topKills: [{ name: '骷髏弓箭手', n: 22 }, { name: '食屍鬼', n: 19 }], topLoot: [],
@@ -324,9 +342,18 @@ const DEMO_FLEET: Fleet = {
               <span class="pct">{{ b.expPct }}%</span>
             </div>
 
+            <div class="clanline">
+              <span class="clanchip" :class="{ none: !b.clan }"><em>血盟</em>{{ b.clan || '未入盟' }}</span>
+              <span v-if="b.clanRank" class="clanchip rank" :class="{ warn: !WAREHOUSE_RANKS.includes(b.clanRank) }" :title="WAREHOUSE_RANKS.includes(b.clanRank) ? '這個階級可以用血盟倉庫' : '這個階級用不了血盟倉庫,拿不到倉庫互助'"><em>階級</em>{{ b.clanRank }}</span>
+            </div>
+
             <div class="vitals">
               <div class="vital"><label>HP</label><div class="bar hp"><i :style="{ width: pct(b.hp, b.maxHp) + '%' }"></i></div><span>{{ b.hp }}/{{ b.maxHp }}</span></div>
               <div class="vital"><label>MP</label><div class="bar mp"><i :style="{ width: pct(b.mp, b.maxMp) + '%' }"></i></div><span>{{ b.mp }}/{{ b.maxMp }}</span></div>
+            </div>
+
+            <div class="attrs">
+              <div v-for="a in attrs(b)" :key="a.k" class="attr"><label>{{ a.k }}</label><b>{{ a.v }}</b></div>
             </div>
 
             <dl class="kv">
@@ -514,6 +541,18 @@ const DEMO_FLEET: Fleet = {
 .bar.mp i { background: linear-gradient(90deg, #4f8dff, #6cc6ff); }
 .bar.thp { display: inline-block; width: 64px; height: 6px; vertical-align: middle; margin-left: 6px; }
 .bar.thp i { background: #ff8a5c; }
+
+.clanline { display: flex; flex-wrap: wrap; gap: 6px; }
+.clanchip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); }
+.clanchip em { font-style: normal; font-size: 11px; letter-spacing: 0.08em; color: var(--ink-3); }
+.clanchip.none { color: var(--ink-3); border-style: dashed; }
+.clanchip.rank { color: var(--c-light); border-color: rgba(var(--c-light-rgb), 0.35); }
+.clanchip.rank.warn { color: var(--warn); border-color: rgba(255, 193, 94, 0.45); }
+
+.attrs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.attr { display: grid; gap: 1px; justify-items: center; padding: 6px 4px; border-radius: 8px; background: rgba(0, 0, 0, 0.22); }
+.attr label { font-size: 10.5px; letter-spacing: 0.08em; color: var(--ink-3); }
+.attr b { font-size: 15px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
 
 .vitals { display: grid; gap: 6px; }
 .vital { display: grid; grid-template-columns: 26px 1fr 78px; align-items: center; gap: 10px; }
