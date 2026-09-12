@@ -523,6 +523,7 @@ export const AG_FEATURES: AgFeature[] = [
       '滿 30 天再多送一張對盔甲施法的卷軸。',
     ],
     shot: '每日簽到 NPC',
+    art: 'checkin-npc.jpg',
     details: [
       {
         h: '怎麼領',
