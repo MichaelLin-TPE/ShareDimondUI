@@ -30,7 +30,7 @@ interface BotSnap {
   buffs: Buff[]
   adena: number; adenaDay: number; net: number; gained: number; sold: number; spent: number
   // 以下欄位舊版伺服器(還沒重啟的)不會送,一律當可選處理,讀取走 n0()
-  aidIn?: number; aidOut?: number; clanIn?: number; clanOut?: number; clanChest?: number
+  aidIn?: number; aidOut?: number; clanIn?: number; clanOut?: number; clanChest?: number; bonusIn?: number
   deaths: number; attacks: number; hits: number; kills: number; dayMin: number; bornMin: number
   topKills: Named[]; topLoot: Named[]
 }
@@ -187,11 +187,15 @@ const n0 = (v: number | undefined) => (typeof v === 'number' ? v : 0)
 
 /**
  * 伺服器端的對帳等式(BotRules.netFromFlows):
- *   net = 撿到 + 賣雜物 − 花掉 − 給隊友 + 收到 − 存倉庫 + 領倉庫
+ *   net = 撿到 + 賣雜物 − 花掉 − 給隊友 + 收到 − 存倉庫 + 領倉庫 + 簽到獎勵
  * 對不起來就是又出現沒被記錄的金流 —— 這頁的用途之一就是把它抓出來,所以直接顯示差額。
+ *
+ * ⚠️ 2026-09-13 加入 bonusIn(每日簽到):獎勵天幣 15 萬直接 storeItem 進背包、不經過任何計數器,
+ * 全隊 20 隻的差額都正好是 150000。伺服器 d1fb59a 已補上計數器並把等式加到第八項,這裡跟著加;
+ * 舊版伺服器(還沒重啟的)不送這個欄位,走 n0() 補 0,結果與加入前完全相同。
  */
 function ledgerDiff(b: BotSnap) {
-  return b.net - (b.gained + b.sold - b.spent - n0(b.aidOut) + n0(b.aidIn) - n0(b.clanOut) + n0(b.clanIn))
+  return b.net - (b.gained + b.sold - b.spent - n0(b.aidOut) + n0(b.aidIn) - n0(b.clanOut) + n0(b.clanIn) + n0(b.bonusIn))
 }
 
 /**
@@ -228,17 +232,48 @@ function attrs(b: BotSnap) {
   ]
 }
 
-/** 頂部等級一覽:等級高到低、同級照名字排 */
+/**
+ * 頂部等級一覽:等級高到低、同級照名字排。下面的假人卡片吃同一份 sorted,
+ * 所以「等級一覽的第 N 個」永遠對應「第 N 張卡片」,點了才捲得到正確的那張。
+ *
+ * ⚠️ 用 WeakMap 以 f.data 為鍵快取:模板裡會被呼叫五次(最高/最低/平均/chip/卡片),
+ * 每次都重排一次陣列,而輪詢每 5 秒換一份新資料。輪詢拿到新物件時 key 不同,快取自動失效。
+ */
+const summaryCache = new WeakMap<FleetStatus, { sorted: BotSnap[]; max: number; min: number; avg: string }>()
 function levelSummary(f: Fleet) {
+  const hit = summaryCache.get(f.data)
+  if (hit) return hit
   const sorted = [...f.data.bots].sort((a, b) => b.lv - a.lv || a.name.localeCompare(b.name, 'zh-TW', { numeric: true }))
   const lvs = sorted.map((b) => b.lv)
-  return {
+  const out = {
     sorted,
     max: lvs.length ? Math.max(...lvs) : 0,
     min: lvs.length ? Math.min(...lvs) : 0,
     avg: lvs.length ? (lvs.reduce((s, v) => s + v, 0) / lvs.length).toFixed(1) : '0',
   }
+  summaryCache.set(f.data, out)
+  return out
 }
+
+/**
+ * 點等級一覽的假人 → 捲到牠的卡片並短暫高亮。
+ * id 比照 ledgerKey 用 token + 名字組合:多台伺服器並存時假人名字可能重複,只用名字會捲錯。
+ * ⚠️ 這頁的捲動容器是 body(實測 body.scrollTop 會動、documentElement 不動),
+ * 所以要驗捲動時量 document.body.scrollTop,量 window.scrollY 會恆為 0 而誤判成「沒捲」。
+ */
+const botAnchor = (f: Fleet, b: BotSnap) => `bot-${f.token}-${b.name}`
+const highlighted = ref('')
+let highlightTimer: ReturnType<typeof setTimeout> | null = null
+function focusBot(f: Fleet, b: BotSnap) {
+  const key = botAnchor(f, b)
+  const el = document.getElementById(key)
+  if (!el) return
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (highlightTimer) clearTimeout(highlightTimer)
+  highlighted.value = key
+  highlightTimer = setTimeout(() => { highlighted.value = '' }, 1600)
+}
+onUnmounted(() => { if (highlightTimer) clearTimeout(highlightTimer) })
 
 // ── 示範資料(?demo=1)──
 function demoBot(p: Partial<BotSnap>): BotSnap {
@@ -246,11 +281,12 @@ function demoBot(p: Partial<BotSnap>): BotSnap {
     name: 'AI騎士', cls: '騎士', lv: 18, lvDay: 16, expPct: 42, hp: 210, maxHp: 260, mp: 12, maxMp: 20,
     clan: '神盾AI', clanRank: '守護騎士',
     str: 16, dex: 12, con: 14, intel: 8, wis: 11, cha: 10, ac: -18, mr: 12,
-    // 這四筆金流要讓 ledgerDiff 等於 0(跟伺服器 BotRules.netFromFlows 同一條等式);clanChest 是全隊共用值
-    aidIn: 0, aidOut: 2000, clanIn: 8000, clanOut: 6000, clanChest: 128400,
+    // 這幾筆金流要讓 ledgerDiff 等於 0(跟伺服器 BotRules.netFromFlows 同一條等式);clanChest 是全隊共用值
+    // 6500 + 3100 − 7400 − 2000 + 0 − 6000 + 8000 + 15000 = 17200 = net
+    aidIn: 0, aidOut: 2000, clanIn: 8000, clanOut: 6000, clanChest: 128400, bonusIn: 15000,
     map: '說話之島', x: 32600, y: 32920, dead: false, goal: '攻擊 楊果里恩', haste: true, brave: true,
     target: { name: '楊果里恩', lv: 18, hpPct: 55 }, buffs: [],
-    adena: 48200, adenaDay: 31000, net: 17200, gained: 21500, sold: 3100, spent: 7400,
+    adena: 48200, adenaDay: 31000, net: 17200, gained: 6500, sold: 3100, spent: 7400,
     deaths: 1, attacks: 1320, hits: 948, kills: 212, dayMin: 196, bornMin: 1880,
     topKills: [{ name: '楊果里恩', n: 64 }, { name: '食屍鬼', n: 51 }, { name: '萊肯', n: 38 }, { name: '骷髏', n: 30 }],
     topLoot: [{ name: '綠色藥水', n: 9 }, { name: '骨頭碎片', n: 7 }, { name: '強化綠色藥水', n: 3 }, { name: '魔法書 (通暢氣脈術)', n: 1 }],
@@ -266,7 +302,7 @@ const DEMO_FLEET: Fleet = {
       demoBot({
         name: 'AI法師', cls: '法師', lv: 21, lvDay: 19, expPct: 77, hp: 96, maxHp: 150, mp: 64, maxMp: 180, brave: false,
         str: 8, dex: 10, con: 9, intel: 18, wis: 15, cha: 12, ac: -6, mr: 28,
-        aidIn: 1500, aidOut: 0, clanIn: 0, clanOut: 1500,
+        aidIn: 1500, aidOut: 0, clanIn: 0, clanOut: 1500, bonusIn: 0,   // 今天還沒簽到
         map: '海音地監 2樓', goal: '攻擊 受詛咒的 鼠人', target: { name: '受詛咒的 鼠人', lv: 28, hpPct: 18 },
         buffs: [{ name: '通暢氣脈術', sec: 214 }, { name: '加速魔力回復', sec: 95 }],
         adena: 36900, adenaDay: 29000, net: 7900, gained: 12800, sold: 900, spent: 5800, deaths: 3, attacks: 610, hits: 455, kills: 133,
@@ -277,7 +313,7 @@ const DEMO_FLEET: Fleet = {
         name: 'AI妖精', cls: '妖精', lv: 15, lvDay: 15, expPct: 8, hp: 0, maxHp: 170, mp: 30, maxMp: 70, dead: true, haste: false, brave: false,
         clan: '', clanRank: '',   // 還沒入盟:用不到血盟倉庫互助
         str: 11, dex: 16, con: 10, intel: 12, wis: 12, cha: 14, ac: -9, mr: 15,
-        aidIn: 0, aidOut: 0, clanIn: 0, clanOut: 0,   // 未入盟:沒有倉庫金流
+        aidIn: 0, aidOut: 0, clanIn: 0, clanOut: 0, bonusIn: 0,   // 未入盟:沒有倉庫金流;死亡中也還沒簽到
         map: '古魯丁地監 3樓', goal: '死亡,等待回村', target: null, buffs: [],
         adena: 9100, adenaDay: 12600, net: -3500, gained: 2100, sold: 0, spent: 5600, deaths: 5, attacks: 280, hits: 190, kills: 41,
         topKills: [{ name: '骷髏弓箭手', n: 22 }, { name: '食屍鬼', n: 19 }], topLoot: [],
@@ -354,9 +390,15 @@ const DEMO_FLEET: Fleet = {
             <span>最高 Lv{{ levelSummary(f).max }} · 最低 Lv{{ levelSummary(f).min }} · 平均 {{ levelSummary(f).avg }}</span>
           </div>
           <ul class="level-list">
-            <li v-for="b in levelSummary(f).sorted" :key="b.name" class="lvchip" :class="{ dead: b.dead }">
-              <span class="lvname">{{ b.name }}</span>
-              <b>Lv{{ b.lv }}</b>
+            <li v-for="b in levelSummary(f).sorted" :key="b.name">
+              <button
+                type="button" class="lvchip" :class="{ dead: b.dead }"
+                :aria-label="`看 ${b.name} 的卡片(Lv${b.lv})`"
+                @click="focusBot(f, b)"
+              >
+                <span class="lvname">{{ b.name }}</span>
+                <b>Lv{{ b.lv }}</b>
+              </button>
             </li>
           </ul>
         </div>
@@ -373,7 +415,11 @@ const DEMO_FLEET: Fleet = {
         <p v-if="!f.data.bots.length" class="notice">伺服器在線,但目前沒有假人在跑。</p>
 
         <div class="grid">
-          <article v-for="b in f.data.bots" :key="b.name" class="bot" :class="{ dead: b.dead }">
+          <article
+            v-for="b in levelSummary(f).sorted" :key="b.name"
+            :id="botAnchor(f, b)" class="bot"
+            :class="{ dead: b.dead, lit: highlighted === botAnchor(f, b) }"
+          >
             <div class="bot-head">
               <div class="who">
                 <span class="cls">{{ b.cls }}</span>
@@ -440,6 +486,7 @@ const DEMO_FLEET: Fleet = {
                 <span>收到 <b>{{ fmt(n0(b.aidIn)) }}</b></span>
                 <span>存倉庫 <b>{{ fmt(n0(b.clanOut)) }}</b></span>
                 <span>領倉庫 <b>{{ fmt(n0(b.clanIn)) }}</b></span>
+                <span>簽到 <b>{{ fmt(n0(b.bonusIn)) }}</b></span>
               </div>
               <p v-if="showOffBooks(f, b)" class="offbooks">帳目差 {{ signed(ledgerDiff(b)) }}:有沒被記錄到的金流</p>
             </div>
@@ -554,11 +601,16 @@ const DEMO_FLEET: Fleet = {
 .levels-head h3 { font-size: 14px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.06em; }
 .levels-head span { font-size: 12.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .level-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
-.lvchip { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 34px; padding: 6px 10px; border-radius: 8px; background: rgba(var(--c-light-rgb), 0.07); border: 1px solid rgba(var(--c-light-rgb), 0.16); font-size: 13.5px; line-height: 1.3; }
+/* ⚠️ chip 是 <button>,而上面 .fleet button 有 `all: unset`(權重 1 class + 1 型別)。
+   選擇器一定要寫成 .level-list .lvchip(2 class)才贏得過,否則背景/邊框/盒模型會被整條清掉。
+   不用 !important:提權就夠,也不去動 .fleet button 那條全站重設(會波及頁面其他按鈕)。 */
+.level-list .lvchip { width: 100%; font-family: inherit; font-size: 13.5px; line-height: 1.3; text-align: left; color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 34px; padding: 6px 10px; border-radius: 8px; background: rgba(var(--c-light-rgb), 0.07); border: 1px solid rgba(var(--c-light-rgb), 0.16); transition: background 0.15s ease, border-color 0.15s ease; }
+.level-list .lvchip:hover { background: rgba(var(--c-light-rgb), 0.14); border-color: rgba(var(--c-light-rgb), 0.4); }
+.level-list .lvchip:focus-visible { outline: 2px solid var(--c-light); outline-offset: 2px; }
 .lvname { color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
-.lvchip b { flex: none; color: var(--c-light); font-weight: 700; font-variant-numeric: tabular-nums; }
-.lvchip.dead { border-color: rgba(255, 107, 122, 0.4); }
-.lvchip.dead b { color: var(--bad); }
+.level-list .lvchip b { flex: none; color: var(--c-light); font-weight: 700; font-variant-numeric: tabular-nums; }
+.level-list .lvchip.dead { border-color: rgba(255, 107, 122, 0.4); }
+.level-list .lvchip.dead b { color: var(--bad); }
 
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .stat { padding: 14px 16px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 2px; }
@@ -568,8 +620,12 @@ const DEMO_FLEET: Fleet = {
 .stat span { font-size: 12.5px; color: var(--ink-3); }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
-.bot { padding: 16px 18px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 12px; align-content: start; }
+/* scroll-margin-top:從等級一覽點過來時留點上緣空間,不要讓卡片貼齊視窗頂端被切 */
+.bot { padding: 16px 18px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); display: grid; gap: 12px; align-content: start;
+  scroll-margin-top: 24px; transition: border-color 0.25s ease, box-shadow 0.25s ease; }
 .bot.dead { border-color: rgba(255, 107, 122, 0.35); }
+/* 點了等級一覽之後短暫標示,否則一排長相相似的卡片裡認不出捲到哪張 */
+.bot.lit { border-color: var(--c-light); box-shadow: 0 0 0 2px rgba(var(--c-light-rgb), 0.3), 0 0 24px rgba(var(--c-light-rgb), 0.18); }
 .bot-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .who { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .who h3 { font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
