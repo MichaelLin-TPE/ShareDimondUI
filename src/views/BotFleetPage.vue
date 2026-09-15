@@ -20,6 +20,8 @@ const demo = computed(() => route.query.demo === '1')
 
 interface Named { name: string; n: number }
 interface Buff { name: string; sec: number }
+/** 穿戴中的一件裝備:tier 是詞綴階級 0~4(0 = 沒詞綴),ench 是強化等級;t2 1=武器 2=防具,use 是防具部位 */
+interface GearItem { name: string; ench: number; tier: number; t2?: number; use?: number }
 interface BotSnap {
   name: string; cls: string; lv: number; lvDay: number; expPct: number
   clan: string; clanRank: string
@@ -31,6 +33,8 @@ interface BotSnap {
   adena: number; adenaDay: number; net: number; gained: number; sold: number; spent: number
   // 以下欄位舊版伺服器(還沒重啟的)不會送,一律當可選處理,讀取走 n0()
   aidIn?: number; aidOut?: number; clanIn?: number; clanOut?: number; clanChest?: number; bonusIn?: number
+  /** 目前穿戴中的裝備;伺服器還沒送這個欄位時是 undefined,一律當空陣列處理 */
+  gear?: GearItem[]
   deaths: number; attacks: number; hits: number; kills: number; dayMin: number; bornMin: number
   topKills: Named[]; topLoot: Named[]
 }
@@ -268,12 +272,33 @@ function focusBot(f: Fleet, b: BotSnap) {
   const key = botAnchor(f, b)
   const el = document.getElementById(key)
   if (!el) return
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  // ⚠️ 這頁不能用 behavior:'smooth' —— document.scrollingElement 不是 body,但實際在捲的是 body,
+  //    這個錯配讓 smooth 捲動完全失效(實測:smooth 959→959 沒動、auto 959→440 正常)。
+  //    少了動畫,但高亮 1.6 秒已足夠提供視覺回饋。
+  el.scrollIntoView({ behavior: 'auto', block: 'start' })
   if (highlightTimer) clearTimeout(highlightTimer)
   highlighted.value = key
   highlightTimer = setTimeout(() => { highlighted.value = '' }, 1600)
 }
 onUnmounted(() => { if (highlightTimer) clearTimeout(highlightTimer) })
+
+/**
+ * 展開看這隻穿什麼裝備。key 沿用 botAnchor(token + 名字):多台伺服器並存時名字可能重複。
+ * 存在元件層級的 ref,而輪詢每 5 秒換的是 f.data —— botAnchor 不變,所以展開狀態不會被輪詢關掉。
+ */
+const openGear = ref<Set<string>>(new Set())
+function toggleGear(f: Fleet, b: BotSnap) {
+  const k = botAnchor(f, b)
+  const next = new Set(openGear.value)   // 換新 Set 才觸發響應更新
+  if (next.has(k)) next.delete(k)
+  else next.add(k)
+  openGear.value = next
+}
+/** 詞綴階級:伺服器送 0~4,用語和神盾官網「裝備炫色」那頁一致 */
+const AFFIX_TIERS = ['', '精良', '稀有', '史詩', '傳說']
+const tierName = (t: number) => AFFIX_TIERS[t] || ''
+/** 武器(t2=1)排最前,其餘照伺服器送來的順序;sort 是穩定排序,舊資料沒有 t2 時順序不變 */
+const sortedGear = (b: BotSnap) => [...(b.gear || [])].sort((x, y) => (x.t2 === 1 ? 0 : 1) - (y.t2 === 1 ? 0 : 1))
 
 // ── 示範資料(?demo=1)──
 function demoBot(p: Partial<BotSnap>): BotSnap {
@@ -284,6 +309,15 @@ function demoBot(p: Partial<BotSnap>): BotSnap {
     // 這幾筆金流要讓 ledgerDiff 等於 0(跟伺服器 BotRules.netFromFlows 同一條等式);clanChest 是全隊共用值
     // 6500 + 3100 − 7400 − 2000 + 0 − 6000 + 8000 + 15000 = 17200 = net
     aidIn: 0, aidOut: 2000, clanIn: 8000, clanOut: 6000, clanChest: 128400, bonusIn: 15000,
+    gear: [
+      { name: '修練者單手劍', ench: 3, tier: 2 },
+      { name: '修練者皮盾牌', ench: 1, tier: 0 },
+      { name: '修練者皮盔甲', ench: 2, tier: 1 },
+      { name: '修練者皮頭盔', ench: 0, tier: 0 },
+      { name: '修練者皮手套', ench: 0, tier: 3 },
+      { name: '修練者皮涼鞋', ench: 1, tier: 0 },
+      { name: '修練者T恤', ench: 0, tier: 0 },
+    ],
     map: '說話之島', x: 32600, y: 32920, dead: false, goal: '攻擊 楊果里恩', haste: true, brave: true,
     target: { name: '楊果里恩', lv: 18, hpPct: 55 }, buffs: [],
     adena: 48200, adenaDay: 31000, net: 17200, gained: 6500, sold: 3100, spent: 7400,
@@ -303,6 +337,12 @@ const DEMO_FLEET: Fleet = {
         name: 'AI法師', cls: '法師', lv: 21, lvDay: 19, expPct: 77, hp: 96, maxHp: 150, mp: 64, maxMp: 180, brave: false,
         str: 8, dex: 10, con: 9, intel: 18, wis: 15, cha: 12, ac: -6, mr: 28,
         aidIn: 1500, aidOut: 0, clanIn: 0, clanOut: 1500, bonusIn: 0,   // 今天還沒簽到
+        gear: [
+          { name: '瑪那魔杖', ench: 4, tier: 3 },
+          { name: '法師長袍', ench: 2, tier: 1 },
+          { name: '智慧頭巾', ench: 0, tier: 0 },
+          { name: '修練者皮涼鞋', ench: 1, tier: 0 },
+        ],
         map: '海音地監 2樓', goal: '攻擊 受詛咒的 鼠人', target: { name: '受詛咒的 鼠人', lv: 28, hpPct: 18 },
         buffs: [{ name: '通暢氣脈術', sec: 214 }, { name: '加速魔力回復', sec: 95 }],
         adena: 36900, adenaDay: 29000, net: 7900, gained: 12800, sold: 900, spent: 5800, deaths: 3, attacks: 610, hits: 455, kills: 133,
@@ -314,6 +354,10 @@ const DEMO_FLEET: Fleet = {
         clan: '', clanRank: '',   // 還沒入盟:用不到血盟倉庫互助
         str: 11, dex: 16, con: 10, intel: 12, wis: 12, cha: 14, ac: -9, mr: 15,
         aidIn: 0, aidOut: 0, clanIn: 0, clanOut: 0, bonusIn: 0,   // 未入盟:沒有倉庫金流;死亡中也還沒簽到
+        gear: [
+          { name: '歐西斯弓', ench: 0, tier: 4 },
+          { name: '歐西斯鏈甲', ench: 1, tier: 0 },
+        ],
         map: '古魯丁地監 3樓', goal: '死亡,等待回村', target: null, buffs: [],
         adena: 9100, adenaDay: 12600, net: -3500, gained: 2100, sold: 0, spent: 5600, deaths: 5, attacks: 280, hits: 190, kills: 41,
         topKills: [{ name: '骷髏弓箭手', n: 22 }, { name: '食屍鬼', n: 19 }], topLoot: [],
@@ -508,11 +552,28 @@ const DEMO_FLEET: Fleet = {
               </div>
             </div>
 
+            <div v-if="openGear.has(botAnchor(f, b))" class="block gear">
+              <h4>穿戴中的裝備 <small>{{ (b.gear || []).length }} 件</small></h4>
+              <ul v-if="(b.gear || []).length" class="gear-list">
+                <li v-for="(g, i) in sortedGear(b)" :key="g.name + i">
+                  <span class="gname">
+                    <em v-if="g.tier" class="tier" :class="'t' + g.tier">{{ tierName(g.tier) }}</em>
+                    {{ g.name }}
+                  </span>
+                  <b v-if="g.ench > 0">+{{ g.ench }}</b>
+                </li>
+              </ul>
+              <p v-else class="muted">目前沒有穿戴中的武器或防具。</p>
+            </div>
+
             <footer class="bot-foot">
               <span>死亡 {{ b.deaths }} 次</span>
               <span>命中 {{ pct(b.hits, b.attacks) }}%</span>
               <span>今日 {{ duration(b.dayMin) }}</span>
               <span v-if="b.bornMin >= 0">創角 {{ duration(b.bornMin) }}</span>
+              <button type="button" class="gear-btn" @click="toggleGear(f, b)">
+                {{ openGear.has(botAnchor(f, b)) ? '收起裝備' : `裝備${(b.gear || []).length ? ' ' + (b.gear || []).length + ' 件' : ''}` }}
+              </button>
             </footer>
           </article>
         </div>
@@ -695,7 +756,22 @@ const DEMO_FLEET: Fleet = {
 .lists li span { overflow-wrap: anywhere; }
 .lists li b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.bot-foot { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-3); }
+.bot-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-3); }
+/* ⚠️ 這頁有 .fleet button { all: unset }(權重 1 class + 1 型別),按鈕樣式一定要提權才蓋得過 */
+.bot-foot .gear-btn { margin-left: auto; font-family: inherit; font-size: 12.5px; line-height: 1.3; color: var(--c-light); cursor: pointer; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(var(--c-light-rgb), 0.35); background: rgba(var(--c-light-rgb), 0.06); transition: background 0.15s ease, border-color 0.15s ease; }
+.bot-foot .gear-btn:hover { background: rgba(var(--c-light-rgb), 0.16); border-color: rgba(var(--c-light-rgb), 0.55); }
+.bot-foot .gear-btn:focus-visible { outline: 2px solid var(--c-light); outline-offset: 2px; }
+
+.gear-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.gear-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13.5px; color: var(--ink-2); }
+.gname { min-width: 0; overflow-wrap: anywhere; }
+.gear-list b { flex: none; color: var(--c-light); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* 詞綴階級顏色:對齊神盾官網「裝備炫色」的分階,不硬碼跳脫色 */
+.tier { font-style: normal; font-size: 12px; padding: 1px 6px; margin-right: 4px; border-radius: 5px; border: 1px solid currentColor; opacity: 0.95; }
+.tier.t1 { color: var(--ink-2); }
+.tier.t2 { color: var(--good); }
+.tier.t3 { color: var(--c-light); }
+.tier.t4 { color: var(--warn); }
 
 @media (max-width: 900px) {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
