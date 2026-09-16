@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import AgPage from './ui/AgPage.vue'
-import { AG_SITE } from './nav'
 
 const steps = [
-  { n: '01', t: '下載 AEGIS 登入器', d: '從下方按鈕取得最新版壓縮檔,約 0.3 MB。' },
+  { n: '01', t: '向客服索取登入器', d: '加官方 LINE 跟客服拿 AEGIS 登入器壓縮檔,約 0.3 MB。' },
   { n: '02', t: '解壓到客戶端資料夾', d: '解壓到你的天堂資料夾(跟 Login.exe 同一層)。沒有客戶端?找客服拿。' },
   { n: '03', t: '執行 MyLauncher.exe', d: '啟動時自動檢查更新,更新完直接進登入畫面。第一次請以系統管理員身分開啟。' },
 ]
@@ -21,8 +20,7 @@ const steps = [
           </div>
         </div>
         <div class="dl">
-          <a class="ag-btn primary" :href="AG_SITE.downloadUrl" target="_blank" rel="noopener">下載 AEGIS 登入器 <span class="arr">↓</span></a>
-          <RouterLink class="ag-btn" to="/aegis/contact">客戶端取得 · 聯絡客服</RouterLink>
+          <RouterLink class="ag-btn primary" to="/aegis/contact">登入器與客戶端取得 · 聯絡客服 <span class="arr">→</span></RouterLink>
         </div>
         <p class="ag-cap note">系統需求:Windows 10 / 11 · 顯示傷害覆蓋層需要系統管理員權限</p>
       </div>

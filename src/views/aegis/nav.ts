@@ -26,7 +26,5 @@ export const AG_SITE = {
   name: '神盾天堂',
   latin: 'AEGIS',
   tagline: '3.81 經典私服',
-  /** AEGIS 登入器最新版下載(公開 repo release) */
-  downloadUrl: 'https://github.com/MichaelLin-TPE/AEGIS/releases/latest',
   lineQr: 'https://qr-official.line.me/gs/M_920wuugp_GW.png?oat_content=qr',
 }
