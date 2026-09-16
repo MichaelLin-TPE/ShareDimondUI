@@ -8,8 +8,8 @@ import MhPromo from './components/MhPromo.vue'
 import { useNotifications } from './composables/notifications.ts'
 
 const route = useRoute()
-// MH 廣告總開關:暫時隱藏(使用者要求)。說可開放再改 true 並重新部署。
-const showMhPromo = false
+// MH 廣告總開關:2026-09-16 開放上線。
+const showMhPromo = true
 // 新增：控制收費方式彈窗顯示狀態的變數
 const showPricingModal = ref(false)
 // 控制圖片彈窗顯示狀態的變數
