@@ -12,8 +12,8 @@ const KEY = 'mh_promo_v1'
 
 const router = useRouter()
 const route = useRoute()
-/** 在 MH 介紹頁(/mh)本身不顯示廣告,避免重複 */
-const hiddenHere = computed(() => route.name === 'mh')
+/** 在 MH 介紹頁(/mh)本身不顯示廣告,避免重複;神盾天堂官網(/aegis)也不放 MH 廣告 */
+const hiddenHere = computed(() => route.name === 'mh' || route.path.startsWith('/aegis'))
 
 const ready = ref(false)
 const phase = ref<Phase>('dock')
@@ -56,6 +56,8 @@ watch(phase, () => {
   mountAnim()
 })
 watch(noPopup, persist)
+// 從隱藏頁(/aegis、/mh)切到其他頁時 canvas 才被建出來,要補掛雷達動畫
+watch(hiddenHere, mountAnim)
 
 function mountAnim() {
   stop?.()
