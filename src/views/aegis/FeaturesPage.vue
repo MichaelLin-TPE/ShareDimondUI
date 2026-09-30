@@ -353,6 +353,9 @@ onUnmounted(() => {
 .mw-body li::before { content: ''; position: absolute; left: 0; top: 17px; width: 6px; height: 1px; background: #e8842a; }
 .mw-body .ag-table-wrap { border-top: 1px solid rgba(255, 255, 255, 0.1); }
 .mw-body .ag-table td { white-space: normal; }
+/* 手機上第一欄(名稱)不要被擠成一字一行:中文字之間不斷行,只在空白/標點換行(min-width 對表格欄位無效) */
+/* 只套在 3 欄以下的表:4 欄以上空間不夠,長名稱(破碎的遺物首飾)不拆會把表撐寬 */
+.mw-body .ag-table:not(:has(th:nth-child(4))) td:first-child { word-break: keep-all; }
 .mw-foot { display: flex; justify-content: flex-end; padding: 16px 28px 22px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
 /* 全站 main.css 的 button 樣式會漏進來(彈窗不在 .ag-root 底下),這裡完整重設 */
 .mw-btn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; height: 46px; padding: 0 26px;

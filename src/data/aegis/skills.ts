@@ -85,7 +85,7 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '鋼鐵防護', cls: 'elf', level: 45, mp: 30, cooldown: '—', type: '輔助', effect: 'AC 大幅提升（持續 960 秒）', tier: '精靈魔法 5 階' },
   { name: '體能激發', cls: 'elf', level: 50, mp: 30, cooldown: '—', type: '輔助', effect: 'STR 提升（持續 960 秒）', tier: '精靈魔法 6 階' },
   { name: '水之元氣', cls: 'elf', level: 50, mp: 1, cooldown: '—', type: '輔助', effect: '解除水屬性減益（持續 64 秒）', tier: '精靈魔法 6 階' },
-  { name: '屬性之火', cls: 'elf', level: 50, mp: 20, cooldown: '—', type: '輔助', effect: '火屬性攻擊力大幅提升（持續 192 秒）', tier: '精靈魔法 6 階' },
+  { name: '屬性之火', cls: 'elf', level: 50, mp: 20, cooldown: '—', type: '輔助', effect: '近戰攻擊 40% 機率傷害 2 倍（持續 192 秒）', tier: '精靈魔法 6 階' },
   { name: '暴風疾走', cls: 'elf', level: 50, mp: 10, cooldown: '—', type: '輔助', effect: '傳送到隨機地點', tier: '精靈魔法 6 階' },
   { name: '污濁之水', cls: 'elf', level: 50, mp: 20, cooldown: '1.2 秒', type: '減益', effect: '目標中毒並降低回復（持續 192 秒）', tier: '精靈魔法 6 階' },
   { name: '精準射擊', cls: 'elf', level: 50, mp: 10, cooldown: '3 秒', type: '輔助', effect: '一段時間內弓箭必定命中（持續 192 秒）', tier: '精靈魔法 6 階' },
