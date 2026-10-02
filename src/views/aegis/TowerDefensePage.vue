@@ -5,6 +5,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { ApiError, restoreSession, session } from './prereg/api'
 import { CLS_ORDER, td, type ClassInfo, type RankView, type StateView, type TdConfig, type WaveView } from './td/api'
 import { TdScene, loadAssets } from './td/scene'
+import { TdAudio, type SfxName } from './td/audio'
 
 const ART = '/aegis/td/'
 const RARITY = ['普通', '稀有', '傳說']
@@ -21,6 +22,14 @@ const canvasEl = ref<HTMLCanvasElement | null>(null)
 const stageEl = ref<HTMLElement | null>(null)
 let scene: TdScene | null = null
 let ro: ResizeObserver | null = null
+const audio = new TdAudio()
+const muted = ref(audio.muted)
+function toggleMute() {
+  audio.unlock()
+  audio.setMuted(!muted.value)
+  muted.value = audio.muted
+  if (!muted.value) audio.play('click')
+}
 
 const battling = ref(false)
 const speed = ref(1)
@@ -58,9 +67,13 @@ function apply(s: StateView) {
 
 async function act(type: 'buy' | 'upgrade' | 'path' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) {
   if (busy.value || battling.value) return false
+  audio.unlock()      // 用鍵盤操作的人不會觸發最外層的 pointerdown,這裡再保一次
   busy.value = true
   try {
     apply(await td.action(type, slot, cls, value))
+    // 招募:這個職業在天堂創角畫面被選到的聲音
+    const snd: SfxName = type === 'buy' ? (`cls${clsIndex(cls ?? '')}` as SfxName) : type === 'upgrade' ? 'upgrade' : type === 'sell' ? 'sell' : 'bless'
+    audio.play(snd)
     return true
   } catch (e) {
     fail(e)
@@ -72,12 +85,14 @@ async function act(type: 'buy' | 'upgrade' | 'path' | 'sell' | 'bless', slot: nu
 
 async function startRun() {
   if (busy.value) return
+  audio.unlock()
   busy.value = true
   try {
     result.value = null
     selected.value = -1
     placing.value = null
     apply(await td.start())
+    audio.play('wave_start')
   } catch (e) {
     fail(e)
   } finally {
@@ -89,6 +104,7 @@ function pickClass(id: string) {
   if (battling.value) return
   placing.value = placing.value === id ? null : id
   selected.value = -1
+  audio.play('click')
 }
 
 async function onSlot(slot: number) {
@@ -118,6 +134,7 @@ async function sell() {
 async function startWave() {
   if (busy.value || battling.value || !scene || !run.value) return
   if (run.value.choices) return
+  audio.unlock()
   busy.value = true
   let w: WaveView
   try {
@@ -131,7 +148,9 @@ async function startWave() {
   placing.value = null
   battling.value = true
   busy.value = false
+  audio.play(run.value.bossNext ? 'boss_warn' : 'wave_start')
   await scene.play(w.events)
+  audio.play(w.over ? 'game_over' : 'wave_clear')
   battling.value = false
   state.value = w.state
   if (w.state.run) scene.setRun(w.state.run)
@@ -172,6 +191,7 @@ async function upTalent(i: number) {
   busy.value = true
   try {
     const s = await td.talent(i)
+    audio.play('upgrade')
     state.value = { profile: s.profile, run: state.value?.run ?? s.run }
   } catch (e) {
     fail(e)
@@ -202,6 +222,7 @@ async function boot() {
       scene = new TdScene(canvasEl.value, c, assets)
       if (import.meta.env.DEV) (window as unknown as { __tdScene?: TdScene }).__tdScene = scene   // 開發時方便從主控台檢查畫面
       scene.onSlot = onSlot
+      scene.onSfx = (name, scale) => audio.play(name, scale)
       scene.speed = speed.value
       if (state.value?.run) scene.setRun(state.value.run)
       if (stageEl.value) {
@@ -229,14 +250,15 @@ onMounted(boot)
 onBeforeUnmount(() => {
   ro?.disconnect()
   scene?.destroy()
+  audio.destroy()
   window.clearTimeout(toastTimer)
 })
 </script>
 
 <template>
-  <div class="td">
+  <div class="td" @pointerdown="audio.unlock()">
     <div class="ag-wrap">
-      <header class="td-head">
+      <div class="td-head">
         <div class="ttl">
           <div class="ag-cap ember">TOWER DEFENSE // 天堂塔防</div>
           <h1>守住女神像。<span v-if="run">{{ run.chapter }} · 第 {{ run.wave }} 波</span></h1>
@@ -245,8 +267,9 @@ onBeforeUnmount(() => {
           <button type="button" @click="openRank">排行榜</button>
           <button v-if="session.token" type="button" @click="showTalent = true">女神徽章<b v-if="profile">{{ profile.badges }}</b></button>
           <button type="button" @click="showHelp = true">怎麼玩</button>
+          <button type="button" :title="muted ? '現在是靜音' : '現在有聲音'" @click="toggleMute">音效 {{ muted ? '關' : '開' }}</button>
         </div>
-      </header>
+      </div>
 
       <p v-if="loadError" class="td-msg bad">{{ loadError }}</p>
       <p v-else-if="loading" class="td-msg">載入中…</p>
@@ -471,7 +494,7 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 14px; }
 .td-head h1 { margin-top: 6px; font-size: clamp(1.4rem, 2.6vw, 2.1rem); font-weight: 400; letter-spacing: -0.01em; }
 .td-head h1 span { margin-left: 14px; font-size: 0.6em; color: var(--ag-ember); letter-spacing: 0.06em; }
-.td .acts { display: flex; gap: 8px; }
+.td .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .td .acts button { height: 38px; padding: 0 14px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--ag-line); color: var(--ag-ink); font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; }
 .td .acts button:hover { border-color: var(--ag-ember); }
 .td .acts button b { margin-left: 8px; color: #ffd76a; }
@@ -487,7 +510,7 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-hud .bl i { font-style: normal; margin-left: 3px; }
 
 .td-main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
-.td-stage { position: relative; width: 100%; aspect-ratio: 5 / 3; background: #0b0f0b; border: 1px solid var(--ag-line); overflow: hidden; }
+.td-stage { position: relative; width: 100%; aspect-ratio: 50 / 33; background: #0b0f0b; border: 1px solid var(--ag-line); overflow: hidden; }
 .td-stage canvas { display: block; width: 100%; height: 100%; }
 .td-cover { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center; background: rgba(0, 0, 0, 0.66); }
 .td-cover h2 { font-size: clamp(1.2rem, 2.4vw, 1.8rem); font-weight: 400; }
@@ -584,6 +607,7 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 @media (max-width: 980px) {
   .td-main { grid-template-columns: 1fr; }
   .td { padding-top: 88px; }
+  .td .acts button { padding: 0 10px; }
   .bless { grid-template-columns: 1fr; }
   .bless button { min-height: 0; }
   .rank .rr { grid-template-columns: 44px 1fr 70px 70px; }
