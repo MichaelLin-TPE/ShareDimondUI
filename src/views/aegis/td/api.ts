@@ -15,7 +15,9 @@ export interface TdConfig {
 
 export interface TowerView {
   cls: string; level: number; path: number; pathTitle: string | null; upgradeCost: number; sellValue: number
-  dmg: number; rangePx: number; perMinute: number; hp: number; guardPos: number; needPath: boolean
+  dmg: number; rangePx: number; perMinute: number; hp: number; needPath: boolean
+  /** 騎士會在路上哪幾個地方把怪攔下來(後端的距離單位;其他職業是空的) */
+  guards: number[]
 }
 export interface BlessView { id: string; title: string; desc: string; rarity: number; count: number }
 export interface RunView {

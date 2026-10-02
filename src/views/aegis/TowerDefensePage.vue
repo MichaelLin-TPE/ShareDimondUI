@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
                 <span v-if="selTower.cls !== 'PRINCE'">一下 <b>{{ selTower.dmg }}</b></span>
                 <span v-if="selTower.cls !== 'PRINCE'">每秒 <b>{{ perSec(selTower.perMinute) }}</b> 下</span>
                 <span v-if="selTower.cls === 'KNIGHT'">生命 <b>{{ selTower.hp }}</b></span>
-                <span v-if="selTower.cls !== 'KNIGHT'">{{ selTower.cls === 'PRINCE' ? '光環' : '射程' }} <b>{{ selTower.rangePx }}</b></span>
+                <span>{{ selTower.cls === 'PRINCE' ? '光環' : '範圍' }} <b>{{ selTower.rangePx }}</b></span>
               </div>
               <div v-if="selTower.needPath" class="paths">
                 <p>升到 {{ cfg?.pathLevel }} 級了,選一條路線(選了不能改):</p>
@@ -318,6 +318,7 @@ onBeforeUnmount(() => {
                 <span v-else class="max">已滿級</span>
                 <button type="button" :disabled="busy" @click="sell">賣掉 +{{ selTower.sellValue }}</button>
               </div>
+              <p v-if="selTower.cls === 'KNIGHT'" class="kn">怪走到他正對面(路上有盾牌記號的地方)會被攔下來。放在兩排路中間,兩邊都顧得到。</p>
             </div>
 
             <!-- 商店 -->
@@ -516,6 +517,7 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-side .row .up { flex: 1; border-color: var(--ag-ember); }
 .td-side .row .up b { color: #ffd76a; margin-left: 4px; }
 .td-side .row .max { flex: 1; color: #ffd76a; font-size: 14px; }
+.sel .kn { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--ag-ink-50); }
 .td-side button:disabled { opacity: 0.4; cursor: not-allowed; }
 .paths { display: flex; flex-direction: column; gap: 6px; }
 .paths p { font-size: 13px; color: var(--ag-ink-72); margin: 0 0 2px; }

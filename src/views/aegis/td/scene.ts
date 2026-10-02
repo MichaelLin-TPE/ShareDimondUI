@@ -48,6 +48,14 @@ const THEMES: [string, string, string, string, string][] = [
 
 // 職業的代表色(特效、徽章用):妖精、騎士、法師、黑妖、君主
 const CLS_COLOR = ['#8fe06a', '#cfd8e6', '#b78bff', '#ff5a7a', '#ffd35a']
+// 每張圖畫出來本來面向哪一邊(true = 朝左)。攻擊時要轉向目標,所以得先知道原圖朝哪。順序:妖精、騎士、法師、黑妖、君主
+const FACES_LEFT: { idle: boolean; attack: boolean }[] = [
+  { idle: false, attack: false },
+  { idle: true, attack: true },
+  { idle: true, attack: false },
+  { idle: true, attack: true },
+  { idle: false, attack: false },
+]
 // 怪顯示多高(邏輯像素):一般、快速、厚血、成群、飛行、魔抗、物抗
 const MOB_H = [46, 40, 62, 32, 46, 48, 48]
 
@@ -55,8 +63,10 @@ interface TowerVis {
   slot: number; cls: number; level: number; path: number
   /** 塔位座標 */
   sx: number; sy: number
-  /** 角色實際站的位置(騎士站在路上) */
+  /** 角色站的位置(就是塔位) */
   x: number; y: number
+  /** 騎士在路上把怪攔下來的地方(畫面座標) */
+  guards: [number, number][]
   rangePx: number
   attackAt: number; faceLeft: boolean
   kHp: number; kMax: number; down: boolean; upAt: number
@@ -71,7 +81,7 @@ interface MobVis {
 }
 interface Particle { x: number; y: number; vx: number; vy: number; born: number; life: number; size: number; color: string; g: number; kind: number }
 interface FloatText { x: number; y: number; text: string; color: string; size: number; born: number; life: number; vy: number }
-interface Fx { kind: 'arrow' | 'orb' | 'ring' | 'bolt' | 'slash' | 'stab' | 'beam'; born: number; life: number; x0: number; y0: number; x1: number; y1: number; color: string; r: number; pts?: number[] }
+interface Fx { kind: 'arrow' | 'orb' | 'ring' | 'bolt' | 'slash' | 'stab' | 'cleave' | 'wave'; born: number; life: number; x0: number; y0: number; x1: number; y1: number; color: string; r: number; pts?: number[] }
 
 export class TdScene {
   private ctx: CanvasRenderingContext2D
@@ -171,13 +181,13 @@ export class TdScene {
     const cls = ['ELF', 'KNIGHT', 'WIZARD', 'DARKELF', 'PRINCE'].indexOf(t.cls)
     const s = this.cfg.slots[slot] as number[]
     const sx = s[0] ?? 0, sy = s[1] ?? 0
-    let x = sx, y = sy
-    if (cls === 1 && t.guardPos >= 0) [x, y] = this.posXY(t.guardPos)
+    const x = sx, y = sy
+    const guards = (t.guards ?? []).map((g) => this.posXY(g))
     const same = old && old.cls === cls
     if (!same) this.burst(x, y - 30, CLS_COLOR[cls] ?? '#fff', 18)                     // 新蓋的塔:冒一圈光
     else if (old.level !== t.level || old.path !== t.path) this.levelUp(x, y, cls)       // 升級 / 選路線
     return {
-      slot, cls, level: t.level, path: t.path, sx, sy, x, y, rangePx: t.rangePx,
+      slot, cls, level: t.level, path: t.path, sx, sy, x, y, guards, rangePx: t.rangePx,
       attackAt: same ? old.attackAt : -999, faceLeft: same ? old.faceLeft : false,
       kHp: t.hp, kMax: t.hp, down: false, upAt: -999, bornAt: same ? old.bornAt : this.fxTick,
     }
@@ -273,7 +283,6 @@ export class TdScene {
         if (!m) break
         m.hp = e[6] ?? 0
         if (silent) break
-        m.flashAt = t
         this.hitFx(e[2] ?? -1, m, e[4] ?? 0, e[5] ?? 0)
         break
       }
@@ -315,6 +324,7 @@ export class TdScene {
         const tw = this.towers[e[2] ?? -1]
         if (!tw) break
         tw.kHp = e[3] ?? 0
+        if (!silent && e[4] === KNIGHT.HIT) this.fx.push({ kind: 'slash', born: t, life: 4, x0: tw.x, y0: tw.y - 42, x1: 0, y1: 0, color: '#ff6a5a', r: 18 })   // 被怪抓了一下
         if (e[4] === KNIGHT.DOWN) { tw.down = true; if (!silent) this.float(tw.x, tw.y - 80, '倒下', '#ff8f7a', 14, 30) }
         if (e[4] === KNIGHT.UP) { tw.down = false; tw.upAt = t; tw.kHp = tw.kMax; if (!silent) this.levelUp(tw.x, tw.y, 1) }
         break
@@ -336,52 +346,69 @@ export class TdScene {
     }
   }
 
-  /** 一下命中的特效:依出手的職業與路線畫箭、火球、閃電、斬擊,再跳傷害數字 */
+  /**
+   * 一下命中的特效:依出手的職業與路線畫箭、火球、閃電、刀光,再跳傷害數字。
+   * 出手到命中有一點時間差(拉弓放箭、舉劍劈下、法球飛過去),閃白和數字等招式「到」了才出現。
+   */
   private hitFx(slot: number, m: MobVis, dmg: number, flags: number) {
     const t = this.fxTick
     const my = m.y - this.mobHeight(m) / 2
     const tw = this.towers[slot]
     const cast = this.lastCast.get(slot)
     if (flags & HIT_FLAG.POISON) {
+      m.flashAt = t
       this.float(m.x + 8, my - 10, String(dmg), '#8ff06a', 11, 18)
       this.bubble(m.x, my, '#8ff06a', 3)
       return
     }
     if (flags & HIT_FLAG.REFLECT) {
+      m.flashAt = t
       this.fx.push({ kind: 'slash', born: t, life: 5, x0: m.x, y0: my, x1: m.x, y1: my, color: '#dfe8ff', r: 16 })
       this.float(m.x, my - 14, String(dmg), '#dfe8ff', 11, 18)
       return
     }
     const crit = (flags & HIT_FLAG.CRIT) !== 0
     const brave = (flags & HIT_FLAG.BRAVE) !== 0
+    let delay = 0
     if (tw && cast) {
       const cls = Math.floor(cast.kind / 10), path = cast.kind % 10
       const color = CLS_COLOR[cls] ?? '#fff'
-      if (cls === 0) {
-        this.fx.push({ kind: 'arrow', born: t, life: 3.2, x0: tw.x + (tw.faceLeft ? -14 : 14), y0: tw.y - 48, x1: m.x, y1: my, color: path === 3 ? '#ff9b3d' : '#e9ffd0', r: 0 })
-        if (path === 3 && crit) this.burst(m.x, my, '#ff8a2a', 14)
-      } else if (cls === 1) {
-        this.fx.push({ kind: 'slash', born: t, life: 5, x0: m.x, y0: my, x1: m.x, y1: my, color: '#ffffff', r: 24 })
+      const dir = tw.faceLeft ? -1 : 1
+      if (cls === 0) {          // 妖精:拉弓、放箭,箭飛過去
+        delay = 4.4
+        this.fx.push({ kind: 'arrow', born: t + 1.4, life: 3, x0: tw.x + dir * 20, y0: tw.y - 46, x1: m.x, y1: my, color: path === 3 ? '#ff9b3d' : '#e9ffd0', r: 0 })
+        if (path === 3 && crit) this.burstLater(m.x, my, '#ff8a2a', 14, delay, 1)
+      } else if (cls === 1) {   // 騎士:舉劍劈下,刀光掃過身前,劍氣飛到路上的怪身上
+        delay = 4.4
+        if (cast.first) this.fx.push({ kind: 'cleave', born: t + 1.5, life: 4.5, x0: tw.x + dir * 14, y0: tw.y - 40, x1: dir, y1: 0, color: '#ffffff', r: 56 })
+        this.fx.push({ kind: 'wave', born: t + 2.2, life: 2.2, x0: tw.x + dir * 40, y0: tw.y - 40, x1: m.x, y1: my, color: '#dff1ff', r: 20 })
+        this.burstLater(m.x, my, '#fff6d8', 9, delay, 1)
       } else if (cls === 2) {
-        if (path === 3) {   // 極光雷電:從上一個命中點連到這一個
-          this.fx.push({ kind: 'bolt', born: t, life: 5, x0: cast.px, y0: cast.py, x1: m.x, y1: my, color: '#cfe4ff', r: 0, pts: jag(cast.px, cast.py, m.x, my) })
+        if (path === 3) {       // 極光雷電:從上一個命中點連到這一個
+          delay = 1.5
+          this.fx.push({ kind: 'bolt', born: t + delay, life: 5, x0: cast.px, y0: cast.py, x1: m.x, y1: my, color: '#cfe4ff', r: 0, pts: jag(cast.px, cast.py, m.x, my) })
           cast.px = m.x; cast.py = my
-          this.burst(m.x, my, '#bcd8ff', 5)
-        } else if (cast.first) {   // 範圍魔法:法球飛到主目標,再炸開
-          const ice = path === 2
-          const r = path === 1 ? 91 : 70
-          this.fx.push({ kind: 'orb', born: t, life: 3, x0: tw.x, y0: tw.y - 60, x1: m.x, y1: my, color: ice ? '#9fe8ff' : '#ff8a3d', r: 7 })
-          this.fx.push({ kind: 'ring', born: t + 2.4, life: 8, x0: m.x, y0: m.y - 6, x1: 0, y1: 0, color: ice ? '#9fe8ff' : '#ff8a3d', r })
-          this.burstLater(m.x, m.y - 14, ice ? '#d6f6ff' : '#ffb25a', path === 1 ? 34 : 22, 2.4, ice ? 2 : 1)
+          this.burstLater(m.x, my, '#bcd8ff', 5, delay, 1)
+        } else {                // 範圍魔法:法球飛到主目標,再炸開
+          delay = 4.6
+          if (cast.first) {
+            const ice = path === 2
+            const r = path === 1 ? 91 : 70
+            this.fx.push({ kind: 'orb', born: t + 1.6, life: 3, x0: tw.x + dir * 16, y0: tw.y - 74, x1: m.x, y1: my, color: ice ? '#9fe8ff' : '#ff8a3d', r: 7 })
+            this.fx.push({ kind: 'ring', born: t + delay, life: 8, x0: m.x, y0: m.y - 6, x1: 0, y1: 0, color: ice ? '#9fe8ff' : '#ff8a3d', r })
+            this.burstLater(m.x, m.y - 14, ice ? '#d6f6ff' : '#ffb25a', path === 1 ? 34 : 22, delay, ice ? 2 : 1)
+          }
         }
-      } else if (cls === 3) {
-        this.fx.push({ kind: 'stab', born: t, life: 5, x0: m.x, y0: my, x1: m.x, y1: my, color, r: 22 })
+      } else if (cls === 3) {   // 黑妖:衝上去兩刀
+        delay = 2
+        this.fx.push({ kind: 'stab', born: t + delay, life: 5, x0: m.x, y0: my, x1: m.x, y1: my, color, r: 22 })
         if (path === 2) this.bubble(m.x, my, '#8ff06a', 5)
       }
       cast.first = false
     }
+    m.flashAt = t + delay
     const big = crit || brave
-    this.float(m.x + (Math.random() * 16 - 8), my - 12, String(dmg) + (crit ? '!' : ''), crit ? '#ffe14d' : brave ? '#ffab4d' : '#ffffff', big ? 17 : 12, big ? 26 : 18)
+    this.float(m.x + (Math.random() * 16 - 8), my - 12, String(dmg) + (crit ? '!' : ''), crit ? '#ffe14d' : brave ? '#ffab4d' : '#ffffff', big ? 17 : 12, big ? 26 : 18, delay)
   }
 
   // ===================== 每一格:更新位置 =====================
@@ -542,15 +569,24 @@ export class TdScene {
       c.strokeStyle = this.placing >= 0 ? '#ffd76a' : '#ffffff'
       c.lineWidth = 2.4
       c.beginPath(); c.moveTo(-7, 0); c.lineTo(7, 0); c.moveTo(0, -4); c.lineTo(0, 4); c.stroke()
-    } else if (tw.cls === 1) {
-      // 騎士離開石台站到路上:畫一條線表示他守的是哪裡
-      c.globalAlpha = 0.5
-      c.strokeStyle = CLS_COLOR[1] ?? '#fff'
-      c.setLineDash([4, 5]); c.lineWidth = 1.5
-      c.beginPath(); c.moveTo(0, 0); c.lineTo(tw.x - x, tw.y - y); c.stroke()
-      c.setLineDash([])
     }
     c.restore()
+    // 騎士:在路上標出他會把怪攔下來的地方
+    if (tw && tw.cls === 1) {
+      for (const [gx, gy] of tw.guards) {
+        c.save()
+        c.translate(gx, gy)
+        c.globalAlpha = hot ? 0.95 : 0.6
+        c.strokeStyle = CLS_COLOR[1] ?? '#fff'
+        c.lineWidth = 2
+        c.setLineDash([5, 4])
+        c.beginPath(); c.ellipse(0, 0, 15, 8, 0, 0, Math.PI * 2); c.stroke()
+        c.setLineDash([])
+        c.fillStyle = CLS_COLOR[1] ?? '#fff'
+        c.beginPath(); c.moveTo(-5, -5); c.lineTo(5, -5); c.lineTo(5, 0); c.quadraticCurveTo(5, 5, 0, 7); c.quadraticCurveTo(-5, 5, -5, 0); c.closePath(); c.fill()
+        c.restore()
+      }
+    }
   }
 
   private drawAura(c: CanvasRenderingContext2D, tw: TowerVis) {
@@ -576,8 +612,8 @@ export class TdScene {
     if (i < 0) return
     const tw = this.towers[i]
     let x = 0, y = 0, r = 0
-    if (tw) { r = tw.rangePx; x = tw.cls === 1 ? tw.x : tw.sx; y = tw.cls === 1 ? tw.y : tw.sy }
-    else if (this.placing >= 0 && this.placing !== 1) { const s = this.cfg.slots[i] as number[]; x = s[0] ?? 0; y = s[1] ?? 0; r = this.placingRange }
+    if (tw) { r = tw.rangePx; x = tw.sx; y = tw.sy }
+    else if (this.placing >= 0) { const s = this.cfg.slots[i] as number[]; x = s[0] ?? 0; y = s[1] ?? 0; r = this.placingRange }
     if (r <= 0 || (tw && tw.cls === 4)) return
     c.save()
     c.fillStyle = 'rgba(255,255,255,0.07)'
@@ -588,38 +624,75 @@ export class TdScene {
     c.restore()
   }
 
+  /**
+   * 出手之後過了 at 個 tick,這個職業的身體該是什麼姿勢。每個職業動作不同:
+   * 妖精拉弓放箭(不往前衝)、騎士舉劍劈下、法師舉杖浮起、黑妖衝上去刺。dir = 面向(右 1、左 -1)。
+   */
+  private pose(cls: number, at: number, dir: number) {
+    const p = { attack: false, rot: 0, dx: 0, dy: 0, sx: 1, sy: 1 }
+    if (at < 0 || at >= 8) return p
+    if (cls === 0) {
+      p.attack = at < 6.5
+      if (at < 1.4) { const k = at / 1.4; p.rot = -0.07 * k * dir; p.dx = -3 * k * dir; p.sx = 1 - 0.04 * k }        // 拉滿
+      else if (at < 2.6) { const k = (at - 1.4) / 1.2; p.rot = (-0.07 + 0.12 * k) * dir; p.dx = (-3 + 5 * k) * dir; p.sx = 0.96 + 0.1 * k }   // 放箭
+      else { const k = (at - 2.6) / 5.4; p.rot = 0.05 * (1 - k) * dir; p.dx = 2 * (1 - k) * dir; p.sx = 1.06 - 0.06 * k }
+    } else if (cls === 1) {
+      if (at < 1.5) { const k = at / 1.5; p.rot = -0.42 * k * dir; p.dy = -4 * k; p.sy = 1 + 0.05 * k }                 // 舉劍,身體往後仰
+      else if (at < 3) { const k = (at - 1.5) / 1.5; p.attack = true; p.rot = (-0.42 + 0.95 * k) * dir; p.dy = -4 * (1 - k); p.dx = 4 * k * dir; p.sx = 1.06 }   // 劈下去
+      else { const k = (at - 3) / 5; p.attack = at < 4.6; p.rot = 0.53 * (1 - k) * (1 - k) * dir; p.dx = 4 * (1 - k) * dir }
+    } else if (cls === 2) {
+      p.attack = at < 6.5
+      const k = Math.sin(Math.min(1, at / 6.5) * Math.PI)
+      p.dy = -6 * k; p.sx = 1 + 0.05 * k; p.sy = 1 + 0.05 * k; p.rot = -0.05 * k * dir
+    } else if (cls === 3) {
+      if (at < 1) { const k = at; p.dx = -6 * k * dir; p.sx = 1 - 0.06 * k; p.rot = -0.1 * k * dir }                     // 壓低蓄力
+      else if (at < 3) { const k = (at - 1) / 2; p.attack = true; p.dx = (-6 + 24 * k) * dir; p.rot = 0.16 * dir; p.sx = 1.08 }   // 衝出去
+      else { const k = (at - 3) / 5; p.attack = at < 4.5; p.dx = 18 * (1 - k) * (1 - k) * dir; p.rot = 0.16 * (1 - k) * dir }
+    }
+    return p
+  }
+
   private drawTower(c: CanvasRenderingContext2D, tw: TowerVis) {
     const t = this.fxTick
     const a = this.assets.cls[tw.cls]
     if (!a) return
-    const at = t - tw.attackAt          // 出手之後過了幾個 tick
-    const attacking = at >= 0 && at < 7
-    const img = attacking && at > 1.2 && at < 5.2 ? a.attack : a.idle
+    const dir = tw.faceLeft ? -1 : 1
+    const ps = this.pose(tw.cls, t - tw.attackAt, dir)
+    const img = ps.attack ? a.attack : a.idle
     const h = 84
     const w = (img.width / img.height) * h
     const born = Math.min(1, (t - tw.bornAt) / 6)
-    // 待機:呼吸。出手:先往後縮蓄力,再往前衝,最後彈回來
-    let sx = 1, sy = 1 + 0.028 * Math.sin(t * 0.16 + tw.slot), rot = 0, dx = 0
-    if (attacking) {
-      const dir = tw.faceLeft ? -1 : 1
-      if (at < 1.2) { const p = at / 1.2; sx = 1 + 0.06 * p; sy = 1 - 0.07 * p; rot = -0.12 * p * dir; dx = -4 * p * dir }
-      else if (at < 3.2) { const p = (at - 1.2) / 2; sx = 1.1 - 0.04 * p; sy = 1.1 - 0.04 * p; rot = 0.14 * (1 - p * 0.4) * dir; dx = (9 - 3 * p) * dir }
-      else { const p = (at - 3.2) / 3.8; const e = 1 - p; sx = 1 + 0.06 * e; sy = 1 + 0.06 * e * Math.cos(p * 9); rot = 0.08 * e * dir; dx = 6 * e * dir }
-    }
+    const breathe = 1 + 0.028 * Math.sin(t * 0.16 + tw.slot)
+    // 原圖朝哪邊不一定,要翻成面向目標
+    const faces = FACES_LEFT[tw.cls]
+    const flip = tw.faceLeft !== (ps.attack ? faces?.attack : faces?.idle)
     c.save()
-    c.translate(tw.x + dx, tw.y)
+    c.translate(tw.x + ps.dx, tw.y + ps.dy)
     c.fillStyle = 'rgba(0,0,0,0.32)'
-    c.beginPath(); c.ellipse(-dx * 0.5, 2, 24, 8, 0, 0, Math.PI * 2); c.fill()
+    c.beginPath(); c.ellipse(-ps.dx * 0.5, 2 - ps.dy, 24, 8, 0, 0, Math.PI * 2); c.fill()
     if (tw.down) {
       c.globalAlpha = 0.5
       c.rotate(tw.faceLeft ? -1.35 : 1.35)
       c.translate(0, 10)
     }
     if (t - tw.upAt < 10) { c.shadowColor = '#fff3a8'; c.shadowBlur = 24 * (1 - (t - tw.upAt) / 10) }
-    c.rotate(rot)
-    c.scale((tw.faceLeft ? -1 : 1) * sx * born, sy * born)
+    c.rotate(ps.rot)
+    c.scale((flip ? -1 : 1) * ps.sx * born, ps.sy * breathe * born)
     c.drawImage(img, -w / 2, -h, w, h)
     c.restore()
+
+    // 法師舉杖的時候杖頭亮一下
+    const at = t - tw.attackAt
+    if (tw.cls === 2 && at >= 0 && at < 5) {
+      const k = Math.sin((at / 5) * Math.PI)
+      c.save()
+      const gx = tw.x + dir * 16, gy = tw.y - 76 + ps.dy
+      const g = c.createRadialGradient(gx, gy, 1, gx, gy, 20)
+      g.addColorStop(0, 'rgba(255,255,255,' + 0.9 * k + ')'); g.addColorStop(0.4, 'rgba(183,139,255,' + 0.6 * k + ')'); g.addColorStop(1, 'rgba(183,139,255,0)')
+      c.fillStyle = g
+      c.beginPath(); c.arc(gx, gy, 20, 0, Math.PI * 2); c.fill()
+      c.restore()
+    }
 
     // 等級與路線
     c.save()
@@ -798,6 +871,32 @@ export class TdScene {
         c.beginPath()
         for (let i = 0; i < f.pts.length; i += 2) (i === 0 ? c.moveTo(f.pts[i] ?? 0, f.pts[i + 1] ?? 0) : c.lineTo(f.pts[i] ?? 0, f.pts[i + 1] ?? 0))
         c.stroke()
+      } else if (f.kind === 'cleave') {
+        // 騎士的刀光:一道月牙從頭頂往身前掃下來(x1 = 面向,1 右 -1 左)
+        c.translate(f.x0, f.y0)
+        c.scale(f.x1, 1)
+        const head = -1.75 + 2.5 * Math.min(1, p * 1.5)       // 刀尖掃到哪
+        const tail = head - 1.5 * (1 - p * 0.5)
+        c.globalAlpha = Math.min(1, (1 - p) * 1.6)
+        c.shadowColor = '#bfe2ff'; c.shadowBlur = 16
+        c.lineCap = 'round'
+        for (let i = 0; i < 6; i++) {                          // 尾巴越來越細、越來越淡
+          const a0 = tail + ((head - tail) * i) / 6, a1 = tail + ((head - tail) * (i + 1)) / 6 + 0.03
+          c.strokeStyle = 'rgba(255,255,255,' + (0.15 + 0.14 * i) + ')'
+          c.lineWidth = 2 + i * 1.9
+          c.beginPath(); c.arc(0, 0, f.r, a0, a1); c.stroke()
+        }
+      } else if (f.kind === 'wave') {
+        // 劍氣:一道小月牙從騎士飛到怪身上
+        const x = f.x0 + (f.x1 - f.x0) * p, y = f.y0 + (f.y1 - f.y0) * p
+        c.translate(x, y)
+        c.rotate(Math.atan2(f.y1 - f.y0, f.x1 - f.x0))
+        c.globalAlpha = 0.95 - p * 0.35
+        c.shadowColor = '#9fd4ff'; c.shadowBlur = 14
+        c.strokeStyle = f.color; c.lineCap = 'round'; c.lineWidth = 5
+        c.beginPath(); c.arc(-f.r, 0, f.r, -0.75, 0.75); c.stroke()
+        c.strokeStyle = '#fff'; c.lineWidth = 2
+        c.beginPath(); c.arc(-f.r, 0, f.r, -0.55, 0.55); c.stroke()
       } else if (f.kind === 'slash') {
         c.globalAlpha = 1 - p
         c.translate(f.x0, f.y0); c.rotate(-0.7)
@@ -844,6 +943,7 @@ export class TdScene {
     c.save()
     c.textAlign = 'center'; c.textBaseline = 'middle'
     for (const f of this.floats) {
+      if (t < f.born) continue
       const k = (t - f.born) / f.life
       const pop = k < 0.15 ? 0.6 + (k / 0.15) * 0.6 : 1.2 - Math.min(0.2, (k - 0.15) * 0.5)
       c.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1
@@ -881,8 +981,8 @@ export class TdScene {
 
   private shake(amp: number) { this.shakeAt = this.fxTick; this.shakeAmp = amp }
 
-  private float(x: number, y: number, text: string, color: string, size: number, life: number) {
-    this.floats.push({ x, y, text, color, size, born: this.fxTick, life, vy: 1.3 })
+  private float(x: number, y: number, text: string, color: string, size: number, life: number, delay = 0) {
+    this.floats.push({ x, y, text, color, size, born: this.fxTick + delay, life, vy: 1.3 })
   }
 
   private burst(x: number, y: number, color: string, n: number) { this.burstLater(x, y, color, n, 0, 1) }
