@@ -89,7 +89,7 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '暴風疾走', cls: 'elf', level: 50, mp: 10, cooldown: '—', type: '輔助', effect: '傳送到隨機地點', tier: '精靈魔法 6 階' },
   { name: '污濁之水', cls: 'elf', level: 50, mp: 20, cooldown: '1.2 秒', type: '減益', effect: '目標中毒並降低回復（持續 192 秒）', tier: '精靈魔法 6 階' },
   { name: '精準射擊', cls: 'elf', level: 50, mp: 10, cooldown: '3 秒', type: '輔助', effect: '一段時間內弓箭必定命中（持續 192 秒）', tier: '精靈魔法 6 階' },
-  { name: '烈焰之魂', cls: 'elf', level: 50, mp: 30, cooldown: '—', type: '輔助', effect: '火屬性強力附魔，打怪傷害固定不亂跳（持續 64 秒）', tier: '精靈魔法 6 階' },
+  { name: '烈焰之魂', cls: 'elf', level: 50, mp: 30, cooldown: '—', type: '輔助', effect: '火屬性強力附魔，打怪傷害固定不亂跳，另有 33% 機率打出武器最大傷害的 2 倍（持續 64 秒）', tier: '精靈魔法 6 階' },
   { name: '能量激發', cls: 'elf', level: 50, mp: 30, cooldown: '—', type: '輔助', effect: 'INT 提升（持續 960 秒）', tier: '精靈魔法 6 階' },
   { name: '極光雷電', cls: 'wizard', level: 12, mp: 20, cooldown: '0.8 秒', type: '攻擊', effect: '單體風屬性魔法攻擊（風屬性）', tier: '魔法 3 階' },
   { name: '起死回生術', cls: 'wizard', level: 12, mp: 20, cooldown: '0.85 秒', type: '攻擊', effect: '不死系怪物有機率直接消滅（王無效，地屬性）', tier: '魔法 3 階' },
