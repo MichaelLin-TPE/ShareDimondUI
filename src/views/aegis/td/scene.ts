@@ -933,7 +933,9 @@ export class TdScene {
   private slotAt(ev: MouseEvent): number {
     const r = this.canvas.getBoundingClientRect()
     const x = ((ev.clientX - r.left) / r.width) * W, y = ((ev.clientY - r.top) / r.height) * H
-    let best = -1, bestD = 46 * 46
+    // 手機上地圖縮得很小:點擊範圍至少留 24 個實際像素的半徑,手指才點得到
+    const reach = Math.max(46, (24 * W) / r.width)
+    let best = -1, bestD = reach * reach
     this.cfg.slots.forEach((s, i) => {
       const tw = this.towers[i]
       // 塔站著的地方(騎士在路上)和石台本身都可以點

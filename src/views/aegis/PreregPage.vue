@@ -481,6 +481,8 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .pr-auth button, .pr-bar button, .pm button, .pr-done button { box-sizing: border-box; text-align: center; }
+/* 同一個重設也把 input 的 box-sizing 洗成 content-box,寬度 100% 加上內距會超出外框 */
+.pr-form input, .pm-name { box-sizing: border-box; }
 
 /* 官網的共用重設(.ag-root button { all: unset })權重比 .ag-btn 高,用在 <button> 上會整個被洗掉,這裡補回來 */
 button.ag-btn {

@@ -260,12 +260,13 @@ watch(menuOpen, (v) => {
 .ag-foot .links { flex-direction: row; flex-wrap: wrap; gap: 8px 22px; max-width: 520px; }
 .ag-foot .links a:hover { color: var(--ag-ink); }
 
-@media (max-width: 1100px) {
+/* 導覽多了「預約創角」之後,右邊 6 項在間距 44 時要 1280 以上才放得下 */
+@media (max-width: 1280px) {
   .ag-nav { gap: 28px; padding: 24px 24px; }
   .side { gap: 24px; }
   .lnk { font-size: 12px; letter-spacing: 0.04em; }
 }
-@media (max-width: 960px) {
+@media (max-width: 1060px) {
   .ag-nav { justify-content: space-between; }
   .side { display: none; }
   .burger { display: block; order: 3; }

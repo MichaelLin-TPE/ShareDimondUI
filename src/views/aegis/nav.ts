@@ -19,6 +19,7 @@ export const AG_NAV: AgNavItem[] = [
   { label: '武器防具', to: '/aegis/items', side: 'right' },
   { label: '交易區', to: '/aegis/market', side: 'right' },
   { label: '聯絡客服', to: '/aegis/contact', side: 'right' },
+  { label: '預約創角', to: '/aegis/prereg', side: 'right', strong: true },
   { label: '點我玩遊戲', to: '/aegis/play', side: 'right', strong: true },
 ]
 
