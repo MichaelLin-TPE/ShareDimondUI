@@ -115,6 +115,7 @@ const router = createRouter({
         { path: 'items', component: () => import('@/views/aegis/ItemsPage.vue') },
         { path: 'market', component: () => import('@/views/aegis/MarketPage.vue') },
         { path: 'contact', component: () => import('@/views/aegis/ContactPage.vue') },
+        { path: 'prereg', component: () => import('@/views/aegis/PreregPage.vue') },
       ],
     },
     {
