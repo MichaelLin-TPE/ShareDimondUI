@@ -480,6 +480,19 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.pr-auth button, .pr-bar button, .pm button, .pr-done button { box-sizing: border-box; text-align: center; }
+
+/* 官網的共用重設(.ag-root button { all: unset })權重比 .ag-btn 高,用在 <button> 上會整個被洗掉,這裡補回來 */
+button.ag-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px; box-sizing: border-box; height: 44px; padding: 0 22px;
+  font-size: 12.5px; font-weight: 500; letter-spacing: 0.14em; color: var(--ag-ink); border: 1px solid var(--ag-line); white-space: nowrap; cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+button.ag-btn:hover { border-color: var(--ag-ink); }
+button.ag-btn.primary { background: var(--ag-ember); border-color: var(--ag-ember); color: #120800; font-weight: 600; }
+button.ag-btn.primary:hover { box-shadow: 0 0 28px var(--ag-ember-glow); }
+button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .pr-msg { color: var(--ag-ink-72); font-size: 15px; }
 .pr-msg.bad, .bad { color: #ff8f7a; }
 .good { color: #9fe0a8; }
@@ -499,7 +512,7 @@ onBeforeUnmount(() => {
 .pr-form small { font-size: 13px; line-height: 1.5; color: var(--ag-ink-50); }
 .pr-form small.good { color: #9fe0a8; }
 .pr-form small.bad { color: #ff8f7a; }
-.pr-form .ag-btn { align-self: flex-start; cursor: pointer; background-clip: padding-box; }
+.pr-form .ag-btn { align-self: flex-start; }
 .pr-form .ag-btn:disabled, .pr-acts .ag-btn:disabled, .pm-go:disabled { opacity: 0.5; cursor: not-allowed; }
 .pr-form.inline { margin-top: 20px; max-width: 420px; }
 .pr-side ul { margin: 14px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: var(--ag-ink-72); font-size: 15.5px; line-height: 1.6; }
@@ -611,7 +624,7 @@ onBeforeUnmount(() => {
 .pm-bonus p { grid-column: 1 / -1; margin: 0; color: var(--ag-ink-50); font-size: 13.5px; }
 .pm-name { width: 100%; height: 46px; padding: 0 12px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--ag-line); color: var(--ag-ink); font: inherit; font-size: 17px; outline: none; }
 .pm-hint { min-height: 20px; margin: 6px 0 10px; font-size: 13.5px; }
-.pm-go { width: 100%; justify-content: center; cursor: pointer; }
+.pm-go { width: 100%; }
 
 /* ---------- 已預約 ---------- */
 .pr-done { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 40px; align-items: center; }
@@ -622,7 +635,6 @@ onBeforeUnmount(() => {
 .pr-hero-in .st { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--ag-ink-72); }
 .pr-hero-in .st b { color: var(--ag-ink); font-weight: 500; }
 .pr-acts .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-.pr-acts .ag-btn { cursor: pointer; background-clip: padding-box; }
 .pr-acts b { color: var(--ag-ink); font-weight: 500; }
 .pr-confirm { margin-top: 20px; padding: 16px; border: 1px solid #a8503f; background: rgba(120, 30, 20, 0.2); font-size: 15px; line-height: 1.6; }
 
