@@ -3,6 +3,20 @@
 // 客戶端沒有合適原音的(過關、結界擋下、首領來襲的號角、賣出)是自己合成的。
 const BASE = '/aegis/td/sfx/'
 const MUTE_KEY = 'aegis_td_muted'
+const MUSIC_KEY = 'aegis_td_music_off'
+const BGM_BASE = '/aegis/td/bgm/'
+const BGM_VOLUME = 0.32
+
+/**
+ * 背景音樂(使用者 2026-10-03 從天堂客戶端挑的):布置時、七個場景各一首、王來了、結算。
+ * 原檔是客戶端 Sound/music<N>.mp3,轉成 96kbps 放在 public/aegis/td/bgm。
+ */
+export const BGM = {
+  setup: 'setup',                                              // music0
+  chapters: ['ch0', 'ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6'], // music1 說話之島、music10 古魯丁、music18 風木、music12 奇岩、music11 海音、music4 龍之谷、music3 歐瑞
+  boss: 'boss',                                                // music2
+  result: 'result',                                            // music5
+} as const
 
 /** 全部的音效名稱(= 檔名) */
 export const SFX_NAMES = [
@@ -39,9 +53,28 @@ export class TdAudio {
   private lastAt = new Map<string, number>()
   private live = 0
   muted = false
+  musicOff = false
+  /** 現在在放哪一首(淡出中的不算) */
+  private bgm: HTMLAudioElement | null = null
+  private bgmName = ''
+  /** 瀏覽器還不准出聲的時候先記著,解鎖後再放 */
+  private bgmWanted = ''
+  private fadeTimer = 0
+  private unlocked = false
 
   constructor() {
-    try { this.muted = localStorage.getItem(MUTE_KEY) === '1' } catch { /* 存不了就用預設 */ }
+    try {
+      this.muted = localStorage.getItem(MUTE_KEY) === '1'
+      this.musicOff = localStorage.getItem(MUSIC_KEY) === '1'
+    } catch { /* 存不了就用預設 */ }
+    document.addEventListener('visibilitychange', this.onVisibility)
+  }
+
+  /** 切到別的分頁或 App 就暫停音樂,回來再繼續 */
+  private onVisibility = () => {
+    if (!this.bgm) return
+    if (document.visibilityState === 'hidden') this.bgm.pause()
+    else if (!this.muted && !this.musicOff) this.bgm.play().catch(() => {})
   }
 
   /**
@@ -59,6 +92,60 @@ export class TdAudio {
       for (const n of SFX_NAMES) this.load(n)
     }
     if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {})
+    this.unlocked = true
+    if (this.bgmWanted) this.music(this.bgmWanted)
+  }
+
+  // ===================== 背景音樂 =====================
+
+  /**
+   * 換一首背景音樂(淡出舊的、淡入新的);name = '' 停掉。同一首重複呼叫不會重頭播。
+   * 瀏覽器要使用者點過畫面才准出聲:還沒解鎖就先記著,unlock() 時再放。
+   */
+  music(name: string) {
+    this.bgmWanted = name
+    if (!this.unlocked || this.muted || this.musicOff) { if (!name) this.stopMusic(); return }
+    if (name === this.bgmName && this.bgm) return
+    this.stopMusic()
+    if (!name) return
+    const a = new Audio(`${BGM_BASE}${name}.mp3`)
+    a.loop = true
+    a.volume = 0
+    a.preload = 'auto'
+    this.bgm = a
+    this.bgmName = name
+    a.play().catch(() => { /* 還不准出聲:下次 unlock 再放 */ this.bgm = null; this.bgmName = '' })
+    // 淡入
+    let v = 0
+    const step = () => {
+      if (this.bgm !== a) return
+      v = Math.min(BGM_VOLUME, v + 0.04)
+      a.volume = v
+      if (v < BGM_VOLUME) this.fadeTimer = window.setTimeout(step, 60)
+    }
+    step()
+  }
+
+  private stopMusic() {
+    const old = this.bgm
+    this.bgm = null
+    this.bgmName = ''
+    window.clearTimeout(this.fadeTimer)
+    if (!old) return
+    // 淡出再停,不會「啪」一聲斷掉
+    const fade = () => {
+      old.volume = Math.max(0, old.volume - 0.05)
+      if (old.volume > 0.01) window.setTimeout(fade, 50)
+      else { old.pause(); old.src = '' }
+    }
+    fade()
+  }
+
+  setMusicOff(off: boolean) {
+    this.musicOff = off
+    try { localStorage.setItem(MUSIC_KEY, off ? '1' : '0') } catch { /* 存不了就算了 */ }
+    if (off) this.stopMusic()
+    else this.music(this.bgmWanted)
   }
 
   private async load(name: string) {
@@ -74,10 +161,13 @@ export class TdAudio {
     }
   }
 
+  /** 音效總開關(音樂另外有自己的開關;總開關關掉時音樂也不放) */
   setMuted(m: boolean) {
     this.muted = m
     try { localStorage.setItem(MUTE_KEY, m ? '1' : '0') } catch { /* 存不了就算了 */ }
     if (this.gain && this.ctx) this.gain.gain.setTargetAtTime(m ? 0 : 1, this.ctx.currentTime, 0.03)
+    if (m) this.stopMusic()
+    else this.music(this.bgmWanted)
   }
 
   /** scale:再乘一個音量倍率(例如成群的小怪小聲一點) */
@@ -103,6 +193,8 @@ export class TdAudio {
   }
 
   destroy() {
+    document.removeEventListener('visibilitychange', this.onVisibility)
+    this.stopMusic()
     this.ctx?.close().catch(() => {})
     this.ctx = null
   }

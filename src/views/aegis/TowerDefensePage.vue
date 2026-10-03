@@ -5,7 +5,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch 
 import { ApiError, restoreSession, session } from './prereg/api'
 import { CLS_ORDER, td, type ClassInfo, type RankView, type StateView, type TdConfig, type WaveView } from './td/api'
 import { TdScene, loadAssets } from './td/scene'
-import { TdAudio, type SfxName } from './td/audio'
+import { BGM, TdAudio, type SfxName } from './td/audio'
 
 const ART = '/aegis/td/'
 const RARITY = ['普通', '稀有', '傳說']
@@ -24,11 +24,17 @@ let scene: TdScene | null = null
 let ro: ResizeObserver | null = null
 const audio = new TdAudio()
 const muted = ref(audio.muted)
+const musicOff = ref(audio.musicOff)
 function toggleMute() {
   audio.unlock()
   audio.setMuted(!muted.value)
   muted.value = audio.muted
   if (!muted.value) audio.play('click')
+}
+function toggleMusic() {
+  audio.unlock()
+  audio.setMusicOff(!musicOff.value)
+  musicOff.value = audio.musicOff
 }
 
 const battling = ref(false)
@@ -174,6 +180,7 @@ async function startWave() {
   }
   selected.value = -1
   placing.value = null
+  bossWave.value = run.value.bossNext
   battling.value = true
   busy.value = false
   audio.play(run.value.bossNext ? 'boss_warn' : 'wave_start')
@@ -229,6 +236,17 @@ async function upTalent(i: number) {
 }
 
 watch(speed, (v) => { if (scene) scene.speed = v })
+// 背景音樂跟著畫面走:布置時一首、打哪一章放哪一章的、王來那一波換成王的、結算另一首;沒登入或還沒開局就不放
+const bgmName = computed(() => {
+  if (!session.token) return ''
+  if (result.value) return BGM.result
+  if (!run.value) return BGM.setup
+  if (!battling.value) return BGM.setup
+  if (bossWave.value) return BGM.boss
+  return BGM.chapters[Math.floor((run.value.wave - 1) / 10) % BGM.chapters.length] ?? BGM.setup
+})
+const bossWave = ref(false)
+watch(bgmName, (n) => audio.music(n), { immediate: true })
 watch([placing, selected], () => {
   if (!scene) return
   scene.selected = selected.value
@@ -301,6 +319,7 @@ onBeforeUnmount(() => {
           <button v-if="session.token" type="button" @click="showTalent = true">女神徽章<b v-if="profile">{{ profile.badges }}</b></button>
           <button type="button" @click="showHelp = true">怎麼玩</button>
           <button type="button" :title="muted ? '現在是靜音' : '現在有聲音'" @click="toggleMute">音效 {{ muted ? '關' : '開' }}</button>
+          <button type="button" :disabled="muted" @click="toggleMusic">音樂 {{ musicOff || muted ? '關' : '開' }}</button>
         </div>
       </div>
 
