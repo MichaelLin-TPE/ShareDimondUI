@@ -5,7 +5,7 @@
 // 地圖怎麼畫在 terrain.ts,特效怎麼畫在 fx.ts,這個檔決定「什麼時候放哪一個」。
 import { EV, HIT_FLAG, KNIGHT, STATUS, type RunView, type TdConfig, type TowerView } from './api'
 import type { SfxName } from './audio'
-import { FxLayer, P } from './fx'
+import { FxLayer, P, setLowQuality } from './fx'
 import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, clearGlowCache, drawAmbientOver, drawAmbientUnder, glow, renderTerrain, type Terrain } from './terrain'
 
 const ASSET = '/aegis/td/'
@@ -111,6 +111,13 @@ export class TdScene {
   private done: (() => void) | null = null
   private lastCast = new Map<number, Cast>()
 
+  /** 跑不動就自動降畫質(手機打到後面怪多塔多,光效太多會卡到白屏) */
+  private lowQ = false
+  /** 手機(觸控):預設就用輕一點的畫質 */
+  private mobile = window.matchMedia('(pointer: coarse)').matches
+  /** 最近幾格平均花幾毫秒 */
+  private frameMs = 16
+  private lowSince = 0
   private chapter = 0
   private bossKind = 0
   private wave = 0
@@ -148,6 +155,8 @@ export class TdScene {
     document.addEventListener('visibilitychange', this.onVisible)
     window.addEventListener('pageshow', this.onVisible)
     canvas.addEventListener('contextrestored', this.onVisible)
+    canvas.addEventListener('contextlost', this.onContextLost)
+    this.fx.quality = this.mobile ? 0.6 : 1
     this.resize()
     this.last = performance.now()
     this.raf = requestAnimationFrame(this.frame)
@@ -162,15 +171,51 @@ export class TdScene {
     document.removeEventListener('visibilitychange', this.onVisible)
     window.removeEventListener('pageshow', this.onVisible)
     this.canvas.removeEventListener('contextrestored', this.onVisible)
+    this.canvas.removeEventListener('contextlost', this.onContextLost)
+    this.releaseTerrain()
     this.done?.()
   }
 
   /** 畫布大小跟著外框走(外框維持 1000:660) */
   resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    // 低畫質時解析度降到 1.25 倍:手機 GPU 最吃的是像素數
+    const dpr = Math.min(this.lowQ ? 1.25 : this.mobile ? 1.5 : 2, window.devicePixelRatio || 1)
     const cw = Math.max(320, this.canvas.clientWidth)
-    this.canvas.width = Math.round(cw * dpr)
+    const w = Math.round(cw * dpr)
+    // 手機網址列縮進縮出會讓外框差個一兩像素,每次都重做底圖(100ms)太浪費:差很少就不動
+    if (Math.abs(w - this.canvas.width) < 4 && this.canvas.width > 0) return
+    this.canvas.width = w
     this.canvas.height = Math.round((cw * VH) / W * dpr)
+  }
+
+  private releaseTerrain() {
+    // 舊底圖主動縮成 0:有些手機瀏覽器不會馬上回收畫布的記憶體,一直換場景會累積到被整個丟掉
+    if (this.terrain) { this.terrain.canvas.width = 0; this.terrain.canvas.height = 0 }
+    this.terrain = null
+    this.terrainKey = ''
+  }
+
+  /** 每一格花了多久:連續一秒都超過 45ms 就降畫質;降了之後要連續五秒都很順才升回來 */
+  private watchFps(ms: number, now: number) {
+    this.frameMs = this.frameMs * 0.9 + ms * 0.1
+    if (!this.lowQ) {
+      if (this.frameMs > 45) { if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 1000) this.setQuality(true, now) }
+      else this.lowSince = 0
+    } else if (this.frameMs < 20) {
+      if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 5000) this.setQuality(false, now)
+    } else this.lowSince = 0
+  }
+
+  private setQuality(low: boolean, now: number) {
+    this.lowQ = low
+    this.lowSince = 0
+    this.frameMs = low ? 30 : 16
+    this.fx.quality = low ? 0.35 : this.mobile ? 0.6 : 1
+    setLowQuality(low)
+    this.releaseTerrain()
+    this.canvas.width = 0          // 讓 resize 一定重設
+    this.resize()
+    this.last = now
   }
 
   // ===================== 布置階段:把後端給的局面擺出來 =====================
@@ -256,7 +301,9 @@ export class TdScene {
     if (this.destroyed) return
     const dt = Math.min(0.1, (now - this.last) / 1000)
     this.last = now
+    const t0 = performance.now()
     this.advance(dt)
+    if (this.events) this.watchFps(performance.now() - t0, now)   // 只在戰鬥中量(布置時本來就很輕)
     this.raf = requestAnimationFrame(this.frame)
   }
 
@@ -652,11 +699,12 @@ export class TdScene {
 
     const key = this.chapter + ':' + this.canvas.width
     if (this.terrainKey !== key || !this.terrain) {
+      this.releaseTerrain()
       this.terrain = renderTerrain(this.cfg, this.chapter, this.canvas.width, this.assets.decor)
       this.terrainKey = key
     }
     c.drawImage(this.terrain.canvas, 0, -TOP, W, VH)
-    drawAmbientUnder(c, this.terrain, this.cfg, this.clock)
+    if (!this.lowQ) drawAmbientUnder(c, this.terrain, this.cfg, this.clock)
 
     // 塔位底座 + 君主光環 + 貼地的特效 + 射程
     for (let i = 0; i < this.cfg.slots.length; i++) this.drawSlot(c, i)
@@ -674,9 +722,11 @@ export class TdScene {
     for (const it of items) it.fn()
 
     this.fx.drawAir(c)
-    c.translate(0, -TOP)
-    drawAmbientOver(c, this.terrain, this.clock)
-    c.translate(0, TOP)
+    if (!this.lowQ) {              // 低畫質:雲影、飄雪這些氛圍先省下來
+      c.translate(0, -TOP)
+      drawAmbientOver(c, this.terrain, this.clock)
+      c.translate(0, TOP)
+    }
     this.fx.drawFloats(c)
 
     // 以下不跟著鏡頭晃,用畫面座標
@@ -1214,10 +1264,14 @@ export class TdScene {
   /** 回到前景:底圖、光暈、剪影快取全部作廢重畫 */
   private onVisible = () => {
     if (document.visibilityState === 'hidden') return
-    this.terrain = null
-    this.terrainKey = ''
+    this.releaseTerrain()
     this.tints.clear()
     clearGlowCache()
     this.last = performance.now()   // 在背景停了多久不算進動畫
+  }
+  /** 畫布被瀏覽器丟掉(記憶體不夠):先降畫質,等它還回來(contextrestored)再重畫 */
+  private onContextLost = (e: Event) => {
+    e.preventDefault()
+    if (!this.lowQ) this.setQuality(true, performance.now())
   }
 }

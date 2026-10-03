@@ -700,6 +700,7 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
     c.setTransform(1, 0, 0, 1, 0, 0)
     c.drawImage(tex, 0, 0)
     world()
+    tex.width = 0   // 用完就還記憶體,不等回收
   }
   // 路邊長一點草 / 積雪,邊線才不會像尺畫的
   for (let i = 0; i < cfg.path.length - 1; i++) {

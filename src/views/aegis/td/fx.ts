@@ -35,6 +35,8 @@ const GROUND: FxKind[] = ['ring', 'frost', 'circle', 'scorch']
 export class FxLayer {
   /** 現在的時間(tick);每一格由場景更新 */
   t = 0
+  /** 畫質倍率(1 = 全開;手機跑不動時場景會調到 0.35):粒子數量、同時存在的上限都照它打折 */
+  quality = 1
   private parts: Particle[] = []
   private floats: FloatText[] = []
   private list: Fx[] = []
@@ -55,8 +57,14 @@ export class FxLayer {
     this.parts.push({ x, y, vx, vy, born: this.t + delay, life, size, color, g, drag, kind, rot: Math.random() * 6.28 })
   }
 
+  /** 要噴幾顆:照畫質打折,但至少留一顆讓人看得出有打到 */
+  private n(count: number) {
+    return this.quality >= 1 ? count : Math.max(1, Math.round(count * this.quality))
+  }
+
   /** 往四面八方噴的光點 */
   burst(x: number, y: number, color: string, n: number, delay = 0, kind: number = P.GLOW, power = 1) {
+    n = this.n(n)
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, s = (1 + Math.random() * 3.4) * power
       this.part(x, y, Math.cos(a) * s, Math.sin(a) * s * 0.75 - 1, delay, 7 + Math.random() * 8, 1.6 + Math.random() * 2.6, color, kind, 0.16, 0.04)
@@ -64,23 +72,27 @@ export class FxLayer {
   }
   /** 打到東西迸出來的火花(拖著尾巴) */
   sparks(x: number, y: number, color: string, n: number, delay = 0, power = 1) {
+    n = this.n(n)
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, s = (2.4 + Math.random() * 4) * power
       this.part(x, y, Math.cos(a) * s, Math.sin(a) * s * 0.8 - 0.6, delay, 4 + Math.random() * 5, 1 + Math.random() * 1.4, color, P.STREAK, 0.22, 0.07)
     }
   }
   smoke(x: number, y: number, n: number, delay = 0, color = '#2a2420', spread = 14) {
+    if (this.quality < 1) return          // 煙最吃效能(大張半透明),降畫質就不畫
     for (let i = 0; i < n; i++) {
       this.part(x + (Math.random() - 0.5) * spread * 2, y + (Math.random() - 0.5) * spread, (Math.random() - 0.5) * 0.5, -0.5 - Math.random() * 0.7, delay + Math.random() * 3, 16 + Math.random() * 14, 7 + Math.random() * 8, color, P.SMOKE, 0, 0.02)
     }
   }
   /** 往上飄的火星 */
   embers(x: number, y: number, color: string, n: number, delay = 0, spread = 20) {
+    n = this.n(n)
     for (let i = 0; i < n; i++) {
       this.part(x + (Math.random() - 0.5) * spread * 2, y + (Math.random() - 0.5) * spread * 0.6, (Math.random() - 0.5) * 1.2, -1 - Math.random() * 2, delay + Math.random() * 4, 10 + Math.random() * 12, 1.4 + Math.random() * 1.8, color, P.FLAME, -0.02, 0.02)
     }
   }
   ice(x: number, y: number, n: number, delay = 0, power = 1) {
+    n = this.n(n)
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, s = (1 + Math.random() * 3) * power
       this.part(x, y, Math.cos(a) * s, Math.sin(a) * s * 0.7 - 1.4, delay, 9 + Math.random() * 9, 2 + Math.random() * 2.6, i % 2 ? '#d6f6ff' : '#ffffff', P.ICE, 0.14, 0.03)
@@ -93,6 +105,7 @@ export class FxLayer {
   }
   /** 腳下往上冒的光(升級、復活) */
   rise(x: number, y: number, color: string, n: number, spread = 22) {
+    n = this.n(n)
     for (let i = 0; i < n; i++) {
       this.part(x + (Math.random() * 2 - 1) * spread, y - Math.random() * 10, 0, -1.6 - Math.random() * 2.2, Math.random() * 4, 10 + Math.random() * 8, 1.8 + Math.random() * 2.2, color, i % 4 === 0 ? P.STAR : P.GLOW)
     }
@@ -154,7 +167,8 @@ export class FxLayer {
     this.floats = this.floats.filter((f) => t - f.born < f.life)
     this.list = this.list.filter((f) => t - f.born < f.life)
     this.screens = this.screens.filter((s) => t - s.born < s.life)
-    if (this.parts.length > 1100) this.parts.splice(0, this.parts.length - 1100)
+    const cap = this.quality >= 1 ? 1100 : 320
+    if (this.parts.length > cap) this.parts.splice(0, this.parts.length - cap)
     if (this.floats.length > 90) this.floats.splice(0, this.floats.length - 90)
     if (this.list.length > 260) this.list.splice(0, this.list.length - 260)
   }
@@ -380,6 +394,10 @@ function strokePts(c: C2, pts: number[], color: string, w: number, alpha: number
   c.stroke()
 }
 
+/** 低畫質時由場景設 true:火舌少一點、閃電不畫最外層的光 */
+export let lowQuality = false
+export function setLowQuality(v: boolean) { lowQuality = v }
+
 function drawFx(c: C2, f: Fx, p: number, age: number) {
   switch (f.kind) {
     case 'arrow': {
@@ -446,7 +464,8 @@ function drawFx(c: C2, f: Fx, p: number, age: number) {
       // 火風暴:範圍裡一根根火舌竄上來
       // 每根火舌三層:外面紅、中間橘(一般疊法,顏色才不會被洗白),芯是疊亮的黃
       const rnd = rng(f.seed)
-      for (let i = 0; i < 13; i++) {
+      const flames = lowQuality ? 6 : 13
+      for (let i = 0; i < flames; i++) {
         const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * f.r * 0.85, ph = rnd(), hh = 46 + rnd() * 44, ww = 13 + rnd() * 9
         const x = f.x0 + Math.cos(a) * d, y = f.y0 + Math.sin(a) * d * 0.6 + 6
         const k = Math.sin(Math.min(1, Math.max(0, p * 1.3 - ph * 0.3)) * Math.PI)
@@ -509,7 +528,7 @@ function drawFx(c: C2, f: Fx, p: number, age: number) {
       const a = p < 0.25 ? 1 : 1 - (p - 0.25) / 0.75
       c.globalCompositeOperation = 'lighter'
       c.lineJoin = 'round'; c.lineCap = 'round'
-      strokePts(c, pts, '#3f7dff', 11, 0.35 * a)
+      if (!lowQuality) strokePts(c, pts, '#3f7dff', 11, 0.35 * a)
       strokePts(c, pts, '#bfe0ff', 4.6, 0.85 * a)
       strokePts(c, pts, '#ffffff', 1.9, a)
       const mi = Math.floor(pts.length / 4) * 2
