@@ -139,7 +139,11 @@ export class TdScene {
   /** 該出聲了(射箭、爆炸、怪倒下…);要不要真的播由外面決定 */
   onSfx: (name: SfxName, scale: number) => void = () => {}
 
-  constructor(private canvas: HTMLCanvasElement, private cfg: TdConfig, private assets: SceneAssets) {
+  private canvas: HTMLCanvasElement
+  private frames = 0
+
+  constructor(canvas: HTMLCanvasElement, private cfg: TdConfig, private assets: SceneAssets) {
+    this.canvas = canvas
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     let acc = 0
     for (let i = 0; i < cfg.path.length - 1; i++) {
@@ -148,14 +152,10 @@ export class TdScene {
       this.segEnd.push(acc)
     }
     this.length = acc
-    canvas.addEventListener('click', this.onClick)
-    canvas.addEventListener('mousemove', this.onMove)
-    canvas.addEventListener('mouseleave', this.onLeave)
+    this.bindCanvas()
     // 手機切到別的 App 再回來,瀏覽器會把背景分頁的畫布內容丟掉(底圖那張就變成全黑):回到前景就全部重畫
     document.addEventListener('visibilitychange', this.onVisible)
     window.addEventListener('pageshow', this.onVisible)
-    canvas.addEventListener('contextrestored', this.onVisible)
-    canvas.addEventListener('contextlost', this.onContextLost)
     this.fx.quality = this.mobile ? 0.6 : 1
     this.resize()
     this.last = performance.now()
@@ -165,15 +165,50 @@ export class TdScene {
   destroy() {
     this.destroyed = true
     cancelAnimationFrame(this.raf)
-    this.canvas.removeEventListener('click', this.onClick)
-    this.canvas.removeEventListener('mousemove', this.onMove)
-    this.canvas.removeEventListener('mouseleave', this.onLeave)
+    this.unbindCanvas()
     document.removeEventListener('visibilitychange', this.onVisible)
     window.removeEventListener('pageshow', this.onVisible)
-    this.canvas.removeEventListener('contextrestored', this.onVisible)
-    this.canvas.removeEventListener('contextlost', this.onContextLost)
     this.releaseTerrain()
     this.done?.()
+  }
+
+  private bindCanvas() {
+    const c = this.canvas
+    c.addEventListener('click', this.onClick)
+    c.addEventListener('mousemove', this.onMove)
+    c.addEventListener('mouseleave', this.onLeave)
+    c.addEventListener('contextlost', this.onContextLost)
+    c.addEventListener('contextrestored', this.onVisible)
+  }
+
+  private unbindCanvas() {
+    const c = this.canvas
+    c.removeEventListener('click', this.onClick)
+    c.removeEventListener('mousemove', this.onMove)
+    c.removeEventListener('mouseleave', this.onLeave)
+    c.removeEventListener('contextlost', this.onContextLost)
+    c.removeEventListener('contextrestored', this.onVisible)
+  }
+
+  /**
+   * 畫布被瀏覽器殺掉了(手機 Chrome 切全螢幕、記憶體不夠時會發生,畫面整片白、左上角一個哭臉):
+   * 同一張畫布救不回來,直接換一張新的放回同一個位置,底圖和快取全部重畫。
+   */
+  private replaceCanvas() {
+    const old = this.canvas
+    const cv = document.createElement('canvas')
+    cv.style.cursor = old.style.cursor
+    this.unbindCanvas()
+    old.replaceWith(cv)
+    old.width = 0; old.height = 0
+    this.canvas = cv
+    this.ctx = cv.getContext('2d') as CanvasRenderingContext2D
+    this.bindCanvas()
+    this.releaseTerrain()
+    this.tints.clear()
+    clearGlowCache()
+    this.canvas.width = 0
+    this.resize()
   }
 
   /** 畫布大小跟著外框走(外框維持 1000:660) */
@@ -302,6 +337,11 @@ export class TdScene {
     const dt = Math.min(0.1, (now - this.last) / 1000)
     this.last = now
     const t0 = performance.now()
+    // 每半秒檢查一次畫布還在不在(有些瀏覽器殺掉畫布不會通知):不在就換一張新的
+    if (++this.frames % 30 === 0) {
+      const ctx = this.ctx as CanvasRenderingContext2D & { isContextLost?: () => boolean }
+      if (ctx.isContextLost?.()) this.replaceCanvas()
+    }
     this.advance(dt)
     if (this.events) this.watchFps(performance.now() - t0, now)   // 只在戰鬥中量(布置時本來就很輕)
     this.raf = requestAnimationFrame(this.frame)
@@ -1269,9 +1309,15 @@ export class TdScene {
     clearGlowCache()
     this.last = performance.now()   // 在背景停了多久不算進動畫
   }
-  /** 畫布被瀏覽器丟掉(記憶體不夠):先降畫質,等它還回來(contextrestored)再重畫 */
+  /** 畫布被瀏覽器丟掉:先降畫質;一秒內沒還回來(contextrestored)就直接換一張新畫布 */
   private onContextLost = (e: Event) => {
     e.preventDefault()
     if (!this.lowQ) this.setQuality(true, performance.now())
+    const lost = this.canvas
+    window.setTimeout(() => {
+      if (this.destroyed || this.canvas !== lost) return
+      const ctx = this.ctx as CanvasRenderingContext2D & { isContextLost?: () => boolean }
+      if (!ctx.isContextLost || ctx.isContextLost()) this.replaceCanvas()
+    }, 1000)
   }
 }

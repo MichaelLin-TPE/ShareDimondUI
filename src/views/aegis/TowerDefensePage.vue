@@ -63,16 +63,8 @@ function dismissHint() {
   hintDismissed.value = true
   try { localStorage.setItem('aegis_td_land_hint', '1') } catch { /* 存不了就算了 */ }
 }
-/** 試著幫他轉橫:全螢幕 + 鎖定橫向(Android 可以;iPhone 不給鎖,只能請他自己轉) */
-async function goLandscape() {
-  try { await document.documentElement.requestFullscreen?.() } catch { /* 不支援全螢幕 */ }
-  const o = screen.orientation as ScreenOrientation & { lock?: (v: string) => Promise<void> }
-  try { await o.lock?.('landscape') } catch { say('把手機轉橫就會自動切換') }
-}
-async function leaveLandscape() {
-  const o = screen.orientation as ScreenOrientation & { unlock?: () => void }
-  try { o.unlock?.() } catch { /* 沒鎖過 */ }
-  if (document.fullscreenElement) { try { await document.exitFullscreen() } catch { /* 已經不是全螢幕 */ } }
+// 不用全螢幕 API:手機 Chrome 一進全螢幕就把畫布殺掉(整片白、左上角哭臉),轉橫就自動切版面了
+function leaveLandscape() {
   say('把手機轉直就回到一般畫面')
 }
 
@@ -336,8 +328,7 @@ onBeforeUnmount(() => {
         </div>
 
         <p v-if="coarse && !landscape && run && !hintDismissed" class="td-land-hint">
-          <span>📱 手機建議轉橫向玩,地圖會大很多</span>
-          <button type="button" class="try" @click="goLandscape">橫向全螢幕</button>
+          <span>📱 把手機轉橫,地圖會大很多(記得關掉螢幕旋轉鎖定)</span>
           <button type="button" class="x" aria-label="知道了" @click="dismissHint">✕</button>
         </p>
 
@@ -352,7 +343,6 @@ onBeforeUnmount(() => {
               <span>第 <b>{{ run.wave }}</b> 波</span>
               <button type="button" class="leave" @click="leaveLandscape">離開橫向</button>
             </div>
-            <button v-else-if="coarse && run && hintDismissed" type="button" class="td-land-btn" @click="goLandscape">⤢ 橫向</button>
 
             <div v-if="!session.token" class="td-cover">
               <h2>用預約帳號登入就能玩</h2>
@@ -674,9 +664,7 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-land-hint { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px 10px 8px 14px; background: rgba(232, 132, 42, 0.14); border: 1px solid var(--ag-ember); font-size: 14px; color: var(--ag-ink); }
 .td-land-hint span { flex: 1; }
 .td-land-hint button { height: 32px; padding: 0 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--ag-line); color: var(--ag-ink); font: inherit; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
-.td-land-hint button.try { border-color: var(--ag-ember); }
 .td-land-hint button.x { width: 32px; padding: 0; }
-.td-land-btn { position: absolute; left: 10px; top: 10px; height: 32px; padding: 0 10px; background: rgba(0, 0, 0, 0.65); border: 1px solid var(--ag-line); color: var(--ag-ink-72); font: inherit; font-size: 13px; cursor: pointer; }
 
 /* 橫向模式:整個螢幕只放地圖和右邊一條操作欄;官網的導覽列、背景動畫先藏起來 */
 :global(html.td-land .ag-nav), :global(html.td-land .ag-amb) { display: none !important; }
