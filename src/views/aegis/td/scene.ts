@@ -178,7 +178,7 @@ export class TdScene {
     window.clearTimeout(this.resizeTimer)
     document.removeEventListener('visibilitychange', this.onVisible)
     window.removeEventListener('pageshow', this.onVisible)
-    this.releaseTerrain()
+    this.dropTerrainCanvas()
     this.done?.()
   }
 
@@ -246,11 +246,18 @@ export class TdScene {
     this.canvas.height = Math.round((cw * VH) / W * dpr)
   }
 
+  /** 底圖的畫布一直重用同一張(換場景只重畫內容);尺寸不對才丟掉重建 */
+  private terrainCv: HTMLCanvasElement | null = null
+
   private releaseTerrain() {
-    // 舊底圖主動縮成 0:有些手機瀏覽器不會馬上回收畫布的記憶體,一直換場景會累積到被整個丟掉
-    if (this.terrain) { this.terrain.canvas.width = 0; this.terrain.canvas.height = 0 }
     this.terrain = null
     this.terrainKey = ''
+  }
+
+  private dropTerrainCanvas() {
+    if (this.terrainCv) { this.terrainCv.width = 0; this.terrainCv.height = 0 }
+    this.terrainCv = null
+    this.releaseTerrain()
   }
 
   /** 換畫質:解析度、粒子數、氛圍動畫一起換;底圖重畫 */
@@ -806,8 +813,9 @@ export class TdScene {
 
     const key = this.chapter + ':' + this.canvas.width
     if (this.terrainKey !== key || !this.terrain) {
-      this.releaseTerrain()
-      this.terrain = renderTerrain(this.cfg, this.chapter, this.canvas.width, this.assets.decor)
+      if (this.terrainCv && this.terrainCv.width !== this.canvas.width) this.dropTerrainCanvas()
+      this.terrain = renderTerrain(this.cfg, this.chapter, this.canvas.width, this.assets.decor, this.terrainCv)
+      this.terrainCv = this.terrain.canvas
       this.terrainKey = key
     }
     c.drawImage(this.terrain.canvas, 0, -TOP, W, VH)

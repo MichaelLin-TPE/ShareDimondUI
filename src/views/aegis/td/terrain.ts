@@ -221,6 +221,19 @@ function blobPath(cx: number, cy: number, rx: number, ry: number, seed: number, 
   return p
 }
 
+/** 路面的形狀(每段一個長方形 + 轉角一個圓,合起來就是圓角的粗線):拿來 clip,路面的紋理就不會畫出路外 */
+function roadShape(cfg: TdConfig, halfW: number): Path2D {
+  const p = new Path2D()
+  for (let i = 0; i < cfg.path.length - 1; i++) {
+    const a = cfg.path[i] as number[], b = cfg.path[i + 1] as number[]
+    const ax = (a[0] ?? 0) - (i === 0 ? 40 : 0), ay = a[1] ?? 0, bx = b[0] ?? 0, by = b[1] ?? 0
+    p.rect(Math.min(ax, bx) - (ay === by ? 0 : halfW), Math.min(ay, by) - (ax === bx ? 0 : halfW), Math.abs(bx - ax) + (ay === by ? 0 : halfW * 2), Math.abs(by - ay) + (ax === bx ? 0 : halfW * 2))
+    p.moveTo(bx + halfW, by); p.arc(bx, by, halfW, 0, Math.PI * 2)
+    if (i === 0) { p.moveTo(ax + halfW, ay); p.arc(ax, ay, halfW, 0, Math.PI * 2) }
+  }
+  return p
+}
+
 function tracePath(c: CanvasRenderingContext2D, cfg: TdConfig) {
   c.beginPath()
   cfg.path.forEach((p, i) => (i === 0 ? c.moveTo((p[0] ?? 0) - 40, p[1] ?? 0) : c.lineTo(p[0] ?? 0, p[1] ?? 0)))
@@ -542,12 +555,20 @@ function snowman(c: C2, h: number) {
 
 // ===================== 底圖 =====================
 
-export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, decor: Record<string, HTMLImageElement>): Terrain {
+/**
+ * 畫一張場景的底圖。reuse = 上一張底圖的畫布:尺寸一樣就直接畫在它上面,不另外新建
+ * (手機 Chrome 的 GPU 記憶體有限,換場景一直新建大畫布,會把正在用的主畫布擠掉變成整片透明)
+ */
+export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, decor: Record<string, HTMLImageElement>, reuse: HTMLCanvasElement | null = null): Terrain {
   const th = THEMES[chapter % THEMES.length] as Theme
-  const cv = document.createElement('canvas')
-  cv.width = pxWidth
-  cv.height = Math.round((pxWidth * VH) / W)
+  const height = Math.round((pxWidth * VH) / W)
+  const cv = reuse && reuse.width === pxWidth && reuse.height === height ? reuse : document.createElement('canvas')
+  if (cv !== reuse) { cv.width = pxWidth; cv.height = height }
   const c = cv.getContext('2d') as CanvasRenderingContext2D
+  c.setTransform(1, 0, 0, 1, 0, 0)
+  c.clearRect(0, 0, cv.width, cv.height)
+  c.globalAlpha = 1
+  c.globalCompositeOperation = 'source-over'
   const k = cv.width / W
   // 底圖涵蓋 y = -TOP ~ H;下面都用地圖座標畫
   const world = () => c.setTransform(k, 0, 0, k, 0, k * TOP)
@@ -654,11 +675,10 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
   strokeRoad(c, cfg, 56, th.road[1])
   strokeRoad(c, cfg, 48, th.roadStyle === 'cobble' ? darken(th.road[2], 0.3) : th.road[0])
   {
-    // 路面的紋理先畫在另一張,再用「路的形狀」把超出去的切掉
-    const tex = document.createElement('canvas')
-    tex.width = cv.width; tex.height = cv.height
-    const t = tex.getContext('2d') as CanvasRenderingContext2D
-    t.setTransform(k, 0, 0, k, 0, k * TOP)
+    // 路面的紋理:裁切成路的形狀再畫,超出路的部分不會出現(不用另外一張暫存畫布)
+    c.save()
+    c.clip(roadShape(cfg, 24))
+    const t = c
     if (th.roadStyle === 'cobble') {
       const cw = 15, ch = 11
       for (let row = 0; row * ch < H + ch; row++) {
@@ -681,13 +701,9 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
         ellipse(t, x, y, r * 1.6, r, rnd() > 0.45 ? th.road[2] : '#ffffff')
       }
       t.globalAlpha = 1
-      // 車轍:兩條淡淡的暗線
-      t.globalAlpha = th.roadStyle === 'snow' ? 0.3 : 0.2
-      strokeRoad(t, cfg, 24, th.road[2])
-      t.globalAlpha = 1
-      t.globalCompositeOperation = 'destination-out'
-      strokeRoad(t, cfg, 19, '#000')
-      t.globalCompositeOperation = 'source-over'
+      // 車轍:兩條淡淡的暗線(寬的暗線上再蓋一條路面色的細線,只剩兩邊)
+      strokeRoad(t, cfg, 24, mix(th.road[0], th.road[2], th.roadStyle === 'snow' ? 0.3 : 0.2))
+      strokeRoad(t, cfg, 19, th.road[0])
       for (let i = 0; i < 2600; i++) {
         const x = rnd() * W, y = rnd() * H
         if (distToPath(cfg, x, y) > 24) continue
@@ -695,12 +711,8 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
         pebble(t, x, y, 1.4 + rnd() * 1.8, darken(th.road[0], 0.2 + rnd() * 0.2))
       }
     }
-    t.globalCompositeOperation = 'destination-in'
-    strokeRoad(t, cfg, 48, '#000')
-    c.setTransform(1, 0, 0, 1, 0, 0)
-    c.drawImage(tex, 0, 0)
+    c.restore()
     world()
-    tex.width = 0   // 用完就還記憶體,不等回收
   }
   // 路邊長一點草 / 積雪,邊線才不會像尺畫的
   for (let i = 0; i < cfg.path.length - 1; i++) {
