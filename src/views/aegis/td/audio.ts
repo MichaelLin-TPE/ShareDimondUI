@@ -5,7 +5,9 @@ const BASE = '/aegis/td/sfx/'
 const MUTE_KEY = 'aegis_td_muted'
 const MUSIC_KEY = 'aegis_td_music_off'
 const BGM_BASE = '/aegis/td/bgm/'
-const BGM_VOLUME = 0.32
+const BGM_VOLUME = 0.5
+/** 音效總音量:使用者 10-03 說音效比背景音樂大聲,壓到 0.55 */
+const SFX_MASTER = 0.55
 
 /**
  * 背景音樂(使用者 2026-10-03 從天堂客戶端挑的):布置時、七個場景各一首、王來了、結算。
@@ -87,7 +89,7 @@ export class TdAudio {
       if (!AC) return
       this.ctx = new AC()
       this.gain = this.ctx.createGain()
-      this.gain.gain.value = this.muted ? 0 : 1
+      this.gain.gain.value = this.muted ? 0 : SFX_MASTER
       this.gain.connect(this.ctx.destination)
       for (const n of SFX_NAMES) this.load(n)
     }
@@ -165,7 +167,7 @@ export class TdAudio {
   setMuted(m: boolean) {
     this.muted = m
     try { localStorage.setItem(MUTE_KEY, m ? '1' : '0') } catch { /* 存不了就算了 */ }
-    if (this.gain && this.ctx) this.gain.gain.setTargetAtTime(m ? 0 : 1, this.ctx.currentTime, 0.03)
+    if (this.gain && this.ctx) this.gain.gain.setTargetAtTime(m ? 0 : SFX_MASTER, this.ctx.currentTime, 0.03)
     if (m) this.stopMusic()
     else this.music(this.bgmWanted)
   }
