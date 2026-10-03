@@ -276,7 +276,7 @@ async function boot() {
       if (import.meta.env.DEV) (window as unknown as { __tdScene?: TdScene }).__tdScene = scene   // 開發時方便從主控台檢查畫面
       scene.onSlot = onSlot
       scene.onSfx = (name, scale) => audio.play(name, scale)
-      scene.onCanvasLost = (info) => say(info)
+      scene.onCanvasLost = (info) => { say(info); window.clearTimeout(toastTimer); toastTimer = window.setTimeout(() => (toast.value = ''), 20000) }
       scene.speed = speed.value
       if (state.value?.run) scene.setRun(state.value.run)
       if (stageEl.value) {

@@ -37,9 +37,9 @@ export class FxLayer {
   t = 0
   /** 畫質倍率(1 = 全開;手機跑不動時場景會調到 0.35):粒子數量、同時存在的上限都照它打折 */
   quality = 1
-  private parts: Particle[] = []
+  parts: Particle[] = []
   private floats: FloatText[] = []
-  private list: Fx[] = []
+  list: Fx[] = []
   private screens: Screen[] = []
 
   clear() { this.parts = []; this.floats = []; this.list = []; this.screens = [] }

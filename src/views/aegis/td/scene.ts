@@ -111,8 +111,9 @@ export class TdScene {
   private done: (() => void) | null = null
   private lastCast = new Map<number, Cast>()
 
-  /** 跑不動就自動降畫質(手機打到後面怪多塔多,光效太多會卡到白屏) */
+  /** 跑不動就自動降畫質(手機打到後面怪多塔多,光效太多會卡到白屏):0 全開、1 減特效關氛圍、2 再降解析度 */
   private lowQ = false
+  private tier = 0
   /** 手機(觸控):預設就用輕一點的畫質 */
   private mobile = window.matchMedia('(pointer: coarse)').matches
   /** 最近幾格平均花幾毫秒 */
@@ -195,10 +196,15 @@ export class TdScene {
    * 畫布被瀏覽器殺掉了(手機 Chrome 切全螢幕、記憶體不夠時會發生,畫面整片白、左上角一個哭臉):
    * 同一張畫布救不回來,直接換一張新的放回同一個位置,底圖和快取全部重畫。
    */
-  private replaceCanvas() {
+  private replaceCanvas(reason: string) {
     const old = this.canvas
+    const oldSize = `${old.width}×${old.height}`
+    this.lastReplace = performance.now()
+    this.replaced++
     const cv = document.createElement('canvas')
     cv.style.cursor = old.style.cursor
+    // Vue 的 scoped 樣式靠 data-v-xxx 屬性認元素:新畫布要帶一樣的屬性,不然 width:100% 不會套到它
+    for (const a of Array.from(old.attributes)) if (a.name.startsWith('data-v-') || a.name === 'class') cv.setAttribute(a.name, a.value)
     this.unbindCanvas()
     old.replaceWith(cv)
     old.width = 0; old.height = 0
@@ -210,7 +216,7 @@ export class TdScene {
     clearGlowCache()
     this.canvas.width = 0
     this.resizeNow()
-    this.onCanvasLost(`畫布 ${old.width}×${old.height} 被瀏覽器丟掉,已換新(dpr ${window.devicePixelRatio}, 視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? ', 全螢幕' : ''})`)
+    this.onCanvasLost(`畫面重建 #${this.replaced}(${reason};舊畫布 ${oldSize}、dpr ${window.devicePixelRatio}、視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? '、全螢幕' : ''}、畫質 ${this.tier}、${this.frameMs.toFixed(0)}ms/格、第 ${this.wave} 波)`)
   }
 
   private resizeTimer = 0
@@ -223,7 +229,7 @@ export class TdScene {
   /** 畫布大小跟著外框走(外框維持 1000:660) */
   private resizeNow() {
     // 低畫質時解析度降到 1.25 倍:手機 GPU 最吃的是像素數
-    const dpr = Math.min(this.lowQ ? 1.25 : this.mobile ? 1.5 : 2, window.devicePixelRatio || 1)
+    const dpr = Math.min(this.tier >= 2 ? 1.25 : this.mobile ? 1.5 : 2, window.devicePixelRatio || 1)
     const cw = Math.max(320, this.canvas.clientWidth)
     const w = Math.round(cw * dpr)
     // 手機網址列縮進縮出會讓外框差個一兩像素,每次都重做底圖(100ms)太浪費:差很少就不動
@@ -239,31 +245,76 @@ export class TdScene {
     this.terrainKey = ''
   }
 
-  /** 每一格花了多久:連續一秒都超過 45ms 就降畫質;降了之後要連續五秒都很順才升回來 */
+  /**
+   * 每一格花了多久:連續一秒都超過 45ms 就降一階(先減特效、關氛圍;還是超過 70ms 才降解析度);
+   * 降了之後要連續五秒都很順才升回來
+   */
   private watchFps(ms: number, now: number) {
     this.frameMs = this.frameMs * 0.9 + ms * 0.1
-    if (!this.lowQ) {
-      if (this.frameMs > 45) { if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 1000) this.setQuality(true, now) }
-      else this.lowSince = 0
-    } else if (this.frameMs < 20) {
-      if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 5000) this.setQuality(false, now)
+    const limit = this.tier === 0 ? 45 : 70
+    if (this.tier < 2 && this.frameMs > limit) {
+      if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 1000) this.setTier(this.tier + 1, now)
+    } else if (this.tier > 0 && this.frameMs < 20) {
+      if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 5000) this.setTier(0, now)
     } else this.lowSince = 0
   }
 
-  private setQuality(low: boolean, now: number) {
-    this.lowQ = low
+  private setTier(tier: number, now: number) {
+    this.tier = tier
+    this.lowQ = tier > 0
     this.lowSince = 0
-    this.frameMs = low ? 30 : 16
-    this.fx.quality = low ? 0.35 : this.mobile ? 0.6 : 1
-    setLowQuality(low)
+    this.frameMs = tier > 0 ? 30 : 16
+    this.fx.quality = tier > 0 ? 0.35 : this.mobile ? 0.6 : 1
+    setLowQuality(tier > 0)
     this.releaseTerrain()
     this.canvas.width = 0          // 讓 resize 一定重設
     this.resizeNow()
     this.last = now
   }
 
+  private setQuality(low: boolean, now: number) { this.setTier(low ? 1 : 0, now) }
+
+  /** 網址帶 debug 時在畫面右下角印效能數字(手機沒主控台) */
+  private debug = /[?&]debug/.test(location.href)
+  private drawDebug(c: CanvasRenderingContext2D) {
+    c.save()
+    c.font = '600 12px monospace'; c.textAlign = 'right'; c.textBaseline = 'bottom'
+    c.fillStyle = 'rgba(0,0,0,0.7)'
+    c.fillRect(W - 330, VH - 44, 330, 44)
+    c.fillStyle = '#8ff06a'
+    c.fillText(`${this.frameMs.toFixed(1)}ms/格  畫質${this.tier === 0 ? '一般' : '低' + this.tier}  ${this.canvas.width}×${this.canvas.height}  dpr${window.devicePixelRatio}`, W - 8, VH - 24)
+    c.fillText(`粒子${this.fx.parts.length} 特效${this.fx.list.length} 怪${this.mobs.size} 重建${this.replaced} ${document.fullscreenElement ? '全螢幕' : ''} ${this.mobile ? '觸控' : ''}`, W - 8, VH - 6)
+    c.restore()
+  }
+
   /** 畫布死掉的時候給頁面看的診斷(顯示在畫面上,手機沒有主控台) */
   onCanvasLost: (info: string) => void = () => {}
+  private lastReplace = 0
+  private replaced = 0
+
+  private probeCv: HTMLCanvasElement | null = null
+  private deadProbes = 0
+  private probe() {
+    // 畫布還沒有尺寸、底圖還沒畫出來,讀到透明是正常的,不算
+    if (this.canvas.width === 0 || !this.terrain) return
+    let px: Uint8ClampedArray
+    try {
+      if (!this.probeCv) { this.probeCv = document.createElement('canvas'); this.probeCv.width = 1; this.probeCv.height = 1 }
+      const pc = this.probeCv.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D
+      pc.clearRect(0, 0, 1, 1)
+      pc.drawImage(this.canvas, Math.floor(this.canvas.width / 2), Math.floor(this.canvas.height / 2), 1, 1, 0, 0, 1, 1)
+      px = pc.getImageData(0, 0, 1, 1).data
+    } catch {
+      return
+    }
+    const dead = (px[3] ?? 0) === 0 || ((px[0] ?? 0) > 250 && (px[1] ?? 0) > 250 && (px[2] ?? 0) > 250)
+    if (!dead) { this.deadProbes = 0; return }
+    if (++this.deadProbes < 2) return             // 連續兩秒都是死的才算(偶爾一格沒畫到不算)
+    this.deadProbes = 0
+    const now = performance.now()
+    if (now - this.lastReplace < 5000) return      // 剛換過還是死的:不要一直換,等下一次
+    this.replaceCanvas(`像素 ${px[0]},${px[1]},${px[2]},${px[3]}`)
+  }
 
   // ===================== 布置階段:把後端給的局面擺出來 =====================
 
@@ -352,9 +403,11 @@ export class TdScene {
     // 每半秒檢查一次畫布還在不在(有些瀏覽器殺掉畫布不會通知):不在就換一張新的
     if (++this.frames % 30 === 0) {
       const ctx = this.ctx as CanvasRenderingContext2D & { isContextLost?: () => boolean }
-      if (ctx.isContextLost?.()) this.replaceCanvas()
+      if (ctx.isContextLost?.()) this.replaceCanvas('isContextLost')
     }
     this.advance(dt)
+    // 每秒探一個像素:底圖畫完之後畫布中間一定是不透明的顏色;讀到透明或整片白就是畫布已經壞了(手機 Chrome 不一定會通知)
+    if (this.frames % 60 === 0 && document.visibilityState === 'visible') this.probe()
     if (this.events) this.watchFps(performance.now() - t0, now)   // 只在戰鬥中量(布置時本來就很輕)
     this.raf = requestAnimationFrame(this.frame)
   }
@@ -792,6 +845,7 @@ export class TdScene {
     }
     this.drawBossBar(c)
     this.fx.drawScreen(c)
+    if (this.debug) this.drawDebug(c)
   }
 
   private drawSlot(c: CanvasRenderingContext2D, i: number) {
@@ -1329,7 +1383,7 @@ export class TdScene {
     window.setTimeout(() => {
       if (this.destroyed || this.canvas !== lost) return
       const ctx = this.ctx as CanvasRenderingContext2D & { isContextLost?: () => boolean }
-      if (!ctx.isContextLost || ctx.isContextLost()) this.replaceCanvas()
+      if (!ctx.isContextLost || ctx.isContextLost()) this.replaceCanvas('contextlost')
     }, 1000)
   }
 }
