@@ -313,12 +313,13 @@ export class FxLayer {
         c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round'
         const slide = (1 - inK) * 120
         c.font = `800 ${Math.round(34 + 4 * Math.sin(t * 0.6))}px 'Noto Sans TC', sans-serif`
-        c.shadowColor = s.color; c.shadowBlur = 22
+        // 不用 shadowBlur(手機 GPU 畫大字的模糊陰影很貴):用粗一點的彩色描邊代替光暈
+        c.lineWidth = 9; c.strokeStyle = s.color + '66'
+        c.strokeText(s.text, W / 2 - slide, y - 10)
         c.lineWidth = 5; c.strokeStyle = 'rgba(0,0,0,0.9)'
         c.strokeText(s.text, W / 2 - slide, y - 10)
         c.fillStyle = '#fff1e6'
         c.fillText(s.text, W / 2 - slide, y - 10)
-        c.shadowBlur = 0
         c.font = "600 15px 'Noto Sans TC', sans-serif"
         c.fillStyle = s.color
         c.fillText(s.sub, W / 2 + slide, y + 22)

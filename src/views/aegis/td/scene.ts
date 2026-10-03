@@ -9,6 +9,7 @@ import { FxLayer, P, setLowQuality } from './fx'
 import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, clearGlowCache, drawAmbientOver, drawAmbientUnder, glow, renderTerrain, type Terrain } from './terrain'
 
 const ASSET = '/aegis/td/'
+declare const __BUILD__: string
 
 export type QualityLevel = 'high' | 'normal' | 'low'
 /** 三檔畫質:解析度上限(倍)、粒子數量倍率 */
@@ -224,7 +225,7 @@ export class TdScene {
     clearGlowCache()
     this.canvas.width = 0
     this.resizeNow()
-    this.onCanvasLost(`畫面重建 #${this.replaced}(${reason};舊畫布 ${oldSize}、dpr ${window.devicePixelRatio}、視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? '、全螢幕' : ''}、畫質 ${QUALITY[this.level].title}、${this.frameMs.toFixed(0)}ms/格、第 ${this.wave} 波)`)
+    this.onCanvasLost(`畫面重建 #${this.replaced}(版本 ${__BUILD__};${reason};舊畫布 ${oldSize}、dpr ${window.devicePixelRatio}、視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? '、全螢幕' : ''}、畫質 ${QUALITY[this.level].title}、${this.frameMs.toFixed(0)}ms/格、第 ${this.wave} 波)`)
   }
 
   private resizeTimer = 0

@@ -46,7 +46,7 @@ export function glowOf(color: string): HTMLCanvasElement {
   if (!cv) {
     cv = document.createElement('canvas')
     cv.width = cv.height = 64
-    const c = cv.getContext('2d') as CanvasRenderingContext2D
+    const c = cv.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D
     const g = c.createRadialGradient(32, 32, 0, 32, 32, 32)
     g.addColorStop(0, color); g.addColorStop(0.3, color + 'b0'); g.addColorStop(0.65, color + '38'); g.addColorStop(1, color + '00')
     c.fillStyle = g
@@ -251,7 +251,7 @@ function noiseLayer(seed: number, ramp: [string, string, string]): HTMLCanvasEle
   const w = 200, h = 120, G = 34
   const cv = document.createElement('canvas')
   cv.width = w; cv.height = h
-  const c = cv.getContext('2d') as CanvasRenderingContext2D
+  const c = cv.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D
   const img = c.createImageData(w, h)
   const rnd = rng(seed)
   const grid: number[] = []
@@ -564,7 +564,8 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
   const height = Math.round((pxWidth * VH) / W)
   const cv = reuse && reuse.width === pxWidth && reuse.height === height ? reuse : document.createElement('canvas')
   if (cv !== reuse) { cv.width = pxWidth; cv.height = height }
-  const c = cv.getContext('2d') as CanvasRenderingContext2D
+  // 底圖用 CPU 畫:一次幾千個小筆畫(草、石頭、路面顆粒)一口氣丟給手機 GPU 會讓它重置,所有畫布一起清空
+  const c = cv.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D
   c.setTransform(1, 0, 0, 1, 0, 0)
   c.clearRect(0, 0, cv.width, cv.height)
   c.globalAlpha = 1
