@@ -19,7 +19,8 @@ export const AG_NAV: AgNavItem[] = [
   { label: '武器防具', to: '/aegis/items', side: 'right' },
   { label: '交易區', to: '/aegis/market', side: 'right' },
   { label: '聯絡客服', to: '/aegis/contact', side: 'right' },
-  { label: '預約創角', to: '/aegis/prereg', side: 'right', strong: true },
+  // 預約創角先不放進導覽(使用者:全部做完再開放;現在只給自己用網址 #/aegis/prereg、#/aegis/td 試)。要開放時把下面這行解開
+  // { label: '預約創角', to: '/aegis/prereg', side: 'right', strong: true },
   { label: '點我玩遊戲', to: '/aegis/play', side: 'right', strong: true },
 ]
 
