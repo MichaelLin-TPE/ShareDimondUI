@@ -10,6 +10,14 @@ import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, clearGlowCache, drawAmbientO
 
 const ASSET = '/aegis/td/'
 
+export type QualityLevel = 'high' | 'normal' | 'low'
+/** 三檔畫質:解析度上限(倍)、粒子數量倍率 */
+export const QUALITY: Record<QualityLevel, { title: string; dpr: number; particles: number }> = {
+  high: { title: '清晰', dpr: 2, particles: 1 },
+  normal: { title: '一般', dpr: 1.5, particles: 0.7 },
+  low: { title: '降低', dpr: 1, particles: 0.35 },
+}
+
 export interface SceneAssets {
   cls: { idle: HTMLImageElement; attack: HTMLImageElement }[]
   mobs: HTMLImageElement[]
@@ -111,14 +119,13 @@ export class TdScene {
   private done: (() => void) | null = null
   private lastCast = new Map<number, Cast>()
 
-  /** 跑不動就自動降畫質(手機打到後面怪多塔多,光效太多會卡到白屏):0 全開、1 減特效關氛圍、2 再降解析度 */
+  /** 畫質(玩家自己選):清晰 high、一般 normal、降低 low。低畫質時不畫氛圍、粒子少、解析度低 */
+  level: QualityLevel = 'normal'
   private lowQ = false
-  private tier = 0
-  /** 手機(觸控):預設就用輕一點的畫質 */
+  /** 手機(觸控):預設「一般」;電腦預設「清晰」 */
   private mobile = window.matchMedia('(pointer: coarse)').matches
-  /** 最近幾格平均花幾毫秒 */
+  /** 最近幾格平均花幾毫秒(debug 顯示用) */
   private frameMs = 16
-  private lowSince = 0
   private chapter = 0
   private bossKind = 0
   private wave = 0
@@ -157,8 +164,7 @@ export class TdScene {
     // 手機切到別的 App 再回來,瀏覽器會把背景分頁的畫布內容丟掉(底圖那張就變成全黑):回到前景就全部重畫
     document.addEventListener('visibilitychange', this.onVisible)
     window.addEventListener('pageshow', this.onVisible)
-    this.fx.quality = this.mobile ? 0.6 : 1
-    this.resizeNow()
+    this.setLevel(this.mobile ? 'normal' : 'high')
     this.last = performance.now()
     this.raf = requestAnimationFrame(this.frame)
   }
@@ -216,7 +222,7 @@ export class TdScene {
     clearGlowCache()
     this.canvas.width = 0
     this.resizeNow()
-    this.onCanvasLost(`畫面重建 #${this.replaced}(${reason};舊畫布 ${oldSize}、dpr ${window.devicePixelRatio}、視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? '、全螢幕' : ''}、畫質 ${this.tier}、${this.frameMs.toFixed(0)}ms/格、第 ${this.wave} 波)`)
+    this.onCanvasLost(`畫面重建 #${this.replaced}(${reason};舊畫布 ${oldSize}、dpr ${window.devicePixelRatio}、視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? '、全螢幕' : ''}、畫質 ${QUALITY[this.level].title}、${this.frameMs.toFixed(0)}ms/格、第 ${this.wave} 波)`)
   }
 
   private resizeTimer = 0
@@ -228,8 +234,8 @@ export class TdScene {
 
   /** 畫布大小跟著外框走(外框維持 1000:660) */
   private resizeNow() {
-    // 低畫質時解析度降到 1.25 倍:手機 GPU 最吃的是像素數
-    const dpr = Math.min(this.tier >= 2 ? 1.25 : this.mobile ? 1.5 : 2, window.devicePixelRatio || 1)
+    // 解析度上限照畫質:手機 GPU 最吃的是像素數
+    const dpr = Math.min(QUALITY[this.level].dpr, window.devicePixelRatio || 1)
     const cw = Math.max(320, this.canvas.clientWidth)
     const w = Math.round(cw * dpr)
     // 手機網址列縮進縮出會讓外框差個一兩像素,每次都重做底圖(100ms)太浪費:差很少就不動
@@ -245,34 +251,18 @@ export class TdScene {
     this.terrainKey = ''
   }
 
-  /**
-   * 每一格花了多久:連續一秒都超過 45ms 就降一階(先減特效、關氛圍;還是超過 70ms 才降解析度);
-   * 降了之後要連續五秒都很順才升回來
-   */
-  private watchFps(ms: number, now: number) {
-    this.frameMs = this.frameMs * 0.9 + ms * 0.1
-    const limit = this.tier === 0 ? 45 : 70
-    if (this.tier < 2 && this.frameMs > limit) {
-      if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 1000) this.setTier(this.tier + 1, now)
-    } else if (this.tier > 0 && this.frameMs < 20) {
-      if (!this.lowSince) this.lowSince = now; else if (now - this.lowSince > 5000) this.setTier(0, now)
-    } else this.lowSince = 0
-  }
-
-  private setTier(tier: number, now: number) {
-    this.tier = tier
-    this.lowQ = tier > 0
-    this.lowSince = 0
-    this.frameMs = tier > 0 ? 30 : 16
-    this.fx.quality = tier > 0 ? 0.35 : this.mobile ? 0.6 : 1
-    setLowQuality(tier > 0)
+  /** 換畫質:解析度、粒子數、氛圍動畫一起換;底圖重畫 */
+  setLevel(level: QualityLevel) {
+    this.level = level
+    const q = QUALITY[level]
+    this.lowQ = level === 'low'
+    this.fx.quality = q.particles
+    setLowQuality(this.lowQ)
     this.releaseTerrain()
     this.canvas.width = 0          // 讓 resize 一定重設
     this.resizeNow()
-    this.last = now
+    this.last = performance.now()
   }
-
-  private setQuality(low: boolean, now: number) { this.setTier(low ? 1 : 0, now) }
 
   /** 網址帶 debug 時在畫面右下角印效能數字(手機沒主控台) */
   private debug = /[?&]debug/.test(location.href)
@@ -282,7 +272,7 @@ export class TdScene {
     c.fillStyle = 'rgba(0,0,0,0.7)'
     c.fillRect(W - 330, VH - 44, 330, 44)
     c.fillStyle = '#8ff06a'
-    c.fillText(`${this.frameMs.toFixed(1)}ms/格  畫質${this.tier === 0 ? '一般' : '低' + this.tier}  ${this.canvas.width}×${this.canvas.height}  dpr${window.devicePixelRatio}`, W - 8, VH - 24)
+    c.fillText(`${this.frameMs.toFixed(1)}ms/格  畫質${QUALITY[this.level].title}  ${this.canvas.width}×${this.canvas.height}  dpr${window.devicePixelRatio}`, W - 8, VH - 24)
     c.fillText(`粒子${this.fx.parts.length} 特效${this.fx.list.length} 怪${this.mobs.size} 重建${this.replaced} ${document.fullscreenElement ? '全螢幕' : ''} ${this.mobile ? '觸控' : ''}`, W - 8, VH - 6)
     c.restore()
   }
@@ -408,7 +398,7 @@ export class TdScene {
     this.advance(dt)
     // 每秒探一個像素:底圖畫完之後畫布中間一定是不透明的顏色;讀到透明或整片白就是畫布已經壞了(手機 Chrome 不一定會通知)
     if (this.frames % 60 === 0 && document.visibilityState === 'visible') this.probe()
-    if (this.events) this.watchFps(performance.now() - t0, now)   // 只在戰鬥中量(布置時本來就很輕)
+    this.frameMs = this.frameMs * 0.9 + (performance.now() - t0) * 0.1
     this.raf = requestAnimationFrame(this.frame)
   }
 
@@ -1375,10 +1365,9 @@ export class TdScene {
     clearGlowCache()
     this.last = performance.now()   // 在背景停了多久不算進動畫
   }
-  /** 畫布被瀏覽器丟掉:先降畫質;一秒內沒還回來(contextrestored)就直接換一張新畫布 */
+  /** 畫布被瀏覽器丟掉:一秒內沒還回來(contextrestored)就直接換一張新畫布 */
   private onContextLost = (e: Event) => {
     e.preventDefault()
-    if (!this.lowQ) this.setQuality(true, performance.now())
     const lost = this.canvas
     window.setTimeout(() => {
       if (this.destroyed || this.canvas !== lost) return

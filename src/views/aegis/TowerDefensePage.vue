@@ -4,7 +4,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { ApiError, restoreSession, session } from './prereg/api'
 import { CLS_ORDER, td, type ClassInfo, type RankView, type StateView, type TdConfig, type WaveView } from './td/api'
-import { TdScene, loadAssets } from './td/scene'
+import { QUALITY, TdScene, loadAssets, type QualityLevel } from './td/scene'
 import { BGM, TdAudio, type SfxName } from './td/audio'
 
 const ART = '/aegis/td/'
@@ -35,6 +35,17 @@ function toggleMusic() {
   audio.unlock()
   audio.setMusicOff(!musicOff.value)
   musicOff.value = audio.musicOff
+}
+// 畫質:清晰 → 一般 → 降低 輪流切,記在這台裝置;沒選過的話手機「一般」、電腦「清晰」
+const LEVELS: QualityLevel[] = ['high', 'normal', 'low']
+const quality = ref<QualityLevel>('normal')
+try { const saved = localStorage.getItem('aegis_td_quality'); if (saved === 'high' || saved === 'normal' || saved === 'low') quality.value = saved } catch { /* 用預設 */ }
+function cycleQuality() {
+  const next = LEVELS[(LEVELS.indexOf(quality.value) + 1) % LEVELS.length] ?? 'normal'
+  quality.value = next
+  try { localStorage.setItem('aegis_td_quality', next) } catch { /* 存不了就算了 */ }
+  scene?.setLevel(next)
+  say(`畫質:${QUALITY[next].title}`)
 }
 
 const battling = ref(false)
@@ -277,6 +288,7 @@ async function boot() {
       scene.onSlot = onSlot
       scene.onSfx = (name, scale) => audio.play(name, scale)
       scene.onCanvasLost = (info) => { say(info); window.clearTimeout(toastTimer); toastTimer = window.setTimeout(() => (toast.value = ''), 20000) }
+      try { if (localStorage.getItem('aegis_td_quality')) scene.setLevel(quality.value); else quality.value = scene.level } catch { quality.value = scene.level }
       scene.speed = speed.value
       if (state.value?.run) scene.setRun(state.value.run)
       if (stageEl.value) {
@@ -330,6 +342,7 @@ onBeforeUnmount(() => {
           <button type="button" @click="showHelp = true">怎麼玩</button>
           <button type="button" :title="muted ? '現在是靜音' : '現在有聲音'" @click="toggleMute">音效 {{ muted ? '關' : '開' }}</button>
           <button type="button" :disabled="muted" @click="toggleMusic">音樂 {{ musicOff || muted ? '關' : '開' }}</button>
+          <button type="button" title="清晰 → 一般 → 降低 輪流切" @click="cycleQuality">畫質 {{ QUALITY[quality].title }}</button>
         </div>
       </div>
 
