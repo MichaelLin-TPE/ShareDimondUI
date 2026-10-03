@@ -18,6 +18,8 @@ export interface TowerView {
   dmg: number; rangePx: number; perMinute: number; hp: number; needPath: boolean
   /** 騎士會在路上哪幾個地方把怪攔下來(後端的距離單位;其他職業是空的) */
   guards: number[]
+  /** 君主才有:這座光環現在給什麼(直接顯示) */
+  aura: string | null
 }
 export interface BlessView { id: string; title: string; desc: string; rarity: number; count: number }
 export interface RunView {

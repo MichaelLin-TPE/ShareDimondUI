@@ -77,6 +77,8 @@ interface TowerVis {
   rangePx: number
   attackAt: number; faceLeft: boolean
   kHp: number; kMax: number; down: boolean; upAt: number; hurtAt: number
+  /** 在哪座君主的光環裡(-1 = 沒有):腳下畫金圈,看得出誰吃到加成 */
+  buffedBy: number
   bornAt: number
 }
 interface MobVis {
@@ -320,6 +322,15 @@ export class TdScene {
     this.goddessMax = run.goddessMax
     const prev = this.towers
     this.towers = run.towers.map((t, i) => (t ? this.makeTower(i, t, prev[i] ?? null, first) : null))
+    // 誰在君主的光環裡(後端算傷害用的是塔位到塔位的距離,這裡照一樣的算法)
+    for (const tw of this.towers) {
+      if (!tw || tw.cls === 4) continue
+      tw.buffedBy = -1
+      for (const p of this.towers) {
+        if (!p || p.cls !== 4 || p === tw) continue
+        if (Math.hypot(p.sx - tw.sx, p.sy - tw.sy) <= p.rangePx) { tw.buffedBy = p.slot; break }
+      }
+    }
     if (!this.events) {
       this.mobs.clear()
     }
@@ -348,6 +359,7 @@ export class TdScene {
       slot, cls, level: t.level, path: t.path, sx, sy, x, y, guards, rangePx: t.rangePx,
       attackAt: same ? old.attackAt : -999, faceLeft: same ? old.faceLeft : false,
       kHp: t.hp, kMax: t.hp, down: false, upAt: -999, hurtAt: -999, bornAt: same ? old.bornAt : this.fxTick,
+      buffedBy: -1,
     }
   }
 
@@ -999,6 +1011,34 @@ export class TdScene {
       c.save()
       c.globalCompositeOperation = 'lighter'
       glow(c, tw.x, tw.y - 2, 34, '#ffd76a', 0.3 + 0.12 * Math.sin(this.clock * 2.4 + tw.slot))
+      c.restore()
+    }
+    // 在君主光環裡:腳下一圈慢慢轉的金色符文環 + 幾顆繞著飄的光點,看得出這座有吃到加成
+    if (tw.buffedBy >= 0 && !tw.down) {
+      c.save()
+      c.translate(tw.x, tw.y + 1)
+      c.globalCompositeOperation = 'lighter'
+      c.scale(1, 0.42)
+      c.rotate(this.clock * 0.8 + tw.slot)
+      c.globalAlpha = 0.55 + 0.2 * Math.sin(this.clock * 2 + tw.slot)
+      c.strokeStyle = '#ffd35a'; c.lineWidth = 2.2
+      c.setLineDash([9, 7])
+      c.beginPath(); c.arc(0, 0, 30, 0, Math.PI * 2); c.stroke()
+      c.setLineDash([])
+      c.fillStyle = '#ffe9a0'
+      for (let i = 0; i < 4; i++) {         // 四顆小菱形在環上
+        const a = (i / 4) * Math.PI * 2
+        const x = Math.cos(a) * 30, y = Math.sin(a) * 30
+        c.beginPath(); c.moveTo(x, y - 4); c.lineTo(x + 3, y); c.lineTo(x, y + 4); c.lineTo(x - 3, y); c.fill()
+      }
+      c.restore()
+      c.save()
+      c.globalCompositeOperation = 'lighter'
+      for (let i = 0; i < 3; i++) {         // 繞著身體往上飄的金光
+        const ph = this.clock * 1.1 + i * 2.1 + tw.slot
+        const k = (ph % 2.2) / 2.2
+        glow(c, tw.x + Math.sin(ph * 1.7) * 18, tw.y - 10 - k * 70, 5, '#ffd76a', (1 - k) * 0.8)
+      }
       c.restore()
     }
     // 黑妖衝出去的時候後面拖兩道殘影

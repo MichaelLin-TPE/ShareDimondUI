@@ -432,6 +432,7 @@ onBeforeUnmount(() => {
                 <button type="button" :disabled="busy" @click="sell">賣掉 +{{ selTower.sellValue }}</button>
               </div>
               <p v-if="selTower.cls === 'KNIGHT'" class="kn">怪走到他正對面(路上有盾牌記號的地方)會被攔下來。放在兩排路中間,兩邊都顧得到。</p>
+              <p v-if="selTower.aura" class="kn">{{ selTower.aura }}。腳下有金圈的塔就是有吃到;升級會變大、變強。</p>
             </div>
 
             <!-- 商店 -->
