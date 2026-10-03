@@ -86,11 +86,12 @@ export async function restoreSession() {
   session.ready = true
 }
 
-export async function register(login: string, password: string) {
-  signedIn(await api.post('/aegis/prereg/register', { login, password }, false))
+/** turnstile = 過完人機驗證拿到的一次性憑證 */
+export async function register(login: string, password: string, turnstile: string) {
+  signedIn(await api.post('/aegis/prereg/register', { login, password, turnstile }, false))
 }
-export async function login(login: string, password: string) {
-  signedIn(await api.post('/aegis/prereg/login', { login, password }, false))
+export async function login(login: string, password: string, turnstile: string) {
+  signedIn(await api.post('/aegis/prereg/login', { login, password, turnstile }, false))
 }
 export async function logout() {
   try { await api.post('/aegis/prereg/logout') } catch { /* 後端沒回也照樣登出 */ }

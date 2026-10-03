@@ -3,7 +3,7 @@
 // 桌機:照遊戲客戶端的創角畫面(CreateUI.xml 的座標與原圖)在 800x600 的舞台上重現,舞台整個等比縮放。
 // 手機:800x600 縮到手機寬度按鈕會小到按不到,改用直式排版,圖與規則完全相同。
 // 規則(初始值、上限、可分配點數)由後端給;初期能力值獎勵是遊戲伺服器的實際數值(src/data/aegis/prereg.ts)。
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AgPage from './ui/AgPage.vue'
 import { AG_CLASSES } from '@/data/aegis/classes'
 import { BONUS_LABELS, BONUS_TABLE, CLASS_INTRO, CLASS_PRESETS, GAUGE_LABELS, GAUGE_TABLE } from '@/data/aegis/prereg'
@@ -11,6 +11,7 @@ import {
   ApiError, changePassword, checkLogin, checkName, createCharacter, deleteCharacter, fetchRules, fetchStats,
   login, logout, register, restoreSession, session, type Rules,
 } from './prereg/api'
+import * as turnstile from './prereg/turnstile'
 
 const UI = '/aegis/prereg/ui/'
 const CLS_NAMES = ['君主', '騎士', '妖精', '法師', '黑暗妖精']
@@ -29,6 +30,26 @@ const authBusy = ref(false)
 const authError = ref('')
 const loginHint = ref<{ ok: boolean; message: string } | null>(null)
 let loginTimer = 0
+// 人機驗證(Cloudflare Turnstile):小工具放在表單裡,憑證一次性,送出過就要重設
+const turnstileEl = ref<HTMLElement | null>(null)
+const turnstileToken = ref('')
+const turnstileError = ref('')
+let turnstileWidget: { reset: () => void; destroy: () => void } | null = null
+
+async function mountTurnstile() {
+  await nextTick()
+  if (!turnstileEl.value || turnstileWidget) return
+  try {
+    turnstileWidget = await turnstile.mount(turnstileEl.value, (t) => { turnstileToken.value = t })
+  } catch {
+    turnstileError.value = '人機驗證載入失敗,請確認網路後重新整理'
+  }
+}
+// 還沒登入的時候表單才在;登出後表單回來要重放一次
+watch(() => session.token, (token) => {
+  if (token) { turnstileWidget?.destroy(); turnstileWidget = null; turnstileToken.value = '' }
+  else mountTurnstile()
+})
 
 watch([fLogin, authMode], () => {
   loginHint.value = null
@@ -51,12 +72,13 @@ async function submitAuth() {
   }
   authBusy.value = true
   try {
-    if (authMode.value === 'register') await register(fLogin.value, fPassword.value)
-    else await login(fLogin.value, fPassword.value)
+    if (authMode.value === 'register') await register(fLogin.value, fPassword.value, turnstileToken.value)
+    else await login(fLogin.value, fPassword.value, turnstileToken.value)
     fPassword.value = ''
     fPassword2.value = ''
   } catch (e) {
     authError.value = e instanceof ApiError ? e.message : '發生錯誤,請稍後再試'
+    turnstileWidget?.reset()    // 憑證用過一次就作廢,不管成功失敗都要重新驗
   } finally {
     authBusy.value = false
   }
@@ -224,6 +246,7 @@ onMounted(async () => {
   } catch (e) {
     loadError.value = e instanceof ApiError ? e.message : '載入失敗,請重新整理'
   }
+  if (!session.token) mountTurnstile()
   fetchStats().then((s) => (totalAccounts.value = s.accounts)).catch(() => {})
 })
 onBeforeUnmount(() => {
@@ -231,6 +254,7 @@ onBeforeUnmount(() => {
   ro?.disconnect()
   window.clearTimeout(loginTimer)
   window.clearTimeout(nameTimer)
+  turnstileWidget?.destroy()
 })
 </script>
 
@@ -265,6 +289,10 @@ onBeforeUnmount(() => {
                 <span>再輸入一次密碼</span>
                 <input v-model="fPassword2" type="password" autocomplete="new-password" :maxlength="rules.passwordMax" />
               </label>
+              <div class="pr-turnstile">
+                <div ref="turnstileEl"></div>
+                <small v-if="turnstileError" class="bad">{{ turnstileError }}</small>
+              </div>
               <p v-if="authError" class="pr-msg bad">{{ authError }}</p>
               <button class="ag-btn primary" type="submit" :disabled="authBusy">
                 {{ authBusy ? '處理中…' : authMode === 'register' ? '建立帳號' : '登入' }} <span class="arr">→</span>
@@ -514,6 +542,8 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .pr-form small { font-size: 13px; line-height: 1.5; color: var(--ag-ink-50); }
 .pr-form small.good { color: #9fe0a8; }
 .pr-form small.bad { color: #ff8f7a; }
+.pr-turnstile { min-height: 65px; }
+.pr-turnstile small.bad { display: block; margin-top: 6px; font-size: 12.5px; }
 .pr-form .ag-btn { align-self: flex-start; }
 .pr-form .ag-btn:disabled, .pr-acts .ag-btn:disabled, .pm-go:disabled { opacity: 0.5; cursor: not-allowed; }
 .pr-form.inline { margin-top: 20px; max-width: 420px; }
