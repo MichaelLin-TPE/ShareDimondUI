@@ -6,7 +6,7 @@
 import { EV, HIT_FLAG, KNIGHT, STATUS, type RunView, type TdConfig, type TowerView } from './api'
 import type { SfxName } from './audio'
 import { FxLayer, P } from './fx'
-import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, drawAmbientOver, drawAmbientUnder, glow, renderTerrain, type Terrain } from './terrain'
+import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, clearGlowCache, drawAmbientOver, drawAmbientUnder, glow, renderTerrain, type Terrain } from './terrain'
 
 const ASSET = '/aegis/td/'
 
@@ -144,6 +144,10 @@ export class TdScene {
     canvas.addEventListener('click', this.onClick)
     canvas.addEventListener('mousemove', this.onMove)
     canvas.addEventListener('mouseleave', this.onLeave)
+    // 手機切到別的 App 再回來,瀏覽器會把背景分頁的畫布內容丟掉(底圖那張就變成全黑):回到前景就全部重畫
+    document.addEventListener('visibilitychange', this.onVisible)
+    window.addEventListener('pageshow', this.onVisible)
+    canvas.addEventListener('contextrestored', this.onVisible)
     this.resize()
     this.last = performance.now()
     this.raf = requestAnimationFrame(this.frame)
@@ -155,6 +159,9 @@ export class TdScene {
     this.canvas.removeEventListener('click', this.onClick)
     this.canvas.removeEventListener('mousemove', this.onMove)
     this.canvas.removeEventListener('mouseleave', this.onLeave)
+    document.removeEventListener('visibilitychange', this.onVisible)
+    window.removeEventListener('pageshow', this.onVisible)
+    this.canvas.removeEventListener('contextrestored', this.onVisible)
     this.done?.()
   }
 
@@ -1204,4 +1211,13 @@ export class TdScene {
     this.canvas.style.cursor = this.hover >= 0 ? 'pointer' : 'default'
   }
   private onLeave = () => { this.hover = -1 }
+  /** 回到前景:底圖、光暈、剪影快取全部作廢重畫 */
+  private onVisible = () => {
+    if (document.visibilityState === 'hidden') return
+    this.terrain = null
+    this.terrainKey = ''
+    this.tints.clear()
+    clearGlowCache()
+    this.last = performance.now()   // 在背景停了多久不算進動畫
+  }
 }

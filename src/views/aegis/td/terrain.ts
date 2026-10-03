@@ -38,6 +38,8 @@ const lighten = (c: string, k: number) => mix(c, '#ffffff', k)
 const darken = (c: string, k: number) => mix(c, '#000000', k)
 
 const glowCache = new Map<string, HTMLCanvasElement>()
+/** 手機切到別的 App 再回來,瀏覽器可能把畫布的內容丟掉:把快取清掉重畫 */
+export function clearGlowCache() { glowCache.clear() }
 /** 一顆柔邊的光球(顏色要寫成 #rrggbb);發光的東西都拿它疊 */
 export function glowOf(color: string): HTMLCanvasElement {
   let cv = glowCache.get(color)
