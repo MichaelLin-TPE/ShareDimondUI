@@ -63,9 +63,24 @@ function dismissHint() {
   hintDismissed.value = true
   try { localStorage.setItem('aegis_td_land_hint', '1') } catch { /* 存不了就算了 */ }
 }
-// 不用全螢幕 API:手機 Chrome 一進全螢幕就把畫布殺掉(整片白、左上角哭臉),轉橫就自動切版面了
-function leaveLandscape() {
-  say('把手機轉直就回到一般畫面')
+// 全螢幕只包遊戲這一塊(.td),跟一般網頁遊戲一樣;整個網站進全螢幕在手機 Chrome 上畫布會被殺掉
+const rootEl = ref<HTMLElement | null>(null)
+const fullscreen = ref(false)
+const onFsChange = () => {
+  fullscreen.value = !!document.fullscreenElement
+  if (!fullscreen.value) { const o = screen.orientation as ScreenOrientation & { unlock?: () => void }; try { o.unlock?.() } catch { /* 沒鎖過 */ } }
+}
+/** 試著幫他轉橫:遊戲區塊全螢幕 + 鎖定橫向(Android 可以;iPhone 不給鎖,只能請他自己轉) */
+async function goLandscape() {
+  const el = rootEl.value
+  if (!el?.requestFullscreen) { say('這個瀏覽器不支援全螢幕,把手機轉橫就會自動切換'); return }
+  try { await el.requestFullscreen({ navigationUI: 'hide' }) } catch { say('進不了全螢幕,把手機轉橫就會自動切換'); return }
+  const o = screen.orientation as ScreenOrientation & { lock?: (v: string) => Promise<void> }
+  try { await o.lock?.('landscape') } catch { say('把手機轉橫就會自動切換') }
+}
+async function leaveLandscape() {
+  if (document.fullscreenElement) { try { await document.exitFullscreen() } catch { /* 已經不是全螢幕 */ } }
+  else say('把手機轉直就回到一般畫面')
 }
 
 const run = computed(() => state.value?.run ?? null)
@@ -261,6 +276,7 @@ async function boot() {
       if (import.meta.env.DEV) (window as unknown as { __tdScene?: TdScene }).__tdScene = scene   // 開發時方便從主控台檢查畫面
       scene.onSlot = onSlot
       scene.onSfx = (name, scale) => audio.play(name, scale)
+      scene.onCanvasLost = (info) => say(info)
       scene.speed = speed.value
       if (state.value?.run) scene.setRun(state.value.run)
       if (stageEl.value) {
@@ -286,10 +302,12 @@ watch(() => session.token, (now, before) => {
 
 onMounted(() => {
   landMql.addEventListener('change', onLandChange)
+  document.addEventListener('fullscreenchange', onFsChange)
   boot()
 })
 onBeforeUnmount(() => {
   landMql.removeEventListener('change', onLandChange)
+  document.removeEventListener('fullscreenchange', onFsChange)
   document.documentElement.classList.remove('td-land')
   ro?.disconnect()
   scene?.destroy()
@@ -299,7 +317,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="td" @pointerdown="audio.unlock()">
+  <div ref="rootEl" class="td" :class="{ fs: fullscreen }" @pointerdown="audio.unlock()">
     <div class="ag-wrap">
       <div class="td-head">
         <div class="ttl">
@@ -328,7 +346,8 @@ onBeforeUnmount(() => {
         </div>
 
         <p v-if="coarse && !landscape && run && !hintDismissed" class="td-land-hint">
-          <span>📱 把手機轉橫,地圖會大很多(記得關掉螢幕旋轉鎖定)</span>
+          <span>📱 手機建議轉橫向玩,地圖會大很多</span>
+          <button type="button" class="try" @click="goLandscape">橫向全螢幕</button>
           <button type="button" class="x" aria-label="知道了" @click="dismissHint">✕</button>
         </p>
 
@@ -337,6 +356,7 @@ onBeforeUnmount(() => {
             <canvas ref="canvasEl"></canvas>
 
             <!-- 橫向模式:上面那條狀態列看不到,地圖上疊一條小的 -->
+            <button v-if="coarse && run && !landscape && hintDismissed" type="button" class="td-land-btn" @click="goLandscape">⤢ 橫向全螢幕</button>
             <div v-if="landscape && run" class="td-hud mini">
               <span class="g">天幣 <b>{{ run.gold }}</b></span>
               <span class="h">女神像 <b>{{ run.goddessHp }}/{{ run.goddessMax }}</b></span>
@@ -664,7 +684,12 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-land-hint { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 8px 10px 8px 14px; background: rgba(232, 132, 42, 0.14); border: 1px solid var(--ag-ember); font-size: 14px; color: var(--ag-ink); }
 .td-land-hint span { flex: 1; }
 .td-land-hint button { height: 32px; padding: 0 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--ag-line); color: var(--ag-ink); font: inherit; font-size: 13.5px; cursor: pointer; white-space: nowrap; }
+.td-land-hint button.try { border-color: var(--ag-ember); }
 .td-land-hint button.x { width: 32px; padding: 0; }
+.td-land-btn { position: absolute; left: 10px; top: 10px; height: 32px; padding: 0 10px; background: rgba(0, 0, 0, 0.65); border: 1px solid var(--ag-line); color: var(--ag-ink-72); font: inherit; font-size: 13px; cursor: pointer; }
+/* 遊戲區塊全螢幕時:背景填黑;不在橫向版面時(還沒轉過去)讓它可以捲 */
+.td.fs { background: #0b0f0b; overflow: auto; padding-top: 12px; }
+.td.fs .td-head { display: none; }
 
 /* 橫向模式:整個螢幕只放地圖和右邊一條操作欄;官網的導覽列、背景動畫先藏起來 */
 :global(html.td-land .ag-nav), :global(html.td-land .ag-amb) { display: none !important; }

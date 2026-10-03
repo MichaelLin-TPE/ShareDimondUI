@@ -157,7 +157,7 @@ export class TdScene {
     document.addEventListener('visibilitychange', this.onVisible)
     window.addEventListener('pageshow', this.onVisible)
     this.fx.quality = this.mobile ? 0.6 : 1
-    this.resize()
+    this.resizeNow()
     this.last = performance.now()
     this.raf = requestAnimationFrame(this.frame)
   }
@@ -166,6 +166,7 @@ export class TdScene {
     this.destroyed = true
     cancelAnimationFrame(this.raf)
     this.unbindCanvas()
+    window.clearTimeout(this.resizeTimer)
     document.removeEventListener('visibilitychange', this.onVisible)
     window.removeEventListener('pageshow', this.onVisible)
     this.releaseTerrain()
@@ -208,11 +209,19 @@ export class TdScene {
     this.tints.clear()
     clearGlowCache()
     this.canvas.width = 0
-    this.resize()
+    this.resizeNow()
+    this.onCanvasLost(`畫布 ${old.width}×${old.height} 被瀏覽器丟掉,已換新(dpr ${window.devicePixelRatio}, 視窗 ${window.innerWidth}×${window.innerHeight}${document.fullscreenElement ? ', 全螢幕' : ''})`)
+  }
+
+  private resizeTimer = 0
+  /** 外框變了:等它穩定(全螢幕、轉向的過程會跳好幾次)再真的改畫布 */
+  resize() {
+    window.clearTimeout(this.resizeTimer)
+    this.resizeTimer = window.setTimeout(() => this.resizeNow(), 150)
   }
 
   /** 畫布大小跟著外框走(外框維持 1000:660) */
-  resize() {
+  private resizeNow() {
     // 低畫質時解析度降到 1.25 倍:手機 GPU 最吃的是像素數
     const dpr = Math.min(this.lowQ ? 1.25 : this.mobile ? 1.5 : 2, window.devicePixelRatio || 1)
     const cw = Math.max(320, this.canvas.clientWidth)
@@ -249,9 +258,12 @@ export class TdScene {
     setLowQuality(low)
     this.releaseTerrain()
     this.canvas.width = 0          // 讓 resize 一定重設
-    this.resize()
+    this.resizeNow()
     this.last = now
   }
+
+  /** 畫布死掉的時候給頁面看的診斷(顯示在畫面上,手機沒有主控台) */
+  onCanvasLost: (info: string) => void = () => {}
 
   // ===================== 布置階段:把後端給的局面擺出來 =====================
 
