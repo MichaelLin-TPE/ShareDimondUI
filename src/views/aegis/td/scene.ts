@@ -59,6 +59,8 @@ export async function loadAssets(): Promise<SceneAssets> {
 const CLS_COLOR = ['#8fe06a', '#cfd8e6', '#b78bff', '#ff5a7a', '#ffd35a']
 // 法師三條路線的顏色:沒選、火、冰、雷
 const WIZ_COLOR = ['#b78bff', '#ff7a1f', '#8fe0ff', '#9fc4ff']
+// 轉職後攻擊特效的主色:金色(遊俠、聖騎士、大法師)、暗紫(刺客)
+const JOB_GOLD = '#ffe27a', JOB_SHADOW = '#b36bff'
 // 每張圖畫出來本來面向哪一邊(true = 朝左)。攻擊時要轉向目標,所以得先知道原圖朝哪。順序:妖精、騎士、法師、黑妖、君主
 /** 轉職後的圖原本朝哪邊(第六批、種子 33:遊俠射箭朝左、聖騎士朝左、大法師待機朝左出手朝右、刺客朝左、國王朝前) */
 const FACES_LEFT_JOB: { idle: boolean; attack: boolean }[] = [
@@ -733,10 +735,18 @@ export class TdScene {
         const start = 1.4 + n * 0.45
         delay = start + 3
         const color = path === 3 ? '#ff8a2a' : path === 2 ? '#a8ffe0' : '#d8ff9a'
-        if (n === 0) fx.add('flash', 1.2, 3, tw.x + dir * 22, tw.y - 46, { r: 9, color })
+        if (n === 0) fx.add('flash', 1.2, 3, tw.x + dir * 22, tw.y - 46, { r: tw.job ? 14 : 9, color: tw.job ? JOB_GOLD : color })
         fx.add('arrow', start, 3, tw.x + dir * 20, tw.y - 46, { x1: m.x, y1: my, color, v: path === 3 ? 2 : path === 2 ? 1 : 0 })
         fx.sparks(m.x, my, color, 4, delay, 0.7)
         fx.add('flash', delay, 3.5, m.x, my, { r: 10, color, v: 0.4 })
+        if (tw.job) {
+          // 精靈遊俠:箭上多纏一道金色長尾的光箭,命中時一圈金色震波、星芒、往上飄的金光
+          fx.add('arrow', start + 0.2, 3, tw.x + dir * 20, tw.y - 42, { x1: m.x, y1: my - 4, color: JOB_GOLD, v: 1 })
+          fx.add('ring', delay, 7, m.x, m.y, { r: 30, color: JOB_GOLD, v: 3 })
+          fx.add('flash', delay + 0.2, 5, m.x, my, { r: 17, color: JOB_GOLD, v: 0.8 })
+          fx.stars(m.x, my, JOB_GOLD, 3, delay)
+          fx.rise(m.x, my, JOB_GOLD, 4, 14)
+        }
         if (path === 2) fx.add('ring', delay, 6, m.x, m.y, { r: 22, color: '#a8ffe0', v: 2 })
         if (path === 3 && crit) {
           fx.add('explode', delay, 10, m.x, my, { r: 36, color: '#ff7a1f' })
@@ -747,19 +757,34 @@ export class TdScene {
         // 騎士:舉劍劈下,一道月牙刀光掃過身前,劍氣飛到路上的怪身上再劃開
         delay = 4.4
         if (cast.first) {
-          fx.add('cleave', 1.5, 4.5, tw.x + dir * 14, tw.y - 40, { x1: dir, r: 58 })
+          fx.add('cleave', 1.5, 4.5, tw.x + dir * 14, tw.y - 40, { x1: dir, r: tw.job ? 84 : 58 })
           fx.smoke(tw.x + dir * 26, tw.y - 2, 2, 3, '#8a8072', 6)
+          if (tw.job) fx.add('circle', 0, 7, tw.x, tw.y + 2, { r: 40, color: JOB_GOLD })   // 聖騎士:腳下亮起聖陣
         }
-        fx.add('wave', 2.2, 2.2, tw.x + dir * 40, tw.y - 40, { x1: m.x, y1: my, r: 20 })
+        fx.add('wave', 2.2, 2.2, tw.x + dir * 40, tw.y - 40, { x1: m.x, y1: my, r: tw.job ? 30 : 20 })
         fx.add('slash', delay, 5, m.x, my, { r: 22, color: '#9fd0ff', v: dir > 0 ? 0.9 : Math.PI - 0.9 })
         fx.add('flash', delay, 4, m.x, my, { r: 13, color: '#cfe8ff', v: 0.3 })
         fx.sparks(m.x, my, '#fff6d8', 6, delay)
+        if (tw.job) {
+          // 聖騎士:再補一道更大的金色刀痕、一道細光柱從天上打在怪身上、金色震波
+          fx.add('slash', delay + 0.6, 5, m.x, my, { r: 34, color: JOB_GOLD, v: dir > 0 ? -0.5 : Math.PI + 0.5 })
+          fx.add('pillar', delay, 9, m.x, m.y, { r: 12, color: JOB_GOLD })
+          fx.add('ring', delay + 0.4, 7, m.x, m.y, { r: 34, color: '#fff1b0', v: 3 })
+          fx.stars(m.x, my, JOB_GOLD, 3, delay + 0.4)
+        }
       } else if (cls === 2) {
         const color = WIZ_COLOR[path] ?? '#b78bff'
         if (path === 3) {
           // 極光雷電:從杖頭打到第一隻,再一隻一隻跳過去
           delay = 1.5 + n * 0.8
           fx.add('bolt', delay, 5.5, cast.px, cast.py, { x1: m.x, y1: my, color })
+          if (tw.job) {
+            // 大法師:兩道閃電交纏、每一隻被劈到的都閃一下、腳下震波
+            fx.add('bolt', delay + 0.3, 5, cast.px + 6, cast.py - 8, { x1: m.x + 4, y1: my - 6, color: JOB_GOLD })
+            fx.add('flash', delay + 0.2, 5, m.x, my, { r: 16, color: '#dfe8ff', v: 0.5 })
+            fx.add('ring', delay + 0.3, 6, m.x, m.y, { r: 24, color, v: 2 })
+            if (n === 0) fx.add('circle', 0, 8, tw.x, tw.y + 2, { r: 44, color })
+          }
           cast.px = m.x; cast.py = my
           fx.sparks(m.x, my, '#bcd8ff', 5, delay, 0.8)
           fx.burst(m.x, my, '#9fc4ff', 3, delay)
@@ -767,7 +792,8 @@ export class TdScene {
           // 範圍魔法:法球飛到主目標再炸開(火風暴留下火舌和焦痕,冰雪颶風先落冰錐、地面結冰長冰刺)
           delay = 4.6
           if (cast.first) {
-            const r = path === 1 ? 91 : 70
+            const r = (path === 1 ? 91 : 70) * (tw.job ? 1.25 : 1)
+            if (tw.job) fx.add('circle', 0, 8, tw.x, tw.y + 2, { r: 44, color })   // 大法師:腳下魔法陣,爆炸範圍也變大
             fx.add('orb', 1.6, 3, tw.x + dir * 16, tw.y - 78, { x1: m.x, y1: my, color, r: path === 1 ? 8 : 7, v: path === 2 ? 2 : path === 1 ? 1 : 0 })
             if (path === 1) {
               fx.add('explode', delay, 12, m.x, m.y - 14, { r, color: '#ff7a1f' })
@@ -791,6 +817,13 @@ export class TdScene {
               fx.sparks(m.x, m.y - 14, '#e0d0ff', 12, delay, 1.2)
               fx.burst(m.x, m.y - 14, color, 14, delay)
             }
+            if (tw.job) {
+              // 大法師:爆炸之後再一圈金色震波、天上落一道光柱、畫面震一下
+              fx.add('ring', delay + 1.2, 10, m.x, m.y, { r: r * 1.2, color: JOB_GOLD, v: 3 })
+              fx.add('pillar', delay - 1, 10, m.x, m.y, { r: 18, color: JOB_GOLD })
+              fx.sparks(m.x, m.y - 14, JOB_GOLD, 10, delay + 0.5, 1.4)
+              this.shakeLater(2.5, delay)
+            }
           } else if (path === 1) fx.embers(m.x, my, '#ff9a3d', 3, delay, 8)
           else if (path === 2) fx.ice(m.x, my, 3, delay, 0.6)
         }
@@ -802,6 +835,15 @@ export class TdScene {
         fx.add('slash', delay, 5, m.x, my, { r: big, color, v: -0.75 })
         fx.add('slash', delay + 0.9, 5, m.x, my, { r: big, color, v: Math.PI + 0.75 })
         fx.sparks(m.x, my, color, 5, delay + 0.9)
+        if (tw.job) {
+          // 暗影刺客:再補兩刀成米字、黑紫色的暗影爆開、紫光閃
+          fx.add('slash', delay + 1.5, 5, m.x, my, { r: big * 1.25, color: JOB_SHADOW, v: 0 })
+          fx.add('slash', delay + 2.1, 5, m.x, my, { r: big * 1.25, color: JOB_SHADOW, v: Math.PI / 2 })
+          fx.smoke(m.x, my, 5, delay + 1.5, '#1a0a2a', 12)
+          fx.add('flash', delay + 2.1, 5, m.x, my, { r: 18, color: JOB_SHADOW, v: 0.4 })
+          fx.add('ring', delay + 2.1, 7, m.x, m.y, { r: 28, color: JOB_SHADOW, v: 2 })
+          fx.burst(m.x, my, JOB_SHADOW, 6, delay + 1.5)
+        }
         if (crit) {
           fx.add('slash', delay + 1.8, 5, m.x, my, { r: big * 1.2, color, v: 0.15 })
           fx.add('slash', delay + 2.5, 5, m.x, my, { r: big * 1.2, color, v: Math.PI / 2 })
