@@ -3,13 +3,14 @@
 import { api } from '../prereg/api'
 
 export interface PathInfo { title: string; desc: string }
-export interface ClassInfo { id: string; title: string; desc: string; price: number; baseDmg: number; range: number; magic: boolean; paths: PathInfo[] }
+/** jobTitle / jobDesc:轉職後的稱號與說明 */
+export interface ClassInfo { id: string; title: string; desc: string; price: number; baseDmg: number; range: number; magic: boolean; paths: PathInfo[]; jobTitle: string; jobDesc: string }
 export interface MobInfo { id: string; title: string; desc: string; speed: number }
 export interface BlessInfo { id: string; title: string; desc: string; rarity: number }
 export interface TalentInfo { id: string; title: string; desc: string; max: number }
 export interface TdConfig {
   width: number; height: number; unit: number; path: number[][]; slots: number[][]; goddess: number[]; tps: number
-  maxLevel: number; pathLevel: number; princeLimit: number; sellRefundPct: number; blessEvery: number
+  maxLevel: number; pathLevel: number; jobLevel: number; jobMaxLevel: number; jobDmgPct: number; princeLimit: number; sellRefundPct: number; blessEvery: number
   classes: ClassInfo[]; mobs: MobInfo[]; bosses: string[]; chapters: string[]; blessings: BlessInfo[]; talents: TalentInfo[]
 }
 
@@ -20,6 +21,8 @@ export interface TowerView {
   guards: number[]
   /** 君主才有:這座光環現在給什麼(直接顯示) */
   aura: string | null
+  /** 轉職了沒、轉職後的稱號、第二條路線;canJob = 現在可以轉職(10 級、選過路線、還沒轉) */
+  job: boolean; jobTitle: string | null; path2: number; path2Title: string | null; canJob: boolean
 }
 export interface BlessView { id: string; title: string; desc: string; rarity: number; count: number }
 export interface RunView {
@@ -44,7 +47,7 @@ export const td = {
   config: () => api.get<TdConfig>('/aegis/td/config', false),
   state: () => api.get<StateView>('/aegis/td/state'),
   start: () => api.post<StateView>('/aegis/td/run/start'),
-  action: (type: 'buy' | 'upgrade' | 'path' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) =>
+  action: (type: 'buy' | 'upgrade' | 'path' | 'job' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) =>
     api.post<StateView>('/aegis/td/run/action', { type, slot, cls, value }),
   wave: () => api.post<WaveView>('/aegis/td/run/wave'),
   abandon: () => api.post<WaveView>('/aegis/td/run/abandon'),

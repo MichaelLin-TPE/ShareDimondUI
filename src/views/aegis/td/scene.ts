@@ -20,7 +20,8 @@ export const QUALITY: Record<QualityLevel, { title: string; dpr: number; particl
 }
 
 export interface SceneAssets {
-  cls: { idle: HTMLImageElement; attack: HTMLImageElement }[]
+  /** jobIdle / jobAttack:轉職後的樣子(金甲);載不到就沿用原本的 */
+  cls: { idle: HTMLImageElement; attack: HTMLImageElement; jobIdle: HTMLImageElement | null; jobAttack: HTMLImageElement | null }[]
   mobs: HTMLImageElement[]
   bosses: HTMLImageElement[]
   goddess: HTMLImageElement
@@ -41,6 +42,8 @@ export async function loadAssets(): Promise<SceneAssets> {
   const cls = await Promise.all([0, 1, 2, 3, 4].map(async (i) => ({
     idle: await loadImage(`${ASSET}cls${i}_idle.webp`),
     attack: await loadImage(`${ASSET}cls${i}_attack.webp`),
+    jobIdle: await loadImage(`${ASSET}job${i}_idle.webp`).catch(() => null),
+    jobAttack: await loadImage(`${ASSET}job${i}_attack.webp`).catch(() => null),
   })))
   const mobs = await Promise.all([0, 1, 2, 3, 4, 5, 6].map((i) => loadImage(`${ASSET}mob${i}.webp`)))
   const bosses = await Promise.all([0, 1, 2, 3, 4, 5].map((i) => loadImage(`${ASSET}boss${i}.webp`)))
@@ -57,6 +60,14 @@ const CLS_COLOR = ['#8fe06a', '#cfd8e6', '#b78bff', '#ff5a7a', '#ffd35a']
 // 法師三條路線的顏色:沒選、火、冰、雷
 const WIZ_COLOR = ['#b78bff', '#ff7a1f', '#8fe0ff', '#9fc4ff']
 // 每張圖畫出來本來面向哪一邊(true = 朝左)。攻擊時要轉向目標,所以得先知道原圖朝哪。順序:妖精、騎士、法師、黑妖、君主
+/** 轉職後的圖原本朝哪邊(第六批、種子 33:遊俠射箭朝左、聖騎士朝左、大法師待機朝左出手朝右、刺客朝左、國王朝前) */
+const FACES_LEFT_JOB: { idle: boolean; attack: boolean }[] = [
+  { idle: false, attack: true },
+  { idle: true, attack: true },
+  { idle: true, attack: false },
+  { idle: true, attack: true },
+  { idle: false, attack: false },
+]
 const FACES_LEFT: { idle: boolean; attack: boolean }[] = [
   { idle: false, attack: false },
   { idle: true, attack: true },
@@ -81,6 +92,10 @@ interface TowerVis {
   /** 在哪座君主的光環裡(-1 = 沒有):腳下畫金圈,看得出誰吃到加成 */
   buffedBy: number
   bornAt: number
+  /** 轉職了:換金甲的圖、身後有一圈金光 */
+  job: boolean
+  /** 什麼時候轉職的(儀式特效用;沒轉或一開始就是轉職狀態 = -999) */
+  jobAt: number
 }
 interface MobVis {
   id: number; type: number; rank: number; hp: number; maxHp: number
@@ -358,6 +373,16 @@ export class TdScene {
         this.fx.add('ring', 0, 10, x, y, { r: 44, color })
         this.fx.burst(x, y - 30, color, 18)
       }
+    } else if (!old.job && t.job) {   // 轉職儀式:金色光柱打下來、兩圈震波、整片金光閃一下、頭上跳稱號
+      this.fx.add('pillar', 0, 30, x, y, { r: 44, color: '#ffd76a' })
+      this.fx.add('ring', 0, 14, x, y, { r: 70, color: '#ffe9a0', v: 6 })
+      this.fx.add('ring', 4, 16, x, y, { r: 110, color: '#ffd76a', v: 4 })
+      this.fx.burst(x, y - 40, '#ffe9a0', 36)
+      this.fx.rise(x, y, '#ffd76a', 60)
+      this.fx.screenFlash('#ffe9a0', 0.45, 14)
+      this.fx.banner(t.jobTitle ?? '轉職', '轉職成功', '#ffd76a', 44)
+      this.sfx('revive')
+      this.sfx('bless', 6)
     } else if (old.level !== t.level || old.path !== t.path) {   // 升級 / 選路線
       this.fx.rise(x, y, color, 26)
       this.fx.add('ring', 0, 10, x, y, { r: 40, color })
@@ -368,6 +393,7 @@ export class TdScene {
       attackAt: same ? old.attackAt : -999, faceLeft: same ? old.faceLeft : false,
       kHp: t.hp, kMax: t.hp, down: false, upAt: -999, hurtAt: -999, bornAt: same ? old.bornAt : this.fxTick,
       buffedBy: -1,
+      job: t.job, jobAt: same && old.job ? old.jobAt : t.job ? (same ? this.fxTick : -999) : -999,
     }
   }
 
@@ -1006,17 +1032,25 @@ export class TdScene {
     const dir = tw.faceLeft ? -1 : 1
     const at = t - tw.attackAt
     const ps = this.pose(tw.cls, at, dir)
-    const img = ps.attack ? a.attack : a.idle
+    const img = ps.attack ? (tw.job && a.jobAttack) || a.attack : (tw.job && a.jobIdle) || a.idle
     const h = 84
     const w = (img.width / img.height) * h
     const born = Math.min(1, (t - tw.bornAt) / 6)
     const breathe = 1 + 0.028 * Math.sin(this.clock * 3.2 + tw.slot)
     // 原圖朝哪邊不一定,要翻成面向目標
-    const faces = FACES_LEFT[tw.cls]
+    const faces = (tw.job && (ps.attack ? a.jobAttack : a.jobIdle) ? FACES_LEFT_JOB : FACES_LEFT)[tw.cls]
     const flip = tw.faceLeft !== (ps.attack ? faces?.attack : faces?.idle)
 
+    // 轉職:身後一團慢慢呼吸的金光,剛轉職的前幾秒更亮
+    if (tw.job && !tw.down) {
+      const fresh = Math.max(0, 1 - (t - tw.jobAt) / 40)
+      c.save()
+      c.globalCompositeOperation = 'lighter'
+      glow(c, tw.x, tw.y - 44, 46 + 10 * fresh, '#ffd76a', 0.16 + 0.05 * Math.sin(this.clock * 2.1 + tw.slot) + 0.3 * fresh)
+      c.restore()
+    }
     // 滿級:腳下一團金光
-    if (tw.level >= this.cfg.maxLevel && !tw.down) {
+    if (tw.level >= (tw.job ? this.cfg.jobMaxLevel : this.cfg.maxLevel) && !tw.down) {
       c.save()
       c.globalCompositeOperation = 'lighter'
       glow(c, tw.x, tw.y - 2, 34, '#ffd76a', 0.3 + 0.12 * Math.sin(this.clock * 2.4 + tw.slot))

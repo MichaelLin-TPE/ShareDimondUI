@@ -117,7 +117,7 @@ function apply(s: StateView) {
   if (s.run && scene) scene.setRun(s.run)
 }
 
-async function act(type: 'buy' | 'upgrade' | 'path' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) {
+async function act(type: 'buy' | 'upgrade' | 'path' | 'job' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) {
   if (busy.value || battling.value) return false
   audio.unlock()      // 用鍵盤操作的人不會觸發最外層的 pointerdown,這裡再保一次
   busy.value = true
@@ -125,7 +125,7 @@ async function act(type: 'buy' | 'upgrade' | 'path' | 'sell' | 'bless', slot: nu
     apply(await td.action(type, slot, cls, value))
     // 招募:這個職業在天堂創角畫面被選到的聲音
     const snd: SfxName = type === 'buy' ? (`cls${clsIndex(cls ?? '')}` as SfxName) : type === 'upgrade' ? 'upgrade' : type === 'sell' ? 'sell' : 'bless'
-    audio.play(snd)
+    if (type !== 'job') audio.play(snd)   // 轉職的聲音由場景的儀式特效一起播
     return true
   } catch (e) {
     fail(e)
@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
 
             <!-- 選中的塔 -->
             <div v-if="selTower && selClass" class="box sel">
-              <div class="bh">{{ selClass.title }} · {{ selTower.level }} 級<em v-if="selTower.pathTitle">{{ selTower.pathTitle }}</em></div>
+              <div class="bh"><span :class="{ jobname: selTower.job }">{{ selTower.job ? selTower.jobTitle : selClass.title }} · {{ selTower.level }} 級</span><em v-if="selTower.pathTitle">{{ selTower.pathTitle }}<template v-if="selTower.path2Title"> + {{ selTower.path2Title }}</template></em></div>
               <div class="nums">
                 <span v-if="selTower.cls !== 'PRINCE'">一下 <b>{{ selTower.dmg }}</b></span>
                 <span v-if="selTower.cls !== 'PRINCE'">每秒 <b>{{ perSec(selTower.perMinute) }}</b> 下</span>
@@ -423,6 +423,13 @@ onBeforeUnmount(() => {
                 <button v-for="(p, i) in selClass.paths" :key="p.title" type="button" :disabled="busy" @click="act('path', selected, null, i + 1)">
                   <b>{{ p.title }}</b><span>{{ p.desc }}</span>
                 </button>
+              </div>
+              <div v-else-if="selTower.canJob" class="paths job">
+                <p>升到 {{ cfg?.jobLevel }} 級了!可以免費轉職成<b>{{ selClass.jobTitle }}</b>:{{ selClass.jobDesc }}。最高 {{ cfg?.jobMaxLevel }} 級。再選一條路線:</p>
+                <button v-for="(p, i) in selClass.paths" v-show="i + 1 !== selTower.path" :key="p.title" type="button" :disabled="busy" @click="act('job', selected, null, i + 1)">
+                  <b>轉職 · {{ p.title }}</b><span>{{ p.desc }}</span>
+                </button>
+                <button type="button" class="later" :disabled="busy" @click="sell">先不轉,賣掉 +{{ selTower.sellValue }}</button>
               </div>
               <div v-else class="row">
                 <button v-if="selTower.upgradeCost >= 0" type="button" class="up" :disabled="busy || run.gold < selTower.upgradeCost" @click="act('upgrade', selected, null, null)">
@@ -545,7 +552,7 @@ onBeforeUnmount(() => {
           <li>怪物從左上角進來,沿著路走向右下角的女神像。漏一隻小怪扣 1 點生命,精英扣 3,王扣 10;歸零這一局就結束。</li>
           <li>每一波開始前:在右邊選職業、點地圖上的空位放下去;點已經放好的塔可以升級或賣掉(退七成)。</li>
           <li>按「開始」之後戰鬥自動進行,可以調 1~3 倍速。戰鬥中不能操作。</li>
-          <li>每座塔升到 {{ cfg?.pathLevel }} 級要三選一路線,選了不能改。最高 {{ cfg?.maxLevel }} 級。</li>
+          <li>每座塔升到 {{ cfg?.pathLevel }} 級要三選一路線,選了不能改。升到 {{ cfg?.jobLevel }} 級可以免費轉職:傷害 +{{ cfg?.jobDmgPct }}%、再選一條路線(兩條效果疊在一起)、最高升到 {{ cfg?.jobMaxLevel }} 級。</li>
           <li>每 {{ cfg?.blessEvery }} 波選一次女神的祝福;每 10 波有王。</li>
           <li>排行看你守住最多幾波。結束後拿到的女神徽章可以點永久天賦。</li>
         </ul>
@@ -555,6 +562,7 @@ onBeforeUnmount(() => {
             <b>{{ c.title }}</b>
             <span>{{ c.desc }}</span>
             <small v-for="p in c.paths" :key="p.title"><i>{{ p.title }}</i>{{ p.desc }}</small>
+            <small class="job"><i>轉職 → {{ c.jobTitle }}</i>{{ c.jobDesc }}</small>
           </div>
         </div>
         <button class="ag-btn" type="button" @click="showHelp = false">關閉</button>
@@ -617,6 +625,12 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-side .box { background: rgba(0, 0, 0, 0.62); border: 1px solid var(--ag-line-soft); padding: 12px; }
 .td-side .bh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 14px; letter-spacing: 0.06em; color: var(--ag-ink); margin-bottom: 10px; }
 .td-side .bh em { font-style: normal; font-size: 12.5px; color: var(--ag-ember); }
+.td-side .bh .jobname { color: #ffd76a; }
+.paths.job p b { color: #ffd76a; font-weight: 600; }
+.paths.job button { border-color: rgba(255, 215, 106, 0.55); background: rgba(255, 215, 106, 0.08); }
+.paths.job button.later { border-color: var(--ag-line); background: rgba(255, 255, 255, 0.06); }
+.paths.job button.later { height: 36px; padding: 0 10px; display: block; font-size: 13px; color: var(--ag-ink-72); }
+.help .cls small.job i { color: #ffd76a; }
 .next { display: flex; flex-direction: column; gap: 6px; }
 .next .nm { display: grid; grid-template-columns: 34px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; font-size: 14px; }
 .next .nm img { grid-row: 1 / 3; width: 34px; height: 34px; object-fit: contain; }
