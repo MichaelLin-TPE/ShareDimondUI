@@ -70,13 +70,42 @@ export class TdAudio {
       this.musicOff = localStorage.getItem(MUSIC_KEY) === '1'
     } catch { /* 存不了就用預設 */ }
     document.addEventListener('visibilitychange', this.onVisibility)
+    // 手機把瀏覽器收到背景、鎖螢幕、關掉分頁:只靠 visibilitychange 不夠(使用者 10-04 回報關了瀏覽器音樂還在放),
+    // 這幾個事件也都當成「離開」,一律暫停;回到前景(pageshow / 視窗取得焦點)再接著放
+    window.addEventListener('pagehide', this.onLeave)
+    document.addEventListener('freeze', this.onLeave)
+    window.addEventListener('pageshow', this.onVisibility)
+    document.addEventListener('resume', this.onVisibility)
+    if (this.mobile) {   // 電腦上點到別的視窗音樂不用停,手機上視窗失去焦點就是人走了
+      window.addEventListener('blur', this.onLeave)
+      window.addEventListener('focus', this.onVisibility)
+    }
+    // 通知列的媒體控制(Android 會把網頁的音樂掛在通知上):按暫停就真的停
+    try {
+      navigator.mediaSession?.setActionHandler('pause', () => this.onLeave())
+      navigator.mediaSession?.setActionHandler('play', () => this.onVisibility())
+    } catch { /* 不支援就算了 */ }
+  }
+
+  private readonly mobile = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
+
+  private get away() {
+    return document.visibilityState === 'hidden' || (this.mobile && !document.hasFocus())
+  }
+
+  private onLeave = () => {
+    this.bgm?.pause()
+    try { if (navigator.mediaSession) navigator.mediaSession.playbackState = 'paused' } catch { /* 不支援 */ }
   }
 
   /** 切到別的分頁或 App 就暫停音樂,回來再繼續 */
   private onVisibility = () => {
     if (!this.bgm) return
-    if (document.visibilityState === 'hidden') this.bgm.pause()
-    else if (!this.muted && !this.musicOff) this.bgm.play().catch(() => {})
+    if (this.away) this.onLeave()
+    else if (!this.muted && !this.musicOff) {
+      this.bgm.play().catch(() => {})
+      try { if (navigator.mediaSession) navigator.mediaSession.playbackState = 'playing' } catch { /* 不支援 */ }
+    }
   }
 
   /**
@@ -116,7 +145,8 @@ export class TdAudio {
     a.preload = 'auto'
     this.bgm = a
     this.bgmName = name
-    a.play().catch(() => { /* 還不准出聲:下次 unlock 再放 */ this.bgm = null; this.bgmName = '' })
+    // 人不在畫面上(收到背景時剛好換曲):先不放,回到前景 onVisibility 會接著放
+    if (!this.away) a.play().catch(() => { /* 還不准出聲:下次 unlock 再放 */ this.bgm = null; this.bgmName = '' })
     // 淡入
     let v = 0
     const step = () => {
@@ -134,6 +164,7 @@ export class TdAudio {
     this.bgmName = ''
     window.clearTimeout(this.fadeTimer)
     if (!old) return
+    if (this.away) { old.pause(); old.src = ''; return }   // 人不在就直接停,不留一個還在淡出的聲音
     // 淡出再停,不會「啪」一聲斷掉
     const fade = () => {
       old.volume = Math.max(0, old.volume - 0.05)
@@ -196,7 +227,18 @@ export class TdAudio {
 
   destroy() {
     document.removeEventListener('visibilitychange', this.onVisibility)
-    this.stopMusic()
+    window.removeEventListener('pagehide', this.onLeave)
+    window.removeEventListener('blur', this.onLeave)
+    document.removeEventListener('freeze', this.onLeave)
+    window.removeEventListener('pageshow', this.onVisibility)
+    window.removeEventListener('focus', this.onVisibility)
+    document.removeEventListener('resume', this.onVisibility)
+    try { navigator.mediaSession?.setActionHandler('pause', null); navigator.mediaSession?.setActionHandler('play', null) } catch { /* 不支援 */ }
+    const old = this.bgm
+    this.bgm = null
+    this.bgmName = ''
+    window.clearTimeout(this.fadeTimer)
+    if (old) { old.pause(); old.src = '' }   // 離開頁面:直接停,不淡出(淡出的計時器在頁面卸載後不一定會跑)
     this.ctx?.close().catch(() => {})
     this.ctx = null
   }
