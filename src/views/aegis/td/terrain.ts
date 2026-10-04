@@ -226,7 +226,7 @@ function roadShape(cfg: TdConfig, halfW: number): Path2D {
   const p = new Path2D()
   for (let i = 0; i < cfg.path.length - 1; i++) {
     const a = cfg.path[i] as number[], b = cfg.path[i + 1] as number[]
-    const ax = (a[0] ?? 0) - (i === 0 ? 40 : 0), ay = a[1] ?? 0, bx = b[0] ?? 0, by = b[1] ?? 0
+    const [ax, ay] = i === 0 ? entrancePoint(cfg, 40) : [a[0] ?? 0, a[1] ?? 0], bx = b[0] ?? 0, by = b[1] ?? 0
     p.rect(Math.min(ax, bx) - (ay === by ? 0 : halfW), Math.min(ay, by) - (ax === bx ? 0 : halfW), Math.abs(bx - ax) + (ay === by ? 0 : halfW * 2), Math.abs(by - ay) + (ax === bx ? 0 : halfW * 2))
     p.moveTo(bx + halfW, by); p.arc(bx, by, halfW, 0, Math.PI * 2)
     if (i === 0) { p.moveTo(ax + halfW, ay); p.arc(ax, ay, halfW, 0, Math.PI * 2) }
@@ -234,9 +234,23 @@ function roadShape(cfg: TdConfig, halfW: number): Path2D {
   return p
 }
 
+/** 入口朝哪邊:從第二個折點指向第一個折點的單位向量(路從畫布外進來的方向) */
+function entranceDir(cfg: TdConfig): [number, number] {
+  const a = cfg.path[0] as number[], b = cfg.path[1] as number[]
+  const dx = (a[0] ?? 0) - (b[0] ?? 0), dy = (a[1] ?? 0) - (b[1] ?? 0)
+  const len = Math.hypot(dx, dy) || 1
+  return [dx / len, dy / len]
+}
+/** 入口往畫布外延伸 back 的那一點(路要畫到畫布外,入口才不會是圓頭) */
+function entrancePoint(cfg: TdConfig, back: number): [number, number] {
+  const p0 = cfg.path[0] as number[], [dx, dy] = entranceDir(cfg)
+  return [(p0[0] ?? 0) + dx * back, (p0[1] ?? 0) + dy * back]
+}
+
 function tracePath(c: CanvasRenderingContext2D, cfg: TdConfig) {
   c.beginPath()
-  cfg.path.forEach((p, i) => (i === 0 ? c.moveTo((p[0] ?? 0) - 40, p[1] ?? 0) : c.lineTo(p[0] ?? 0, p[1] ?? 0)))
+  const [ex, ey] = entrancePoint(cfg, 40)
+  cfg.path.forEach((p, i) => (i === 0 ? c.moveTo(ex, ey) : c.lineTo(p[0] ?? 0, p[1] ?? 0)))
 }
 function strokeRoad(c: CanvasRenderingContext2D, cfg: TdConfig, w: number, color: string | CanvasGradient) {
   c.strokeStyle = color; c.lineWidth = w; c.lineJoin = 'round'; c.lineCap = 'round'
@@ -591,8 +605,11 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
   c.globalAlpha = 1
 
   // ---- 水池 / 岩漿 / 冰湖 ----
-  const pools: [number, number, number, number][] = [[70, 506, 64, 58]]
-  if (th.secondPool) pools.push([930, 290, 52, 62])
+  // 水池的位置是固定的,壓到這張地圖的路或塔位就不畫
+  const poolOk = ([cx, cy, rx, ry]: [number, number, number, number]) =>
+    distToPath(cfg, cx, cy) > rx + 40 && !cfg.slots.some((sl) => Math.abs((sl[0] ?? 0) - cx) < rx + 44 && Math.abs((sl[1] ?? 0) - cy) < ry + 30)
+  const pools: [number, number, number, number][] = ([[70, 506, 64, 58]] as [number, number, number, number][]).filter(poolOk)
+  if (th.secondPool && poolOk([930, 290, 52, 62])) pools.push([930, 290, 52, 62])
   pools.forEach(([cx, cy, rx, ry], i) => {
     const seed = 77 + chapter * 13 + i * 5
     const path = blobPath(cx, cy, rx, ry, seed)
@@ -718,7 +735,7 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
   // 路邊長一點草 / 積雪,邊線才不會像尺畫的
   for (let i = 0; i < cfg.path.length - 1; i++) {
     const a = cfg.path[i] as number[], b = cfg.path[i + 1] as number[]
-    const ax = (a[0] ?? 0) - (i === 0 ? 40 : 0), ay = a[1] ?? 0, bx = b[0] ?? 0, by = b[1] ?? 0
+    const [ax, ay] = i === 0 ? entrancePoint(cfg, 40) : [a[0] ?? 0, a[1] ?? 0], bx = b[0] ?? 0, by = b[1] ?? 0
     const len = Math.hypot(bx - ax, by - ay)
     const ux = (bx - ax) / len, uy = (by - ay) / len
     for (let d = 0; d < len; d += 7) {
@@ -808,16 +825,21 @@ export function renderTerrain(cfg: TdConfig, chapter: number, pxWidth: number, d
     if (light) lights.push({ x: p.x, y: p.y - p.h * 0.55, r: light[1] * (p.h / (PROP_H[p.name] ?? p.h)), color: light[0] })
   }
 
-  // ---- 入口:左邊的山洞 ----
+  // ---- 入口:畫布邊上的山洞(在路的第一個折點,朝路進來的方向)----
   {
     const p0 = cfg.path[0] as number[]
-    const ey = p0[1] ?? 90
-    const eg = c.createRadialGradient(0, ey, 6, 0, ey, 66)
+    const ex = p0[0] ?? 0, ey = p0[1] ?? 90
+    const [ox, oy] = entranceDir(cfg)
+    const ix = -ox, iy = -oy          // 往地圖裡面
+    const px = -iy, py = ix           // 沿著畫布邊
+    const eg = c.createRadialGradient(ex, ey, 6, ex, ey, 66)
     eg.addColorStop(0, 'rgba(0,0,0,0.96)'); eg.addColorStop(0.55, 'rgba(0,0,0,0.7)'); eg.addColorStop(1, 'rgba(0,0,0,0)')
     c.fillStyle = eg
-    c.fillRect(0, ey - 66, 70, 132)
+    c.fillRect(ex - 70, ey - 70, 140, 140)
     const rock = mix(th.road[1], th.ground[0], 0.5)
-    const stones: [number, number, number][] = [[4, ey - 30, 34], [34, ey - 36, 22], [2, ey + 62, 36], [36, ey + 52, 22], [-6, ey - 58, 30], [18, ey + 80, 20]]
+    // [往裡多少, 沿邊多少, 大小]:左邊入口時就是原本的位置
+    const stones: [number, number, number][] = ([[4, -30, 34], [34, -36, 22], [2, 62, 36], [36, 52, 22], [-6, -58, 30], [18, 80, 20]] as [number, number, number][])
+      .map(([a, b, h]) => [ex + ix * a + px * b, ey + iy * a + py * b, h] as [number, number, number])
     stones.sort((p, q) => p[1] - q[1])
     for (const [x, y, h] of stones) {
       c.save(); c.translate(x, y)
@@ -900,11 +922,12 @@ export function drawAmbientUnder(c: C2, tr: Terrain, cfg: TdConfig, t: number) {
   c.globalCompositeOperation = 'lighter'
   // 入口:洞裡透出來的魔光,怪就是從這裡來的
   const p0 = cfg.path[0] as number[]
-  const ey = p0[1] ?? 90
-  glow(c, 4, ey, 46 + 6 * Math.sin(t * 1.6), '#7a3dff', 0.4 + 0.12 * Math.sin(t * 2.3))
+  const [ox, oy] = entranceDir(cfg)
+  const ex = (p0[0] ?? 0) - ox * 4, ey = (p0[1] ?? 90) - oy * 4
+  glow(c, ex, ey, 46 + 6 * Math.sin(t * 1.6), '#7a3dff', 0.4 + 0.12 * Math.sin(t * 2.3))
   for (let i = 0; i < 3; i++) {
     const a = t * 1.1 + (i * Math.PI * 2) / 3
-    glow(c, 10 + Math.cos(a) * 14, ey + Math.sin(a) * 20, 9, '#c99bff', 0.5)
+    glow(c, ex - ox * 6 + Math.cos(a) * 14, ey - oy * 6 + Math.sin(a) * 20, 9, '#c99bff', 0.5)
   }
   // 營火、火盆、水晶的光
   for (let i = 0; i < tr.lights.length; i++) {

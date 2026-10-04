@@ -8,10 +8,14 @@ export interface ClassInfo { id: string; title: string; desc: string; price: num
 export interface MobInfo { id: string; title: string; desc: string; speed: number }
 export interface BlessInfo { id: string; title: string; desc: string; rarity: number }
 export interface TalentInfo { id: string; title: string; desc: string; max: number }
+/** 一張地圖:路線折點、塔位、女神像位置(邏輯像素) */
+export interface MapInfo { path: number[][]; slots: number[][]; goddess: number[] }
 export interface TdConfig {
   width: number; height: number; unit: number; path: number[][]; slots: number[][]; goddess: number[]; tps: number
   maxLevel: number; pathLevel: number; jobLevel: number; jobMaxLevel: number; jobDmgPct: number; princeLimit: number; sellRefundPct: number; blessEvery: number
   classes: ClassInfo[]; mobs: MobInfo[]; bosses: string[]; chapters: string[]; blessings: BlessInfo[]; talents: TalentInfo[]
+  /** 全部七張地圖,照場景順序;path / slots / goddess 是第一張(舊欄位) */
+  maps: MapInfo[]
 }
 
 export interface TowerView {
@@ -32,6 +36,12 @@ export interface RunView {
   firstOfDay: boolean; bossNext: boolean
   /** 下一波會出的怪:[類型, 階級(0 一般 1 精英 2 王), 數量] */
   nextSpawns: number[][]
+  /** 這一波用 config.maps 的第幾張 */
+  map: number
+  /** 候補區:換場景收回來的英雄,要擺回去才能開始下一波 */
+  bench: TowerView[]
+  /** 重擺期間(換場景之後、開打之前):擺好的可以再拿起來 */
+  rearranging: boolean
 }
 export interface TalentView { id: string; title: string; desc: string; level: number; max: number; nextCost: number }
 export interface ProfileView { badges: number; talents: TalentView[]; bestWave: number; bestHp: number; runs: number; firstRunBonusAvailable: boolean }
@@ -47,7 +57,7 @@ export const td = {
   config: () => api.get<TdConfig>('/aegis/td/config', false),
   state: () => api.get<StateView>('/aegis/td/state'),
   start: () => api.post<StateView>('/aegis/td/run/start'),
-  action: (type: 'buy' | 'upgrade' | 'path' | 'job' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) =>
+  action: (type: 'buy' | 'upgrade' | 'path' | 'job' | 'place' | 'pickup' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) =>
     api.post<StateView>('/aegis/td/run/action', { type, slot, cls, value }),
   wave: () => api.post<WaveView>('/aegis/td/run/wave'),
   abandon: () => api.post<WaveView>('/aegis/td/run/abandon'),

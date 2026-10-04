@@ -51,6 +51,8 @@ function cycleQuality() {
 const battling = ref(false)
 const speed = ref(1)
 const placing = ref<string | null>(null)
+/** 候補區選中的是第幾位(換地圖重擺用);-1 = 沒有 */
+const benchPick = ref(-1)
 const selected = ref(-1)
 const result = ref<WaveView | null>(null)
 const showRank = ref(false)
@@ -117,7 +119,7 @@ function apply(s: StateView) {
   if (s.run && scene) scene.setRun(s.run)
 }
 
-async function act(type: 'buy' | 'upgrade' | 'path' | 'job' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) {
+async function act(type: 'buy' | 'upgrade' | 'path' | 'job' | 'place' | 'pickup' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) {
   if (busy.value || battling.value) return false
   audio.unlock()      // 用鍵盤操作的人不會觸發最外層的 pointerdown,這裡再保一次
   busy.value = true
@@ -125,7 +127,7 @@ async function act(type: 'buy' | 'upgrade' | 'path' | 'job' | 'sell' | 'bless', 
     apply(await td.action(type, slot, cls, value))
     // 招募:這個職業在天堂創角畫面被選到的聲音
     const snd: SfxName = type === 'buy' ? (`cls${clsIndex(cls ?? '')}` as SfxName) : type === 'upgrade' ? 'upgrade' : type === 'sell' ? 'sell' : 'bless'
-    if (type !== 'job') audio.play(snd)   // 轉職的聲音由場景的儀式特效一起播
+    if (type !== 'job' && type !== 'place' && type !== 'pickup') audio.play(snd)   // 轉職的聲音由場景的儀式特效一起播;擺放由 onSlot 播那位英雄的聲音
     return true
   } catch (e) {
     fail(e)
@@ -155,8 +157,27 @@ async function startRun() {
 function pickClass(id: string) {
   if (battling.value) return
   placing.value = placing.value === id ? null : id
+  benchPick.value = -1
   selected.value = -1
   audio.play('click')
+}
+
+/** 候補區:點一位英雄,再點地圖上的空位擺回去 */
+function pickBench(i: number) {
+  if (battling.value) return
+  benchPick.value = benchPick.value === i ? -1 : i
+  placing.value = null
+  selected.value = -1
+  audio.play('click')
+}
+
+async function pickup() {
+  if (selected.value < 0 || !run.value) return
+  if (await act('pickup', selected.value, null, null)) {
+    selected.value = -1
+    benchPick.value = run.value.bench.length - 1
+    audio.play('click')
+  }
 }
 
 async function onSlot(slot: number) {
@@ -167,8 +188,18 @@ async function onSlot(slot: number) {
     placing.value = null
     return
   }
+  if (benchPick.value >= 0 && r.bench[benchPick.value]) {
+    const hero = r.bench[benchPick.value]
+    if (await act('place', slot, null, benchPick.value)) {
+      audio.play(`cls${clsIndex(hero?.cls ?? '')}` as SfxName)
+      // 一位接一位:還有沒擺的就自動選下一位
+      benchPick.value = run.value && run.value.bench.length > 0 ? 0 : -1
+      selected.value = benchPick.value >= 0 ? -1 : slot
+    }
+    return
+  }
   if (!placing.value) {
-    say('先在右邊選一個職業,再點空位放上去')
+    say(r.bench.length > 0 ? '先在右邊候補區點一位英雄,再點空位擺上去' : '先在右邊選一個職業,再點空位放上去')
     return
   }
   const ok = await act('buy', slot, placing.value, null)
@@ -198,6 +229,7 @@ async function startWave() {
   }
   selected.value = -1
   placing.value = null
+  benchPick.value = -1
   bossWave.value = run.value.bossNext
   battling.value = true
   busy.value = false
@@ -265,11 +297,13 @@ const bgmName = computed(() => {
 })
 const bossWave = ref(false)
 watch(bgmName, (n) => audio.music(n), { immediate: true })
-watch([placing, selected], () => {
+watch([placing, selected, benchPick], () => {
   if (!scene) return
   scene.selected = selected.value
-  scene.placing = placing.value ? clsIndex(placing.value) : -1
-  scene.placingRange = classes.value.find((c) => c.id === placing.value)?.range ?? 0
+  const benchCls = benchPick.value >= 0 ? run.value?.bench[benchPick.value]?.cls ?? null : null
+  const placingCls = placing.value ?? benchCls
+  scene.placing = placingCls ? clsIndex(placingCls) : -1
+  scene.placingRange = classes.value.find((c) => c.id === placingCls)?.range ?? 0
 })
 
 async function boot() {
@@ -437,9 +471,23 @@ onBeforeUnmount(() => {
                 </button>
                 <span v-else class="max">已滿級</span>
                 <button type="button" :disabled="busy" @click="sell">賣掉 +{{ selTower.sellValue }}</button>
+                <button v-if="run.rearranging" type="button" class="pick" :disabled="busy" @click="pickup">拿起來重擺</button>
               </div>
               <p v-if="selTower.cls === 'KNIGHT'" class="kn">怪走到他正對面(路上有盾牌記號的地方)會被攔下來。放在兩排路中間,兩邊都顧得到。</p>
               <p v-if="selTower.aura" class="kn">{{ selTower.aura }}。腳下有金圈的塔就是有吃到;升級會變大、變強。</p>
+            </div>
+
+            <!-- 候補區:換地圖收回來的英雄 -->
+            <div v-if="run.bench.length > 0" class="box bench">
+              <div class="bh">候補區<em>{{ run.bench.length }} 位還沒擺</em></div>
+              <div class="shop">
+                <button v-for="(b, i) in run.bench" :key="i" type="button" :class="{ on: benchPick === i }" :disabled="battling" @click="pickBench(i)">
+                  <img :src="`${ART}${b.job ? 'job' : 'cls'}${clsIndex(b.cls)}_idle.webp`" alt="" />
+                  <span>{{ b.job ? b.jobTitle : classes.find((c) => c.id === b.cls)?.title }}</span>
+                  <b>{{ b.level }} 級</b>
+                </button>
+              </div>
+              <p class="tip">換地圖了!點一位英雄,再點地圖上的空位擺上去(免費;等級、路線、轉職都還在)。擺好的點一下可以再拿起來。</p>
             </div>
 
             <!-- 商店 -->
@@ -456,8 +504,8 @@ onBeforeUnmount(() => {
               <p class="tip">{{ placing ? classes.find((c) => c.id === placing)?.desc + ' ── 點地圖上的空位放下去' : '選一個職業,再點地圖上的空位' }}</p>
             </div>
 
-            <button class="go" type="button" :disabled="busy || battling || choosing" @click="startWave">
-              {{ battling ? '戰鬥中…' : `開始第 ${run.wave} 波` }}
+            <button class="go" type="button" :disabled="busy || battling || choosing || run.bench.length > 0" @click="startWave">
+              {{ battling ? '戰鬥中…' : run.bench.length > 0 ? `還有 ${run.bench.length} 位英雄沒擺` : `開始第 ${run.wave} 波` }}
             </button>
             <button class="quit" type="button" :disabled="busy || battling" @click="confirmQuit = true">不打了,結算這一局</button>
           </aside>
@@ -549,7 +597,8 @@ onBeforeUnmount(() => {
       <div class="td-dialog wide help">
         <h3>怎麼玩</h3>
         <ul>
-          <li>怪物從左上角進來,沿著路走向右下角的女神像。漏一隻小怪扣 1 點生命,精英扣 3,王扣 10;歸零這一局就結束。</li>
+          <li>怪物從入口的山洞進來,沿著路走向女神像。漏一隻小怪扣 1 點生命,精英扣 3,王扣 10;歸零這一局就結束。</li>
+          <li>每 10 波換一張地圖:所有英雄會收回候補區,免費重新擺到新地圖上(等級、路線、轉職都保留)。</li>
           <li>每一波開始前:在右邊選職業、點地圖上的空位放下去;點已經放好的塔可以升級或賣掉(退七成)。</li>
           <li>按「開始」之後戰鬥自動進行,可以調 1~3 倍速。戰鬥中不能操作。</li>
           <li>每座塔升到 {{ cfg?.pathLevel }} 級要三選一路線,選了不能改。升到 {{ cfg?.jobLevel }} 級可以免費轉職:傷害 +{{ cfg?.jobDmgPct }}%、再選一條路線(兩條效果疊在一起)、最高升到 {{ cfg?.jobMaxLevel }} 級。</li>
@@ -626,6 +675,9 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .td-side .bh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 14px; letter-spacing: 0.06em; color: var(--ag-ink); margin-bottom: 10px; }
 .td-side .bh em { font-style: normal; font-size: 12.5px; color: var(--ag-ember); }
 .td-side .bh .jobname { color: #ffd76a; }
+.box.bench { border-color: rgba(255, 215, 106, 0.55); }
+.box.bench .bh em { color: #ffd76a; }
+.sel .row button.pick { border-color: rgba(255, 215, 106, 0.55); color: #ffd76a; }
 .paths.job p b { color: #ffd76a; font-weight: 600; }
 .paths.job button { border-color: rgba(255, 215, 106, 0.55); background: rgba(255, 215, 106, 0.08); }
 .paths.job button.later { border-color: var(--ag-line); background: rgba(255, 255, 255, 0.06); }

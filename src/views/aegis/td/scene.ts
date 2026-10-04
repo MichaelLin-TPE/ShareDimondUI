@@ -168,16 +168,17 @@ export class TdScene {
   private canvas: HTMLCanvasElement
   private frames = 0
 
-  constructor(canvas: HTMLCanvasElement, private cfg: TdConfig, private assets: SceneAssets) {
+  /** 後端給的設定原樣;cfg 是套上「現在這張地圖」之後的(path / slots / goddess 換成該張的) */
+  private base: TdConfig
+  private cfg: TdConfig
+  private mapIdx = -1
+
+  constructor(canvas: HTMLCanvasElement, cfg: TdConfig, private assets: SceneAssets) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-    let acc = 0
-    for (let i = 0; i < cfg.path.length - 1; i++) {
-      const a = cfg.path[i] as number[], b = cfg.path[i + 1] as number[]
-      acc += (Math.abs((b[0] ?? 0) - (a[0] ?? 0)) + Math.abs((b[1] ?? 0) - (a[1] ?? 0))) * cfg.unit
-      this.segEnd.push(acc)
-    }
-    this.length = acc
+    this.base = cfg
+    this.cfg = cfg
+    this.useMap(0)
     this.bindCanvas()
     // 手機切到別的 App 再回來,瀏覽器會把背景分頁的畫布內容丟掉(底圖那張就變成全黑):回到前景就全部重畫
     document.addEventListener('visibilitychange', this.onVisible)
@@ -333,11 +334,29 @@ export class TdScene {
 
   // ===================== 布置階段:把後端給的局面擺出來 =====================
 
+  /** 換到第 index 張地圖:路線、塔位、女神像都換,路線長度重算 */
+  private useMap(index: number) {
+    if (index === this.mapIdx) return
+    const m = this.base.maps?.[index]
+    this.cfg = m ? { ...this.base, path: m.path, slots: m.slots, goddess: m.goddess } : this.base
+    this.mapIdx = index
+    this.segEnd = []
+    let acc = 0
+    for (let i = 0; i < this.cfg.path.length - 1; i++) {
+      const a = this.cfg.path[i] as number[], b = this.cfg.path[i + 1] as number[]
+      acc += (Math.abs((b[0] ?? 0) - (a[0] ?? 0)) + Math.abs((b[1] ?? 0) - (a[1] ?? 0))) * this.cfg.unit
+      this.segEnd.push(acc)
+    }
+    this.length = acc
+    this.releaseTerrain()
+  }
+
   setRun(run: RunView) {
     const first = this.wave === 0
     const chapter = Math.floor((run.wave - 1) / 10) % THEME_COUNT
-    // 換場景:中間跳出這一章的名字
-    if (!first && chapter !== this.chapter) this.fx.banner(run.chapter, `第 ${run.wave} 波`, '#ffd76a', 56)
+    this.useMap(run.map ?? 0)
+    // 換場景:中間跳出這一章的名字;地圖也換了,提醒把英雄重新擺上去
+    if (!first && chapter !== this.chapter) this.fx.banner(run.chapter, run.rearranging ? '新地圖 ── 把英雄重新擺上去' : `第 ${run.wave} 波`, '#ffd76a', 64)
     this.wave = run.wave
     this.chapter = chapter
     this.bossKind = Math.floor((run.wave - 1) / 10) % this.assets.bosses.length
@@ -838,7 +857,7 @@ export class TdScene {
     if (sh > 0.1) c.translate(Math.sin(t * 5.1) * sh, Math.cos(t * 6.7) * sh)
     c.translate(0, TOP)      // 以下用地圖座標畫(畫面比地圖往上多露出 TOP)
 
-    const key = this.chapter + ':' + this.canvas.width
+    const key = this.chapter + ':' + this.mapIdx + ':' + this.canvas.width
     if (this.terrainKey !== key || !this.terrain) {
       if (this.terrainCv && this.terrainCv.width !== this.canvas.width) this.dropTerrainCanvas()
       this.terrain = renderTerrain(this.cfg, this.chapter, this.canvas.width, this.assets.decor, this.terrainCv)
