@@ -3,6 +3,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlert } from '@/utils/alerts.ts'
 import { generateSignature } from '@/utils/SignTools.ts'
+import { GAMES_HIDDEN, GAME_FEATURE_KEYS } from '@/config/games'
 
 const authStore = useAuthStore()
 const API = 'https://api.gameshare-system.com'
@@ -37,7 +38,7 @@ async function load() {
       useAlert.error(data.message || '讀取失敗')
       return
     }
-    rows.value = data
+    rows.value = GAMES_HIDDEN ? (data as FeatureRow[]).filter((r) => !GAME_FEATURE_KEYS.includes(r.key)) : data
   } catch {
     useAlert.error('讀取失敗')
   } finally {

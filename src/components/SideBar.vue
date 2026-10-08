@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { GAMES_HIDDEN, GAME_PATHS } from '@/config/games'
 import { useAuthStore } from '@/stores/auth.ts'
 import { useRoute, useRouter } from 'vue-router'
 import { useAlert } from '@/utils/alerts.ts'
@@ -162,7 +163,9 @@ onMounted(async () => {
       return
     }
     const data = await res.json()
-    menuList.value = data
+    menuList.value = GAMES_HIDDEN
+      ? (data as Menu[]).filter((m) => !GAME_PATHS.includes(resolvePath(m) ?? ''))
+      : data
   } catch (e) {
     console.error(e)
   }

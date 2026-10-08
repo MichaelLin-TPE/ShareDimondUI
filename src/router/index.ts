@@ -37,6 +37,7 @@ import ThirteenGamePage from '@/views/ThirteenGamePage.vue'
 import NiuNiuGamePage from '@/views/NiuNiuGamePage.vue'
 import ScratchGamePage from '@/views/ScratchGamePage.vue'
 import HoldemGamePage from '@/views/HoldemGamePage.vue'
+import { GAMES_HIDDEN, GAME_PATHS } from '@/config/games'
 import DepositPage from '@/views/DepositPage.vue'
 import VerifyDepositPage from '@/views/VerifyDepositPage.vue'
 
@@ -288,6 +289,11 @@ const router = createRouter({
     //   component: () => import('../views/HomeView.vue'),
     // },
   ],
+})
+
+// 小遊戲隱藏時,直接打網址也進不去,導回血盟大廳
+router.beforeEach((to) => {
+  if (GAMES_HIDDEN && GAME_PATHS.includes(to.path)) return '/clan/dashboard'
 })
 
 export default router

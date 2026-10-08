@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/clanSetting.ts'
 import { computed, ref } from 'vue'
+import { GAMES_HIDDEN } from '@/config/games'
 import { useAuthStore } from '@/stores/auth'
 
 const {
@@ -257,6 +258,7 @@ const rakePercent = computed<number>({
         </div>
       </section>
 
+      <template v-if="!GAMES_HIDDEN">
       <!-- ─── 拉霸機設定 ─── -->
       <section class="cs-card cs-card--full">
         <div class="cs-card-head">
@@ -579,6 +581,8 @@ const rakePercent = computed<number>({
           </button>
         </div>
       </section>
+
+      </template>
 
       <!-- ─── 幣別管理 ─── -->
       <section class="cs-card cs-card--full">
