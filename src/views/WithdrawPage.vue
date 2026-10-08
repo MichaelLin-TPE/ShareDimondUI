@@ -17,7 +17,7 @@ const {
   <div class="withdraw-container">
     <div class="withdraw-card">
       <div class="title-wrap">
-        <h2 class="title">📤 申請提款</h2>
+        <h2 class="title">📤 申請領取分紅</h2>
         <p class="subtitle">送出後由幹部 / 會長審核撥款,凍結金額至審核完成</p>
       </div>
 

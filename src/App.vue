@@ -49,7 +49,7 @@ const featureCategories: FeatureCategory[] = [
       {
         icon: '🎯',
         name: '事件全自動 push',
-        desc: '開單 / 競標被超越 / 得標 / 掛單 / 成交 / 提款審核 全部自動推，人在哪都接得到',
+        desc: '開單 / 競標被超越 / 得標 / 掛單 / 成交 / 領取審核 全部自動推，人在哪都接得到',
       },
     ],
   },
@@ -76,7 +76,7 @@ const featureCategories: FeatureCategory[] = [
       {
         icon: '📖',
         name: '完整歷史紀錄',
-        desc: '寶物結標 / 分紅 / 提款 / 個人交易 全可追溯，出爭議有依據',
+        desc: '寶物結標 / 分紅 / 領取 / 個人交易 全可追溯，出爭議有依據',
       },
     ],
   },
@@ -96,8 +96,8 @@ const featureCategories: FeatureCategory[] = [
     color: 'var(--c-mid)',
     items: [
       { icon: '🔁', name: '會員轉帳', desc: '公會內成員互轉多幣別貨幣' },
-      { icon: '📤', name: '申請提款', desc: '送出提款單，幹部審核後撥款' },
-      { icon: '✅', name: '提款審核', desc: '幹部/會長核准或退回提款單，有完整稽核紀錄' },
+      { icon: '📤', name: '申請領取分紅', desc: '送出領取申請，幹部審核後記帳' },
+      { icon: '✅', name: '領取審核', desc: '幹部/會長核准或退回領取申請，有完整稽核紀錄' },
       { icon: '🎁', name: '基金分配', desc: '會長將公會金庫依比例分給成員，有預算進度條防超發' },
     ],
   },

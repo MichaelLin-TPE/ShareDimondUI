@@ -7,7 +7,7 @@ const { totalAmount, withdrawHistoryList, handleAction, loading, submitting } = 
 <template>
   <div class="audit-container">
     <div class="title-wrap">
-      <h2 class="title">📤 提款審核大廳</h2>
+      <h2 class="title">📤 領取審核大廳</h2>
       <p class="subtitle">審慎核對金額來源與用途,確認無誤後撥款給成員</p>
     </div>
 
@@ -29,7 +29,7 @@ const { totalAmount, withdrawHistoryList, handleAction, loading, submitting } = 
 
     <div v-else-if="withdrawHistoryList.length === 0" class="empty-card">
       <div class="empty-icon">✅</div>
-      <div class="empty-text">目前沒有待審核的提款申請</div>
+      <div class="empty-text">目前沒有待審核的領取申請</div>
     </div>
 
     <div v-else class="request-list">

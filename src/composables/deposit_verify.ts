@@ -103,14 +103,14 @@ export function useAuction() {
       })
       const data = await res.json()
       data.forEach((item: DepositHistory) => {
-        item.remark = '申請儲值'
+        item.remark = '申請入帳'
         item.createTime = formatDateTime(item.createTime)
       })
       depositHistoryList.value = data
       getTotalAmount()
     } catch (e) {
       console.error(e)
-      useAlert.error('載入儲值列表失敗,請稍後再試')
+      useAlert.error('載入入帳列表失敗,請稍後再試')
     } finally {
       loading.value = false
     }

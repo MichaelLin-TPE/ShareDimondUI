@@ -17,7 +17,7 @@ const {
   <div class="deposit-container">
     <div class="deposit-card">
       <div class="title-wrap">
-        <h2 class="title">💰 申請儲值</h2>
+        <h2 class="title">💰 申請入帳</h2>
         <p class="subtitle">送出後由幹部 / 會長審核,通過後金額即入帳</p>
       </div>
 
@@ -42,7 +42,7 @@ const {
       </div>
 
       <div class="field">
-        <label>儲值金額</label>
+        <label>入帳金額</label>
         <div class="amount-wrapper">
           <span class="currency-prefix">$</span>
           <input

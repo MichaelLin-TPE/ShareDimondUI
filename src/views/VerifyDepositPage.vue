@@ -7,7 +7,7 @@ const { totalAmount, depositHistoryList, handleAction, loading, submitting } = u
 <template>
   <div class="audit-container">
     <div class="title-wrap">
-      <h2 class="title">💰 儲值審核大廳</h2>
+      <h2 class="title">💰 入帳審核大廳</h2>
       <p class="subtitle">確認成員已實際繳款後再核准,核准即入帳到該成員錢包</p>
     </div>
 
@@ -29,7 +29,7 @@ const { totalAmount, depositHistoryList, handleAction, loading, submitting } = u
 
     <div v-else-if="depositHistoryList.length === 0" class="empty-card">
       <div class="empty-icon">✅</div>
-      <div class="empty-text">目前沒有待審核的儲值申請</div>
+      <div class="empty-text">目前沒有待審核的入帳申請</div>
     </div>
 
     <div v-else class="request-list">

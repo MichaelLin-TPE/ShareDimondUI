@@ -124,7 +124,7 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
   SELL: { label: '販售', colorClass: 'color-bid' },
   BID: { label: '競標', colorClass: 'color-wait' },
   SLOT: { label: '拉霸', colorClass: 'color-create' },
-  DEPOSITED: { label: '儲值', colorClass: 'color-join' },
+  DEPOSITED: { label: '入帳', colorClass: 'color-join' },
 }
 
 const filteredLogs = computed(() => {

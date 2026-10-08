@@ -33,7 +33,7 @@ const ACTION_LABELS: Record<string, string> = {
   SET_TREASURE_BUYER: '強設買家',
   DELETE_ATTENDANCE_BY_LEADER: '移除出席',
   UPDATE_ITEM_PRICE: '改物品底價',
-  CONFIRM_WITHDRAW: '提款審核',
+  CONFIRM_WITHDRAW: '領取審核',
   SHARE_ALL: '公積金分配',
 }
 

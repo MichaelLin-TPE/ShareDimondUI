@@ -112,14 +112,14 @@ TimeStamp:currentTimeStamp
       )
       const data = await res.json()
       data.forEach((item: WithdrawHistory) => {
-        item.remark = '申請提款'
+        item.remark = '申請領取分紅'
         item.createTime = formatDateTime(item.createTime)
       })
       withdrawHistoryList.value = data
       getTotalAmount()
     } catch (e) {
       console.error(e)
-      useAlert.error('載入提款列表失敗,請稍後再試')
+      useAlert.error('載入領取列表失敗,請稍後再試')
     } finally {
       loading.value = false
     }
