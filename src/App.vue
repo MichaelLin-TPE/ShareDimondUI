@@ -186,6 +186,12 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
     <button class="nav-link" @click="showLineQR = true">聯絡我們</button>
     <div class="divider"></div>
     <button class="nav-link" @click="showPricingModal = true">收費方式</button>
+    <div class="divider"></div>
+    <a class="nav-link" href="/landing/terms.html" target="_blank" rel="noopener">服務條款</a>
+    <div class="divider"></div>
+    <a class="nav-link" href="/landing/privacy.html" target="_blank" rel="noopener">隱私權政策</a>
+    <div class="divider"></div>
+    <a class="nav-link" href="/landing/refund.html" target="_blank" rel="noopener">退款政策</a>
   </footer>
   <div
     v-if="isLoginPage && showPricingModal"
@@ -307,6 +313,9 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
         class="usage-image"
         style="background-color: white; padding: 15px"
       />
+      <p style="text-align: center; color: #94a3b8; font-size: 0.9rem; margin-top: 10px">
+        客服信箱:<a href="mailto:m24572582@gmail.com" style="color: #e2e8f0">m24572582@gmail.com</a>
+      </p>
     </div>
   </div>
 
@@ -964,18 +973,27 @@ const { drawerOpen: notifDrawerOpen, closeDrawer: notifCloseDrawer } = useNotifi
     padding: 12px 4px;
     box-sizing: border-box;
   }
+  .bottom-nav {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
   .nav-link {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
     display: inline-flex;
     justify-content: center;
     font-size: 0.78rem;
-    padding: 4px 4px;
+    padding: 4px 8px;
     white-space: nowrap;
   }
   .divider {
     display: none;
   }
+}
+
+.nav-link,
+a.nav-link {
+  text-decoration: none;
 }
 
 /* --- 基本佈局樣式 --- */

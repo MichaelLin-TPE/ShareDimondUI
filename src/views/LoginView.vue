@@ -111,6 +111,10 @@ const addMember = async () => {
     errorForApply.value = '請填寫帳號與密碼'
     return
   }
+  if (!agreedForApply.value) {
+    errorForApply.value = '請先閱讀並同意服務條款與隱私權政策'
+    return
+  }
   // 新玩家才需要驗證:確認密碼 / 遊戲名稱 / Email
   if (applyMode.value === 'new') {
     if (!passwordForApplyAgain.value || !userNameForApply.value || !emailForAPply.value) {
@@ -183,6 +187,7 @@ const loading = ref(false)
 const error = ref('')
 const errorForApply = ref('')
 const loadingForApply = ref(false)
+const agreedForApply = ref(false)
 
 const login = async () => {
   error.value = ''
@@ -357,6 +362,16 @@ const onForgotPassword = () => {
           <input v-model="userNameForApply" type="text" placeholder="請輸入遊戲名稱" />
           <input v-model="emailForAPply" type="email" placeholder="請輸入電子郵件" />
         </template>
+
+        <label class="agree-row">
+          <input v-model="agreedForApply" type="checkbox" />
+          <span>
+            我已閱讀並同意
+            <a href="/landing/terms.html" target="_blank" rel="noopener">服務條款</a>
+            與
+            <a href="/landing/privacy.html" target="_blank" rel="noopener">隱私權政策</a>
+          </span>
+        </label>
 
         <p v-if="errorForApply" class="errorForApply">{{ errorForApply }}</p>
 
@@ -881,5 +896,25 @@ button:disabled {
 .auto-fade-enter-from,
 .auto-fade-leave-to {
   opacity: 0;
+}
+
+.agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 4px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-align: left;
+  cursor: pointer;
+}
+.agree-row input[type='checkbox'] {
+  width: auto;
+  margin: 3px 0 0;
+  flex-shrink: 0;
+}
+.agree-row a {
+  color: #e2e8f0;
+  text-decoration: underline;
 }
 </style>

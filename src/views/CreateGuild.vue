@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useAuction } from '@/composables/createGuild.ts'
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 
 const {
   newCurrency,
@@ -13,6 +14,8 @@ const {
   accountMode,
 } = useAuction()
 const router = useRouter()
+/** 建立血盟前必須勾同意服務條款與隱私權政策(2026-10-09) */
+const agreed = ref(false)
 
 const onCurrencyKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter') {
@@ -239,12 +242,22 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
         </div>
       </div>
 
+      <label class="cg-agree">
+        <input v-model="agreed" type="checkbox" />
+        <span>
+          我已閱讀並同意
+          <a href="/landing/terms.html" target="_blank" rel="noopener">服務條款</a>
+          與
+          <a href="/landing/privacy.html" target="_blank" rel="noopener">隱私權政策</a>
+        </span>
+      </label>
+
       <!-- Submit -->
       <div class="cg-actions">
         <button type="button" class="cg-btn-cancel" @click="router.replace('/login')">
           返回登入
         </button>
-        <button type="button" class="cg-btn-submit" :disabled="submitting" @click="submit">
+        <button type="button" class="cg-btn-submit" :disabled="submitting || !agreed" @click="submit">
           {{ submitting ? '建立中...' : '🛡️ 建立血盟' }}
         </button>
       </div>
@@ -688,5 +701,24 @@ const onCurrencyKeydown = (e: KeyboardEvent) => {
     text-align: center;
     font-size: 0.78rem;
   }
+}
+
+.cg-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 18px 0 6px;
+  font-size: 0.88rem;
+  color: #94a3b8;
+  cursor: pointer;
+}
+.cg-agree input[type='checkbox'] {
+  width: auto;
+  margin: 3px 0 0;
+  flex-shrink: 0;
+}
+.cg-agree a {
+  color: #e2e8f0;
+  text-decoration: underline;
 }
 </style>
