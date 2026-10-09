@@ -24,6 +24,8 @@ export interface AnimClip {
   img: HTMLImageElement; n: number; fw: number; fh: number; ax: number; ay: number; dur: number[]; total: number; left: boolean
   /** 沒出手時站著用哪一格 */
   idle: number
+  /** 命中那一格在第幾毫秒(放箭 / 劈下):起手會提前這麼多,讓它剛好對上出手事件 */
+  hit: number
 }
 
 export interface SceneAssets {
@@ -71,12 +73,12 @@ async function loadAnims(): Promise<Record<string, { attack?: AnimClip; idle?: A
   try {
     const res = await fetch(`${ASSET}anim/manifest.json`, { cache: 'no-cache' })
     if (!res.ok) return out
-    const m = (await res.json()) as Record<string, Record<string, { file: string; n: number; fw: number; fh: number; ax: number; ay: number; dur: number[]; left: boolean; idle?: number }>>
+    const m = (await res.json()) as Record<string, Record<string, { file: string; n: number; fw: number; fh: number; ax: number; ay: number; dur: number[]; left: boolean; idle?: number; hit?: number }>>
     await Promise.all(Object.entries(m).map(async ([key, acts]) => {
       for (const [act, d] of Object.entries(acts)) {
         try {
           const img = await loadImage(`${ASSET}anim/${d.file}`)
-          const clip: AnimClip = { img, n: d.n, fw: d.fw, fh: d.fh, ax: d.ax, ay: d.ay, dur: d.dur, total: d.dur.reduce((a, b) => a + b, 0), left: d.left, idle: d.idle ?? 0 }
+          const clip: AnimClip = { img, n: d.n, fw: d.fw, fh: d.fh, ax: d.ax, ay: d.ay, dur: d.dur, total: d.dur.reduce((a, b) => a + b, 0), left: d.left, idle: d.idle ?? 0, hit: d.hit ?? 0 }
           if (act === 'attack') (out[key] ??= {}).attack = clip
           else if (act === 'idle') (out[key] ??= {}).idle = clip
         } catch { /* 這段載不到就用舊的 */ }
@@ -133,6 +135,8 @@ interface TowerVis {
   guards: [number, number][]
   rangePx: number
   attackAt: number; faceLeft: boolean
+  /** 已經為哪一個 tick 的出手事件提前起手了(避免事件到時又重設 attackAt) */
+  armedTick: number
   kHp: number; kMax: number; down: boolean; upAt: number; hurtAt: number
   /** 在哪座君主的光環裡(-1 = 沒有):腳下畫金圈,看得出誰吃到加成 */
   buffedBy: number
@@ -454,7 +458,7 @@ export class TdScene {
     }
     return {
       slot, cls, level: t.level, path: t.path, sx, sy, x, y, guards, rangePx: t.rangePx,
-      attackAt: same ? old.attackAt : -999, faceLeft: same ? old.faceLeft : false,
+      attackAt: same ? old.attackAt : -999, armedTick: same ? old.armedTick : -999, faceLeft: same ? old.faceLeft : false,
       kHp: t.hp, kMax: t.hp, down: false, upAt: -999, hurtAt: -999, bornAt: same ? old.bornAt : this.fxTick,
       buffedBy: -1,
       job: t.job, jobAt: same && old.job ? old.jobAt : t.job ? (same ? this.fxTick : -999) : -999,
@@ -472,7 +476,7 @@ export class TdScene {
     this.mobs.clear()
     this.lastCast.clear()
     this.bossLag = 1
-    for (const t of this.towers) if (t) { t.down = false; t.kHp = t.kMax; t.attackAt = -999 }
+    for (const t of this.towers) if (t) { t.down = false; t.kHp = t.kMax; t.attackAt = -999; t.armedTick = -999 }
     this.fx.float(W / 2, 222, `第 ${this.wave} 波`, '#fff3cf', 22, 34, 0, 1)
     return new Promise((resolve) => { this.done = resolve })
   }
@@ -485,6 +489,31 @@ export class TdScene {
     this.sfxQueue = []
     while (this.evIdx < this.events.length) this.apply(this.events[this.evIdx++] as number[], true)
     this.finish()
+  }
+
+  /**
+   * 往前看還沒到的出手事件:有影格的單位,起手要比事件早「命中格」那麼多,放箭 / 劈下那一格才會剛好對上伺服器算的出手。
+   * 事件整份都在手上,所以看得到未來;最多往前看 30 tick。
+   */
+  private armAhead() {
+    if (!this.events) return
+    const horizon = this.playTick + 30
+    for (let i = this.evIdx; i < this.events.length; i++) {
+      const e = this.events[i] as number[]
+      const tick = e[1] ?? 0
+      if (tick > horizon) break
+      if (e[0] !== EV.CAST) continue
+      const tw = this.towers[e[2] ?? -1]
+      if (!tw || tw.armedTick === tick) continue
+      const clip = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]?.attack
+      if (!clip || clip.hit <= 0) continue
+      const lead = (clip.hit / 1000) * this.cfg.tps
+      if (tick - lead > this.playTick) continue
+      tw.armedTick = tick
+      tw.attackAt = tick - lead
+      const m = this.mobs.get(e[4] ?? -1)
+      if (m) tw.faceLeft = m.x < tw.x
+    }
   }
 
   private finish() {
@@ -524,6 +553,7 @@ export class TdScene {
         while (this.evIdx < this.events.length && ((this.events[this.evIdx] as number[])[1] ?? 0) <= this.playTick) {
           this.apply(this.events[this.evIdx++] as number[], false)
         }
+        this.armAhead()
       } else if (this.fxTick - this.endedAt > 20) {
         this.finish()   // 最後一下的特效播完再收
       }
@@ -578,7 +608,7 @@ export class TdScene {
         const tw = this.towers[e[2] ?? -1]
         const m = this.mobs.get(e[4] ?? -1)
         if (!tw) break
-        tw.attackAt = t
+        if (tw.armedTick !== t) tw.attackAt = t   // 沒提前起手過(沒影格的單位)才從現在開始
         if (m) tw.faceLeft = m.x < tw.x
         const kind = e[3] ?? 0
         const dir = tw.faceLeft ? -1 : 1
@@ -1152,7 +1182,15 @@ export class TdScene {
     const fi = clip ? clipAt(clip, (at / this.cfg.tps) * 1000).i : -1
     // 影格負責「畫面上的動作」(拉弓、法術、揮砍的速度線),程式姿勢負責大幅度的傾身 / 衝刺,兩個疊在一起
     const ps = this.pose(tw.cls, at, dir)
-    if (fi >= 0) { ps.attack = true; ps.rot = 0; ps.sx = 1; ps.sy = 1 }   // 影格自己有動作,不再旋轉 / 壓扁(會看起來像圖在扭),只留衝刺位移
+    // 影格負責手上的動作,但整個人也要跟著動(前傾、後仰、衝刺、落地壓一下),不然看起來像動畫鑲在一張靜止的圖裡;幅度取程式姿勢的六成
+    if (fi >= 0) { ps.attack = true; ps.rot *= 0.6; ps.sx = 1 + (ps.sx - 1) * 0.6; ps.sy = 1 + (ps.sy - 1) * 0.6 }
+    // 沒出手:整個人慢慢左右擺、上下浮(每座塔相位錯開)
+    if (fi < 0 && !tw.down) {
+      const ph = this.clock * 1.6 + tw.slot * 0.9
+      ps.rot += Math.sin(ph) * 0.035 * (tw.faceLeft ? -1 : 1)
+      ps.dy += Math.sin(ph * 2) * 1.5
+      ps.dx += Math.sin(ph) * 1.2
+    }
     const img = ps.attack ? (tw.job && a.jobAttack) || a.attack : (tw.job && a.jobIdle) || a.idle
     const h = 84
     const w = (img.width / img.height) * h
