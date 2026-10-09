@@ -19,9 +19,16 @@ export const QUALITY: Record<QualityLevel, { title: string; dpr: number; particl
   low: { title: '降低', dpr: 1, particles: 0.35 },
 }
 
+/** 一段逐格動畫:橫向圖集,每格 fw×fh,腳底在 (ax, ay),每格停幾毫秒;left = 這段動作原本朝左 */
+export interface AnimClip {
+  img: HTMLImageElement; n: number; fw: number; fh: number; ax: number; ay: number; dur: number[]; total: number; left: boolean
+}
+
 export interface SceneAssets {
   /** jobIdle / jobAttack:轉職後的樣子(金甲);載不到就沿用原本的 */
   cls: { idle: HTMLImageElement; attack: HTMLImageElement; jobIdle: HTMLImageElement | null; jobAttack: HTMLImageElement | null }[]
+  /** 逐格動畫:key = cls0~4 / job0~4,目前只有 attack;沒有的單位用程式姿勢 */
+  anim: Record<string, { attack?: AnimClip }>
   mobs: HTMLImageElement[]
   bosses: HTMLImageElement[]
   goddess: HTMLImageElement
@@ -52,7 +59,36 @@ export async function loadAssets(): Promise<SceneAssets> {
   await Promise.all(DECOR_SPRITES.map(async (n) => {
     try { decor[n] = await loadImage(`${ASSET}decor_${n}.webp`) } catch { /* 少一張擺設不影響遊戲 */ }
   }))
-  return { cls, mobs, bosses, goddess, decor }
+  const anim = await loadAnims()
+  return { cls, mobs, bosses, goddess, decor, anim }
+}
+
+/** 讀 anim/manifest.json 再載每段圖集;整份讀不到就回空(全部走舊的假動作) */
+async function loadAnims(): Promise<Record<string, { attack?: AnimClip }>> {
+  const out: Record<string, { attack?: AnimClip }> = {}
+  try {
+    const res = await fetch(`${ASSET}anim/manifest.json`, { cache: 'no-cache' })
+    if (!res.ok) return out
+    const m = (await res.json()) as Record<string, Record<string, { file: string; n: number; fw: number; fh: number; ax: number; ay: number; dur: number[]; left: boolean }>>
+    await Promise.all(Object.entries(m).map(async ([key, acts]) => {
+      for (const [act, d] of Object.entries(acts)) {
+        try {
+          const img = await loadImage(`${ASSET}anim/${d.file}`)
+          const clip: AnimClip = { img, n: d.n, fw: d.fw, fh: d.fh, ax: d.ax, ay: d.ay, dur: d.dur, total: d.dur.reduce((a, b) => a + b, 0), left: d.left }
+          if (act === 'attack') (out[key] ??= {}).attack = clip
+        } catch { /* 這段載不到就用舊的 */ }
+      }
+    }))
+  } catch { /* 沒有 manifest */ }
+  return out
+}
+
+/** 動畫開始後過了 ms 毫秒,現在該是第幾格;超過總長回 -1 */
+function clipFrame(clip: AnimClip, ms: number): number {
+  if (ms < 0 || ms >= clip.total) return -1
+  let acc = 0
+  for (let i = 0; i < clip.n; i++) { acc += clip.dur[i] ?? 0; if (ms < acc) return i }
+  return -1
 }
 
 // 職業的代表色(特效、徽章用):妖精、騎士、法師、黑妖、君主
@@ -1092,15 +1128,27 @@ export class TdScene {
     if (!a) return
     const dir = tw.faceLeft ? -1 : 1
     const at = t - tw.attackAt
+    // 有逐格影格就播影格(出手後 at 個 tick → 毫秒 → 第幾格);沒有才用程式姿勢
+    const clip = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]?.attack
+    const fi = clip ? clipFrame(clip, (at / this.cfg.tps) * 1000) : -1
+    // 影格負責「畫面上的動作」(拉弓、法術、揮砍的速度線),程式姿勢負責大幅度的傾身 / 衝刺,兩個疊在一起
     const ps = this.pose(tw.cls, at, dir)
+    if (fi >= 0) ps.attack = true
     const img = ps.attack ? (tw.job && a.jobAttack) || a.attack : (tw.job && a.jobIdle) || a.idle
     const h = 84
     const w = (img.width / img.height) * h
+    const cs = h / 260        // 影格素材以 260 高為基準,跟待機圖同比例
     const born = Math.min(1, (t - tw.bornAt) / 6)
     const breathe = 1 + 0.028 * Math.sin(this.clock * 3.2 + tw.slot)
     // 原圖朝哪邊不一定,要翻成面向目標
     const faces = (tw.job && (ps.attack ? a.jobAttack : a.jobIdle) ? FACES_LEFT_JOB : FACES_LEFT)[tw.cls]
-    const flip = tw.faceLeft !== (ps.attack ? faces?.attack : faces?.idle)
+    const flip = fi >= 0 && clip ? tw.faceLeft !== clip.left : tw.faceLeft !== (ps.attack ? faces?.attack : faces?.idle)
+    /** 畫本體:影格就切圖集那一格,否則整張圖 */
+    const body = (src: CanvasImageSource) => {
+      if (fi >= 0 && clip) c.drawImage(src, fi * clip.fw, 0, clip.fw, clip.fh, -clip.ax * cs, -clip.ay * cs, clip.fw * cs, clip.fh * cs)
+      else c.drawImage(src, -w / 2, -h, w, h)
+    }
+    const bodyImg: HTMLImageElement = fi >= 0 && clip ? clip.img : img
 
     // 轉職:身後一團慢慢呼吸的金光,剛轉職的前幾秒更亮
     if (tw.job && !tw.down) {
@@ -1145,8 +1193,8 @@ export class TdScene {
       }
       c.restore()
     }
-    // 黑妖衝出去的時候後面拖兩道殘影
-    if (tw.cls === 3 && at >= 1 && at < 4.6) {
+    // 黑妖衝出去的時候後面拖兩道殘影(播影格時不用,影格自己有刺出去的動作)
+    if (tw.cls === 3 && at >= 1 && at < 4.6 && fi < 0) {
       for (let i = 2; i >= 1; i--) {
         const gp = this.pose(3, at - i * 0.55, dir)
         c.save()
@@ -1169,16 +1217,16 @@ export class TdScene {
     }
     c.rotate(ps.rot)
     c.scale((flip ? -1 : 1) * ps.sx * born, ps.sy * breathe * born)
-    c.drawImage(img, -w / 2, -h, w, h)
+    body(bodyImg)
     const hurt = t - tw.hurtAt
     if (hurt >= 0 && hurt < 3) {            // 騎士挨打:閃一下紅
       c.globalAlpha = (tw.down ? 0.5 : 1) * (1 - hurt / 3) * 0.6
-      c.drawImage(this.tintOf(img, '#ff4a3a'), -w / 2, -h, w, h)
+      body(this.tintOf(bodyImg, '#ff4a3a'))
     }
     const up = t - tw.upAt
     if (up >= 0 && up < 10) {               // 重新站起來:整個人亮一下
       c.globalAlpha = (1 - up / 10) * 0.7
-      c.drawImage(this.tintOf(img, '#fff3a8'), -w / 2, -h, w, h)
+      body(this.tintOf(bodyImg, '#fff3a8'))
     }
     c.restore()
 
