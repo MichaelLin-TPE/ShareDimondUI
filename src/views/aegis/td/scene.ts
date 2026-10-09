@@ -1225,7 +1225,7 @@ export class TdScene {
       c.restore()
     }
     // 滿級:腳下一團金光
-    if (tw.level >= (tw.job ? this.cfg.jobMaxLevel : this.cfg.maxLevel) && !tw.down) {
+    if (tw.level >= (tw.job ? (this.cfg.awakenMaxLevel ?? this.cfg.jobMaxLevel) : this.cfg.maxLevel) && !tw.down) {
       c.save()
       c.globalCompositeOperation = 'lighter'
       glow(c, tw.x, tw.y - 2, 34, '#ffd76a', 0.3 + 0.12 * Math.sin(this.clock * 2.4 + tw.slot))

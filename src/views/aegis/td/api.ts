@@ -13,6 +13,8 @@ export interface MapInfo { path: number[][]; slots: number[][]; goddess: number[
 export interface TdConfig {
   width: number; height: number; unit: number; path: number[][]; slots: number[][]; goddess: number[]; tps: number
   maxLevel: number; pathLevel: number; jobLevel: number; jobMaxLevel: number; jobDmgPct: number; princeLimit: number; sellRefundPct: number; blessEvery: number
+  /** 覺醒最高到幾級(15 之後)、技能最高幾階 */
+  awakenMaxLevel: number; skillMaxRank: number
   classes: ClassInfo[]; mobs: MobInfo[]; bosses: string[]; chapters: string[]; blessings: BlessInfo[]; talents: TalentInfo[]
   /** 全部七張地圖,照場景順序;path / slots / goddess 是第一張(舊欄位) */
   maps: MapInfo[]
@@ -27,7 +29,10 @@ export interface TowerView {
   aura: string | null
   /** 轉職了沒、轉職後的稱號、第二條路線;canJob = 現在可以轉職(10 級、選過路線、還沒轉) */
   job: boolean; jobTitle: string | null; path2: number; path2Title: string | null; canJob: boolean
+  /** 覺醒了幾級(15 級以下 0);職業技能(轉職後才能買,cost = -1 是練滿或還不能買) */
+  awaken: number; skills: SkillView[]
 }
+export interface SkillView { idx: number; title: string; desc: string; rank: number; max: number; cost: number }
 export interface BlessView { id: string; title: string; desc: string; rarity: number; count: number }
 export interface RunView {
   wave: number; wavesCleared: number; chapter: string; gold: number; goddessHp: number; goddessMax: number
@@ -57,7 +62,7 @@ export const td = {
   config: () => api.get<TdConfig>('/aegis/td/config', false),
   state: () => api.get<StateView>('/aegis/td/state'),
   start: () => api.post<StateView>('/aegis/td/run/start'),
-  action: (type: 'buy' | 'upgrade' | 'path' | 'job' | 'place' | 'pickup' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) =>
+  action: (type: 'buy' | 'upgrade' | 'path' | 'job' | 'place' | 'pickup' | 'sell' | 'bless' | 'skill', slot: number | null, cls: string | null, value: number | null) =>
     api.post<StateView>('/aegis/td/run/action', { type, slot, cls, value }),
   wave: () => api.post<WaveView>('/aegis/td/run/wave'),
   abandon: () => api.post<WaveView>('/aegis/td/run/abandon'),

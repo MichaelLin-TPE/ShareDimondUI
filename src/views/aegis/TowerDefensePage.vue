@@ -119,14 +119,14 @@ function apply(s: StateView) {
   if (s.run && scene) scene.setRun(s.run)
 }
 
-async function act(type: 'buy' | 'upgrade' | 'path' | 'job' | 'place' | 'pickup' | 'sell' | 'bless', slot: number | null, cls: string | null, value: number | null) {
+async function act(type: 'buy' | 'upgrade' | 'path' | 'job' | 'place' | 'pickup' | 'sell' | 'bless' | 'skill', slot: number | null, cls: string | null, value: number | null) {
   if (busy.value || battling.value) return false
   audio.unlock()      // 用鍵盤操作的人不會觸發最外層的 pointerdown,這裡再保一次
   busy.value = true
   try {
     apply(await td.action(type, slot, cls, value))
     // 招募:這個職業在天堂創角畫面被選到的聲音
-    const snd: SfxName = type === 'buy' ? (`cls${clsIndex(cls ?? '')}` as SfxName) : type === 'upgrade' ? 'upgrade' : type === 'sell' ? 'sell' : 'bless'
+    const snd: SfxName = type === 'buy' ? (`cls${clsIndex(cls ?? '')}` as SfxName) : type === 'upgrade' || type === 'skill' ? 'upgrade' : type === 'sell' ? 'sell' : 'bless'
     if (type !== 'job' && type !== 'place' && type !== 'pickup') audio.play(snd)   // 轉職的聲音由場景的儀式特效一起播;擺放由 onSlot 播那位英雄的聲音
     return true
   } catch (e) {
@@ -444,7 +444,7 @@ onBeforeUnmount(() => {
 
             <!-- 選中的塔 -->
             <div v-if="selTower && selClass" class="box sel">
-              <div class="bh"><span :class="{ jobname: selTower.job }">{{ selTower.job ? selTower.jobTitle : selClass.title }} · {{ selTower.level }} 級</span><em v-if="selTower.pathTitle">{{ selTower.pathTitle }}<template v-if="selTower.path2Title"> + {{ selTower.path2Title }}</template></em></div>
+              <div class="bh"><span :class="{ jobname: selTower.job }">{{ selTower.job ? selTower.jobTitle : selClass.title }} · {{ selTower.awaken > 0 ? `覺醒 ${selTower.awaken}` : `${selTower.level} 級` }}</span><em v-if="selTower.pathTitle">{{ selTower.pathTitle }}<template v-if="selTower.path2Title"> + {{ selTower.path2Title }}</template></em></div>
               <div class="nums">
                 <span v-if="selTower.cls !== 'PRINCE'">一下 <b>{{ selTower.dmg }}</b></span>
                 <span v-if="selTower.cls !== 'PRINCE'">每秒 <b>{{ perSec(selTower.perMinute) }}</b> 下</span>
@@ -458,19 +458,33 @@ onBeforeUnmount(() => {
                 </button>
               </div>
               <div v-else-if="selTower.canJob" class="paths job">
-                <p>升到 {{ cfg?.jobLevel }} 級了!可以免費轉職成<b>{{ selClass.jobTitle }}</b>:{{ selClass.jobDesc }}。最高 {{ cfg?.jobMaxLevel }} 級。再選一條路線:</p>
+                <p>升到 {{ cfg?.jobLevel }} 級了!可以免費轉職成<b>{{ selClass.jobTitle }}</b>:{{ selClass.jobDesc }}。轉職後可以學職業技能,{{ cfg?.jobMaxLevel }} 級之後還能覺醒到 {{ cfg?.awakenMaxLevel }} 級。再選一條路線:</p>
                 <button v-for="(p, i) in selClass.paths" v-show="i + 1 !== selTower.path" :key="p.title" type="button" :disabled="busy" @click="act('job', selected, null, i + 1)">
                   <b>轉職 · {{ p.title }}</b><span>{{ p.desc }}</span>
                 </button>
                 <button type="button" class="later" :disabled="busy" @click="sell">先不轉,賣掉 +{{ selTower.sellValue }}</button>
               </div>
               <div v-else class="row">
-                <button v-if="selTower.upgradeCost >= 0" type="button" class="up" :disabled="busy || run.gold < selTower.upgradeCost" @click="act('upgrade', selected, null, null)">
-                  升級 <b>{{ selTower.upgradeCost }}</b>
+                <button v-if="selTower.upgradeCost >= 0" type="button" class="up" :class="{ awaken: selTower.level >= (cfg?.jobMaxLevel ?? 15) }" :disabled="busy || run.gold < selTower.upgradeCost" @click="act('upgrade', selected, null, null)">
+                  {{ selTower.level >= (cfg?.jobMaxLevel ?? 15) ? '覺醒' : '升級' }} <b>{{ selTower.upgradeCost }}</b>
                 </button>
-                <span v-else class="max">已滿級</span>
+                <span v-else class="max">已覺醒到頂</span>
                 <button type="button" :disabled="busy" @click="sell">賣掉 +{{ selTower.sellValue }}</button>
                 <button v-if="run.rearranging" type="button" class="pick" :disabled="busy" @click="pickup">拿起來重擺</button>
+              </div>
+              <!-- 職業技能:轉職後才有,每個 3 階,用天幣買 -->
+              <div v-if="selTower.job && !selTower.needPath" class="skills">
+                <div v-for="sk in selTower.skills" :key="sk.idx" class="skill" :class="{ maxed: sk.rank >= sk.max }">
+                  <div class="st">
+                    <b>{{ sk.title }}</b>
+                    <span class="pips"><i v-for="r in sk.max" :key="r" :class="{ on: r <= sk.rank }"></i></span>
+                  </div>
+                  <small>{{ sk.desc }}</small>
+                  <button v-if="sk.cost >= 0" type="button" :disabled="busy || run.gold < sk.cost" @click="act('skill', selected, null, sk.idx)">
+                    {{ sk.rank === 0 ? '學習' : '升階' }} <b>{{ sk.cost }}</b>
+                  </button>
+                  <span v-else class="max">已練滿</span>
+                </div>
               </div>
               <p v-if="selTower.cls === 'KNIGHT'" class="kn">怪走到他正對面(路上有盾牌記號的地方)會被攔下來。放在兩排路中間,兩邊都顧得到。</p>
               <p v-if="selTower.aura" class="kn">{{ selTower.aura }}。腳下有金圈的塔就是有吃到;升級會變大、變強。</p>
@@ -681,6 +695,20 @@ button.ag-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 .paths.job button { border-color: rgba(255, 215, 106, 0.55); background: rgba(255, 215, 106, 0.08); }
 .paths.job button.later { border-color: var(--ag-line); background: rgba(255, 255, 255, 0.06); }
 .paths.job button.later { height: 36px; padding: 0 10px; display: block; font-size: 13px; color: var(--ag-ink-72); }
+.row button.up.awaken { border-color: rgba(255, 215, 106, 0.7); background: rgba(255, 215, 106, 0.12); color: #ffe9a0; }
+/* 職業技能(轉職後) */
+.skills { display: grid; gap: 6px; margin-top: 8px; }
+.skill { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--ag-line); border-radius: 6px; background: rgba(255, 255, 255, 0.04); }
+.skill.maxed { border-color: rgba(255, 215, 106, 0.45); }
+.skill .st { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.skill .st b { color: #ffe9a0; }
+.skill .pips { display: inline-flex; gap: 3px; }
+.skill .pips i { width: 8px; height: 8px; border-radius: 2px; background: rgba(255, 255, 255, 0.12); }
+.skill .pips i.on { background: #ffd76a; }
+.skill small { grid-column: 1; font-size: 11px; color: var(--ag-ink-72); line-height: 1.35; }
+.skill button { grid-column: 2; grid-row: 1 / span 2; height: 32px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+.skill button b { color: #ffd76a; margin-left: 2px; }
+.skill .max { grid-column: 2; grid-row: 1 / span 2; font-size: 11px; color: var(--ag-ink-72); }
 .help .cls small.job i { color: #ffd76a; }
 .next { display: flex; flex-direction: column; gap: 6px; }
 .next .nm { display: grid; grid-template-columns: 34px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; font-size: 14px; }
