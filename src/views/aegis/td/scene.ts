@@ -1133,7 +1133,7 @@ export class TdScene {
     const fi = clip ? clipFrame(clip, (at / this.cfg.tps) * 1000) : -1
     // 影格負責「畫面上的動作」(拉弓、法術、揮砍的速度線),程式姿勢負責大幅度的傾身 / 衝刺,兩個疊在一起
     const ps = this.pose(tw.cls, at, dir)
-    if (fi >= 0) ps.attack = true
+    if (fi >= 0) { ps.attack = true; ps.rot = 0; ps.sx = 1; ps.sy = 1 }   // 影格自己有動作,不再旋轉 / 壓扁(會看起來像圖在扭),只留衝刺位移
     const img = ps.attack ? (tw.job && a.jobAttack) || a.attack : (tw.job && a.jobIdle) || a.idle
     const h = 84
     const w = (img.width / img.height) * h
