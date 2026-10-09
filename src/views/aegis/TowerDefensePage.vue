@@ -286,13 +286,12 @@ async function upTalent(i: number) {
 }
 
 watch(speed, (v) => { if (scene) scene.speed = v })
-// 背景音樂跟著畫面走:布置時一首、打哪一章放哪一章的、王來那一波換成王的、結算另一首;沒登入或還沒開局就不放
+// 背景音樂:一張地圖一首,從開局到換地圖之間不間斷(布置、打波、王波都不換,曲子循環播);換地圖才換曲,結算另一首;沒登入或還沒開局放準備曲
+// 使用者 2026-10-10:「每個地圖的音樂就從頭播到尾不要間斷,換地圖再換音樂」—— 以前布置 / 打波 / 王波各換一首,每一波都被打斷
 const bgmName = computed(() => {
   if (!session.token) return ''
   if (result.value) return BGM.result
   if (!run.value) return BGM.setup
-  if (!battling.value) return BGM.setup
-  if (bossWave.value) return BGM.boss
   return BGM.chapters[Math.floor((run.value.wave - 1) / 10) % BGM.chapters.length] ?? BGM.setup
 })
 const bossWave = ref(false)
