@@ -7,6 +7,7 @@ import { EV, HIT_FLAG, KNIGHT, STATUS, type RunView, type TdConfig, type TowerVi
 import type { SfxName } from './audio'
 import { FxLayer, P, setLowQuality } from './fx'
 import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, clearGlowCache, drawAmbientOver, drawAmbientUnder, glow, renderTerrain, type Terrain } from './terrain'
+import { bowPose, drawRig, loadRig, type Rig } from './rig'
 
 const ASSET = '/aegis/td/'
 declare const __BUILD__: string
@@ -33,6 +34,8 @@ export interface SceneAssets {
   cls: { idle: HTMLImageElement; attack: HTMLImageElement; jobIdle: HTMLImageElement | null; jobAttack: HTMLImageElement | null }[]
   /** 逐格動畫:key = cls0~4 / job0~4;attack = 出手 8 格,idle = 待機 4 格慢速循環;沒有的單位用程式姿勢 */
   anim: Record<string, { attack?: AnimClip; idle?: AnimClip }>
+  /** 骨骼動畫(零件 + 程式手臂 + 關鍵格):有的單位優先用這個;key 同 anim */
+  rigs: Record<string, Rig>
   mobs: HTMLImageElement[]
   bosses: HTMLImageElement[]
   goddess: HTMLImageElement
@@ -64,7 +67,10 @@ export async function loadAssets(): Promise<SceneAssets> {
     try { decor[n] = await loadImage(`${ASSET}decor_${n}.webp`) } catch { /* 少一張擺設不影響遊戲 */ }
   }))
   const anim = await loadAnims()
-  return { cls, mobs, bosses, goddess, decor, anim }
+  const rigs: Record<string, Rig> = {}
+  if (import.meta.env.DEV) (window as unknown as { __tdRig?: unknown }).__tdRig = { drawRig, bowPose }   // 開發時從主控台畫大圖檢查骨骼
+  await Promise.all(['cls0', 'cls1', 'cls2', 'cls3', 'cls4', 'job0', 'job1', 'job2', 'job3', 'job4'].map(async (k) => { const r = await loadRig(k); if (r) rigs[k] = r }))
+  return { cls, mobs, bosses, goddess, decor, anim, rigs }
 }
 
 /** 讀 anim/manifest.json 再載每段圖集;整份讀不到就回空(全部走舊的假動作) */
@@ -505,9 +511,12 @@ export class TdScene {
       if (e[0] !== EV.CAST) continue
       const tw = this.towers[e[2] ?? -1]
       if (!tw || tw.armedTick === tick) continue
-      const clip = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]?.attack
-      if (!clip || clip.hit <= 0) continue
-      const lead = (clip.hit / 1000) * this.cfg.tps
+      const unitKey = tw.job ? `job${tw.cls}` : `cls${tw.cls}`
+      const rig = this.assets.rigs[unitKey]
+      const clip = this.assets.anim[unitKey]?.attack
+      const hitMs = rig ? rig.hit : clip && clip.hit > 0 ? clip.hit : 0
+      if (hitMs <= 0) continue
+      const lead = (hitMs / 1000) * this.cfg.tps
       if (tick - lead > this.playTick) continue
       tw.armedTick = tick
       tw.attackAt = tick - lead
@@ -608,7 +617,7 @@ export class TdScene {
         const tw = this.towers[e[2] ?? -1]
         const m = this.mobs.get(e[4] ?? -1)
         if (!tw) break
-        if (tw.armedTick !== t) tw.attackAt = t   // 沒提前起手過(沒影格的單位)才從現在開始
+        if (tw.armedTick !== (e[1] ?? t)) tw.attackAt = t   // 沒提前起手過(沒影格的單位)才從現在開始;比對事件自己的 tick,fxTick 跟事件 tick 不一定相等,之前拿 fxTick 比會把提前起手的動作重設,拉弓永遠拉不完
         if (m) tw.faceLeft = m.x < tw.x
         const kind = e[3] ?? 0
         const dir = tw.faceLeft ? -1 : 1
@@ -1159,6 +1168,40 @@ export class TdScene {
     return p
   }
 
+  /** 骨骼動畫版的本體:影子 + 零件 + 程式手臂 + 弦與箭;等級徽章、挨打閃紅跟舊版一樣 */
+  private drawTowerRig(c: CanvasRenderingContext2D, tw: TowerVis, rig: Rig, t: number, at: number) {
+    const h = 100
+    const atkMs = at >= 0 ? (at / this.cfg.tps) * 1000 : -1
+    const pose = bowPose(rig, this.clock, atkMs, tw.slot * 0.9)
+    const born = Math.min(1, (t - tw.bornAt) / 6)
+    c.save()
+    c.translate(tw.x, tw.y)
+    c.fillStyle = 'rgba(0,0,0,0.32)'
+    c.beginPath(); c.ellipse(0, 2, 24, 8, 0, 0, Math.PI * 2); c.fill()
+    c.restore()
+    c.save()
+    if (tw.down) { c.translate(tw.x, tw.y); c.rotate(tw.faceLeft ? -1.35 : 1.35); c.translate(-tw.x, -tw.y + 10); c.globalAlpha = 0.5 }
+    if (born < 1) { c.translate(tw.x, tw.y); c.scale(born, born); c.translate(-tw.x, -tw.y) }
+    drawRig(c, rig, pose, tw.x, tw.y, h, tw.faceLeft)
+    c.restore()
+    const hurt = t - tw.hurtAt
+    if (hurt >= 0 && hurt < 3) {            // 挨打:整個人閃一下紅
+      c.save(); c.globalCompositeOperation = 'source-atop'; c.globalAlpha = (1 - hurt / 3) * 0.5
+      c.fillStyle = '#ff4a3a'; c.fillRect(tw.x - 40, tw.y - h - 10, 80, h + 14); c.restore()
+    }
+    c.save()
+    c.translate(tw.x + 22, tw.y - 8)
+    c.fillStyle = 'rgba(10,10,14,0.85)'
+    c.strokeStyle = tw.path ? (CLS_COLOR[tw.cls] ?? '#fff') : 'rgba(255,255,255,0.5)'
+    c.lineWidth = 1.6
+    c.beginPath(); c.arc(0, 0, 9.5, 0, Math.PI * 2); c.fill(); c.stroke()
+    c.fillStyle = tw.level >= this.cfg.maxLevel ? '#ffd76a' : '#fff'
+    c.font = '600 11px Inter, sans-serif'
+    c.textAlign = 'center'; c.textBaseline = 'middle'
+    c.fillText(String(tw.level), 0, 0.5)
+    c.restore()
+  }
+
   private drawTower(c: CanvasRenderingContext2D, tw: TowerVis) {
     const t = this.fxTick
     const a = this.assets.cls[tw.cls]
@@ -1178,7 +1221,10 @@ export class TdScene {
     }
     const dir = tw.faceLeft ? -1 : 1
     // 有逐格影格就播影格(出手後 at 個 tick → 毫秒 → 第幾格);沒有才用程式姿勢
-    const unitAnim = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]
+    const unitKey = tw.job ? `job${tw.cls}` : `cls${tw.cls}`
+    const rig = this.assets.rigs[unitKey]
+    if (rig) { this.drawTowerRig(c, tw, rig, t, at); return }
+    const unitAnim = this.assets.anim[unitKey]
     const clip = unitAnim?.attack
     const idleClip = unitAnim?.idle
     const fi = clip ? clipAt(clip, (at / this.cfg.tps) * 1000).i : -1
