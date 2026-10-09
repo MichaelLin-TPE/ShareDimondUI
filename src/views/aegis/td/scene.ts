@@ -1165,14 +1165,16 @@ export class TdScene {
     if (!a) return
     const at = t - tw.attackAt
     // 沒在出手時,每一格都看射程內最近的怪在哪一邊,先轉過去等它(出手那段維持出手時的朝向,免得中途翻面)
-    if (!tw.down && (at < 0 || at > 24)) {
+    let enemyNear = false
+    if (!tw.down) {
       let best: MobVis | null = null, bd = tw.rangePx * 1.6
       for (const m of this.mobs.values()) {
         if (m.gone) continue
         const d = Math.hypot(m.x - tw.x, m.y - tw.y)
         if (d < bd) { bd = d; best = m }
       }
-      if (best && Math.abs(best.x - tw.x) > 6) tw.faceLeft = best.x < tw.x
+      enemyNear = best !== null
+      if ((at < 0 || at > 24) && best && Math.abs(best.x - tw.x) > 6) tw.faceLeft = best.x < tw.x
     }
     const dir = tw.faceLeft ? -1 : 1
     // 有逐格影格就播影格(出手後 at 個 tick → 毫秒 → 第幾格);沒有才用程式姿勢
@@ -1184,15 +1186,15 @@ export class TdScene {
     const ps = this.pose(tw.cls, at, dir)
     // 影格負責手上的動作,但整個人也要跟著動(前傾、後仰、衝刺、落地壓一下),不然看起來像動畫鑲在一張靜止的圖裡;幅度取程式姿勢的六成
     if (fi >= 0) { ps.attack = true; ps.rot *= 0.6; ps.sx = 1 + (ps.sx - 1) * 0.6; ps.sy = 1 + (ps.sy - 1) * 0.6 }
-    // 沒出手:整個人慢慢左右擺、上下浮(每座塔相位錯開)
-    if (fi < 0 && !tw.down) {
+    // 附近沒怪才慢慢左右擺、上下浮(每座塔相位錯開);打怪中不疊擺動,免得跟出手動作打架看起來像抖
+    if (fi < 0 && !tw.down && !enemyNear) {
       const ph = this.clock * 1.6 + tw.slot * 0.9
       ps.rot += Math.sin(ph) * 0.035 * (tw.faceLeft ? -1 : 1)
       ps.dy += Math.sin(ph * 2) * 1.5
       ps.dx += Math.sin(ph) * 1.2
     }
     const img = ps.attack ? (tw.job && a.jobAttack) || a.attack : (tw.job && a.jobIdle) || a.idle
-    const h = 84
+    const h = 100   // 2026-10-10 由 84 放大:84 像素時拉弓的手只動幾個像素,看起來像抖
     const w = (img.width / img.height) * h
     const cs = h / 260        // 影格素材以 260 高為基準,跟待機圖同比例
     const born = Math.min(1, (t - tw.bornAt) / 6)
