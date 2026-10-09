@@ -1149,7 +1149,7 @@ export class TdScene {
     const unitAnim = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]
     const clip = unitAnim?.attack
     const idleClip = unitAnim?.idle
-    const { i: fi, p: fp } = clip ? clipAt(clip, (at / this.cfg.tps) * 1000) : { i: -1, p: 0 }
+    const fi = clip ? clipAt(clip, (at / this.cfg.tps) * 1000).i : -1
     // 影格負責「畫面上的動作」(拉弓、法術、揮砍的速度線),程式姿勢負責大幅度的傾身 / 衝刺,兩個疊在一起
     const ps = this.pose(tw.cls, at, dir)
     if (fi >= 0) { ps.attack = true; ps.rot = 0; ps.sx = 1; ps.sy = 1 }   // 影格自己有動作,不再旋轉 / 壓扁(會看起來像圖在扭),只留衝刺位移
@@ -1246,16 +1246,7 @@ export class TdScene {
     c.rotate(ps.rot)
     c.scale((flip ? -1 : 1) * ps.sx * born, ps.sy * breathe * born)
     body(bodyImg)
-    if (drawClip) {                        // 這一格播到後半:下一格慢慢淡進來,格與格之間才不會跳
-      const cur = useIdle ? idleAt : { i: fi, p: fp }
-      if (cur.i >= 0 && cur.p > 0.45) {
-        const next = useIdle ? (cur.i + 1) % drawClip.n : cur.i + 1 < drawClip.n ? cur.i + 1 : drawClip.idle
-        const base = c.globalAlpha
-        c.globalAlpha = base * Math.min(1, (cur.p - 0.45) / 0.55)
-        frameOfClip(bodyImg, drawClip, next)
-        c.globalAlpha = base
-      }
-    }
+    // 格與格之間的過渡由圖集裡的內插格負責(每兩格之間 3 張),這裡不再疊下一格,免得兩張重疊
     const hurt = t - tw.hurtAt
     if (hurt >= 0 && hurt < 3) {            // 騎士挨打:閃一下紅
       c.globalAlpha = (tw.down ? 0.5 : 1) * (1 - hurt / 3) * 0.6
