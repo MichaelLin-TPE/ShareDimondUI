@@ -1185,7 +1185,15 @@ export class TdScene {
     // 影格負責「畫面上的動作」(拉弓、法術、揮砍的速度線),程式姿勢負責大幅度的傾身 / 衝刺,兩個疊在一起
     const ps = this.pose(tw.cls, at, dir)
     // 影格負責手上的動作,但整個人也要跟著動(前傾、後仰、衝刺、落地壓一下),不然看起來像動畫鑲在一張靜止的圖裡;幅度取程式姿勢的六成
-    if (fi >= 0) { ps.attack = true; ps.rot *= 0.6; ps.sx = 1 + (ps.sx - 1) * 0.6; ps.sy = 1 + (ps.sy - 1) * 0.6 }
+    if (fi >= 0) {
+      ps.attack = true
+      ps.rot *= 0.9; ps.dx *= 1.3; ps.sx = 1 + (ps.sx - 1) * 0.9; ps.sy = 1 + (ps.sy - 1) * 0.9   // 使用者 10-10:「動作大一點」,前傾 / 衝刺整個人跟著動
+      // 命中那一格:整個人往後坐一下(後座力),之後 120ms 內彈回
+      if (clip && clip.hit > 0) {
+        const since = (at / this.cfg.tps) * 1000 - clip.hit
+        if (since >= 0 && since < 120) { const k = 1 - since / 120; ps.dx -= dir * 5 * k; ps.sx *= 1 + 0.06 * k; ps.sy *= 1 - 0.05 * k }
+      }
+    }
     // 附近沒怪才慢慢左右擺、上下浮(每座塔相位錯開);打怪中不疊擺動,免得跟出手動作打架看起來像抖
     if (fi < 0 && !tw.down && !enemyNear) {
       const ph = this.clock * 1.6 + tw.slot * 0.9
