@@ -29,8 +29,8 @@ export interface AnimClip {
 export interface SceneAssets {
   /** jobIdle / jobAttack:轉職後的樣子(金甲);載不到就沿用原本的 */
   cls: { idle: HTMLImageElement; attack: HTMLImageElement; jobIdle: HTMLImageElement | null; jobAttack: HTMLImageElement | null }[]
-  /** 逐格動畫:key = cls0~4 / job0~4,目前只有 attack;沒有的單位用程式姿勢 */
-  anim: Record<string, { attack?: AnimClip }>
+  /** 逐格動畫:key = cls0~4 / job0~4;attack = 出手 8 格,idle = 待機 4 格慢速循環;沒有的單位用程式姿勢 */
+  anim: Record<string, { attack?: AnimClip; idle?: AnimClip }>
   mobs: HTMLImageElement[]
   bosses: HTMLImageElement[]
   goddess: HTMLImageElement
@@ -66,8 +66,8 @@ export async function loadAssets(): Promise<SceneAssets> {
 }
 
 /** 讀 anim/manifest.json 再載每段圖集;整份讀不到就回空(全部走舊的假動作) */
-async function loadAnims(): Promise<Record<string, { attack?: AnimClip }>> {
-  const out: Record<string, { attack?: AnimClip }> = {}
+async function loadAnims(): Promise<Record<string, { attack?: AnimClip; idle?: AnimClip }>> {
+  const out: Record<string, { attack?: AnimClip; idle?: AnimClip }> = {}
   try {
     const res = await fetch(`${ASSET}anim/manifest.json`, { cache: 'no-cache' })
     if (!res.ok) return out
@@ -78,6 +78,7 @@ async function loadAnims(): Promise<Record<string, { attack?: AnimClip }>> {
           const img = await loadImage(`${ASSET}anim/${d.file}`)
           const clip: AnimClip = { img, n: d.n, fw: d.fw, fh: d.fh, ax: d.ax, ay: d.ay, dur: d.dur, total: d.dur.reduce((a, b) => a + b, 0), left: d.left, idle: d.idle ?? 0 }
           if (act === 'attack') (out[key] ??= {}).attack = clip
+          else if (act === 'idle') (out[key] ??= {}).idle = clip
         } catch { /* 這段載不到就用舊的 */ }
       }
     }))
@@ -1132,10 +1133,22 @@ export class TdScene {
     const t = this.fxTick
     const a = this.assets.cls[tw.cls]
     if (!a) return
-    const dir = tw.faceLeft ? -1 : 1
     const at = t - tw.attackAt
+    // 沒在出手時,每一格都看射程內最近的怪在哪一邊,先轉過去等它(出手那段維持出手時的朝向,免得中途翻面)
+    if (!tw.down && (at < 0 || at > 24)) {
+      let best: MobVis | null = null, bd = tw.rangePx * 1.6
+      for (const m of this.mobs.values()) {
+        if (m.gone) continue
+        const d = Math.hypot(m.x - tw.x, m.y - tw.y)
+        if (d < bd) { bd = d; best = m }
+      }
+      if (best && Math.abs(best.x - tw.x) > 6) tw.faceLeft = best.x < tw.x
+    }
+    const dir = tw.faceLeft ? -1 : 1
     // 有逐格影格就播影格(出手後 at 個 tick → 毫秒 → 第幾格);沒有才用程式姿勢
-    const clip = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]?.attack
+    const unitAnim = this.assets.anim[tw.job ? `job${tw.cls}` : `cls${tw.cls}`]
+    const clip = unitAnim?.attack
+    const idleClip = unitAnim?.idle
     const { i: fi, p: fp } = clip ? clipAt(clip, (at / this.cfg.tps) * 1000) : { i: -1, p: 0 }
     // 影格負責「畫面上的動作」(拉弓、法術、揮砍的速度線),程式姿勢負責大幅度的傾身 / 衝刺,兩個疊在一起
     const ps = this.pose(tw.cls, at, dir)
@@ -1154,9 +1167,16 @@ export class TdScene {
       if (clip) c.drawImage(src, f * clip.fw, 0, clip.fw, clip.fh, -clip.ax * cs, -clip.ay * cs, clip.fw * cs, clip.fh * cs)
       else c.drawImage(src, -w / 2, -h, w, h)
     }
-    const curFrame = clip ? (fi >= 0 ? fi : clip.idle) : 0
-    const body = (src: CanvasImageSource) => frameOf(src, curFrame)
-    const bodyImg: HTMLImageElement = clip ? clip.img : img
+    // 沒出手:有待機圖集就慢速循環(每座塔錯開相位),沒有就停在出手圖集的待機格
+    const idleMs = idleClip ? ((this.clock * 1000 + tw.slot * 137) % idleClip.total) : 0
+    const idleAt = idleClip ? clipAt(idleClip, idleMs) : { i: -1, p: 0 }
+    const useIdle = !!idleClip && fi < 0
+    const drawClip: AnimClip | undefined = useIdle ? idleClip : clip
+    const frameOfClip = (src: CanvasImageSource, cl: AnimClip, f: number) =>
+      c.drawImage(src, f * cl.fw, 0, cl.fw, cl.fh, -cl.ax * cs, -cl.ay * cs, cl.fw * cs, cl.fh * cs)
+    const curFrame = useIdle ? idleAt.i : clip ? (fi >= 0 ? fi : clip.idle) : 0
+    const body = (src: CanvasImageSource) => (drawClip ? frameOfClip(src, drawClip, curFrame) : frameOf(src, 0))
+    const bodyImg: HTMLImageElement = drawClip ? drawClip.img : img
 
     // 轉職:身後一團慢慢呼吸的金光,剛轉職的前幾秒更亮
     if (tw.job && !tw.down) {
@@ -1226,12 +1246,15 @@ export class TdScene {
     c.rotate(ps.rot)
     c.scale((flip ? -1 : 1) * ps.sx * born, ps.sy * breathe * born)
     body(bodyImg)
-    if (clip && fi >= 0 && fp > 0.45) {    // 這一格播到後半:下一格慢慢淡進來,格與格之間才不會跳
-      const next = fi + 1 < clip.n ? fi + 1 : clip.idle
-      const base = c.globalAlpha
-      c.globalAlpha = base * Math.min(1, (fp - 0.45) / 0.55)
-      frameOf(bodyImg, next)
-      c.globalAlpha = base
+    if (drawClip) {                        // 這一格播到後半:下一格慢慢淡進來,格與格之間才不會跳
+      const cur = useIdle ? idleAt : { i: fi, p: fp }
+      if (cur.i >= 0 && cur.p > 0.45) {
+        const next = useIdle ? (cur.i + 1) % drawClip.n : cur.i + 1 < drawClip.n ? cur.i + 1 : drawClip.idle
+        const base = c.globalAlpha
+        c.globalAlpha = base * Math.min(1, (cur.p - 0.45) / 0.55)
+        frameOfClip(bodyImg, drawClip, next)
+        c.globalAlpha = base
+      }
     }
     const hurt = t - tw.hurtAt
     if (hurt >= 0 && hurt < 3) {            // 騎士挨打:閃一下紅
