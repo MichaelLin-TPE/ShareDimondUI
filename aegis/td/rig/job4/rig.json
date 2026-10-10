@@ -1,0 +1,95 @@
+{
+ "size": [
+  213,
+  260
+ ],
+ "feet": [
+  108,
+  258
+ ],
+ "weapon": {
+  "type": "staff",
+  "len": 118,
+  "z": 8,
+  "color": "#c89a2a",
+  "edge": "#4a3410",
+  "gem": "#3b82f6"
+ },
+ "left": true,
+ "parts": {
+  "legL": {
+   "file": "legL.png",
+   "x": 63,
+   "y": 210,
+   "w": 48,
+   "h": 49,
+   "pivot": [
+    88,
+    218
+   ],
+   "parent": "root",
+   "z": 1
+  },
+  "legR": {
+   "file": "legR.png",
+   "x": 100,
+   "y": 210,
+   "w": 51,
+   "h": 50,
+   "pivot": [
+    124,
+    218
+   ],
+   "parent": "root",
+   "z": 2
+  },
+  "torso": {
+   "file": "torso.png",
+   "x": 47,
+   "y": 150,
+   "w": 164,
+   "h": 91,
+   "pivot": [
+    108,
+    215
+   ],
+   "parent": "root",
+   "z": 3
+  },
+  "head": {
+   "file": "head.png",
+   "x": 51,
+   "y": 1,
+   "w": 140,
+   "h": 169,
+   "pivot": [
+    115,
+    160
+   ],
+   "parent": "torso",
+   "z": 6
+  }
+ },
+ "arms": {
+  "armMain": {
+   "shoulder": [
+    70,
+    170
+   ],
+   "len": 42,
+   "z": 7,
+   "sleeve": "#d8b24a",
+   "skin": "#f1d6bf"
+  },
+  "armOff": {
+   "shoulder": [
+    150,
+    170
+   ],
+   "len": 42,
+   "z": 5,
+   "sleeve": "#d8b24a",
+   "skin": "#f1d6bf"
+  }
+ }
+}

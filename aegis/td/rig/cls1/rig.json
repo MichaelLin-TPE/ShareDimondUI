@@ -1,0 +1,85 @@
+{
+ "size": [
+  228,
+  260
+ ],
+ "feet": [
+  125,
+  258
+ ],
+ "weapon": {
+  "type": "sword",
+  "len": 70,
+  "z": 8,
+  "color": "#d9dde3",
+  "edge": "#2e3138",
+  "guard": "#8a7a4a"
+ },
+ "left": true,
+ "parts": {
+  "legL": {
+   "file": "legL.png",
+   "x": 77,
+   "y": 191,
+   "w": 54,
+   "h": 67,
+   "pivot": [
+    104,
+    200
+   ],
+   "parent": "root",
+   "z": 1
+  },
+  "legR": {
+   "file": "legR.png",
+   "x": 120,
+   "y": 191,
+   "w": 54,
+   "h": 69,
+   "pivot": [
+    146,
+    200
+   ],
+   "parent": "root",
+   "z": 2
+  },
+  "torso": {
+   "file": "torso.png",
+   "x": 44,
+   "y": 95,
+   "w": 184,
+   "h": 141,
+   "pivot": [
+    125,
+    200
+   ],
+   "parent": "root",
+   "z": 3
+  },
+  "head": {
+   "file": "head.png",
+   "x": 62,
+   "y": 0,
+   "w": 113,
+   "h": 130,
+   "pivot": [
+    115,
+    118
+   ],
+   "parent": "torso",
+   "z": 6
+  }
+ },
+ "arms": {
+  "armMain": {
+   "shoulder": [
+    84,
+    134
+   ],
+   "len": 50,
+   "z": 7,
+   "sleeve": "#c8ccd3",
+   "skin": "#b9bdc6"
+  }
+ }
+}

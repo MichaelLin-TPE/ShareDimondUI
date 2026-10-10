@@ -1,0 +1,95 @@
+{
+ "size": [
+  187,
+  260
+ ],
+ "feet": [
+  97,
+  258
+ ],
+ "weapon": {
+  "type": "daggers",
+  "len": 36,
+  "z": 8,
+  "color": "#d8dde6",
+  "edge": "#2a2a30",
+  "guard": "#b8202a"
+ },
+ "left": true,
+ "parts": {
+  "legL": {
+   "file": "legL.png",
+   "x": 49,
+   "y": 190,
+   "w": 52,
+   "h": 70,
+   "pivot": [
+    75,
+    200
+   ],
+   "parent": "root",
+   "z": 1
+  },
+  "legR": {
+   "file": "legR.png",
+   "x": 90,
+   "y": 190,
+   "w": 56,
+   "h": 70,
+   "pivot": [
+    118,
+    200
+   ],
+   "parent": "root",
+   "z": 2
+  },
+  "torso": {
+   "file": "torso.png",
+   "x": 54,
+   "y": 134,
+   "w": 87,
+   "h": 72,
+   "pivot": [
+    97,
+    195
+   ],
+   "parent": "root",
+   "z": 3
+  },
+  "head": {
+   "file": "head.png",
+   "x": 19,
+   "y": 0,
+   "w": 162,
+   "h": 150,
+   "pivot": [
+    95,
+    140
+   ],
+   "parent": "torso",
+   "z": 6
+  }
+ },
+ "arms": {
+  "armMain": {
+   "shoulder": [
+    66,
+    156
+   ],
+   "len": 44,
+   "z": 7,
+   "sleeve": "#6a5a7a",
+   "skin": "#8a5a3c"
+  },
+  "armOff": {
+   "shoulder": [
+    128,
+    156
+   ],
+   "len": 44,
+   "z": 7,
+   "sleeve": "#6a5a7a",
+   "skin": "#8a5a3c"
+  }
+ }
+}
