@@ -73,6 +73,7 @@ export interface Pose {
 
 const ease = (k: number) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2)
 const easeOut = (k: number) => 1 - (1 - k) * (1 - k)
+const easeOutBack = (k: number) => 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2)   // 過衝一點再回來
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v))
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k
 const lerp2 = (a: [number, number], b: [number, number], k: number): [number, number] => [lerp(a[0], b[0], k), lerp(a[1], b[1], k)]
@@ -98,11 +99,11 @@ export function bowPose(rig: Rig, clock: number, atk: number, phase: number): Po
   const restBow: [number, number] = [shB[0] + fwd * 8, shB[1] + 50]
   const restDraw: [number, number] = [shD[0] - fwd * 6, shD[1] + 50]
   // 瞄準:前手往前伸直把弓立起來(弓在臉前方);後手先搭到弦上(握把後面一點),再一路拉到耳後
-  const aimBow: [number, number] = [shB[0] + fwd * 50, shB[1] + 4]
+  const aimBow: [number, number] = [shB[0] + fwd * 50, shB[1] + 10]
   const nock: [number, number] = [aimBow[0] - fwd * 16, aimBow[1]]
   const cheek: [number, number] = [shD[0] - fwd * 20, shD[1] + 6]
-  // 弓:0 = 直立(弓背朝前);休息時弓頂往後斜靠著
-  const uprightRot = 0
+  // 弓:0 = 直立(弓背朝前);瞄準時弓頂往目標那邊傾(天堂妖精那種弓斜舉在胸前的樣子);休息時弓頂往後靠著
+  const uprightRot = fwd * 0.7
   const restRot = -fwd * 0.18
 
   // 呼吸(待機,每座塔錯相)
@@ -112,52 +113,68 @@ export function bowPose(rig: Rig, clock: number, atk: number, phase: number): Po
   p.parts.head!.dy = -1.5 * br
 
   if (atk < 0 || atk >= rig.total) {
-    p.hands.armBow = [restBow[0], restBow[1] + 1.5 * br]
-    p.hands.armDraw = [restDraw[0] + fwd * 2 * br, restDraw[1] + 1.5 * br]
-    p.bowRot = restRot + 0.02 * br
+    const sway = Math.sin(clock * 0.9 + phase)          // 重心慢慢左右換
+    p.root.dx = 1.5 * sway
+    p.root.rot = 0.012 * sway
+    p.hands.armBow = [restBow[0] + 1.2 * sway, restBow[1] + 1.5 * br]
+    p.hands.armDraw = [restDraw[0] + fwd * 2 * br - 1.2 * sway, restDraw[1] + 1.5 * br]
+    p.bowRot = restRot + 0.03 * br + 0.02 * sway
     p.arrow = 0
     return p
   }
-  let bowK = 0, drawK = 0, lean = 0, recoil = 0, lower = 0
-  if (atk < 150) {                       // 舉弓
-    bowK = easeOut(atk / 150)
-  } else if (atk < 420) {                // 拉弦
-    bowK = 1; drawK = ease((atk - 150) / 270); lean = drawK
-  } else if (atk < 480) {                // 停住瞄準(微抖)
-    bowK = 1; drawK = 1; lean = 1
-  } else if (atk < 560) {                // 放箭:手甩回、弓回彈、身體後坐
-    bowK = 1; drawK = 0; lean = 1 - (atk - 480) / 80; recoil = 1 - (atk - 480) / 80
-  } else {                               // 放下
-    lower = ease((atk - 560) / 200); bowK = 1 - lower; drawK = 0
+  // 一次出手的節奏(毫秒):預備微蹲 0~60 → 舉弓(帶一點過衝)60~190 → 拉弦到耳後 190~420 → 停住瞄 420~480 → 放箭 480(彈震)→ 放下 580~760
+  const front = fwd < 0 ? 'legL' : 'legR', back = fwd < 0 ? 'legR' : 'legL'
+  let bowK = 0, drawK = 0, lean = 0, recoil = 0, lower = 0, prep = 0, settle = 0
+  if (atk < 60) {                        // 預備:整個人先往下壓一下、弓手先往後帶(拉弓前的蓄力)
+    prep = Math.sin((atk / 60) * Math.PI)
+  } else if (atk < 190) {                // 舉弓:帶過衝,手舉過頭再落回瞄準位
+    bowK = easeOutBack((atk - 60) / 130)
+  } else if (atk < 420) {                // 拉弦:慢起快到,身體跟著坐進去
+    bowK = 1; drawK = ease((atk - 190) / 230); lean = drawK
+  } else if (atk < 480) {                // 停住瞄準:全身微微發抖(不是只有弦)
+    bowK = 1; drawK = 1; lean = 1; settle = 1
+  } else if (atk < 580) {                // 放箭:後座 + 阻尼彈震
+    bowK = 1; drawK = 0; lean = 1 - (atk - 480) / 100; recoil = 1 - (atk - 480) / 100
+  } else {                               // 放下:慢慢鬆開,弓晃回休息位
+    lower = ease((atk - 580) / 180); bowK = 1 - lower; drawK = 0
   }
-  p.hands.armBow = lerp2(restBow, aimBow, bowK)
-  p.bowRot = lerp(restRot, uprightRot, bowK)
-  // 拉弦手:舉弓時從身側到弦上,拉弦時從弦上拉到下巴旁,放箭後往後甩開一點再放下
-  const flung: [number, number] = [cheek[0] - fwd * 10, cheek[1] + 8]
+  const tremor = settle ? Math.sin(atk * 0.75) * 0.6 : 0
+  const snap = recoil > 0 ? Math.exp(-(atk - 480) / 45) * Math.sin((atk - 480) * 0.25) : 0   // 放箭後 ~100ms 的衰減震盪
+  // 弓手:預備時往後帶一點;舉弓後固定;放箭瞬間往前踢一下再彈回
+  const bowHand = lerp2(restBow, aimBow, bowK)
+  bowHand[0] += -fwd * 4 * prep + fwd * 5 * snap + tremor * 0.5
+  bowHand[1] += 2 * prep - 2 * snap
+  p.hands.armBow = bowHand
+  p.bowRot = lerp(restRot, uprightRot, bowK) + fwd * 0.18 * snap - fwd * 0.05 * prep
+  // 拉弦手:舉弓時從身側到弦上,拉弦時從弦上拉到耳後,放箭後往後上方甩開(肘帶著走),再慢慢放下
+  const flung: [number, number] = [cheek[0] - fwd * 14, cheek[1] - 6]
   let drawHand: [number, number]
-  if (atk < 150) drawHand = lerp2(restDraw, nock, easeOut(atk / 150))
-  else if (atk < 480) drawHand = lerp2(nock, cheek, drawK)
-  else if (atk < 560) drawHand = lerp2(cheek, flung, easeOut((atk - 480) / 80))
+  if (atk < 60) drawHand = [restDraw[0] - fwd * 2 * prep, restDraw[1] + 2 * prep]
+  else if (atk < 190) drawHand = lerp2(restDraw, nock, easeOut((atk - 60) / 130))
+  else if (atk < 480) { drawHand = lerp2(nock, cheek, drawK); drawHand[0] += tremor; drawHand[1] += tremor * 0.4 }
+  else if (atk < 580) drawHand = lerp2(cheek, flung, easeOut((atk - 480) / 60))
   else drawHand = lerp2(flung, restDraw, lower)
   p.hands.armDraw = drawHand
-  // 弦:拉弦期間弦掛在拉弦手上;瞄準時微抖
-  const tense = atk >= 420 && atk < 480 ? Math.sin(atk * 0.9) * 0.8 : 0
-  p.stringHand = atk >= 150 && atk < 480 ? [drawHand[0] + tense, drawHand[1]] : null
-  p.arrow = atk >= 200 && atk < 480 ? 1 : 0
-  // 身體:拉弦時微後仰、重心後移;放箭瞬間往後坐再彈回(rig 空間前方 = +x,所以後 = -fwd)
-  p.root.rot = fwd * (-0.05 * lean - 0.07 * recoil)
-  p.root.dx = -fwd * (4 * lean + 5 * recoil)
-  p.root.sx = 1 + 0.05 * recoil
-  p.root.sy = 1 - 0.04 * recoil
-  p.parts.head!.rot += fwd * 0.04 * lean
-  p.parts.head!.dx = -fwd * 3 * lean
-  // 腳步:拉弦時前腳往前跨、後腳撐住、整個人微蹲;放箭時前腳再踩一下
-  p.parts.legR!.dx = fwd * (6 * lean + 3 * recoil)
-  p.parts.legR!.rot = -fwd * 0.12 * lean
-  p.parts.legL!.dx = -fwd * 3 * lean
-  p.root.dy = 2 * lean + 2 * recoil
-  // 弓回彈:放箭瞬間弓微微壓扁
-  p.bowSquash = 1 - 0.1 * recoil
+  // 弦:拉弦期間弦掛在拉弦手上
+  p.stringHand = atk >= 190 && atk < 480 ? [drawHand[0], drawHand[1]] : null
+  p.arrow = atk >= 230 && atk < 480 ? 1 : 0
+  // 身體:預備微蹲;拉弦時重心坐後、肩膀沉;放箭瞬間後坐再彈震回來
+  p.root.rot = fwd * (-0.05 * lean - 0.06 * recoil - 0.03 * snap)
+  p.root.dx = -fwd * (4 * lean + 4 * recoil) + fwd * 2 * snap
+  p.root.sx = 1 + 0.04 * recoil + 0.03 * prep
+  p.root.sy = 1 - 0.035 * recoil - 0.04 * prep
+  p.root.dy = 2 * lean + 2 * recoil + 3 * prep
+  // 身體跟頭:拉弦時身體往弓那邊轉一點、頭盯著目標微傾;放箭瞬間頭往後頓一下
+  p.parts.torso!.rot = fwd * (-0.03 * lean)
+  p.parts.head!.rot += fwd * (0.05 * lean + 0.04 * snap)
+  p.parts.head!.dx = -fwd * (3 * lean + 2 * recoil) + fwd * 1.5 * snap
+  p.parts.head!.dy += 1.5 * lean + tremor * 0.3
+  // 腳步:預備時後腳先蹬、拉弦時前腳跨出、後腳撐住;放箭時前腳再踩一下
+  p.parts[front]!.dx = fwd * (6 * lean + 3 * recoil)
+  p.parts[front]!.rot = -fwd * 0.12 * lean
+  p.parts[back]!.dx = -fwd * (3 * lean + 2 * prep)
+  // 弓回彈:放箭瞬間弓壓扁再彈開
+  p.bowSquash = 1 - 0.1 * recoil + 0.04 * snap
   return p
 }
 

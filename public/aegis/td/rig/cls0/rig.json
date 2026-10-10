@@ -8,7 +8,7 @@
   258
  ],
  "weapon": "bow",
- "left": false,
+ "left": true,
  "parts": {
   "legL": {
    "file": "legL.png",
@@ -40,7 +40,7 @@
    "file": "torso.png",
    "x": 66,
    "y": 141,
-   "w": 124,
+   "w": 123,
    "h": 91,
    "pivot": [
     132,
@@ -66,8 +66,8 @@
  "arms": {
   "armBow": {
    "shoulder": [
-    152,
-    160
+    112,
+    162
    ],
    "len": 54,
    "z": 7,
@@ -76,8 +76,8 @@
   },
   "armDraw": {
    "shoulder": [
-    112,
-    162
+    152,
+    160
    ],
    "len": 54,
    "z": 9,
