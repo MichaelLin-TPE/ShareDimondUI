@@ -63,6 +63,8 @@ export interface Pose {
   root: { rot: number; dx: number; dy: number; sx: number; sy: number }
   /** 程式手臂:手的位置(rig 空間、身體未傾斜前) */
   hands: Record<string, [number, number]>
+  /** 指定手肘位置的手臂(拉弓那隻:肘要往正後方抬高,IK 算不出來,直接給) */
+  elbows: Record<string, [number, number]>
   /** 弓:繞握把轉幾度(弧度,0 = 直立、弓背朝前);拉弦的手的位置(有就畫被拉開的弦);箭:0 不畫,1 搭在弦上 */
   bowRot: number
   stringHand: [number, number] | null
@@ -81,7 +83,7 @@ const lerp2 = (a: [number, number], b: [number, number], k: number): [number, nu
 function zeroPose(rig: Rig): Pose {
   const parts: Pose['parts'] = {}
   for (const n of Object.keys(rig.data.parts)) parts[n] = { rot: 0, dx: 0, dy: 0, sx: 1, sy: 1 }
-  return { parts, root: { rot: 0, dx: 0, dy: 0, sx: 1, sy: 1 }, hands: {}, bowRot: 0, stringHand: null, arrow: 0, bowSquash: 1 }
+  return { parts, root: { rot: 0, dx: 0, dy: 0, sx: 1, sy: 1 }, hands: {}, elbows: {}, bowRot: 0, stringHand: null, arrow: 0, bowSquash: 1 }
 }
 
 /**
@@ -99,11 +101,15 @@ export function bowPose(rig: Rig, clock: number, atk: number, phase: number): Po
   const restBow: [number, number] = [shB[0] + fwd * 8, shB[1] + 50]
   const restDraw: [number, number] = [shD[0] - fwd * 6, shD[1] + 50]
   // 瞄準:前手往前伸直把弓立起來(弓在臉前方);後手先搭到弦上(握把後面一點),再一路拉到耳後
-  const aimBow: [number, number] = [shB[0] + fwd * 50, shB[1] + 10]
-  const nock: [number, number] = [aimBow[0] - fwd * 16, aimBow[1]]
-  const cheek: [number, number] = [shD[0] - fwd * 20, shD[1] + 6]
+  const aimBow: [number, number] = [shB[0] + fwd * 52, shB[1] + 6]
+  const nock: [number, number] = [aimBow[0] - fwd * 14, aimBow[1] + 2]
+  // 拉弦手停在下巴旁(前肩那一側的臉頰下),肘往正後方抬到肩高、前臂跟箭平行——真正拉弓的樣子
+  const cheek: [number, number] = [shD[0] + fwd * 8, shD[1] + 7]
+  const elbowNock: [number, number] = [shD[0] - fwd * 18, shD[1] + 18]
+  const elbowFull: [number, number] = [shD[0] - fwd * 44, shD[1] + 1]
+  const elbowFlung: [number, number] = [shD[0] - fwd * 48, shD[1] - 8]
   // 弓:0 = 直立(弓背朝前);瞄準時弓頂往目標那邊傾(天堂妖精那種弓斜舉在胸前的樣子);休息時弓頂往後靠著
-  const uprightRot = fwd * 0.7
+  const uprightRot = fwd * 0.35
   const restRot = -fwd * 0.18
 
   // 呼吸(待機,每座塔錯相)
@@ -147,13 +153,22 @@ export function bowPose(rig: Rig, clock: number, atk: number, phase: number): Po
   p.hands.armBow = bowHand
   p.bowRot = lerp(restRot, uprightRot, bowK) + fwd * 0.18 * snap - fwd * 0.05 * prep
   // 拉弦手:舉弓時從身側到弦上,拉弦時從弦上拉到耳後,放箭後往後上方甩開(肘帶著走),再慢慢放下
-  const flung: [number, number] = [cheek[0] - fwd * 14, cheek[1] - 6]
+  const flung: [number, number] = [cheek[0] - fwd * 22, cheek[1] - 8]
   let drawHand: [number, number]
   if (atk < 60) drawHand = [restDraw[0] - fwd * 2 * prep, restDraw[1] + 2 * prep]
   else if (atk < 190) drawHand = lerp2(restDraw, nock, easeOut((atk - 60) / 130))
-  else if (atk < 480) { drawHand = lerp2(nock, cheek, drawK); drawHand[0] += tremor; drawHand[1] += tremor * 0.4 }
-  else if (atk < 580) drawHand = lerp2(cheek, flung, easeOut((atk - 480) / 60))
-  else drawHand = lerp2(flung, restDraw, lower)
+  else if (atk < 480) {
+    drawHand = lerp2(nock, cheek, drawK); drawHand[0] += tremor; drawHand[1] += tremor * 0.4
+    const e = lerp2(elbowNock, elbowFull, drawK); e[1] += tremor * 0.5
+    p.elbows.armDraw = e
+  } else if (atk < 580) {
+    const k = easeOut((atk - 480) / 60)
+    drawHand = lerp2(cheek, flung, k)
+    p.elbows.armDraw = lerp2(elbowFull, elbowFlung, k)
+  } else {
+    drawHand = lerp2(flung, restDraw, lower)
+    if (lower < 0.5) p.elbows.armDraw = lerp2(elbowFlung, [shD[0] - fwd * 26, shD[1] + 20], lower * 2)
+  }
   p.hands.armDraw = drawHand
   // 弦:拉弦期間弦掛在拉弦手上
   p.stringHand = atk >= 190 && atk < 480 ? [drawHand[0], drawHand[1]] : null
@@ -190,8 +205,15 @@ function limb(c: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y
 }
 
 /** 兩段式手臂:肩 → 肘 → 手;肘往 bendSign 那邊彎 */
-function drawArm(c: CanvasRenderingContext2D, arm: RigArm, hand: [number, number], bendSign: number) {
+function drawArm(c: CanvasRenderingContext2D, arm: RigArm, hand: [number, number], bendSign: number, elbow?: [number, number]) {
   const [sx, sy] = arm.shoulder, [hx, hy] = hand
+  if (elbow) {   // 肘已指定:肩→肘→手直接畫(不管手長)
+    limb(c, sx, sy, elbow[0], elbow[1], 11, arm.sleeve)
+    limb(c, elbow[0], elbow[1], hx, hy, 9, arm.skin)
+    c.fillStyle = arm.skin; c.strokeStyle = 'rgba(40,30,20,0.9)'; c.lineWidth = 2
+    c.beginPath(); c.arc(hx, hy, 6, 0, Math.PI * 2); c.fill(); c.stroke()
+    return hand
+  }
   const half = arm.len / 2
   const dx = hx - sx, dy = hy - sy
   const dist = Math.hypot(dx, dy)
@@ -265,7 +287,7 @@ export function drawRig(c: CanvasRenderingContext2D, rig: Rig, pose: Pose, x: nu
         sh = [tp[0] + tt.dx + (cx * Math.cos(tt.rot) - cy * Math.sin(tt.rot)) * tt.sx, tp[1] + tt.dy + (cx * Math.sin(tt.rot) + cy * Math.cos(tt.rot)) * tt.sy]
       }
       // 肘往哪邊彎(rig 空間):前手肘微微朝下、後手(拉弦)肘往後上方翹
-      handAt[n] = drawArm(c, { ...a, shoulder: sh }, hand, rig.left ? -1 : 1)
+      handAt[n] = drawArm(c, { ...a, shoulder: sh }, hand, rig.left ? -1 : 1, pose.elbows[n])
     } })
   }
   // 弓(程式畫)、弦與箭:弓跟著弓手,繞握把轉;弦在弓之上、拉弦手之下
