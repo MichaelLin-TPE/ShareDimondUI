@@ -1,69 +1,70 @@
 {
  "size": [
-  230,
+  187,
   260
  ],
  "feet": [
-  132,
+  97,
   258
  ],
  "weapon": {
-  "type": "bow",
-  "len": 112,
+  "type": "daggers",
+  "len": 36,
   "z": 8,
-  "color": "#8f7260",
-  "edge": "#3b2b22"
+  "color": "#d8dde6",
+  "edge": "#2a2a30",
+  "guard": "#b8202a"
  },
  "left": true,
  "parts": {
   "legL": {
    "file": "legL.png",
-   "x": 83,
-   "y": 204,
-   "w": 53,
-   "h": 56,
+   "x": 49,
+   "y": 190,
+   "w": 52,
+   "h": 70,
    "pivot": [
-    110,
-    213
+    75,
+    200
    ],
    "parent": "root",
    "z": 1
   },
   "legR": {
    "file": "legR.png",
-   "x": 125,
-   "y": 201,
-   "w": 60,
-   "h": 59,
+   "x": 90,
+   "y": 190,
+   "w": 56,
+   "h": 70,
    "pivot": [
-    150,
-    211
+    118,
+    200
    ],
    "parent": "root",
    "z": 2
   },
   "torso": {
    "file": "torso.png",
-   "x": 66,
-   "y": 141,
-   "w": 123,
-   "h": 91,
+   "x": 54,
+   "y": 134,
+   "w": 87,
+   "h": 72,
    "pivot": [
-    132,
-    212
+    97,
+    195
    ],
    "parent": "root",
    "z": 3
   },
   "head": {
    "file": "head.png",
-   "x": 42,
+   "x": 19,
    "y": 0,
-   "w": 188,
-   "h": 172,
+   "w": 162,
+   "h": 150,
    "pivot": [
-    132,
-    152
+    95,
+    140
    ],
    "parent": "torso",
    "z": 6
@@ -72,23 +73,23 @@
  "arms": {
   "armMain": {
    "shoulder": [
-    112,
-    162
+    66,
+    156
    ],
-   "len": 54,
+   "len": 44,
    "z": 7,
-   "sleeve": "#9dbb6e",
-   "skin": "#f1d6bf"
+   "sleeve": "#6a5a7a",
+   "skin": "#8a5a3c"
   },
   "armOff": {
    "shoulder": [
-    152,
-    160
+    128,
+    156
    ],
-   "len": 54,
-   "z": 9,
-   "sleeve": "#9dbb6e",
-   "skin": "#f1d6bf"
+   "len": 44,
+   "z": 7,
+   "sleeve": "#6a5a7a",
+   "skin": "#8a5a3c"
   }
  }
 }

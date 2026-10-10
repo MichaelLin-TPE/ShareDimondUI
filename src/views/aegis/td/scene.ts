@@ -7,7 +7,7 @@ import { EV, HIT_FLAG, KNIGHT, STATUS, type RunView, type TdConfig, type TowerVi
 import type { SfxName } from './audio'
 import { FxLayer, P, setLowQuality } from './fx'
 import { DECOR_SPRITES, H, THEME_COUNT, TOP, VH, W, clearGlowCache, drawAmbientOver, drawAmbientUnder, glow, renderTerrain, type Terrain } from './terrain'
-import { bowPose, drawRig, loadRig, type Rig } from './rig'
+import { poseFor, drawRig, loadRig, type Rig } from './rig'
 
 const ASSET = '/aegis/td/'
 declare const __BUILD__: string
@@ -68,7 +68,7 @@ export async function loadAssets(): Promise<SceneAssets> {
   }))
   const anim = await loadAnims()
   const rigs: Record<string, Rig> = {}
-  if (import.meta.env.DEV) (window as unknown as { __tdRig?: unknown }).__tdRig = { drawRig, bowPose }   // 開發時從主控台畫大圖檢查骨骼
+  if (import.meta.env.DEV) (window as unknown as { __tdRig?: unknown }).__tdRig = { drawRig, poseFor }   // 開發時從主控台畫大圖檢查骨骼
   await Promise.all(['cls0', 'cls1', 'cls2', 'cls3', 'cls4', 'job0', 'job1', 'job2', 'job3', 'job4'].map(async (k) => { const r = await loadRig(k); if (r) rigs[k] = r }))
   return { cls, mobs, bosses, goddess, decor, anim, rigs }
 }
@@ -1177,7 +1177,7 @@ export class TdScene {
   private drawTowerRig(c: CanvasRenderingContext2D, tw: TowerVis, rig: Rig, t: number, at: number) {
     const h = 100
     const atkMs = at >= 0 ? (at / this.cfg.tps) * 1000 : -1
-    const pose = bowPose(rig, this.clock, atkMs, tw.slot * 0.9)
+    const pose = poseFor(rig, this.clock, atkMs, tw.slot * 0.9)
     const born = Math.min(1, (t - tw.bornAt) / 6)
     c.save()
     c.translate(tw.x, tw.y)
