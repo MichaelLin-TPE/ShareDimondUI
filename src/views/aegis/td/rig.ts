@@ -94,15 +94,16 @@ export function bowPose(rig: Rig, clock: number, atk: number, phase: number): Po
   const shB = d.arms.armBow!.shoulder, shD = d.arms.armDraw!.shoulder
   const fwd = rig.left ? -1 : 1
   // 休息:弓垂在前側身旁、微斜;拉弦手(後手)垂在身側
-  const restBow: [number, number] = [shB[0] + fwd * 10, shB[1] + 40]
-  const restDraw: [number, number] = [shD[0] - fwd * 8, shD[1] + 36]
+  // 休息:兩手自然垂下(手離肩膀接近手長,手臂才不會折成銳角),弓直直立在前側身旁、下端快碰地
+  const restBow: [number, number] = [shB[0] + fwd * 8, shB[1] + 50]
+  const restDraw: [number, number] = [shD[0] - fwd * 6, shD[1] + 50]
   // 瞄準:前手往前伸直把弓立起來(弓在臉前方);後手先搭到弦上(握把後面一點),再一路拉到耳後
   const aimBow: [number, number] = [shB[0] + fwd * 50, shB[1] + 4]
   const nock: [number, number] = [aimBow[0] - fwd * 16, aimBow[1]]
   const cheek: [number, number] = [shD[0] - fwd * 20, shD[1] + 6]
   // 弓:0 = 直立(弓背朝前);休息時弓頂往後斜靠著
   const uprightRot = 0
-  const restRot = -fwd * 0.55
+  const restRot = -fwd * 0.18
 
   // 呼吸(待機,每座塔錯相)
   const br = Math.sin(clock * 2.2 + phase)

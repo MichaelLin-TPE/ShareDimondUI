@@ -519,7 +519,8 @@ export class TdScene {
       const lead = (hitMs / 1000) * this.cfg.tps
       if (tick - lead > this.playTick) continue
       tw.armedTick = tick
-      tw.attackAt = tick - lead
+      // attackAt 一律用 fxTick 計(畫的時候 at = fxTick - attackAt);事件 tick 是 playTick 計的,每波歸零,兩者差一個固定偏移
+      tw.attackAt = this.fxTick - this.playTick + tick - lead
       const m = this.mobs.get(e[4] ?? -1)
       if (m) tw.faceLeft = m.x < tw.x
     }
@@ -617,8 +618,12 @@ export class TdScene {
         const tw = this.towers[e[2] ?? -1]
         const m = this.mobs.get(e[4] ?? -1)
         if (!tw) break
-        if (tw.armedTick !== (e[1] ?? t)) tw.attackAt = t   // 沒提前起手過(沒影格的單位)才從現在開始;比對事件自己的 tick,fxTick 跟事件 tick 不一定相等,之前拿 fxTick 比會把提前起手的動作重設,拉弓永遠拉不完
-        if (m) tw.faceLeft = m.x < tw.x
+        // 沒提前起手過(沒影格的單位)才從現在開始、現在才轉向;提前起手的,朝向在起手那一刻就定了,放箭這一刻不能再翻
+        // (怪 480ms 內可能已經走到另一邊,這裡再翻會變成拉到一半整個人跳到另一邊)。比對事件自己的 tick,fxTick 跟事件 tick 不相等
+        if (tw.armedTick !== (e[1] ?? t)) {
+          tw.attackAt = t
+          if (m) tw.faceLeft = m.x < tw.x
+        }
         const kind = e[3] ?? 0
         const dir = tw.faceLeft ? -1 : 1
         this.lastCast.set(tw.slot, { kind, first: true, n: 0, px: tw.x + dir * 16, py: tw.y - 78 })
@@ -1210,13 +1215,13 @@ export class TdScene {
     // 沒在出手時,每一格都看射程內最近的怪在哪一邊,先轉過去等它(出手那段維持出手時的朝向,免得中途翻面)
     let enemyNear = false
     if (!tw.down) {
-      let best: MobVis | null = null, bd = tw.rangePx * 1.6
+      let best: MobVis | null = null, bd = Infinity
       for (const m of this.mobs.values()) {
         if (m.gone) continue
         const d = Math.hypot(m.x - tw.x, m.y - tw.y)
         if (d < bd) { bd = d; best = m }
       }
-      enemyNear = best !== null
+      enemyNear = best !== null && bd < tw.rangePx * 1.6   // 不管多遠都先轉向最近的怪等它;只有進到射程附近才算「有敵人」(停掉擺動)
       if ((at < 0 || at > 24) && best && Math.abs(best.x - tw.x) > 6) tw.faceLeft = best.x < tw.x
     }
     const dir = tw.faceLeft ? -1 : 1
