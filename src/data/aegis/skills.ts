@@ -153,7 +153,7 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '究極光裂術', cls: 'wizard', level: 40, mp: 70, cooldown: '5 秒', type: '攻擊', effect: '單體光屬性最強攻擊（8d15+160、光屬性）', tier: '魔法 10 階' },
   { name: '絕對屏障', cls: 'wizard', level: 40, mp: 30, cooldown: '12 秒', type: '輔助', effect: '短時間完全無敵（持續 12 秒）', tier: '魔法 10 階' },
   { name: '靈魂昇華', cls: 'wizard', level: 40, mp: 40, cooldown: '0.5 秒', type: '輔助', effect: '減少受到的魔法傷害（持續 1200 秒）', tier: '魔法 10 階' },
-  { name: '冰雪颶風', cls: 'wizard', level: 40, mp: 60, cooldown: '2 秒', type: '攻擊', effect: '範圍水屬性攻擊,有機率凍結（3d10+2、水屬性）', tier: '魔法 10 階' },
+  { name: '寒冰尖刺(原冰雪颶風)', cls: 'wizard', level: 40, mp: 60, cooldown: '—', type: '攻擊', effect: '單體水屬性最強攻擊魔法:無冷卻、不冰凍、會爆擊（10-23 重做）', tier: '魔法 10 階' },
   { name: '暗隱術', cls: 'darkelf', level: 15, mp: 10, cooldown: '2 秒', type: '輔助', effect: '進入隱身（持續 32 秒）', tier: '暗黑魔法 1 階' },
   { name: '附加劇毒', cls: 'darkelf', level: 15, mp: 10, cooldown: '—', type: '輔助', effect: '武器附毒,攻擊使目標中毒（持續 320 秒、消耗 HP 1）', tier: '暗黑魔法 1 階' },
   { name: '影之防護', cls: 'darkelf', level: 15, mp: 10, cooldown: '—', type: '輔助', effect: '閃避提升（持續 960 秒、消耗 HP 5）', tier: '暗黑魔法 1 階' },
@@ -170,4 +170,9 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '敏捷提升', cls: 'darkelf', level: 30, mp: 10, cooldown: '—', type: '輔助', effect: 'DEX 提升（持續 960 秒）', tier: '暗黑魔法 2 階' },
   { name: '閃避提升', cls: 'darkelf', level: 30, mp: 20, cooldown: '—', type: '輔助', effect: '閃避提升（持續 32 秒）', tier: '暗黑魔法 2 階' },
   { name: '破壞盔甲', cls: 'darkelf', level: 30, mp: 32, cooldown: '5.5 秒', type: '減益', effect: '目標 AC 下降（持續 8 秒、消耗 HP 30）', tier: '暗黑魔法 2 階' },
+  { name: '龍嘯', cls: 'knight', level: 60, mp: 30, cooldown: '獨立冷卻', type: '減益', effect: '雙手劍限定,遠距離指定目標、機率昏迷;跟衝擊之暈分開算冷卻,可以先遠暈再衝暈', tier: '天堂 W 技能(滅世龍掉落 10%)' },
+  { name: '帝國反擊', cls: 'royal', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '自身 buff:期間最大血量提升;被打到時有機率把傷害反射回去並讓對方出血', tier: '天堂 W 技能(滅世龍掉落 10%)' },
+  { name: '精靈大師:精神', cls: 'elf', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '自身 buff:四屬性抗性 +30、所受傷害 −15%、近戰與弓傷害 +5%、昏迷 / 石化 / 沉睡 / 支撐等抗性提升;重放不疊加', tier: '天堂 W 技能(滅世龍掉落 10%)' },
+  { name: '時間靜止', cls: 'wizard', level: 60, mp: 60, cooldown: '—', type: '減益', effect: '周圍敵人睡著(跟沉睡之霧一樣,被打會醒);隊友、血盟、聯盟不受影響;睡著的目標被衝擊之暈或龍嘯打一律命中', tier: '天堂 W 技能(滅世龍掉落 10%)' },
+  { name: '暗影閃避:命運', cls: 'darkelf', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '暗影閃避的強化版(獨立技能):迴避更高,被近距離攻擊時 15% 完全閃過,閃過時 50% 把傷害反彈(等級×2 + 力量×2);跟暗影閃避後放的取代先放的', tier: '天堂 W 技能(滅世龍掉落 10%)' },
 ]
