@@ -153,7 +153,7 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '究極光裂術', cls: 'wizard', level: 40, mp: 70, cooldown: '5 秒', type: '攻擊', effect: '單體光屬性最強攻擊（8d15+160、光屬性）', tier: '魔法 10 階' },
   { name: '絕對屏障', cls: 'wizard', level: 40, mp: 30, cooldown: '12 秒', type: '輔助', effect: '短時間完全無敵（持續 12 秒）', tier: '魔法 10 階' },
   { name: '靈魂昇華', cls: 'wizard', level: 40, mp: 40, cooldown: '0.5 秒', type: '輔助', effect: '減少受到的魔法傷害（持續 1200 秒）', tier: '魔法 10 階' },
-  { name: '寒冰尖刺(原冰雪颶風)', cls: 'wizard', level: 40, mp: 60, cooldown: '—', type: '攻擊', effect: '單體水屬性最強攻擊魔法:無冷卻、不冰凍、會爆擊（10-23 重做）', tier: '魔法 10 階' },
+  { name: '寒冰尖刺', cls: 'wizard', level: 40, mp: 60, cooldown: '—', type: '攻擊', effect: '單體水屬性最強攻擊魔法:無冷卻、不冰凍、會爆擊', tier: '魔法 10 階' },
   { name: '暗隱術', cls: 'darkelf', level: 15, mp: 10, cooldown: '2 秒', type: '輔助', effect: '進入隱身（持續 32 秒）', tier: '暗黑魔法 1 階' },
   { name: '附加劇毒', cls: 'darkelf', level: 15, mp: 10, cooldown: '—', type: '輔助', effect: '武器附毒,攻擊使目標中毒（持續 320 秒、消耗 HP 1）', tier: '暗黑魔法 1 階' },
   { name: '影之防護', cls: 'darkelf', level: 15, mp: 10, cooldown: '—', type: '輔助', effect: '閃避提升（持續 960 秒、消耗 HP 5）', tier: '暗黑魔法 1 階' },
