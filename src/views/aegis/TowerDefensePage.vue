@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
             <div v-if="!session.token" class="td-cover">
               <h2>用預約帳號登入就能玩</h2>
               <p>有帳號就可以,不用先創角色。打到越後面排行越前面,開服有獎。</p>
-              <RouterLink class="ag-btn primary" to="/aegis/prereg">辦帳號 / 登入 <span class="arr">→</span></RouterLink>
+              <RouterLink class="ag-btn primary" to="/reserve/create">辦帳號 / 登入 <span class="arr">→</span></RouterLink>
             </div>
             <div v-else-if="!run && !result" class="td-cover">
               <h2>開始新的一局</h2>

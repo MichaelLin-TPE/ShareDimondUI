@@ -116,7 +116,19 @@ const router = createRouter({
         { path: 'items', component: () => import('@/views/aegis/ItemsPage.vue') },
         { path: 'market', component: () => import('@/views/aegis/MarketPage.vue') },
         { path: 'contact', component: () => import('@/views/aegis/ContactPage.vue') },
-        { path: 'prereg', component: () => import('@/views/aegis/PreregPage.vue') },
+        // 預約創角、塔防搬到獨立的事前預約站 /reserve,舊網址轉過去
+        { path: 'prereg', redirect: '/reserve/create' },
+        { path: 'td', redirect: '/reserve/td' },
+      ],
+    },
+    {
+      // 神盾天堂「事前預約」獨立站(公開,自己的頂欄頁尾;樣式沿用官網 aegis.css)
+      path: '/reserve',
+      component: () => import('@/views/reserve/ReserveLayout.vue'),
+      meta: { fullscreen: true },
+      children: [
+        { path: '', name: 'reserve', component: () => import('@/views/reserve/ReserveHome.vue') },
+        { path: 'create', component: () => import('@/views/aegis/PreregPage.vue') },
         { path: 'td', component: () => import('@/views/aegis/TowerDefensePage.vue') },
       ],
     },

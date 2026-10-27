@@ -4,6 +4,7 @@
 // 手機:800x600 縮到手機寬度按鈕會小到按不到,改用直式排版,圖與規則完全相同。
 // 規則(初始值、上限、可分配點數)由後端給;初期能力值獎勵是遊戲伺服器的實際數值(src/data/aegis/prereg.ts)。
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import AgPage from './ui/AgPage.vue'
 import { AG_CLASSES } from '@/data/aegis/classes'
 import { BONUS_LABELS, BONUS_TABLE, CLASS_INTRO, CLASS_PRESETS, GAUGE_LABELS, GAUGE_TABLE } from '@/data/aegis/prereg'
@@ -85,9 +86,12 @@ async function submitAuth() {
 }
 
 // ---------- 創角 ----------
+// 預約首頁「用 X 預約」會帶 ?cls=&sex= 進來,先幫他選好
+const route = useRoute()
+const pick = (v: unknown, max: number) => { const n = Number(v); return Number.isInteger(n) && n >= 0 && n <= max ? n : 0 }
 const step = ref(1)
-const cls = ref(0)
-const sex = ref(0)
+const cls = ref(pick(route.query.cls, 4))
+const sex = ref(pick(route.query.sex, 1))
 const stats = ref<number[]>([0, 0, 0, 0, 0, 0])
 const charName = ref('')
 const nameHint = ref<{ ok: boolean; message: string } | null>(null)
@@ -317,7 +321,7 @@ onBeforeUnmount(() => {
           <div class="pr-bar">
             <span>帳號 <b>{{ session.login }}</b></span>
             <span class="sp"></span>
-            <RouterLink class="lnk" to="/aegis/td">先去玩塔防</RouterLink>
+            <RouterLink class="lnk" to="/reserve/td">先去玩塔防</RouterLink>
             <button type="button" class="lnk" @click="logout">登出</button>
           </div>
 
@@ -481,7 +485,8 @@ onBeforeUnmount(() => {
           <div class="pr-acts">
             <p class="ag-body">開服當天用帳號 <b>{{ session.login }}</b> 登入遊戲,這隻角色就在選角畫面裡。</p>
             <div class="row">
-              <RouterLink class="ag-btn primary" to="/aegis/td">玩天堂塔防 <span class="arr">→</span></RouterLink>
+              <RouterLink class="ag-btn primary" to="/reserve/td">玩天堂塔防 <span class="arr">→</span></RouterLink>
+              <RouterLink class="ag-btn" to="/reserve">預約進度</RouterLink>
               <button class="ag-btn" type="button" @click="showPwd = !showPwd">修改密碼</button>
               <button class="ag-btn" type="button" @click="confirmDelete = true">刪掉重創</button>
               <button class="ag-btn" type="button" @click="logout">登出</button>
