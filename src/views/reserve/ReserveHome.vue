@@ -262,7 +262,7 @@ onUnmounted(() => io?.disconnect())
         <h2><span>開服那天,</span><span>你的角色已經在了。</span></h2>
         <div class="acts">
           <RouterLink to="/reserve/create" class="btn pri">{{ session.character ? '查看我的角色' : '立即預約' }}<span>→</span></RouterLink>
-          <RouterLink to="/aegis" class="btn">遊戲官網</RouterLink>
+          <a href="/#/aegis" class="btn">遊戲官網</a>
         </div>
       </div>
     </section>

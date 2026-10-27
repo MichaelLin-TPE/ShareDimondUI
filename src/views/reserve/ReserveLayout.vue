@@ -37,7 +37,7 @@ onMounted(() => {
     l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap'
     document.head.appendChild(l)
   }
-  document.title = '神盾天堂 事前預約'
+  document.title = '神盾天堂 事前預約｜3.81 經典天堂私服 開服前搶先創角'
   window.addEventListener('scroll', onScroll, { passive: true })
   document.body.addEventListener('scroll', onScroll, { passive: true })
   restoreSession().catch(() => {})
@@ -71,7 +71,7 @@ onUnmounted(() => {
         <RouterLink :to="{ path: '/reserve', hash: '#rewards' }">預約獎勵</RouterLink>
         <RouterLink :to="{ path: '/reserve', hash: '#classes' }">職業</RouterLink>
         <RouterLink to="/reserve/td" :class="{ on: route.path === '/reserve/td' }">天堂塔防</RouterLink>
-        <RouterLink to="/aegis" class="site">遊戲官網 <span aria-hidden="true">↗</span></RouterLink>
+        <a href="/#/aegis" class="site">遊戲官網 <span aria-hidden="true">↗</span></a>
       </div>
 
       <RouterLink to="/reserve/create" class="go" :class="{ on: route.path === '/reserve/create' }">{{ cta }}</RouterLink>
@@ -88,8 +88,8 @@ onUnmounted(() => {
             <p class="ag-cap">3.81 經典私服 · 事前預約</p>
           </div>
           <div class="fl">
-            <RouterLink to="/aegis">想看遊戲內容?前往遊戲官網 →</RouterLink>
-            <RouterLink to="/aegis/contact">聯絡客服</RouterLink>
+            <a href="/#/aegis">想看遊戲內容?前往遊戲官網 →</a>
+            <a href="/#/aegis/contact">聯絡客服</a>
           </div>
         </div>
       </div>

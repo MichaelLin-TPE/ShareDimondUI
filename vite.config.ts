@@ -10,6 +10,15 @@ export default defineConfig({
   define: { __BUILD__: JSON.stringify(new Date().toISOString().slice(5, 16).replace('T', ' ')) },
   base: '/', // 確保在自定義域名下，資源路徑指向根目錄
   plugins: [vue(), vueDevTools()],
+  // 事前預約是獨立頁 /reserve/(自己的 SEO 標頭),跟主站共用同一包程式
+  build: {
+    rollupOptions: {
+      input: {
+        index: fileURLToPath(new URL('./index.html', import.meta.url)),
+        reserve: fileURLToPath(new URL('./reserve/index.html', import.meta.url)),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
