@@ -1,10 +1,10 @@
 <script setup lang="ts">
-// 事前預約首頁:首屏(人數 + 立即預約)→ 預約進度與全服里程碑獎勵 → 職業 → 流程 → 天堂塔防 → 收尾。
+// 事前預約首頁:首屏(人數 + 立即預約)→ 預約進度與全服里程碑獎勵 → 遊戲特色 → 職業 → 流程 → 天堂塔防 → 收尾。
 // 預約流程本身在 /reserve/create(PreregPage),這頁只負責把人帶進去。
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AG_CLASSES } from '@/data/aegis/classes'
-import { RV_MILESTONES, RV_SHARE_URL, RV_STEPS } from '@/data/aegis/reserve'
+import { RV_FEATURES, RV_MILESTONES, RV_SHARE_URL, RV_STATS, RV_STEPS } from '@/data/aegis/reserve'
 import { fetchStats, session } from '@/views/aegis/prereg/api'
 
 const route = useRoute()
@@ -13,6 +13,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const videoSrc = `${base}/aegis/hero.mp4?v=4`
 const stillSrc = `${base}/aegis/hero-still.jpg?v=4`
 const TD = `${base}/aegis/td/`
+const ART = `${base}/aegis/art/`
 const showVideo = ref(false)
 
 // ---------- 預約人數 ----------
@@ -175,6 +176,33 @@ onUnmounted(() => io?.disconnect())
             <a class="btn line" :href="lineShare" target="_blank" rel="noopener">分享到 LINE</a>
             <a class="btn" href="#" @click.prevent="copyLink">{{ copied ? '已複製網址' : '複製網址' }}</a>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 遊戲特色 ========== -->
+    <section id="features" class="sec ft">
+      <div class="ag-wrap">
+        <div class="hd rv-in">
+          <div class="ag-cap ember">WHY AEGIS</div>
+          <h2>老玩家的天堂,該有的都在</h2>
+          <p>倍率、衝裝機率全部公開,不用私訊問。</p>
+        </div>
+        <div class="stats rv-in">
+          <div v-for="x in RV_STATS" :key="x.k"><b>{{ x.v }}</b><span>{{ x.k }}</span></div>
+        </div>
+        <div class="fts">
+          <article v-for="(f, i) in RV_FEATURES" :key="f.title" class="fc rv-in" :style="{ '--d': (i % 3) * 0.08 + 's' }">
+            <img :src="ART + f.art" :alt="f.title" loading="lazy" />
+            <div class="tx">
+              <span class="i">{{ String(i + 1).padStart(2, '0') }}</span>
+              <h3>{{ f.title }}</h3>
+              <p>{{ f.line }}</p>
+            </div>
+          </article>
+        </div>
+        <div class="more rv-in">
+          <a href="/#/aegis/features">看全部遊戲特色<span>→</span></a>
         </div>
       </div>
     </section>
@@ -363,6 +391,28 @@ onUnmounted(() => io?.disconnect())
 .share .btn.line { background: #06c755; border-color: #06c755; color: #fff; }
 .share .btn.line:hover { filter: brightness(1.08); }
 
+/* ---------- 遊戲特色 ---------- */
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
+.stats div { padding: 26px 10px 22px; text-align: center; border-left: 1px solid var(--ag-line-soft); }
+.stats div:first-child { border-left: 0; }
+.stats b { display: block; font-size: clamp(30px, 3.4vw, 44px); font-weight: 300; letter-spacing: 0.02em; color: #fff; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stats span { display: block; margin-top: 8px; font-size: 13.5px; letter-spacing: 0.16em; color: var(--ag-ink-50); }
+.fts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.fc { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--ag-line-soft); background: #070707; }
+.fc img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.fc::before { content: ''; position: absolute; inset: 0; z-index: 1; background: linear-gradient(0deg, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.55) 38%, rgba(0, 0, 0, 0) 70%); }
+.fc::after { content: ''; position: absolute; z-index: 2; left: 0; bottom: 0; height: 2px; width: 0; background: var(--ag-ember); transition: width 0.5s ease-out; }
+.fc:hover img { transform: scale(1.05); }
+.fc:hover::after { width: 100%; }
+.fc .tx { position: absolute; z-index: 2; left: 22px; right: 22px; bottom: 18px; }
+.fc .i { font-size: 12px; letter-spacing: 0.3em; color: var(--ag-ember); }
+.fc h3 { margin: 4px 0 0; font-size: 22px; font-weight: 500; letter-spacing: 0.08em; color: #fff; }
+.fc p { margin-top: 6px; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); }
+.more { margin-top: 22px; text-align: center; }
+.more a { display: inline-flex; align-items: center; gap: 10px; font-size: 15px; letter-spacing: 0.12em; color: var(--gold); border-bottom: 1px solid rgba(243, 199, 122, 0.4); padding-bottom: 4px; }
+.more a span { transition: transform 0.2s; }
+.more a:hover span { transform: translateX(4px); }
+
 /* ---------- 職業 ---------- */
 .cls-box { border: 1px solid var(--ag-line-soft); }
 .art { position: relative; aspect-ratio: 16 / 7.2; overflow: hidden; background: #050505; }
@@ -434,6 +484,14 @@ onUnmounted(() => io?.disconnect())
   .card h3 { grid-column: 2; font-size: 17px; }
   .card ul { grid-column: 2 / 4; margin-top: 10px; padding-top: 10px; }
   .card .st { grid-column: 3; grid-row: 1; margin: 0; }
+  .stats div { padding: 16px 2px 14px; }
+  .stats b { font-size: 22px; }
+  .stats span { margin-top: 4px; font-size: 11.5px; letter-spacing: 0; }
+  .fts { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; margin: 10px -16px 0; padding: 0 16px 6px; scrollbar-width: none; }
+  .fts::-webkit-scrollbar { display: none; }
+  .fc { flex: 0 0 82%; scroll-snap-align: center; aspect-ratio: 4 / 3; }
+  .fc .tx { left: 16px; right: 16px; bottom: 14px; }
+  .fc h3 { font-size: 19px; }
   .share { padding: 18px; }
   .share .sb { width: 100%; }
   .share .btn { flex: 1; }

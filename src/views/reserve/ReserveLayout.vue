@@ -69,6 +69,7 @@ onUnmounted(() => {
 
       <div class="links">
         <RouterLink :to="{ path: '/reserve', hash: '#rewards' }">預約獎勵</RouterLink>
+        <RouterLink :to="{ path: '/reserve', hash: '#features' }">遊戲特色</RouterLink>
         <RouterLink :to="{ path: '/reserve', hash: '#classes' }">職業</RouterLink>
         <RouterLink to="/reserve/td" :class="{ on: route.path === '/reserve/td' }">天堂塔防</RouterLink>
         <a href="/#/aegis" class="site">遊戲官網 <span aria-hidden="true">↗</span></a>

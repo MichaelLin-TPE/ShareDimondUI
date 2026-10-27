@@ -25,3 +25,22 @@ export const RV_STEPS = [
   { n: '02', t: '創立角色', d: '職業、性別、能力值、名字現在就定。' },
   { n: '03', t: '開服登入', d: '角色已經在選角畫面,里程碑獎勵直接領。' },
 ]
+
+/** 遊戲特色:數字列(數值同官網伺服器設置 server.ts) */
+export const RV_STATS = [
+  { v: '3.81', k: '經典版本' },
+  { v: '×10', k: '經驗倍率' },
+  { v: '100', k: '等級上限' },
+  { v: '3', k: '同 IP 多開' },
+  { v: '00:00', k: '每日重置' },
+]
+
+/** 遊戲特色:挑六個最有感的,圖在 public/aegis/art/;完整的在官網 /aegis/features */
+export const RV_FEATURES = [
+  { title: '屠龍遠征', line: '每天輪一條龍,首通拿屠龍聖印。', art: 'dragonraid.jpg' },
+  { title: '王裝', line: '每隻王都有自己的套裝和武器。', art: 'bossgear.jpg' },
+  { title: '獄之試煉', line: '1~4 人打王,十分鐘一場,每天都能打。', art: 'dungeon.jpg' },
+  { title: '首領積分', line: '打王不用搶最後一刀,打多少算多少。', art: 'boss-points.jpg' },
+  { title: '魔法娃娃', line: '抽娃娃、合成、升星,全帳號一起變強。', art: 'doll.jpg' },
+  { title: '釣魚', line: '掛個竿,錢跟屬性自己游過來。', art: 'fishing-panic.jpg' },
+]
