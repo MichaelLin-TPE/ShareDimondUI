@@ -87,7 +87,7 @@ const saveTokenToBackend = async (token: string) => {
 
 // 3. 靜默獲取 FCM Token 並檢查更新
 const getFcmTokenSilently = async () => {
-  if (Notification.permission !== 'granted') return
+  if (!messaging || Notification.permission !== 'granted') return
 
   try {
     const token = await getToken(messaging, {

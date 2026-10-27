@@ -17,7 +17,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 // 初始化推播服務 (Messaging)
-const messaging = getMessaging(app)
+// iPhone 的 LINE 等 App 內建瀏覽器沒有 serviceWorker,getMessaging 會直接丟錯讓整個網站開不起來(黑屏),所以沒有就不建
+const messaging = 'serviceWorker' in navigator && navigator.serviceWorker ? getMessaging(app) : null
 
 // 導出 messaging，讓其他 Vue 元件可以拿它來要 Token 或接收訊息
 export { messaging }
