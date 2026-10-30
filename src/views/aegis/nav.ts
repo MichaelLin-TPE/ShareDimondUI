@@ -14,10 +14,8 @@ export const AG_NAV: AgNavItem[] = [
   { label: '職業介紹', to: '/aegis/classes', side: 'left' },
   { label: '遊戲特色', to: '/aegis/features', side: 'left' },
   { label: '打寶查詢', to: '/aegis/drops', side: 'left' },
-  { label: '伺服器設置', to: '/aegis/server', side: 'left' },
+  { label: '伺服器設置', to: '/aegis/server', side: 'right' },
   { label: '技能介紹', to: '/aegis/skills', side: 'right' },
-  { label: '武器防具', to: '/aegis/items', side: 'right' },
-  { label: '交易區', to: '/aegis/market', side: 'right' },
   { label: '聯絡客服', to: '/aegis/contact', side: 'right' },
   // 事前預約是獨立站 #/reserve(預約創角、塔防都在那裡),先不放進導覽(使用者:全部做完再開放)。要開放時把下面這行解開
   // { label: '事前預約', to: '/reserve', side: 'right', strong: true },

@@ -113,8 +113,6 @@ const router = createRouter({
         { path: 'drops', component: () => import('@/views/aegis/DropsPage.vue') },
         { path: 'server', component: () => import('@/views/aegis/ServerPage.vue') },
         { path: 'skills', component: () => import('@/views/aegis/SkillsPage.vue') },
-        { path: 'items', component: () => import('@/views/aegis/ItemsPage.vue') },
-        { path: 'market', component: () => import('@/views/aegis/MarketPage.vue') },
         { path: 'contact', component: () => import('@/views/aegis/ContactPage.vue') },
         // 預約創角、塔防搬到獨立的事前預約站 /reserve,舊網址轉過去
         { path: 'prereg', redirect: '/reserve/create' },
