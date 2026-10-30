@@ -3,15 +3,23 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { AG_SITE } from './nav'
 import { AG_NEWS } from '@/data/aegis/news'
-import { AG_FEATURES } from '@/data/aegis/features'
 import FocusText from './ui/FocusText.vue'
 
 // ?v= 是快取版本號:換影片檔就 +1,否則回訪的瀏覽器會一直用舊檔
 const videoSrc = `${import.meta.env.BASE_URL}aegis/hero.mp4?v=4`.replace('//aegis', '/aegis')
 const rootEl = ref<HTMLElement | null>(null)
 const latest = AG_NEWS.slice(0, 3)
-const feats = AG_FEATURES.slice(0, 4)
-const artBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/aegis/art`
+// 這裡才有的玩法:挑無課也玩得到、第一眼會好奇的 8 個,點進去到特色頁對應段落
+const HOOKS = [
+  { id: 'boss', title: '首領積分', hook: '打王不用搶最後一刀', line: '打多少算多少,摸一下也有份。王掉的東西照貢獻分,不是誰補刀誰拿。' },
+  { id: 'bounty', title: '懸賞令', hook: '每天三張懸賞單', line: '上線先接單,解完拿積分、娃娃精華、聲望。沒空打?委託別人解。' },
+  { id: 'trial', title: '職業試煉', hook: '一隻 NPC 帶你從 15 級打到 50 級', line: '四場專屬任務,每過一場就發一套當下穿得上的裝備;50 級那件全服只有這裡拿得到。' },
+  { id: 'season', title: '賽季', hook: '兩週一季,每個人的任務都不一樣', line: '每天抽 3 個、每週抽 4 個,分數升賽季等級領獎,累積分換變身卡。' },
+  { id: 'codex', title: '裝備圖鑑', hook: '爛裝也有用', line: '打到的垃圾裝別丟,登錄收藏冊,全帳號永久加成。' },
+  { id: 'fishing', title: '釣魚', hook: '掛個竿,錢跟屬性自己游過來', line: '沒空練功的晚上,丟根釣竿也在變強。' },
+  { id: 'hourglass', title: '時光幣', hook: '在線就是在賺', line: '30 級以上每 30 分鐘一顆時光幣,5 顆開一袋,或拿去升時光符文。' },
+  { id: 'dragonraid', title: '屠龍遠征', hook: '每天輪一條龍', line: '地龍、水龍、風龍輪著開,首通拿屠龍聖印。' },
+]
 
 // 數字帶:進視窗才跳數
 const stats = [
@@ -81,7 +89,7 @@ onUnmounted(() => { if (io) io.disconnect() })
           <p class="ag-cap l">玩膩了短期服?還在玩賣裝備的服?<br />這裡賣的只有情懷,其餘的靠你自己打。</p>
           <div class="r">
             <p class="ag-body">無課不用怕追不上人。沒有儲值買強度,王裝、符文、娃娃全部從怪身上掉,元寶打王、簽到就有。</p>
-            <p class="ag-body">機率全部攤開、每天準時重置、伺服器長期經營不收攤。你記憶裡那個天堂,我們幫你留著。</p>
+            <p class="ag-body">每天三張懸賞單、兩週一季的隨機任務、輪流開的三條龍,上線永遠有事做。你記憶裡那個天堂,我們幫你留著。</p>
             <div class="cta">
               <RouterLink class="ag-btn primary" to="/aegis/play">點我玩遊戲 <span class="arr">→</span></RouterLink>
               <RouterLink class="ag-btn" to="/aegis/features">遊戲特色</RouterLink>
@@ -142,16 +150,14 @@ onUnmounted(() => { if (io) io.disconnect() })
     <section class="ag-section ag-reveal">
       <div class="ag-wrap">
         <div class="ag-sec-head">
-          <div><div class="idx">03 // FEATURES</div><h2>遊戲特色</h2></div>
-          <RouterLink to="/aegis/features" class="ag-cap more">看全部 →</RouterLink>
+          <div><div class="idx">03 // PLAY</div><h2>這裡才有的玩法。<span class="thin">不是只有練功。</span></h2></div>
+          <RouterLink to="/aegis/features" class="ag-cap more">看全部特色 →</RouterLink>
         </div>
-        <div class="ag-grid" :class="feats.length >= 4 ? 'c4' : feats.length >= 2 ? 'c2' : 'c1'">
-          <RouterLink v-for="f in feats" :key="f.id" :to="`/aegis/features#${f.id}`" class="ag-card" :class="{ wide: feats.length <= 2 }">
-            <div class="ci">// {{ f.idx }}</div>
-            <h3>{{ f.title }}</h3>
-            <p>{{ f.short }}</p>
-            <p v-if="feats.length <= 2" class="more-pts">{{ f.points[0] }}</p>
-            <img v-if="feats.length <= 2 && f.art" class="card-art" :src="`${artBase}/${f.art}`" :alt="f.title" />
+        <div class="ag-grid c4">
+          <RouterLink v-for="(h, i) in HOOKS" :key="h.id" :to="`/aegis/features#${h.id}`" class="ag-card hk">
+            <div class="ci">// 0{{ i + 1 }} · {{ h.title }}</div>
+            <h3>{{ h.hook }}</h3>
+            <p>{{ h.line }}</p>
           </RouterLink>
         </div>
       </div>
@@ -213,18 +219,9 @@ onUnmounted(() => { if (io) io.disconnect() })
 .stat .n { font-size: clamp(1.8rem, 3.4vw, 2.6rem); font-weight: 200; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
 .stat .n .u { font-size: 0.5em; color: var(--ag-ember); }
 
-.ag-card.wide { padding: 34px 32px; min-height: 260px; }
-.ag-card.wide .card-art { position: absolute; right: 0; top: 0; height: 100%; width: 52%; object-fit: cover; object-position: 62% 50%;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%); pointer-events: none; }
-.ag-card.wide .ci, .ag-card.wide h3, .ag-card.wide p { position: relative; z-index: 1; max-width: 50%; }
-/* 兩張並排時卡片較窄:圖收窄一點、文字多留一點 */
-.ag-grid.c2 .ag-card.wide .card-art { width: 46%; object-position: 55% 50%; }
-.ag-grid.c2 .ag-card.wide .ci, .ag-grid.c2 .ag-card.wide h3, .ag-grid.c2 .ag-card.wide p { max-width: 58%; }
-.ag-grid.c2 .ag-card.wide h3 { font-size: 1.3rem; }
-@media (max-width: 800px) { .ag-card.wide .card-art { display: none; } .ag-card.wide .ci, .ag-card.wide h3, .ag-card.wide p { max-width: none; } }
-.ag-card.wide h3 { font-size: 1.5rem; font-family: var(--ag-font); }
-.ag-card.wide p { font-size: 15px; max-width: 60ch; }
-.ag-card.wide .more-pts { margin-top: 12px; color: var(--ag-ink-50); font-size: 13px; }
+.hk { min-height: 0; }
+.hk h3 { font-size: 1.15rem; line-height: 1.4; }
+.hk p { font-size: 14.5px; line-height: 1.7; color: var(--ag-ink-60); }
 .more { color: var(--ag-ink-50); }
 .more:hover { color: var(--ag-ink); }
 .news-list { border-top: 1px solid var(--ag-line); }

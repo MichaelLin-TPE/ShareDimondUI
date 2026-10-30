@@ -186,7 +186,7 @@ onUnmounted(() => io?.disconnect())
         <div class="hd rv-in">
           <div class="ag-cap ember">WHY AEGIS</div>
           <h2>這裡賣的只有情懷,其餘靠你自己打</h2>
-          <p>無課不用怕追不上人。倍率、機率全部公開,不用私訊問。</p>
+          <p>無課不用怕追不上人。懸賞單、賽季任務、輪流開的龍,上線永遠有事做。</p>
         </div>
         <div class="why3">
           <div v-for="(w, i) in RV_WHY" :key="w.q" class="rv-in" :style="{ '--d': i * 0.08 + 's' }"><b>{{ w.q }}</b><p>{{ w.a }}</p></div>

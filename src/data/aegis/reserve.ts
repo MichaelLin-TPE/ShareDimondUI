@@ -44,10 +44,13 @@ export const RV_WHY = [
 
 /** 遊戲特色:挑六個最有感的,圖在 public/aegis/art/;完整的在官網 /aegis/features */
 export const RV_FEATURES = [
-  { title: '屠龍遠征', line: '每天輪一條龍,首通拿屠龍聖印。', art: 'dragonraid.jpg' },
-  { title: '王裝', line: '每隻王都有自己的套裝和武器。', art: 'bossgear.jpg' },
-  { title: '獄之試煉', line: '1~4 人打王,十分鐘一場,每天都能打。', art: 'dungeon.jpg' },
   { title: '首領積分', line: '打王不用搶最後一刀,打多少算多少。', art: 'boss-points.jpg' },
-  { title: '魔法娃娃', line: '抽娃娃、合成、升星,全帳號一起變強。', art: 'doll.jpg' },
+  { title: '懸賞令', line: '每天三張懸賞單,解完拿積分、精華、聲望。', art: 'bounty.jpg' },
+  { title: '職業試煉', line: '一隻 NPC 帶你從 15 級打到 50 級,每關發裝備。', art: 'trial-officer.jpg' },
+  { title: '賽季', line: '兩週一季,每個人的任務都不一樣。', art: 'season.jpg' },
+  { title: '裝備圖鑑', line: '爛裝也有用,登錄收藏冊全帳號永久加成。', art: 'codex.jpg' },
+  { title: '屠龍遠征', line: '每天輪一條龍,首通拿屠龍聖印。', art: 'dragonraid.jpg' },
+  { title: '獄之試煉', line: '1~4 人打王,十分鐘一場,每天都能打。', art: 'dungeon.jpg' },
+  { title: '時光幣', line: '在線每 30 分鐘一顆,5 顆開一袋。', art: 'hourglass.jpg' },
   { title: '釣魚', line: '掛個竿,錢跟屬性自己游過來。', art: 'fishing-panic.jpg' },
 ]
