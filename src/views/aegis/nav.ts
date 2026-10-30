@@ -25,6 +25,6 @@ export const AG_NAV: AgNavItem[] = [
 export const AG_SITE = {
   name: '神盾天堂',
   latin: 'AEGIS',
-  tagline: '3.81 經典私服',
+  tagline: '長期經營的經典天堂',
   lineQr: 'https://qr-official.line.me/gs/M_920wuugp_GW.png?oat_content=qr',
 }

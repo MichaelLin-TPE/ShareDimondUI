@@ -15,10 +15,17 @@ const artBase = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/aegis/art`
 
 // 數字帶:進視窗才跳數
 const stats = [
+  { n: 0, suffix: '', cap: '儲值能買到的裝備' },
   { n: 100, suffix: '', cap: '等級上限' },
   { n: 3, suffix: '', cap: '同 IP 多開' },
-  { n: 5, suffix: '', cap: '職業' },
   { n: 13, suffix: '', cap: '收藏品 · 永久加屬性' },
+]
+
+// 三個問句:直接打到玩家換服的痛點
+const WHY = [
+  { q: '玩膩了短期服?', a: '開服三個月就收攤,練的角色全白費。這裡是長期經營,今天練的每一級,明年還在。' },
+  { q: '還在玩賣裝備的服?', a: '這裡沒有儲值買強度這回事。王裝、符文、娃娃、收藏品,全部要自己打,誰都買不到捷徑。' },
+  { q: '無課怕追不上人?', a: '強度只看你花的時間,不看你花的錢。元寶打王、簽到就有,機率全部公開,努力多少就強多少。' },
 ]
 const shown = ref(stats.map(() => 0))
 let io: IntersectionObserver | null = null
@@ -66,20 +73,36 @@ onUnmounted(() => { if (io) io.disconnect() })
 
       <div class="hero-body">
         <h1 class="ag-h ag-anim" style="--d: 0.15s; --y: 30px">
-          <span class="l1"><FocusText :words="['踏進來,', '重新開始', '你的', '天堂。']" /></span>
+          <span class="l1"><FocusText :words="['不賣裝備,', '不開短期,', '強大', '靠自己打。']" /></span>
           <span class="thin">{{ AG_SITE.name }} {{ AG_SITE.latin }} · {{ AG_SITE.tagline }}</span>
         </h1>
         <div class="ag-line ag-anim grow hr" style="--d: 0.4s"></div>
         <div class="ag-row2 ag-anim" style="--d: 0.5s">
-          <p class="ag-cap l">經典 3.81 · 衝裝機率公開 · 每日 00:00 重置<br />老玩家的天堂,該有的都在。</p>
+          <p class="ag-cap l">玩膩了短期服?還在玩賣裝備的服?<br />這裡賣的只有情懷,其餘的靠你自己打。</p>
           <div class="r">
-            <p class="ag-body">釣魚釣到變強、衝裝機率攤開給你看、王族光環、媽祖祝福,想玩的都幫你準備好了。</p>
-            <p class="ag-body">練到 100 等、一台電腦開三隻、每天午夜準時重置。倍率、機率全部公開,不用私訊問。</p>
+            <p class="ag-body">無課不用怕追不上人。沒有儲值買強度,王裝、符文、娃娃全部從怪身上掉,元寶打王、簽到就有。</p>
+            <p class="ag-body">機率全部攤開、每天準時重置、伺服器長期經營不收攤。你記憶裡那個天堂,我們幫你留著。</p>
             <div class="cta">
               <RouterLink class="ag-btn primary" to="/aegis/play">點我玩遊戲 <span class="arr">→</span></RouterLink>
               <RouterLink class="ag-btn" to="/aegis/features">遊戲特色</RouterLink>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ag-section why ag-reveal">
+      <div class="ag-wrap">
+        <div class="ag-sec-head">
+          <div><div class="idx">01 // WHY</div><h2>為什麼回來這裡。</h2></div>
+          <p class="ag-cap sub">三個問題,問過自己就懂。</p>
+        </div>
+        <div class="ag-grid c3">
+          <article v-for="(w, i) in WHY" :key="w.q" class="ag-card wy">
+            <div class="ci">// 0{{ i + 1 }}</div>
+            <h3>{{ w.q }}</h3>
+            <p>{{ w.a }}</p>
+          </article>
         </div>
       </div>
     </section>
@@ -102,7 +125,7 @@ onUnmounted(() => { if (io) io.disconnect() })
     <section class="ag-section ag-reveal">
       <div class="ag-wrap">
         <div class="ag-sec-head">
-          <div><div class="idx">01 // NEWS</div><h2>最新消息</h2></div>
+          <div><div class="idx">02 // NEWS</div><h2>最新消息</h2></div>
           <RouterLink to="/aegis/news" class="ag-cap more">全部消息 →</RouterLink>
         </div>
         <div class="news-list">
@@ -119,7 +142,7 @@ onUnmounted(() => { if (io) io.disconnect() })
     <section class="ag-section ag-reveal">
       <div class="ag-wrap">
         <div class="ag-sec-head">
-          <div><div class="idx">02 // FEATURES</div><h2>遊戲特色</h2></div>
+          <div><div class="idx">03 // FEATURES</div><h2>遊戲特色</h2></div>
           <RouterLink to="/aegis/features" class="ag-cap more">看全部 →</RouterLink>
         </div>
         <div class="ag-grid" :class="feats.length >= 4 ? 'c4' : feats.length >= 2 ? 'c2' : 'c1'">
@@ -139,11 +162,11 @@ onUnmounted(() => { if (io) io.disconnect() })
         <div class="ag-line"></div>
         <div class="ag-row2 en">
           <div class="l">
-            <div class="ag-cap ember">03 // ENTER</div>
-            <h2 class="ag-h">門開著。<span class="thin">下載 AEGIS,三步驟進場。</span></h2>
+            <div class="ag-cap ember">04 // ENTER</div>
+            <h2 class="ag-h">回來吧。<span class="thin">老地方,新的開始。</span></h2>
           </div>
           <div class="r">
-            <p class="ag-body">下載登入器、解壓、點兩下,更新自己跑完就能進遊戲。沒有客戶端?找客服拿。</p>
+            <p class="ag-body">下載登入器、解壓、點兩下,更新自己跑完就進遊戲。不用儲值、不用排隊,今晚就能回到那個天堂。沒有客戶端?找客服拿。</p>
             <div class="cta">
               <RouterLink class="ag-btn primary" to="/aegis/play">點我玩遊戲 <span class="arr">→</span></RouterLink>
               <RouterLink class="ag-btn" to="/aegis/contact">聯絡客服</RouterLink>
@@ -178,6 +201,11 @@ onUnmounted(() => { if (io) io.disconnect() })
 .hero-body .ag-line { background: rgba(255, 255, 255, 0.34); }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
 
+.why { padding-bottom: 0; }
+.why .sub { color: var(--ag-ink-50); }
+.wy { min-height: 0; }
+.wy h3 { font-size: 1.25rem; font-family: var(--ag-font); margin-bottom: 12px; }
+.wy p { font-size: 15px; line-height: 1.75; color: var(--ag-ink-60); }
 .stats { padding: 0; }
 .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--ag-line-soft); }
 .stat { padding: 30px 20px 26px; border-left: 1px solid var(--ag-line-soft); }
