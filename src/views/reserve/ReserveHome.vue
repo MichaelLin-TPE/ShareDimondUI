@@ -4,7 +4,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { AG_CLASSES } from '@/data/aegis/classes'
-import { RV_FEATURES, RV_MILESTONES, RV_SHARE_URL, RV_STATS, RV_STEPS } from '@/data/aegis/reserve'
+import { RV_FEATURES, RV_MILESTONES, RV_SHARE_URL, RV_STATS, RV_STEPS, RV_WHY } from '@/data/aegis/reserve'
 import { fetchStats, session } from '@/views/aegis/prereg/api'
 
 const route = useRoute()
@@ -104,7 +104,7 @@ onUnmounted(() => io?.disconnect())
       <div class="hero-in">
         <div class="live ag-anim" style="--d: 0.1s"><i></i>事前預約進行中</div>
         <h1 class="ag-anim" style="--d: 0.2s; --y: 26px">神盾天堂<span>AEGIS</span></h1>
-        <p class="lead ag-anim" style="--d: 0.35s">3.81 經典天堂。名字先搶,開服直接上線。</p>
+        <p class="lead ag-anim" style="--d: 0.35s">不賣裝備、不開短期服,強大靠自己打。名字先搶,開服直接上線。</p>
 
         <div class="count ag-anim" style="--d: 0.5s">
           <span class="lb">目前預約人數</span>
@@ -185,8 +185,11 @@ onUnmounted(() => io?.disconnect())
       <div class="ag-wrap">
         <div class="hd rv-in">
           <div class="ag-cap ember">WHY AEGIS</div>
-          <h2>老玩家的天堂,該有的都在</h2>
-          <p>倍率、衝裝機率全部公開,不用私訊問。</p>
+          <h2>這裡賣的只有情懷,其餘靠你自己打</h2>
+          <p>無課不用怕追不上人。倍率、機率全部公開,不用私訊問。</p>
+        </div>
+        <div class="why3">
+          <div v-for="(w, i) in RV_WHY" :key="w.q" class="rv-in" :style="{ '--d': i * 0.08 + 's' }"><b>{{ w.q }}</b><p>{{ w.a }}</p></div>
         </div>
         <div class="stats rv-in">
           <div v-for="x in RV_STATS" :key="x.k"><b>{{ x.v }}</b><span>{{ x.k }}</span></div>
@@ -392,6 +395,10 @@ onUnmounted(() => io?.disconnect())
 .share .btn.line:hover { filter: brightness(1.08); }
 
 /* ---------- 遊戲特色 ---------- */
+.why3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px; }
+.why3 div { padding: 22px 22px 20px; border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
+.why3 b { display: block; font-size: 18px; font-weight: 500; letter-spacing: 0.04em; color: #fff; }
+.why3 p { margin-top: 8px; font-size: 14.5px; line-height: 1.7; color: var(--ag-ink-60); }
 .stats { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
 .stats div { padding: 26px 10px 22px; text-align: center; border-left: 1px solid var(--ag-line-soft); }
 .stats div:first-child { border-left: 0; }
@@ -484,6 +491,8 @@ onUnmounted(() => io?.disconnect())
   .card h3 { grid-column: 2; font-size: 17px; }
   .card ul { grid-column: 2 / 4; margin-top: 10px; padding-top: 10px; }
   .card .st { grid-column: 3; grid-row: 1; margin: 0; }
+  .why3 { grid-template-columns: 1fr; gap: 10px; }
+  .why3 div { padding: 16px 16px 14px; }
   .stats div { padding: 16px 2px 14px; }
   .stats b { font-size: 22px; }
   .stats span { margin-top: 4px; font-size: 11.5px; letter-spacing: 0; }

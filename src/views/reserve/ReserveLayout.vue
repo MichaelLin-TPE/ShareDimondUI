@@ -37,7 +37,7 @@ onMounted(() => {
     l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap'
     document.head.appendChild(l)
   }
-  document.title = '神盾天堂 事前預約｜3.81 經典天堂私服 開服前搶先創角'
+  document.title = '神盾天堂 事前預約｜長期經營的經典天堂私服 開服前搶先創角'
   window.addEventListener('scroll', onScroll, { passive: true })
   document.body.addEventListener('scroll', onScroll, { passive: true })
   restoreSession().catch(() => {})
@@ -86,7 +86,7 @@ onUnmounted(() => {
         <div class="row">
           <div>
             <div class="fb">神盾天堂 <span>AEGIS</span></div>
-            <p class="ag-cap">3.81 經典私服 · 事前預約</p>
+            <p class="ag-cap">長期經營的經典天堂 · 事前預約</p>
           </div>
           <div class="fl">
             <a href="/#/aegis">想看遊戲內容?前往遊戲官網 →</a>
