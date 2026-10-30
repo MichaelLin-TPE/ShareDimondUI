@@ -167,7 +167,7 @@ export const AG_NEWS: AgNews[] = [
     id: 'update-20261023',
     date: '2026-10-23',
     tag: '更新',
-    title: '天堂 W 高階技能、王座(60 級)',
+    title: '60 級首創技能、王座',
     groups: [
       {
         kind: '新內容',

@@ -41,7 +41,7 @@ const BALANCE = [
 </script>
 
 <template>
-  <AgPage eyebrow="SKILLS // 技能介紹" title="高階技能。" sub="各職業的高階魔法,與本服自改的技能。" lead="只列五個職業的高階魔法與天堂 W 五大技能,普通低階魔法不佔版面。標「本服調整」的,數值或機制跟原版不同。">
+  <AgPage eyebrow="SKILLS // 技能介紹" title="高階技能。" sub="各職業的高階魔法,與本服首創的技能。" lead="只列五個職業的高階魔法與首創技能,普通低階魔法不佔版面。標「首創」的,只有這裡玩得到。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="bar">
@@ -57,7 +57,7 @@ const BALANCE = [
             <tbody>
               <tr v-for="s in rows" :key="s.cls + s.name">
                 <td class="num">{{ s.level }}</td>
-                <td class="name">{{ s.name }}<span v-if="s.custom" class="tag ember">本服調整</span></td>
+                <td class="name">{{ s.name }}<span v-if="s.custom" class="tag ember">首創</span></td>
                 <td class="tier">{{ s.tier }}</td>
                 <td><span class="tag" :class="{ ember: s.type === '攻擊', debuff: s.type === '減益' }">{{ s.type }}</span></td>
                 <td class="num">{{ s.mp }}</td>
@@ -112,6 +112,8 @@ const BALANCE = [
 .note { margin-top: 16px; font-size: 15px; color: var(--ag-ink-60); line-height: 1.7; }
 .ag-table-wrap { margin-top: 18px; }
 .name .tag { margin-left: 8px; vertical-align: 1px; }
+.ag-table .tag { white-space: nowrap; }
+.ag-table td.name { white-space: nowrap; }
 .tier { font-size: 13px; color: var(--ag-ink-50); letter-spacing: 0.04em; white-space: nowrap; }
 .tag.debuff { color: #c9a0ff; border-color: rgba(201, 160, 255, 0.35); }
 .empty { color: var(--ag-ink-35); text-align: center; padding: 30px; }

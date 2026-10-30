@@ -1,6 +1,6 @@
 // 技能介紹:只列各職業的高階技能與本服自改的技能(資料對伺服器 skills 表,效果為玩家版說明)。
-// 範圍:王族 40 級以上、騎士 50 / 60 級、精靈魔法 5～6 階、法師 8～10 階、暗黑魔法 2 階,加上天堂 W 五大技能。
-// custom = 數值或機制跟原版不同(頁面標「本服調整」)。普通低階魔法不列。
+// 範圍:王族 40 級以上、騎士 50 / 60 級、精靈魔法 5～6 階、法師 8～10 階、暗黑魔法 2 階,加上五個 60 級首創技能(滅世龍掉落)。
+// custom = 本服首創或自改的技能(頁面標「首創」;使用者 10-30:不要寫「本服調整」、不要提天堂 W)。普通低階魔法不列。
 export type AgClassKey = 'royal' | 'knight' | 'elf' | 'wizard' | 'darkelf'
 
 export interface AgSkill {
@@ -16,11 +16,11 @@ export interface AgSkill {
 }
 
 export const AG_SKILL_TABS: { key: AgClassKey; label: string; note: string }[] = [
-  { key: 'royal', label: '君主', note: '40 級以上的血盟光環技能。灼熱武器、閃亮之盾、勇猛意志是本服調整過的數值;帝國反擊是天堂 W 技能,滅世龍掉落。' },
-  { key: 'knight', label: '騎士', note: '50 / 60 級技能。衝擊之暈的命中公式見下方「平衡算法」;龍嘯是天堂 W 技能,滅世龍掉落。' },
-  { key: 'elf', label: '妖精', note: '精靈魔法 5～6 階(45 / 50 級)。烈焰之魂是本服調整版;精靈大師:精神是天堂 W 技能,滅世龍掉落。' },
-  { key: 'wizard', label: '法師', note: '8～10 階魔法(32 / 36 / 40 級)。寒冰尖刺是本服新增的 10 階攻擊魔法;時間靜止是天堂 W 技能,滅世龍掉落。負面魔法命中公式見下方。' },
-  { key: 'darkelf', label: '黑妖', note: '暗黑魔法 2 階(30 級)。暗影閃避:命運是天堂 W 技能,滅世龍掉落。' },
+  { key: 'royal', label: '君主', note: '40 級以上的血盟光環技能。灼熱武器、閃亮之盾、勇猛意志是本服首創的強化版;帝國反擊 60 級首創技能,滅世龍掉落。' },
+  { key: 'knight', label: '騎士', note: '50 / 60 級技能。衝擊之暈的命中公式見下方「平衡算法」;龍嘯 60 級首創技能,滅世龍掉落。' },
+  { key: 'elf', label: '妖精', note: '精靈魔法 5～6 階(45 / 50 級)。烈焰之魂是本服首創的強化版;精靈大師:精神 60 級首創技能,滅世龍掉落。' },
+  { key: 'wizard', label: '法師', note: '8～10 階魔法(32 / 36 / 40 級)。寒冰尖刺是本服首創的 10 階攻擊魔法;時間靜止 60 級首創技能,滅世龍掉落。負面魔法命中公式見下方。' },
+  { key: 'darkelf', label: '黑妖', note: '暗黑魔法 2 階(30 級)。暗影閃避:命運 60 級首創技能,滅世龍掉落。' },
 ]
 
 export const AG_SKILLS: AgSkill[] = [
@@ -81,9 +81,9 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '敏捷提升', cls: 'darkelf', level: 30, mp: 10, cooldown: '—', type: '輔助', effect: 'DEX 提升（持續 960 秒）', tier: '暗黑魔法 2 階' },
   { name: '閃避提升', cls: 'darkelf', level: 30, mp: 20, cooldown: '—', type: '輔助', effect: '閃避提升（持續 32 秒）', tier: '暗黑魔法 2 階' },
   { name: '破壞盔甲', cls: 'darkelf', level: 30, mp: 32, cooldown: '5.5 秒', type: '減益', effect: '目標 AC 下降（持續 8 秒、消耗 HP 30）', tier: '暗黑魔法 2 階' },
-  { name: '龍嘯', cls: 'knight', level: 60, mp: 30, cooldown: '獨立冷卻', type: '減益', effect: '雙手劍限定,遠距離指定目標、機率昏迷;跟衝擊之暈分開算冷卻,可以先遠暈再衝暈', tier: '天堂 W 技能(滅世龍掉落 10%)' },
-  { name: '帝國反擊', cls: 'royal', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '自身 buff:期間最大血量提升;被打到時有機率把傷害反射回去並讓對方出血', tier: '天堂 W 技能(滅世龍掉落 10%)' },
-  { name: '精靈大師:精神', cls: 'elf', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '自身 buff:四屬性抗性 +30、所受傷害 −15%、近戰與弓傷害 +5%、昏迷 / 石化 / 沉睡 / 支撐等抗性提升;重放不疊加', tier: '天堂 W 技能(滅世龍掉落 10%)' },
-  { name: '時間靜止', cls: 'wizard', level: 60, mp: 60, cooldown: '—', type: '減益', effect: '周圍敵人睡著(跟沉睡之霧一樣,被打會醒);隊友、血盟、聯盟不受影響;睡著的目標被衝擊之暈或龍嘯打一律命中', tier: '天堂 W 技能(滅世龍掉落 10%)' },
-  { name: '暗影閃避:命運', cls: 'darkelf', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '暗影閃避的強化版(獨立技能):迴避更高,被近距離攻擊時 15% 完全閃過,閃過時 50% 把傷害反彈(等級×2 + 力量×2);跟暗影閃避後放的取代先放的', tier: '天堂 W 技能(滅世龍掉落 10%)' },
+  { name: '龍嘯', cls: 'knight', level: 60, mp: 30, cooldown: '獨立冷卻', type: '減益', effect: '雙手劍限定,遠距離指定目標、機率昏迷;跟衝擊之暈分開算冷卻,可以先遠暈再衝暈', custom: true, tier: '首創技能(滅世龍掉落 10%)' },
+  { name: '帝國反擊', cls: 'royal', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '自身 buff:期間最大血量提升;被打到時有機率把傷害反射回去並讓對方出血', custom: true, tier: '首創技能(滅世龍掉落 10%)' },
+  { name: '精靈大師:精神', cls: 'elf', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '自身 buff:四屬性抗性 +30、所受傷害 −15%、近戰與弓傷害 +5%、昏迷 / 石化 / 沉睡 / 支撐等抗性提升;重放不疊加', custom: true, tier: '首創技能(滅世龍掉落 10%)' },
+  { name: '時間靜止', cls: 'wizard', level: 60, mp: 60, cooldown: '—', type: '減益', effect: '周圍敵人睡著(跟沉睡之霧一樣,被打會醒);隊友、血盟、聯盟不受影響;睡著的目標被衝擊之暈或龍嘯打一律命中', custom: true, tier: '首創技能(滅世龍掉落 10%)' },
+  { name: '暗影閃避:命運', cls: 'darkelf', level: 60, mp: 30, cooldown: '—', type: '輔助', effect: '暗影閃避的強化版(獨立技能):迴避更高,被近距離攻擊時 15% 完全閃過,閃過時 50% 把傷害反彈(等級×2 + 力量×2);跟暗影閃避後放的取代先放的', custom: true, tier: '首創技能(滅世龍掉落 10%)' },
 ]
