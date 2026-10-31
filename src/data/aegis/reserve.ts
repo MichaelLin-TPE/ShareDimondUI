@@ -51,6 +51,6 @@ export const RV_FEATURES = [
   { title: '裝備圖鑑', line: '爛裝也有用,登錄收藏冊全帳號永久加成。', art: 'codex.jpg' },
   { title: '屠龍遠征', line: '每天輪一條龍,首通拿屠龍聖印。', art: 'dragonraid.jpg' },
   { title: '獄之試煉', line: '1~4 人打王,十分鐘一場,每天都能打。', art: 'dungeon.jpg' },
-  { title: '時光幣', line: '在線每 30 分鐘一顆,5 顆開一袋。', art: 'hourglass.jpg' },
+  { title: '獨家娛樂場', line: '拉霸、妞妞、十三支、麻將、捕魚,天幣上桌、真人坐莊。', art: 'casino.jpg' },
   { title: '釣魚', line: '掛個竿,錢跟屬性自己游過來。', art: 'fishing-panic.jpg' },
 ]
