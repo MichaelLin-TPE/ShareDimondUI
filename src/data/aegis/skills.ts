@@ -51,7 +51,7 @@ export const AG_SKILLS: AgSkill[] = [
   { name: '能量激發', cls: 'elf', level: 50, mp: 30, cooldown: '—', type: '輔助', effect: 'INT 提升（持續 960 秒）', tier: '精靈魔法 6 階' },
   { name: '全部治癒術', cls: 'wizard', level: 32, mp: 48, cooldown: '0.8 秒', type: '治癒', effect: '隊伍全體回復 HP', tier: '魔法 8 階' },
   { name: '火牢', cls: 'wizard', level: 32, mp: 60, cooldown: '—', type: '攻擊', effect: '單體火屬性攻擊,持續灼燒（火屬性）', tier: '魔法 8 階' },
-  { name: '冰雪暴', cls: 'wizard', level: 32, mp: 60, cooldown: '1.5 秒', type: '攻擊', effect: '範圍水屬性攻擊（3d10+2、水屬性、消耗 HP 10）', tier: '魔法 8 階' },
+  { name: '冰雪暴', cls: 'wizard', level: 32, mp: 60, cooldown: '1.5 秒', type: '攻擊', effect: '範圍水屬性攻擊（3d5、水屬性、消耗 HP 10）', tier: '魔法 8 階' },
   { name: '隱身術', cls: 'wizard', level: 32, mp: 15, cooldown: '3 秒', type: '輔助', effect: '進入隱身', tier: '魔法 8 階' },
   { name: '返生術', cls: 'wizard', level: 32, mp: 50, cooldown: '—', type: '輔助', effect: '讓死者復活', tier: '魔法 8 階' },
   { name: '震裂術', cls: 'wizard', level: 32, mp: 40, cooldown: '1.5 秒', type: '攻擊', effect: '範圍地屬性攻擊（6d8+20、地屬性）', tier: '魔法 8 階' },

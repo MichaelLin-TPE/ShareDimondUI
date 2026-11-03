@@ -19,9 +19,9 @@ export const AG_SERVER_BASIC: AgKv[] = [
 ]
 
 export const AG_SERVER_RATES: AgKv[] = [
-  { k: '經驗倍率', v: '×10' },
+  { k: '經驗倍率', v: '×5' },
   { k: '天幣掉落', v: '×2' },
-  { k: '物品掉落', v: '×2' },
+  { k: '物品掉落', v: '×1' },
   { k: '負重倍率', v: '×100' },
   { k: '商店賣價 / 買價', v: '×1.0 / ×1.0' },
 ]
