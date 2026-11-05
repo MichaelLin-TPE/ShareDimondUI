@@ -5,9 +5,22 @@ export interface AgDetailSection {
   table?: { head: string[]; rows: string[][] }
 }
 
+/** 分類(特色頁上方的分類列;40 項不分類很難找,2026-11-05 使用者) */
+export type AgFeatureCat = 'growth' | 'daily' | 'boss' | 'forge' | 'upgrade' | 'collect' | 'clan'
+export const AG_FEATURE_CATS: { key: AgFeatureCat; name: string }[] = [
+  { key: 'growth', name: '角色成長' },
+  { key: 'daily', name: '日常與任務' },
+  { key: 'boss', name: '首領與副本' },
+  { key: 'forge', name: '打造與王裝' },
+  { key: 'upgrade', name: '裝備升階' },
+  { key: 'collect', name: '收藏與符文' },
+  { key: 'clan', name: '血盟與攻城' },
+]
+
 export interface AgFeature {
   id: string
   idx: string
+  cat: AgFeatureCat
   title: string
   short: string
   points: string[]
@@ -24,6 +37,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'fishing',
     idx: '01',
+    cat: 'daily',
     title: '釣魚',
     short: '掛個竿,錢跟屬性自己游過來。',
     points: [
@@ -65,6 +79,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'boss',
     idx: '02',
+    cat: 'boss',
     title: '首領積分',
     short: '打王不用搶最後一刀,打多少算多少。',
     points: [
@@ -183,6 +198,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'pet',
     idx: '03',
+    cat: 'growth',
     title: '寵物',
     short: '抓一隻養到 50 級,牠打怪的經驗你也有份。',
     points: [
@@ -257,6 +273,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'trial',
     idx: '04',
+    cat: 'growth',
     title: '職業試煉',
     short: '15、30、45、50 級各一場,一隻 NPC 全包。',
     points: [
@@ -301,6 +318,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'party',
     idx: '05',
+    cat: 'growth',
     title: '組隊經驗加成',
     short: '揪團就加經驗,隊友不在同一張圖也算。',
     points: [
@@ -334,6 +352,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'castletax',
     idx: '06',
+    cat: 'clan',
     title: '城戰稅收',
     short: '全服在 NPC 花的錢,5% 流進肯特城金庫。',
     points: [
@@ -357,6 +376,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'affix',
     idx: '07',
+    cat: 'forge',
     title: '裝備炫色',
     short: '打到的每件裝備,都可能帶著稀有詞綴。',
     points: [
@@ -419,6 +439,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'checkin',
     idx: '08',
+    cat: 'daily',
     title: '每日簽到',
     short: '每天上線點一下,天幣和結晶自己進背包。',
     points: [
@@ -449,6 +470,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'dungeon',
     idx: '09',
+    cat: 'boss',
     title: '副本「獄之試煉」',
     short: '1~4 人打王,十分鐘一場,每天都能打;60 級王座雙王、70 級軍王殿。',
     points: [
@@ -586,6 +608,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'bounty',
     idx: '10',
+    cat: 'daily',
     title: '懸賞令',
     short: '每天三張懸賞單,只派等級不超過你的怪,解完拿積分、娃娃精華和聲望。',
     points: [
@@ -639,6 +662,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'doll',
     idx: '11',
+    cat: 'collect',
     title: '魔法娃娃',
     short: '抽娃娃、合成、升星,登錄圖鑑全帳號變強。',
     points: [
@@ -686,6 +710,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'codex',
     idx: '12',
+    cat: 'collect',
     title: '裝備圖鑑',
     short: '爛裝也有用:登錄收藏冊,全帳號永久加成。',
     points: [
@@ -736,6 +761,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'earring',
     idx: '13',
+    cat: 'upgrade',
     title: '元寶耳環',
     short: '四種耳環各補一種能力,一路升到 8 階。',
     points: [
@@ -776,6 +802,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'hourglass',
     idx: '14',
+    cat: 'daily',
     title: '時光幣與時光符文',
     short: '30 級以上在線每 30 分鐘一顆:攢 5 顆開一袋,或拿去升時光符文。',
     points: [
@@ -811,6 +838,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'necklace',
     idx: '15',
+    cat: 'upgrade',
     title: '月之項鍊',
     short: '原版項鍊升階成月之項鍊,一路升到 ★8。',
     points: [
@@ -852,6 +880,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'bless',
     idx: '16',
+    cat: 'forge',
     title: '祝福系統',
     short: '祝福的裝備多一組能力;打得到,也可以用卷軸自己祝福。',
     points: [
@@ -896,6 +925,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'hecate',
     idx: '17',
+    cat: 'upgrade',
     title: '赫卡特與超能符石',
     short: '夢幻之島打升級卷,赫卡特衝到 +9 換超能符石。',
     points: [
@@ -943,6 +973,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'magicweapon',
     idx: '18',
+    cat: 'forge',
     title: '魔法武器',
     short: '兩把 +7 武器加勇氣結晶,做出會發動特效的魔法武器。',
     points: [
@@ -988,6 +1019,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'bosscodex',
     idx: '19',
+    cat: 'collect',
     title: '首領收藏',
     short: '每隻王都有一顆精華,收齊了永久變強。',
     points: [
@@ -1067,6 +1099,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'belt',
     idx: '20',
+    cat: 'upgrade',
     title: '光之殷海薩腰帶',
     short: '六條原版腰帶各有風格,升到 ★8。',
     points: [
@@ -1105,6 +1138,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'hexagram',
     idx: '21',
+    cat: 'upgrade',
     title: '六芒星',
     short: '兩顆合一顆,從護身符一路合到 H。',
     points: [
@@ -1155,6 +1189,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'guarder',
     idx: '22',
+    cat: 'upgrade',
     title: '三系臂甲',
     short: '狂戰、疾風、秘法三條線,★9 有專屬特效。',
     points: [
@@ -1202,6 +1237,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'dragonraid',
     idx: '23',
+    cat: 'boss',
     title: '屠龍遠征',
     short: '每天輪一條龍:地龍安塔瑞斯、水龍法利昂、風龍林德拜爾,首通拿屠龍聖印。',
     points: [
@@ -1300,6 +1336,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'bossgear',
     idx: '24',
+    cat: 'forge',
     title: '王裝',
     short: '每隻王都有自己的套裝和武器,一律 1% 掉落。',
     points: [
@@ -1388,6 +1425,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'ringdevour',
     idx: '25',
+    cat: 'upgrade',
     title: '戒指吞噬與共鳴',
     short: '任何戒指當本體,吃元素戒指長能力;★4 / ★8 / ★12 跟另一格的戒指共鳴。',
     points: [
@@ -1453,6 +1491,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'hunterrune',
     idx: '26',
+    cat: 'collect',
     title: '獵魔符文',
     short: '戴著打怪累積獵魔值:10 階成長 + 5 階覺醒,獵殺 / 守護 / 掠奪三條路線。',
     points: [
@@ -1513,6 +1552,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'dragonarmor',
     idx: '27',
+    cat: 'forge',
     title: '四大龍盔甲',
     short: '最終的盔甲:四條龍 × 四個職業定位,16 件各有一個角色。',
     points: [
@@ -1580,6 +1620,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'soulshirt',
     idx: '28',
+    cat: 'upgrade',
     title: '內衣成長線',
     short: '舊 T恤 → 五型內衣 → 五條奪魂衣,+10 有自己的絕招。',
     points: [
@@ -1633,6 +1674,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'clanunity',
     idx: '29',
+    cat: 'clan',
     title: '同心之盟',
     short: '血盟在線人數越多,全盟一起變強。',
     points: [
@@ -1663,6 +1705,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'season',
     idx: '30',
+    cat: 'daily',
     title: '賽季',
     short: '兩週一季、每人隨機任務,分數升賽季等級、存累計分換變身卡。',
     points: [
@@ -1728,6 +1771,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'cardcodex',
     idx: '31',
+    cat: 'collect',
     title: '變身卡圖鑑',
     short: '211 張變身卡收集,登錄加血、集滿套卡永久加成;禮盒抽得到唯一。',
     points: [
@@ -1803,6 +1847,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'classgrowth',
     idx: '32',
+    cat: 'growth',
     title: '職業本能',
     short: '50 級起每升一級就長一點,70 級封頂,五大職業各一條。',
     points: [
@@ -1831,6 +1876,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'levelrank',
     idx: '33',
+    cat: 'growth',
     title: '全服等級前三名',
     short: '每 3 小時重排一次,前三名頭上掛星、全身加成。',
     points: [
@@ -1858,6 +1904,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'casino',
     idx: '34',
+    cat: 'daily',
     title: '獨家娛樂場',
     short: '奇岩村一隻 NPC,五款小遊戲,全部用天幣玩,玩家對玩家、沒有電腦玩家。',
     points: [
@@ -1967,6 +2014,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'greaves',
     idx: '35',
+    cat: 'upgrade',
     title: '死亡騎士脛甲',
     short: '毀滅、神速、萬魔、磐石四條線,一路升到極 ★11,滿階有覺醒能力。',
     points: [
@@ -2045,6 +2093,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'isle',
     idx: '36',
+    cat: 'boss',
     title: '新遺忘之島',
     short: '七隻首領的島:精華、脛甲升階卷、★1 ~ ★8 脛甲都在這裡掉。',
     points: [
@@ -2086,6 +2135,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'bossbag',
     idx: '37',
+    cat: 'boss',
     title: '首領紅包',
     short: '世界王的金幣不落地,打過的人每人一包,組隊還加成。',
     points: [
@@ -2124,6 +2174,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'siege',
     idx: '38',
+    cat: 'clan',
     title: '肯特攻城',
     short: '每週六晚上九點打肯特城:血盟積分換技能書、個人攻城符文升到 Max、城主盟掛光環。',
     points: [
@@ -2205,6 +2256,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'clanfame',
     idx: '39',
+    cat: 'clan',
     title: '血盟盟威',
     short: '捐天幣、捐元寶、解每日任務累積盟威,血盟升級全盟一起變強。',
     points: [
@@ -2275,6 +2327,7 @@ export const AG_FEATURES: AgFeature[] = [
   {
     id: 'clancity',
     idx: '40',
+    cat: 'clan',
     title: '血盟副本 天空之城',
     short: '盟主開門、全盟一起打四隻王,每關拿盟威和個人貢獻,打倒炎魔拿紅包和專屬符文。',
     points: [

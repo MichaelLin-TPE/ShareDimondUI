@@ -4,25 +4,43 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AgPage from './ui/AgPage.vue'
-import { AG_FEATURES, type AgFeature } from '@/data/aegis/features'
+import { AG_FEATURES, AG_FEATURE_CATS, type AgFeature, type AgFeatureCat } from '@/data/aegis/features'
 
 const route = useRoute()
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const artOf = (file: string) => `${base}/aegis/art/${file}`
 
-const n = AG_FEATURES.length
-const total = String(n).padStart(2, '0')
+// 分類列:選一類只轉那一類的卡(2026-11-05 使用者:40 項很難找東西,但字卡要留著);「全部」= 原本的樣子
+type CatKey = 'all' | AgFeatureCat
+const CATS: { key: CatKey; name: string; count: number }[] = [
+  { key: 'all', name: '全部', count: AG_FEATURES.length },
+  ...AG_FEATURE_CATS.map((c) => ({ ...c, count: AG_FEATURES.filter((f) => f.cat === c.key).length })),
+]
+const cat = ref<CatKey>('all')
+const list = computed(() => (cat.value === 'all' ? AG_FEATURES : AG_FEATURES.filter((f) => f.cat === cat.value)))
+const n = computed(() => list.value.length)
+const total = String(AG_FEATURES.length).padStart(2, '0')
 const active = ref(0)
-const cur = computed(() => AG_FEATURES[active.value]!)
+const cur = computed(() => list.value[active.value] ?? list.value[0]!)
 let userNav = false   // 使用者自己點/滑才用平滑捲動;帶 #id 進來的第一次直接跳到位(背景分頁的平滑捲動不會跑完)
-const go = (i: number) => { userNav = true; active.value = ((i % n) + n) % n }
+const go = (i: number) => { userNav = true; active.value = ((i % n.value) + n.value) % n.value }
+// 換分類:正在看的那張還在新分類裡就留在它身上,不然從第一張開始
+const setCat = (k: CatKey) => {
+  const keep = cur.value
+  cat.value = k
+  userNav = true
+  const i = list.value.indexOf(keep)
+  active.value = i >= 0 ? i : 0
+}
 const next = () => go(active.value + 1)
 const prev = () => go(active.value - 1)
 
 // 首頁卡片連過來會帶 #特色id:直接轉到那張
 const syncHash = () => {
-  const i = AG_FEATURES.findIndex((f) => f.id === (route.hash || '').replace('#', ''))
-  if (i >= 0) active.value = i
+  const f = AG_FEATURES.find((x) => x.id === (route.hash || '').replace('#', ''))
+  if (!f) return
+  if (!list.value.includes(f)) cat.value = f.cat
+  active.value = list.value.indexOf(f)
 }
 
 // 聚焦卡的滑鼠傾斜(度)與視差(-1~1)
@@ -44,8 +62,9 @@ const onLeaveRing = () => { tilt.value = { rx: 0, ry: 0, px: 0, py: 0, on: false
 // 每張卡相對中央的位移:平移 + 繞 Y 軸轉 + 縮小 + 變暗;聚焦卡再疊上滑鼠傾斜
 const cardStyle = (i: number) => {
   let off = i - active.value
-  if (off > n / 2) off -= n          // 頭尾接起來:最後一張在第一張左邊
-  if (off < -n / 2) off += n
+  const c = n.value
+  if (off > c / 2) off -= c          // 頭尾接起來:最後一張在第一張左邊
+  if (off < -c / 2) off += c
   const a = Math.abs(off)
   const t = off === 0 ? tilt.value : null
   const extra = t && t.on ? ` rotateX(${t.rx.toFixed(2)}deg) rotateY(${t.ry.toFixed(2)}deg)` : ''
@@ -76,7 +95,7 @@ const onUp = (e: PointerEvent) => {
 // 點卡片:旁邊的先轉到中間,中間那張(已經選好的)直接開詳細規則。剛滑過的那下不算點擊。
 const onCardClick = (i: number) => {
   if (swiped) { swiped = false; return }
-  if (i === active.value) openModal(AG_FEATURES[i]!)
+  if (i === active.value) openModal(list.value[i]!)
   else go(i)
 }
 
@@ -94,6 +113,16 @@ let indexRo: ResizeObserver | null = null
 watch(active, async (i) => {
   await nextTick()
   centerTab(i, userNav)
+})
+// 分類列在手機上是一排可左右滑:帶 #id 進來跳到別的分類時,把那顆分類捲到看得到的位置
+const catsEl = ref<HTMLElement | null>(null)
+watch(cat, async () => {
+  await nextTick()
+  const c = catsEl.value
+  const t = c?.querySelector<HTMLElement>('.cat.on')
+  if (!c || !t || c.scrollWidth <= c.clientWidth) return
+  const cr = c.getBoundingClientRect(), tr = t.getBoundingClientRect()
+  c.scrollTo({ left: c.scrollLeft + (tr.left - cr.left) - c.clientWidth / 2 + tr.width / 2, behavior: userNav ? 'smooth' : 'auto' })
 })
 
 // 詳細規則:彈窗(畫面暗掉、規則自己一個可捲動面板;Esc / 點外面 / 關閉鈕都能關)
@@ -138,13 +167,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <AgPage eyebrow="FEATURES // 遊戲特色" title="這裡才有的玩法。" :sub="`共 ${n} 項特色,點旁邊的卡切換,點中間那張看完整規則。`">
+  <AgPage eyebrow="FEATURES // 遊戲特色" title="這裡才有的玩法。" :sub="`共 ${AG_FEATURES.length} 項特色,先選分類,點旁邊的卡切換,點中間那張看完整規則。`">
     <section class="ag-section">
       <div class="ag-wrap">
+        <div ref="catsEl" class="cats" role="tablist" aria-label="特色分類">
+          <button
+            v-for="c in CATS" :key="c.key" type="button" role="tab" class="cat"
+            :class="{ on: cat === c.key }" :aria-selected="cat === c.key" @click="setCat(c.key)"
+          >
+            {{ c.name }}<span class="cn">{{ c.count }}</span>
+          </button>
+        </div>
         <div class="stage" @pointerdown="onDown" @pointerup="onUp" @pointercancel="dragging = false" @pointerleave="dragging = false">
           <div class="ring" @pointermove="onMove" @pointerleave="onLeaveRing">
             <button
-              v-for="(f, i) in AG_FEATURES" :key="f.id" type="button" class="card"
+              v-for="(f, i) in list" :key="f.id" type="button" class="card"
               :class="{ on: i === active, tilt: i === active && tilt.on }" :style="cardStyle(i)"
               :aria-pressed="i === active" :aria-label="f.idx + ' ' + f.title + (i === active ? ' · 看詳細規則' : '')"
               @click="onCardClick(i)"
@@ -168,9 +205,9 @@ onUnmounted(() => {
         </div>
 
         <!-- 放在 .stage 外面:stage 的觸控左右滑是換卡,索引列自己左右滑不能被當成換卡 -->
-        <div ref="indexEl" class="index" role="tablist" aria-label="全部特色">
+        <div ref="indexEl" class="index" role="tablist" aria-label="這一類的特色">
           <button
-            v-for="(f, i) in AG_FEATURES" :key="f.id" type="button" role="tab" class="tab"
+            v-for="(f, i) in list" :key="f.id" type="button" role="tab" class="tab"
             :class="{ on: i === active }" :aria-selected="i === active" @click="go(i)"
           >
             <span class="ti">{{ f.idx }}</span>{{ f.title }}
@@ -283,7 +320,18 @@ onUnmounted(() => {
 .card.on .cap .more { opacity: 1; transform: none; }
 .card.on:hover .cap .more .arr { transform: translateX(4px); }
 
-/* 索引列:一眼看到全部特色 */
+/* 分類列:放在卡片上面,選一類只轉那一類 */
+.cats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 6px; }
+.cat { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px;
+  border: 1px solid var(--ag-line); color: var(--ag-ink-72); font-size: 13.5px; font-weight: 500; letter-spacing: 0.08em; white-space: nowrap;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)); transition: color 0.2s, border-color 0.2s, background 0.2s; }
+.cat .cn { font-size: 11px; color: var(--ag-ink-35); font-variant-numeric: tabular-nums; transition: color 0.2s; }
+.cat:hover { color: var(--ag-ink); border-color: var(--ag-ember); }
+.cat.on { background: var(--ag-ember); border-color: var(--ag-ember); color: #120800; }
+.cat.on .cn { color: rgba(18, 8, 0, 0.6); }
+.cat:focus-visible { outline: 2px solid var(--ag-ember); outline-offset: 2px; }
+
+/* 索引列:一眼看到這一類的特色 */
 .index { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
 .tab { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px;
   border: 1px solid var(--ag-line-soft); color: var(--ag-ink-60); font-size: 13px; letter-spacing: 0.06em; white-space: nowrap; transition: color 0.2s, border-color 0.2s, background 0.2s; }
@@ -315,8 +363,10 @@ onUnmounted(() => {
   .cap { top: calc(280px * 9 / 16 - 14px); padding: 0 16px 16px; gap: 4px; }
   .cap b { font-size: 19px; }
   .cap i { font-size: 12.5px; }
-  .index { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding: 2px 2px 8px; margin-top: 12px; scrollbar-width: none; }
-  .index::-webkit-scrollbar { display: none; }
+  .cats, .index { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; }
+  .index { margin-top: 12px; }
+  .cats::-webkit-scrollbar, .index::-webkit-scrollbar { display: none; }
+  .cat { height: 34px; padding: 0 13px; font-size: 13px; }
   .info { grid-template-columns: 1fr; gap: 22px; margin-top: 28px; }
   .strip { grid-template-columns: 1fr; }
 }
