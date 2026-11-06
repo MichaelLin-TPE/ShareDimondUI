@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
 import AgPage from './ui/AgPage.vue'
 import { AG_SKILLS, AG_SKILL_TABS, type AgClassKey } from '@/data/aegis/skills'
 
-// ?c=wizard:從職業介紹點「完整規則」過來,直接開那個職業的分頁
-const qc = String(useRoute().query.c ?? '')
-const tab = ref<AgClassKey>(AG_SKILL_TABS.some((t) => t.key === qc) ? (qc as AgClassKey) : 'royal')
+const tab = ref<AgClassKey>('royal')
 const q = ref('')
 const rows = computed(() => {
   const k = q.value.trim()

@@ -66,7 +66,7 @@ const onUp = (e: PointerEvent) => {
 </script>
 
 <template>
-  <AgPage eyebrow="CLASSES // 職業介紹" title="五個職業。" sub="點哪張,就看哪個。下面列出這個職業專屬的本能、試煉、裝備與技能。">
+  <AgPage eyebrow="CLASSES // 職業介紹" title="五個職業。" sub="點哪張,就看哪個。下面是這個職業的本能、試煉獎勵與基本數值。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="stage" @pointerdown="onDown" @pointerup="onUp" @pointercancel="dragging = false" @pointerleave="dragging = false">
@@ -180,8 +180,10 @@ const onUp = (e: PointerEvent) => {
 .info { margin-top: 44px; padding-bottom: 28px; border-bottom: 1px solid var(--ag-line); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; animation: ag-up 0.45s ease-out; }
 .info .ag-h { margin: 10px 0 0; }
 .desc { max-width: 46ch; margin: 0; }
-.blocks { margin-top: 28px; columns: 2; column-gap: 20px; animation: ag-up 0.45s ease-out; }
-.blk { break-inside: avoid; margin-bottom: 20px; padding: 20px 22px; border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
+.blocks { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; animation: ag-up 0.45s ease-out; }
+/* 三張卡:左邊 本能 + 基本數值(短),右邊 試煉獎勵(長)整欄;順序照 classBlocks */
+.blk:nth-child(2) { grid-column: 2; grid-row: 1 / span 2; }
+.blk { padding: 20px 22px; border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
 .bh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
 .bh b { font-size: 15.5px; font-weight: 500; letter-spacing: 0.04em; }
 .go { flex: none; font-size: 12px; color: var(--ag-ink-50); text-decoration: none; letter-spacing: 0.06em; }
@@ -196,7 +198,8 @@ const onUp = (e: PointerEvent) => {
   .card { width: 230px; height: 380px; margin-left: -115px; }
   .fig { bottom: 74px; }
   .info { grid-template-columns: 1fr; gap: 24px; }
-  .blocks { columns: 1; }
+  .blocks { grid-template-columns: 1fr; }
+  .blk:nth-child(2) { grid-column: auto; grid-row: auto; }
   .blk { padding: 16px 16px; }
   .kv { grid-template-columns: 1fr; gap: 2px; }
 }
