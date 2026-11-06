@@ -1,3 +1,5 @@
+import { AG_FEATURES } from './features'
+
 // 事前預約站(/reserve)的內容設定。
 // 里程碑:預約帳號數達到 count,全服玩家開服都拿得到 items。獎勵是草案,改這裡就好,畫面自動跟著變。
 export type RvIcon = 'potion' | 'scroll' | 'hourglass' | 'doll' | 'crown'
@@ -27,12 +29,13 @@ export const RV_STEPS = [
 ]
 
 /** 遊戲特色:數字列(數值同官網伺服器設置 server.ts) */
+// 跟官網首頁數字帶同一套(雲端 config 真值);「不賣裝備」用文案帶,不放數字(2026-11-07 使用者)
 export const RV_STATS = [
-  { v: '0', k: '儲值能買到的裝備' },
   { v: '×5', k: '經驗倍率' },
+  { v: '×100', k: '負重倍率' },
   { v: '100', k: '等級上限' },
   { v: '3', k: '同 IP 多開' },
-  { v: '00:00', k: '每日重置' },
+  { v: String(AG_FEATURES.length), k: '首創玩法' },
 ]
 
 /** 三個問句:跟官網首頁同一套,打玩家換服的痛點 */

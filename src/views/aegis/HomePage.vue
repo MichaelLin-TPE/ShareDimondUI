@@ -3,6 +3,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { AG_SITE } from './nav'
 import { AG_NEWS } from '@/data/aegis/news'
+import { AG_FEATURES } from '@/data/aegis/features'
 import FocusText from './ui/FocusText.vue'
 
 // ?v= 是快取版本號:換影片檔就 +1,否則回訪的瀏覽器會一直用舊檔
@@ -21,12 +22,14 @@ const HOOKS = [
   { id: 'dragonraid', title: '屠龍遠征', hook: '每天輪一條龍', line: '地龍、水龍、風龍輪著開,首通拿屠龍聖印。' },
 ]
 
-// 數字帶:進視窗才跳數
+// 數字帶:進視窗才跳數。數字都是雲端 config 真值(rates / other / ipcheck.properties),改倍率要一起改這裡跟 server.ts / reserve.ts
+// 2026-11-07 使用者:「儲值能買到的裝備 0」這種用話術帶過(放在數字帶下面那句),數字只放玩家換服第一眼會看的
 const stats = [
-  { n: 0, suffix: '', cap: '儲值能買到的裝備' },
-  { n: 100, suffix: '', cap: '等級上限' },
-  { n: 3, suffix: '', cap: '同 IP 多開' },
-  { n: 13, suffix: '', cap: '收藏品 · 永久加屬性' },
+  { n: 5, prefix: '×', cap: '經驗倍率' },
+  { n: 100, prefix: '×', cap: '負重倍率' },
+  { n: 100, prefix: '', cap: '等級上限' },
+  { n: 3, prefix: '', cap: '同 IP 多開' },
+  { n: AG_FEATURES.length, prefix: '', cap: '首創玩法' },
 ]
 
 // 三個問句:直接打到玩家換服的痛點
@@ -119,14 +122,11 @@ onUnmounted(() => { if (io) io.disconnect() })
       <div class="ag-wrap">
         <div class="stat-grid">
           <div v-for="(s, i) in stats" :key="s.cap" class="stat">
-            <div class="n">{{ shown[i] }}<span v-if="s.suffix" class="u">{{ s.suffix }}</span></div>
+            <div class="n"><span v-if="s.prefix" class="u">{{ s.prefix }}</span>{{ shown[i] }}</div>
             <div class="ag-cap">{{ s.cap }}</div>
           </div>
-          <div class="stat">
-            <div class="n">00:00</div>
-            <div class="ag-cap">每日重置</div>
-          </div>
         </div>
+        <p class="stat-note">商城不賣裝備、不賣強度。王裝、符文、娃娃、收藏品全部自己打,無課跟有課站在同一條起跑線。</p>
       </div>
     </section>
 
@@ -217,7 +217,8 @@ onUnmounted(() => { if (io) io.disconnect() })
 .stat { padding: 30px 20px 26px; border-left: 1px solid var(--ag-line-soft); }
 .stat:first-child { border-left: 0; padding-left: 0; }
 .stat .n { font-size: clamp(1.8rem, 3.4vw, 2.6rem); font-weight: 200; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-bottom: 10px; }
-.stat .n .u { font-size: 0.5em; color: var(--ag-ember); }
+.stat .n .u { font-size: 0.5em; color: var(--ag-ember); vertical-align: 0.35em; margin-right: 2px; }
+.stat-note { padding: 18px 0 0; font-size: 14px; line-height: 1.7; color: var(--ag-ink-60); }
 
 .hk { min-height: 0; }
 .hk h3 { font-size: 1.15rem; line-height: 1.4; }
