@@ -3,6 +3,8 @@
 import { computed, ref } from 'vue'
 import AgPage from './ui/AgPage.vue'
 import { AG_CLASSES } from '@/data/aegis/classes'
+import { classBlocks } from '@/data/aegis/classExtras'
+import type { AgClassKey } from '@/data/aegis/skills'
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '')
 const artOf = (id: string) => `${base}/aegis/classes/${id}.png`
@@ -10,6 +12,7 @@ const artOf = (id: string) => `${base}/aegis/classes/${id}.png`
 const active = ref(0)
 const n = AG_CLASSES.length
 const cur = computed(() => AG_CLASSES[active.value]!)
+const blocks = computed(() => classBlocks(cur.value.id as AgClassKey))
 const go = (i: number) => { active.value = ((i % n) + n) % n }
 const next = () => go(active.value + 1)
 const prev = () => go(active.value - 1)
@@ -66,7 +69,7 @@ const statRows = [
 </script>
 
 <template>
-  <AgPage eyebrow="CLASSES // 職業介紹" title="五個職業。" sub="點哪張,就看哪個。">
+  <AgPage eyebrow="CLASSES // 職業介紹" title="五個職業。" sub="點哪張,就看哪個。下面列出這個職業專屬的本能、試煉、裝備與技能。">
     <section class="ag-section">
       <div class="ag-wrap">
         <div class="stage" @pointerdown="onDown" @pointerup="onUp" @pointercancel="dragging = false" @pointerleave="dragging = false">
@@ -117,6 +120,24 @@ const statRows = [
               <span class="v ember">+{{ cur.bonus }}</span>
             </div>
           </div>
+        </div>
+
+        <!-- 這個職業有什麼:從遊戲特色 / 技能資料抓跟這個職業有關的列 -->
+        <div class="more-hd" :key="'h' + cur.id">
+          <div class="ag-cap ember">{{ cur.latin }} // 專屬內容</div>
+          <h3>{{ cur.name }}能拿到、能學到的</h3>
+        </div>
+        <div class="blocks" :key="'b' + cur.id">
+          <article v-for="b in blocks" :key="b.title" class="blk">
+            <div class="bh">
+              <b>{{ b.title }}</b>
+              <RouterLink :to="b.to" class="go">完整規則 →</RouterLink>
+            </div>
+            <dl>
+              <div v-for="[k, v] in b.rows" :key="k" class="kv"><dt>{{ k }}</dt><dd>{{ v }}</dd></div>
+            </dl>
+            <p v-if="b.note" class="bn">{{ b.note }}</p>
+          </article>
         </div>
       </div>
     </section>
@@ -186,13 +207,29 @@ const statRows = [
 .srow .v { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 300; }
 .srow .v.ember { color: var(--ag-ember); }
 
+.more-hd { margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--ag-line); animation: ag-up 0.45s ease-out; }
+.more-hd h3 { margin-top: 10px; font-size: 1.35rem; font-weight: 400; }
+.blocks { margin-top: 24px; columns: 2; column-gap: 20px; animation: ag-up 0.45s ease-out; }
+.blk { break-inside: avoid; margin-bottom: 20px; padding: 20px 22px; border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
+.bh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.bh b { font-size: 15.5px; font-weight: 500; letter-spacing: 0.04em; }
+.go { flex: none; font-size: 12px; color: var(--ag-ink-50); text-decoration: none; letter-spacing: 0.06em; }
+.go:hover { color: var(--ag-ember); }
+.kv { display: grid; grid-template-columns: minmax(96px, 38%) 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--ag-line-soft); }
+.kv dt { font-size: 13px; color: var(--ag-ink-60); }
+.kv dd { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--ag-ink); }
+.bn { margin-top: 10px; font-size: 12.5px; line-height: 1.6; color: var(--ag-ink-50); }
+
 @media (max-width: 800px) {
   .ring { height: 450px; perspective: 900px; }
   .card { width: 230px; height: 380px; margin-left: -115px; }
   .fig { bottom: 74px; }
   .info { grid-template-columns: 1fr; gap: 24px; }
+  .blocks { columns: 1; }
+  .blk { padding: 16px 16px; }
+  .kv { grid-template-columns: 1fr; gap: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card, .info, .fig, .cap, .wm { transition: none; animation: none; }
+  .card, .info, .fig, .cap, .wm, .more-hd, .blocks { transition: none; animation: none; }
 }
 </style>
