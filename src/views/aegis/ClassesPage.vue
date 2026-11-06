@@ -63,9 +63,6 @@ const onUp = (e: PointerEvent) => {
   else if (dx > 40) prev()
 }
 
-const statRows = [
-  ['STR 力量', 'str'], ['DEX 敏捷', 'dex'], ['CON 體質', 'con'], ['WIS 精神', 'wis'], ['CHA 魅力', 'cha'], ['INT 智力', 'int'],
-] as const
 </script>
 
 <template>
@@ -101,32 +98,14 @@ const statRows = [
         </div>
 
         <div class="info" :key="cur.id">
-          <div class="ihead">
-            <div>
-              <div class="ag-cap ember">{{ cur.latin }}</div>
-              <h2 class="ag-h">{{ cur.name }}<span class="thin">{{ cur.role }}</span></h2>
-            </div>
-            <p class="ag-body desc">{{ cur.desc }}</p>
+          <div>
+            <div class="ag-cap ember">{{ cur.latin }}</div>
+            <h2 class="ag-h">{{ cur.name }}<span class="thin">{{ cur.role }}</span></h2>
           </div>
-          <div class="stats">
-            <div v-for="[label, key] in statRows" :key="key" class="srow">
-              <span class="k ag-cap">{{ label }}</span>
-              <span class="bar"><i :style="{ width: (cur.stats[key] / 18) * 100 + '%' }"></i></span>
-              <span class="v">{{ cur.stats[key] }}</span>
-            </div>
-            <div class="srow bonus">
-              <span class="k ag-cap">可加點</span>
-              <span class="bar"></span>
-              <span class="v ember">+{{ cur.bonus }}</span>
-            </div>
-          </div>
+          <p class="ag-body desc">{{ cur.desc }}</p>
         </div>
 
         <!-- 這個職業有什麼:從遊戲特色 / 技能資料抓跟這個職業有關的列 -->
-        <div class="more-hd" :key="'h' + cur.id">
-          <div class="ag-cap ember">{{ cur.latin }} // 專屬內容</div>
-          <h3>{{ cur.name }}能拿到、能學到的</h3>
-        </div>
         <div class="blocks" :key="'b' + cur.id">
           <article v-for="b in blocks" :key="b.title" class="blk">
             <div class="bh">
@@ -197,19 +176,11 @@ const statRows = [
 .dot { all: unset; cursor: pointer; width: 22px; height: 3px; background: var(--ag-line); transition: background 0.25s, width 0.25s; }
 .dot.on { background: var(--ag-ember); width: 34px; }
 
-.info { margin-top: 44px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; animation: ag-up 0.45s ease-out; }
-.ihead .ag-h { margin: 10px 0 16px; }
-.desc { max-width: 46ch; }
-.stats { border-top: 1px solid var(--ag-line); }
-.srow { display: grid; grid-template-columns: 110px 1fr 40px; align-items: center; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--ag-line-soft); }
-.srow .bar { height: 1px; background: var(--ag-line-soft); position: relative; }
-.srow .bar i { position: absolute; left: 0; top: -1px; height: 3px; background: var(--ag-ember); transition: width 0.5s ease; }
-.srow .v { text-align: right; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 300; }
-.srow .v.ember { color: var(--ag-ember); }
-
-.more-hd { margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--ag-line); animation: ag-up 0.45s ease-out; }
-.more-hd h3 { margin-top: 10px; font-size: 1.35rem; font-weight: 400; }
-.blocks { margin-top: 24px; columns: 2; column-gap: 20px; animation: ag-up 0.45s ease-out; }
+/* 名字 + 介紹一排,底線接下面的專屬內容卡片 */
+.info { margin-top: 44px; padding-bottom: 28px; border-bottom: 1px solid var(--ag-line); display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; animation: ag-up 0.45s ease-out; }
+.info .ag-h { margin: 10px 0 0; }
+.desc { max-width: 46ch; margin: 0; }
+.blocks { margin-top: 28px; columns: 2; column-gap: 20px; animation: ag-up 0.45s ease-out; }
 .blk { break-inside: avoid; margin-bottom: 20px; padding: 20px 22px; border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.02); }
 .bh { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 12px; }
 .bh b { font-size: 15.5px; font-weight: 500; letter-spacing: 0.04em; }
@@ -230,6 +201,6 @@ const statRows = [
   .kv { grid-template-columns: 1fr; gap: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .card, .info, .fig, .cap, .wm, .more-hd, .blocks { transition: none; animation: none; }
+  .card, .info, .fig, .cap, .wm, .blocks { transition: none; animation: none; }
 }
 </style>
