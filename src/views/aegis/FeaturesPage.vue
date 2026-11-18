@@ -193,6 +193,7 @@ onUnmounted(() => {
                 </span>
                 <span class="sheen"></span>
                 <span class="shine"></span>
+                <span v-if="f.soon" class="soon">暫未開放</span>
               </span>
               <span class="cap">
                 <em class="ag-cap ember">// {{ f.idx }}</em>
@@ -210,13 +211,13 @@ onUnmounted(() => {
             v-for="(f, i) in list" :key="f.id" type="button" role="tab" class="tab"
             :class="{ on: i === active }" :aria-selected="i === active" @click="go(i)"
           >
-            <span class="ti">{{ f.idx }}</span>{{ f.title }}
+            <span class="ti">{{ f.idx }}</span>{{ f.title }}<span v-if="f.soon" class="tsoon">暫未開放</span>
           </button>
         </div>
 
         <div :key="cur.id" class="info">
           <div class="ihead">
-            <div class="ag-cap ember">// {{ cur.idx }} / {{ total }}</div>
+            <div class="ag-cap ember">// {{ cur.idx }} / {{ total }}<span v-if="cur.soon" class="isoon">暫未開放 · 之後陸續開放</span></div>
             <h2 class="ag-h">{{ cur.title }}<span class="thin">{{ cur.short }}</span></h2>
             <button v-if="cur.details" type="button" class="ag-btn dbtn" @click="openModal(cur)">
               詳細規則 <span class="arr">→</span>
@@ -246,6 +247,7 @@ onUnmounted(() => {
               <button type="button" class="mw-close" aria-label="關閉" @click="closeModal">✕</button>
             </div>
             <div class="mw-body">
+              <p v-if="modal.soon" class="mw-soon">這項目前暫未開放,之後會陸續開放;規則先放上來給大家看。</p>
               <div v-for="(d, i) in modal.details" :key="d.h" class="dsec">
                 <div class="dh"><span class="ag-cap ember">{{ String(i + 1).padStart(2, '0') }}</span><h3>{{ d.h }}</h3></div>
                 <ul v-if="d.items">
@@ -319,6 +321,12 @@ onUnmounted(() => {
 .cap .more .arr { transition: transform 0.25s; }
 .card.on .cap .more { opacity: 1; transform: none; }
 .card.on:hover .cap .more .arr { transform: translateX(4px); }
+
+/* 暫未開放:卡片左上角標籤、索引列小字、說明列一行(內容照留) */
+.soon { position: absolute; top: 14px; left: 14px; padding: 4px 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.12em; color: #fff;
+  background: rgba(10, 10, 12, 0.78); border: 1px solid rgba(255, 255, 255, 0.28); transform: translateZ(30px); pointer-events: none; }
+.tab .tsoon { font-size: 11px; color: var(--ag-ink-35); letter-spacing: 0.06em; }
+.isoon { margin-left: 12px; color: var(--ag-ink-60); letter-spacing: 0.1em; }
 
 /* 分類列:放在卡片上面,選一類只轉那一類 */
 .cats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 6px; }
@@ -395,6 +403,7 @@ onUnmounted(() => {
 .mw-close:hover { color: #fff; border-color: #e8842a; }
 .mw-body { overflow-y: auto; padding: 8px 28px 6px; overscroll-behavior: contain; }
 .mw-body .dsec { padding: 20px 0; }
+.mw-soon { margin: 18px 0 0; padding: 10px 14px; font-size: 13.5px; line-height: 1.7; color: rgba(255, 255, 255, 0.85); border: 1px solid rgba(232, 132, 42, 0.45); background: rgba(232, 132, 42, 0.08); }
 .mw-body .dsec + .dsec { border-top: 1px solid rgba(255, 255, 255, 0.1); }
 .mw-body .dh { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
 .mw-body .dh h3 { margin: 0; font-size: 15px; font-weight: 500; letter-spacing: 0.02em; }

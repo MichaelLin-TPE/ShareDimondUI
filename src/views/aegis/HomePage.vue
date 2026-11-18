@@ -15,7 +15,7 @@ const HOOKS = [
   { id: 'boss', title: '首領積分', hook: '打王不用搶最後一刀', line: '打多少算多少,摸一下也有份。王掉的東西照貢獻分,不是誰補刀誰拿。' },
   { id: 'bounty', title: '懸賞令', hook: '每天三張懸賞單', line: '上線先接單,解完拿積分、娃娃精華、聲望。沒空打?委託別人解。' },
   { id: 'trial', title: '職業試煉', hook: '一隻 NPC 帶你從 15 級打到 50 級', line: '四場專屬任務,每過一場就發一套當下穿得上的裝備;50 級那件全服只有這裡拿得到。' },
-  { id: 'season', title: '賽季', hook: '兩週一季,每個人的任務都不一樣', line: '每天抽 3 個、每週抽 4 個,分數升賽季等級領獎,累積分換變身卡。' },
+  { id: 'season', title: '賽季', hook: '一週一季,每週換一個主題', line: '每天抽 3 個、每週抽 4 個任務,六章旅程一章一章解,累計分在賽季商店換道具。' },
   { id: 'codex', title: '裝備圖鑑', hook: '爛裝也有用', line: '打到的垃圾裝別丟,登錄收藏冊,全帳號永久加成。' },
   { id: 'fishing', title: '釣魚', hook: '掛個竿,錢跟屬性自己游過來', line: '沒空練功的晚上,丟根釣竿也在變強。' },
   { id: 'casino', title: '獨家娛樂場', hook: '打怪賺的天幣,拿去上桌', line: '拉霸、妞妞、十三支、麻將、捕魚,玩家對玩家、真人坐莊,彩金池整池帶走。' },
@@ -25,9 +25,9 @@ const HOOKS = [
 // 數字帶:進視窗才跳數。數字都是雲端 config 真值(rates / other / ipcheck.properties),改倍率要一起改這裡跟 server.ts / reserve.ts
 // 2026-11-07 使用者:「儲值能買到的裝備 0」這種用話術帶過(放在數字帶下面那句),數字只放玩家換服第一眼會看的
 const stats = [
-  { n: 5, prefix: '×', cap: '經驗倍率' },
-  { n: 100, prefix: '×', cap: '負重倍率' },
-  { n: 100, prefix: '', cap: '等級上限' },
+  { n: 4, prefix: '×', cap: '經驗倍率' },
+  { n: 10, prefix: '×', cap: '負重倍率' },
+  { n: 60, prefix: '', cap: '等級上限' },
   { n: 3, prefix: '', cap: '同 IP 多開' },
   { n: AG_FEATURES.length, prefix: '', cap: '首創玩法' },
 ]
@@ -92,7 +92,7 @@ onUnmounted(() => { if (io) io.disconnect() })
           <p class="ag-cap l">玩膩了短期服?還在玩賣裝備的服?<br />這裡賣的只有情懷,其餘的靠你自己打。</p>
           <div class="r">
             <p class="ag-body">無課不用怕追不上人。沒有儲值買強度,王裝、符文、娃娃全部從怪身上掉,元寶打王、簽到就有。</p>
-            <p class="ag-body">每天三張懸賞單、兩週一季的隨機任務、輪流開的三條龍,上線永遠有事做。你記憶裡那個天堂,我們幫你留著。</p>
+            <p class="ag-body">每天三張懸賞單、一週一季的隨機任務、輪流開的屠龍遠征,上線永遠有事做。你記憶裡那個天堂,我們幫你留著。</p>
             <div class="cta">
               <RouterLink class="ag-btn primary" to="/aegis/play">點我玩遊戲 <span class="arr">→</span></RouterLink>
               <RouterLink class="ag-btn" to="/aegis/features">遊戲特色</RouterLink>

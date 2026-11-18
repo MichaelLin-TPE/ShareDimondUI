@@ -31,9 +31,9 @@ export const RV_STEPS = [
 /** 遊戲特色:數字列(數值同官網伺服器設置 server.ts) */
 // 跟官網首頁數字帶同一套(雲端 config 真值);「不賣裝備」用文案帶,不放數字(2026-11-07 使用者)
 export const RV_STATS = [
-  { v: '×5', k: '經驗倍率' },
-  { v: '×100', k: '負重倍率' },
-  { v: '100', k: '等級上限' },
+  { v: '×4', k: '經驗倍率' },
+  { v: '×10', k: '負重倍率' },
+  { v: '60', k: '等級上限' },
   { v: '3', k: '同 IP 多開' },
   { v: String(AG_FEATURES.length), k: '首創玩法' },
 ]
@@ -50,7 +50,7 @@ export const RV_FEATURES = [
   { title: '首領積分', line: '打王不用搶最後一刀,打多少算多少。', art: 'boss-points.jpg' },
   { title: '懸賞令', line: '每天三張懸賞單,解完拿積分、精華、聲望。', art: 'bounty.jpg' },
   { title: '職業試煉', line: '一隻 NPC 帶你從 15 級打到 50 級,每關發裝備。', art: 'trial-officer.jpg' },
-  { title: '賽季', line: '兩週一季,每個人的任務都不一樣。', art: 'season.jpg' },
+  { title: '賽季', line: '一週一季,每週換主題,每個人的任務都不一樣。', art: 'season.jpg' },
   { title: '裝備圖鑑', line: '爛裝也有用,登錄收藏冊全帳號永久加成。', art: 'codex.jpg' },
   { title: '屠龍遠征', line: '每天輪一條龍,首通拿屠龍聖印。', art: 'dragonraid.jpg' },
   { title: '獄之試煉', line: '1~4 人打王,十分鐘一場,每天都能打。', art: 'dungeon.jpg' },
