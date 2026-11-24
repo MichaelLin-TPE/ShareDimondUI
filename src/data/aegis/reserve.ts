@@ -12,11 +12,10 @@ export interface RvMilestone {
 }
 
 export const RV_MILESTONES: RvMilestone[] = [
-  { count: 500, title: '開荒補給', icon: 'potion', items: ['終極治癒藥水 ×100', '自我加速藥水 ×30'] },
-  { count: 1000, title: '衝裝起步', icon: 'scroll', items: ['對武器施法的卷軸 ×2', '對盔甲施法的卷軸 ×3'] },
-  { count: 2000, title: '時光饋贈', icon: 'hourglass', items: ['時光袋 ×5'] },
-  { count: 3000, title: '魔法夥伴', icon: 'doll', items: ['娃娃召喚卷 ×1', '六芒星抽抽包 ×3'] },
-  { count: 5000, title: '全服狂歡', icon: 'crown', items: ['開服首週經驗 ×2', '金元寶 ×50'] },
+  { count: 50, title: '開荒補給', icon: 'potion', items: ['受祝福瞬間移動卷軸 ×100', '治癒藥水(綁定)×1,000'] },
+  { count: 100, title: '時光饋贈', icon: 'hourglass', items: ['時光袋 ×10'] },
+  { count: 200, title: '魔法夥伴', icon: 'doll', items: ['娃娃召喚卷 ×10'] },
+  { count: 300, title: '破曉變身', icon: 'crown', items: ['紫變自選卷軸 ×1', '炫色武器石 ×5', '炫色防具石 ×5'] },
 ]
 
 /** 分享用的網址:不帶 #,LINE 貼上才不會被改掉(public/reserve/index.html 會轉進來) */

@@ -368,7 +368,7 @@ onUnmounted(() => io?.disconnect())
 .node .lb { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); font-size: 13px; color: var(--ag-ink-50); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .node.on .lb { color: var(--gold); }
 
-.cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
 .card { position: relative; padding: 26px 20px 20px; border: 1px solid var(--ag-line-soft); background: rgba(255, 255, 255, 0.025); display: flex; flex-direction: column; }
 .card .ic svg { width: 46px; height: 46px; fill: none; stroke: var(--ag-ink-35); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .card .goal { margin-top: 16px; font-size: 13px; letter-spacing: 0.12em; color: var(--ag-ink-50); font-variant-numeric: tabular-nums; }
@@ -474,7 +474,7 @@ onUnmounted(() => io?.disconnect())
 .end .acts { margin-top: 30px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 
 @media (max-width: 1100px) {
-  .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
   .sec { padding-top: 76px; }
