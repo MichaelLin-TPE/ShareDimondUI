@@ -35,6 +35,91 @@ const setCat = (k: CatKey) => {
 const next = () => go(active.value + 1)
 const prev = () => go(active.value - 1)
 
+// 搜尋列(2026-11-26 使用者:遊戲特色加一個好看的搜尋列):標題、短介紹、重點、詳細規則全文都搜得到;
+// 空白隔開多個詞 = 每個詞都要有。選一筆就把那張卡轉到中間(不在目前分類就切到它的分類)。
+type Seg = { t: string; hit: boolean }
+type Hit = { f: AgFeature; snip: Seg[]; where: string }
+const FIELDS = AG_FEATURES.map((f) => {
+  const rows: { t: string; w: number; where: string }[] = [
+    { t: f.title, w: 100, where: '' },
+    { t: f.short, w: 40, where: '' },
+    ...f.points.map((t) => ({ t, w: 20, where: '介紹' })),
+  ]
+  for (const d of f.details ?? []) {
+    rows.push({ t: d.h, w: 15, where: d.h })
+    for (const t of d.items ?? []) rows.push({ t, w: 10, where: d.h })
+    for (const r of d.table?.rows ?? []) rows.push({ t: r.join(' · '), w: 10, where: d.h })
+  }
+  return { f, rows, low: rows.map((r) => r.t.toLowerCase()) }
+})
+const catName = (k: AgFeatureCat) => AG_FEATURE_CATS.find((c) => c.key === k)?.name ?? ''
+// 把字切成「有中 / 沒中」幾段,畫面上用 <mark> 標亮(不用 v-html)
+const markText = (t: string, ts: string[]): Seg[] => {
+  const low = t.toLowerCase()
+  const on = new Array<boolean>(t.length).fill(false)
+  for (const w of ts) for (let i = low.indexOf(w); i >= 0; i = low.indexOf(w, i + w.length)) on.fill(true, i, i + w.length)
+  const out: Seg[] = []
+  for (let i = 0; i < t.length; i++) {
+    const last = out[out.length - 1]
+    if (last && last.hit === on[i]) last.t += t[i]
+    else out.push({ t: t[i]!, hit: on[i]! })
+  }
+  return out
+}
+// 長句只留命中附近一段
+const around = (t: string, w: string) => {
+  const i = t.toLowerCase().indexOf(w)
+  if (i < 0 || t.length <= 46) return t
+  const a = Math.max(0, i - 14), b = Math.min(t.length, i + w.length + 30)
+  return (a > 0 ? '…' : '') + t.slice(a, b) + (b < t.length ? '…' : '')
+}
+const q = ref('')
+const terms = computed(() => q.value.trim().toLowerCase().split(' ').map((x) => x.trim()).filter(Boolean))
+const hits = computed<Hit[]>(() => {
+  const ts = terms.value
+  if (!ts.length) return []
+  const scored: { h: Hit; score: number }[] = []
+  for (const x of FIELDS) {
+    let score = 0
+    let all = true
+    for (const t of ts) {
+      const ws = x.rows.filter((_, i) => x.low[i]!.includes(t)).map((r) => r.w)
+      if (!ws.length) { all = false; break }
+      score += Math.max(...ws) + Math.min(ws.length, 15) * 2   // 規則裡提到越多次越相關(搜「結晶」炫色要排在簽到前面)
+    }
+    if (!all) continue
+    if (x.low[0]!.startsWith(ts[0]!)) score += 50
+    if (x.f.soon) score -= 30   // 暫未開放的排在已開放的後面
+    // 摘要:標題就全中 → 顯示短介紹;否則挑第一個命中的內文
+    const titleAll = ts.every((t) => x.low[0]!.includes(t))
+    const k = titleAll ? 1 : Math.max(1, x.low.findIndex((l, i) => i > 0 && l.includes(ts[0]!)))
+    const row = x.rows[k]!
+    scored.push({ h: { f: x.f, snip: markText(titleAll ? row.t : around(row.t, ts[0]!), ts), where: titleAll ? '' : row.where }, score })
+  }
+  return scored.sort((a, b) => b.score - a.score).slice(0, 8).map((s) => s.h)
+})
+const sel = ref(0)
+watch(hits, () => { sel.value = 0 })
+const searchEl = ref<HTMLInputElement | null>(null)
+const focused = ref(false)
+const showDrop = computed(() => focused.value && terms.value.length > 0)
+const pick = (f: AgFeature) => {
+  if (!list.value.includes(f)) cat.value = f.cat
+  userNav = true
+  active.value = list.value.indexOf(f)
+  q.value = ''
+  searchEl.value?.blur()
+}
+const onSearchKey = (e: KeyboardEvent) => {
+  const c = hits.value.length
+  if (e.key === 'ArrowDown' && c) { e.preventDefault(); sel.value = (sel.value + 1) % c }
+  else if (e.key === 'ArrowUp' && c) { e.preventDefault(); sel.value = (sel.value - 1 + c) % c }
+  else if (e.key === 'Enter' && c) { e.preventDefault(); pick(hits.value[sel.value]!.f) }
+  else if (e.key === 'Escape') { if (q.value) q.value = ''; else searchEl.value?.blur() }
+}
+const clearSearch = () => { q.value = ''; searchEl.value?.focus() }
+const SUGGEST = ['副本', '娃娃', '炫色', '賽季', '首領']
+
 // 首頁卡片連過來會帶 #特色id:直接轉到那張
 const syncHash = () => {
   const f = AG_FEATURES.find((x) => x.id === (route.hash || '').replace('#', ''))
@@ -141,6 +226,9 @@ const closeModal = () => {
   closeTimer = setTimeout(() => { modal.value = null; closing.value = false; closeTimer = null }, 200)
 }
 const onKey = (e: KeyboardEvent) => {
+  const typing = e.target instanceof HTMLInputElement
+  if (!typing && !modal.value && e.key === '/') { e.preventDefault(); searchEl.value?.focus(); return }
+  if (typing) return   // 搜尋框裡的方向鍵 / Esc 由 onSearchKey 處理,不換卡
   if (e.key === 'Escape') closeModal()
   else if (!modal.value && e.key === 'ArrowRight') next()
   else if (!modal.value && e.key === 'ArrowLeft') prev()
@@ -170,6 +258,39 @@ onUnmounted(() => {
   <AgPage eyebrow="FEATURES // 遊戲特色" title="這裡才有的玩法。" :sub="`共 ${AG_FEATURES.length} 項特色,先選分類,點旁邊的卡切換,點中間那張看完整規則。`">
     <section class="ag-section">
       <div class="ag-wrap">
+        <div class="search" :class="{ open: showDrop }">
+          <label class="sbox">
+            <svg class="sico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+            <input
+              ref="searchEl" v-model="q" type="search" class="sinput" placeholder="搜尋玩法、道具、規則… 例如:副本、炫色、娃娃"
+              autocomplete="off" enterkeyhint="search" aria-label="搜尋遊戲特色" role="combobox" aria-controls="feat-search-list"
+              :aria-expanded="showDrop" :aria-activedescendant="showDrop && hits.length ? `fs-${sel}` : undefined"
+              @focus="focused = true" @blur="focused = false" @keydown="onSearchKey"
+            />
+            <button v-if="q" type="button" class="sclear" aria-label="清除" @mousedown.prevent @click="clearSearch">✕</button>
+            <kbd v-else class="skbd" aria-hidden="true">/</kbd>
+          </label>
+          <div v-if="showDrop" id="feat-search-list" class="sdrop" role="listbox" @mousedown.prevent>
+            <template v-if="hits.length">
+              <div class="shead ag-cap">找到 {{ hits.length }} 項<span>↑↓ 選擇 · Enter 前往</span></div>
+              <button
+                v-for="(h, i) in hits" :id="`fs-${i}`" :key="h.f.id" type="button" role="option" class="srow"
+                :class="{ on: i === sel }" :aria-selected="i === sel" @mouseenter="sel = i" @click="pick(h.f)"
+              >
+                <span class="sidx">{{ h.f.idx }}</span>
+                <span class="smain">
+                  <b><template v-for="(g, gi) in markText(h.f.title, terms)" :key="gi"><mark v-if="g.hit">{{ g.t }}</mark><template v-else>{{ g.t }}</template></template></b>
+                  <i><em v-if="h.where" class="swhere">{{ h.where }}</em><template v-for="(g, gi) in h.snip" :key="gi"><mark v-if="g.hit">{{ g.t }}</mark><template v-else>{{ g.t }}</template></template></i>
+                </span>
+                <span class="stag">{{ h.f.soon ? '暫未開放' : catName(h.f.cat) }}</span>
+              </button>
+            </template>
+            <div v-else class="snone">
+              <p>找不到「{{ q.trim() }}」相關的特色</p>
+              <div class="ssug"><span class="ag-cap">試試</span><button v-for="w in SUGGEST" :key="w" type="button" @click="q = w">{{ w }}</button></div>
+            </div>
+          </div>
+        </div>
         <div ref="catsEl" class="cats" role="tablist" aria-label="特色分類">
           <button
             v-for="c in CATS" :key="c.key" type="button" role="tab" class="cat"
@@ -365,7 +486,52 @@ onUnmounted(() => {
 .strip img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
 .strip figcaption { padding: 10px 12px; color: var(--ag-ink-72); text-transform: none; letter-spacing: 0.06em; }
 
+/* 搜尋列:玻璃感深色底 + 琥珀色聚焦光暈,下拉結果跟同一個框接起來展開 */
+.search { position: relative; max-width: 640px; margin: 0 auto 18px; z-index: 30; }
+.sbox { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 16px 0 20px; cursor: text;
+  border: 1px solid var(--ag-line); border-radius: 27px; background: linear-gradient(180deg, rgba(28, 28, 32, 0.85), rgba(10, 10, 12, 0.9));
+  backdrop-filter: blur(10px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px -22px rgba(0, 0, 0, 0.9);
+  transition: border-color 0.25s, box-shadow 0.25s, border-radius 0.2s; }
+.sbox:hover { border-color: rgba(232, 132, 42, 0.55); }
+.sbox:focus-within { border-color: var(--ag-ember); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 4px rgba(232, 132, 42, 0.14), 0 0 42px -10px var(--ag-ember-glow); }
+.search.open .sbox { border-radius: 22px 22px 0 0; border-bottom-color: var(--ag-line-soft); }
+.sico { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--ag-ink-50); stroke-width: 2; stroke-linecap: round; transition: stroke 0.25s; }
+.sbox:focus-within .sico { stroke: var(--ag-ember); }
+.sinput { all: unset; flex: 1; min-width: 0; height: 100%; font: inherit; font-size: 15px; letter-spacing: 0.04em; color: var(--ag-ink); }
+.sinput::placeholder { color: var(--ag-ink-35); }
+.sinput::-webkit-search-cancel-button { display: none; }
+.sclear { all: unset; cursor: pointer; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; font-size: 12px; color: var(--ag-ink-60); background: rgba(255, 255, 255, 0.07); transition: background 0.2s, color 0.2s; }
+.sclear:hover { background: var(--ag-ember); color: #120800; }
+.skbd { display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border: 1px solid var(--ag-line); border-radius: 6px; font: 12px/1 var(--ag-font); color: var(--ag-ink-35); }
+.sdrop { position: absolute; left: 0; right: 0; top: 100%; max-height: min(460px, 62vh); overflow-y: auto; overscroll-behavior: contain;
+  border: 1px solid var(--ag-ember); border-top: 0; border-radius: 0 0 22px 22px; background: rgba(10, 10, 12, 0.97); backdrop-filter: blur(14px);
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.95), 0 0 42px -14px var(--ag-ember-glow); padding: 6px 0 10px; animation: sdrop 0.18s ease-out; }
+.search.open .sbox { border-color: var(--ag-ember); }
+@keyframes sdrop { from { opacity: 0; transform: translateY(-6px); } }
+.shead { display: flex; justify-content: space-between; padding: 8px 20px 6px; color: var(--ag-ink-35); }
+.srow { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px; width: 100%; padding: 11px 20px;
+  border-left: 2px solid transparent; transition: background 0.15s, border-color 0.15s; }
+.srow.on { background: rgba(232, 132, 42, 0.1); border-left-color: var(--ag-ember); }
+.sidx { font-size: 12px; color: var(--ag-ink-35); font-variant-numeric: tabular-nums; }
+.srow.on .sidx { color: var(--ag-ember); }
+.smain { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.smain b { font-size: 15px; font-weight: 500; letter-spacing: 0.04em; color: var(--ag-ink); }
+.smain i { font-style: normal; font-size: 12.5px; line-height: 1.55; color: var(--ag-ink-60); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.swhere { font-style: normal; margin-right: 8px; padding: 1px 6px; border: 1px solid var(--ag-line-soft); font-size: 11px; color: var(--ag-ink-50); }
+.smain mark { background: none; color: var(--ag-ember); font-weight: 600; }
+.stag { font-size: 11px; letter-spacing: 0.08em; color: var(--ag-ink-50); white-space: nowrap; }
+.snone { padding: 18px 20px 8px; text-align: center; }
+.snone p { margin: 0 0 12px; font-size: 14px; color: var(--ag-ink-60); }
+.ssug { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+.ssug .ag-cap { color: var(--ag-ink-35); }
+.ssug button { all: unset; cursor: pointer; padding: 5px 12px; border: 1px solid var(--ag-line); border-radius: 14px; font-size: 12.5px; color: var(--ag-ink-72); transition: border-color 0.2s, color 0.2s; }
+.ssug button:hover { border-color: var(--ag-ember); color: var(--ag-ember); }
+
 @media (max-width: 800px) {
+  .sbox { height: 48px; padding: 0 12px 0 16px; }
+  .sinput { font-size: 16px; }   /* iOS 小於 16px 聚焦會自動放大畫面 */
+  .skbd, .shead span, .stag { display: none; }
+  .srow { grid-template-columns: 26px 1fr; padding: 10px 16px; }
   .ring { height: 380px; perspective: 900px; }
   .card { width: 280px; height: 330px; margin-left: -140px; }
   .cap { top: calc(280px * 9 / 16 - 14px); padding: 0 16px 16px; gap: 4px; }
