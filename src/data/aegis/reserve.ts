@@ -32,7 +32,7 @@ export const RV_STEPS = [
 export const RV_STATS = [
   { v: '×4', k: '經驗倍率' },
   { v: '×10', k: '負重倍率' },
-  { v: '60', k: '等級上限' },
+  { v: '65', k: '等級上限' },
   { v: '3', k: '同 IP 多開' },
   { v: String(AG_FEATURES.length), k: '首創玩法' },
 ]

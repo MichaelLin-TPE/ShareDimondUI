@@ -27,7 +27,7 @@ const HOOKS = [
 const stats = [
   { n: 4, prefix: '×', cap: '經驗倍率' },
   { n: 10, prefix: '×', cap: '負重倍率' },
-  { n: 60, prefix: '', cap: '等級上限' },
+  { n: 65, prefix: '', cap: '等級上限' },
   { n: 3, prefix: '', cap: '同 IP 多開' },
   { n: AG_FEATURES.length, prefix: '', cap: '首創玩法' },
 ]
